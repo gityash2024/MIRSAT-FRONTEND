@@ -1,39 +1,40 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { ROLES } from '../utils/permissions';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
+import PublicRoute from './PublicRoute';
+import AuthLayout from '../layouts/AuthLayout';
+import MainLayout from '../layouts/MainLayout';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import { useAuth } from '../hooks/useAuth';
 
-const router = createBrowserRouter([
-  {
-    path: '/auth',
-    element: <AuthLayout />,
-    children: [
-      { path: 'login', element: <LoginPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> }
-    ]
-  },
-  {
-    path: '/',
-    element: <PrivateRoute><MainLayout /></PrivateRoute>,
-    children: [
-      { 
-        path: 'dashboard', 
-        element: <DashboardPage /> 
-      },
-      { 
-        path: 'users', 
-        element: (
-          <PermissionGate permission="view_users">
-            <UsersPage />
-          </PermissionGate>
-        ) 
-      },
-      { 
-        path: 'tasks', 
-        element: <TasksPage /> 
-      },
-      // ... other routes
-    ]
-  }
-]);
+const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
 
-export default router;
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route element={<PublicRoute />}>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+      </Route>
+
+      {/* Protected Routes */}
+      <Route element={<PrivateRoute />}>
+        <Route element={<MainLayout />}>
+          {/* Add protected routes here later */}
+        </Route>
+      </Route>
+
+      {/* Default redirect */}
+      <Route 
+        path="/" 
+        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+export default AppRoutes;
