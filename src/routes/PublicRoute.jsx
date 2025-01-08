@@ -1,10 +1,16 @@
-// PublicRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const PublicRoute = () => {
   const { isAuthenticated } = useAuth();
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/dashboard" replace />;
+
+  // If already authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Render child routes if not authenticated
+  return <Outlet />;
 };
 
 export default PublicRoute;

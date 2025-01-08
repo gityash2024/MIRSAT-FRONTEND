@@ -16,6 +16,7 @@ export const login = createAsyncThunk(
     try {
       const response = await authService.login(credentials);
       localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -35,19 +36,17 @@ export const register = createAsyncThunk(
   }
 );
 
-// export const dashboard = createAsyncThunk(
-//   'auth/dashboard',
-//   async (dashboard, { rejectWithValue }) => {
-//     try {
-//       const response = await authService.register(dashboard);
-//       return response;
-//     } catch (error) {
-//       return rejectWithValue(error.response?.data?.message || 'Dashboard');
-//     }
-//   }
-// );
-
-
+export const fetchCurrentUser = createAsyncThunk(
+  'auth/fetchCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authService.getCurrentUser();
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -58,7 +57,15 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       toast.success('Logged out successfully');
+    },
+    // Restore user from local storage on app reload
+    restoreUser: (state) => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        state.user = JSON.parse(storedUser);
+      }
     }
   },
   extraReducers: (builder) => {
@@ -93,9 +100,13 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         toast.error(action.payload);
+      })
+      // Fetch Current User
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
       });
   }
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, restoreUser } = authSlice.actions;
 export default authSlice.reducer;

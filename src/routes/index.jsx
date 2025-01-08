@@ -18,21 +18,14 @@ const AppRoutes = () => {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Route>
-
-     
-{/* <Route element={<PrivateRoute />}>
-  <Route element={<MainLayout />}>
-    <Route path="/dashboard" element={<Dashboard />} />
-  </Route>
-</Route> */}
 
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
-          {/* Add protected routes here later */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Add more protected routes here later */}
         </Route>
       </Route>
 

@@ -112,6 +112,24 @@ const ProgressItem = styled.div`
   }
 `;
 
+const TeamPerformanceItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+const TeamMemberName = styled.span`
+  font-size: 14px;
+  color: #333;
+`;
+
+const TeamMemberPerformance = styled.span`
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+`;
+
 const Dashboard = () => {
   const { user } = useAuth();
 
@@ -147,6 +165,13 @@ const Dashboard = () => {
     { name: 'Marina Safety Checks', progress: 60 },
     { name: 'Equipment Verification', progress: 90 },
     { name: 'Documentation Review', progress: 45 }
+  ];
+
+  const teamPerformance = [
+    { name: 'John Doe', performance: '95%' },
+    { name: 'Jane Smith', performance: '88%' },
+    { name: 'Mike Johnson', performance: '82%' },
+    { name: 'Sarah Williams', performance: '90%' }
   ];
 
   return (
@@ -193,7 +218,14 @@ const Dashboard = () => {
 
         <ContentCard>
           <Typography className="card-title">Team Performance</Typography>
-         
+          <Box>
+            {teamPerformance.map((member, index) => (
+              <TeamPerformanceItem key={index}>
+                <TeamMemberName>{member.name}</TeamMemberName>
+                <TeamMemberPerformance>{member.performance}</TeamMemberPerformance>
+              </TeamPerformanceItem>
+            ))}
+          </Box>
         </ContentCard>
       </ContentGrid>
     </DashboardContainer>
