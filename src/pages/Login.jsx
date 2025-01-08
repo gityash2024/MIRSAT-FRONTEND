@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
+import { useDispatch } from 'react-redux';
+import { login } from '../store/slices/authSlice';
 import boat from '../assets/boat.jpeg';
 const GlobalStyle = createGlobalStyle`
   * {
@@ -218,14 +220,27 @@ const Login = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    
+    // Clear specific field error when user starts typing
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
+      const newErrors = { ...errors };
+      delete newErrors[e.target.name];
+      setErrors(newErrors);
+    }
+    
+    // Clear API error
+    if (apiError) {
+      setApiError(null);
     }
   };
 
@@ -237,10 +252,30 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
+    
+    // Reset previous errors
+    setApiError(null);
+    
+    // Validate form
+    if (!validateForm()) return;
+
+    // Set loading state
+    setIsLoading(true);
+
+    try {
+      // Dispatch login thunk
+      const resultAction = await dispatch(login(formData)).unwrap();
+      
+      // Navigation handled by Redux thunk success toast/notification
+      navigate('/dashboard');
+    } catch (error) {
+      // Handle login errors
+      setApiError(error || 'Login failed. Please try again.');
+    } finally {
+      // Reset loading state
+      setIsLoading(false);
     }
   };
 
@@ -274,6 +309,12 @@ const Login = () => {
         >
           <Title>Sign in to your account</Title>
           <form onSubmit={handleSubmit}>
+            {apiError && (
+              <ErrorMessage style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                {apiError}
+              </ErrorMessage>
+            )}
+
             <FormGroup>
               <Input
                 type="email"
@@ -304,8 +345,9 @@ const Login = () => {
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </SubmitButton>
 
             <SignUpText>
