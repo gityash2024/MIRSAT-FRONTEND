@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
@@ -5,9 +6,15 @@ import { store } from './store/store';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './config/theme';
 import AppRoutes from './routes';
+import { restoreUser } from './store/slices/authSlice';
 import './App.css';
 
 function App() {
+  useEffect(() => {
+    // Restore user from local storage on app reload
+    store.dispatch(restoreUser());
+  }, []);
+
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
