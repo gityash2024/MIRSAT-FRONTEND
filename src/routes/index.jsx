@@ -5,6 +5,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import MainLayout from '../layouts/MainLayout';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import Dashboard from '../pages/Dashboard';  
 import { useAuth } from '../hooks/useAuth';
 
 const AppRoutes = () => {
@@ -17,8 +18,16 @@ const AppRoutes = () => {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Route>
+
+     
+{/* <Route element={<PrivateRoute />}>
+  <Route element={<MainLayout />}>
+    <Route path="/dashboard" element={<Dashboard />} />
+  </Route>
+</Route> */}
 
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>

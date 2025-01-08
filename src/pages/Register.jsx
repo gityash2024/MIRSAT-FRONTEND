@@ -260,6 +260,41 @@ const Register = () => {
     }
   };
 
+  const StepIndicator = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    left: 50px;
+    right: 50px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: 0;
+  }
+`;
+
+const StepProgressLine = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 50px;
+  height: 2px;
+  background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+  z-index: 1;
+  transition: width 0.3s ease;
+  width: ${props => {
+    if (props.currentStep === 1) return '0%';
+    if (props.currentStep === 2) return '50%';
+    return '100%';
+  }};
+`;
+
   const validateStep = (step) => {
     const newErrors = {};
     

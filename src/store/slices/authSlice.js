@@ -35,6 +35,20 @@ export const register = createAsyncThunk(
   }
 );
 
+// export const dashboard = createAsyncThunk(
+//   'auth/dashboard',
+//   async (dashboard, { rejectWithValue }) => {
+//     try {
+//       const response = await authService.register(dashboard);
+//       return response;
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data?.message || 'Dashboard');
+//     }
+//   }
+// );
+
+
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,

@@ -11,6 +11,10 @@ export const authService = {
     return response.data;
   },
 
+  // dashboard: async (dashboard) => {
+  //   const response = await api.get('/auth/dashboard', dashboard);
+  //   return response.data;
+  // },
   logout: async () => {
     const response = await api.post('/auth/logout');
     return response.data;
