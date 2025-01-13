@@ -28,6 +28,7 @@ import Reports from '../pages/reports';
 import Settings from '../pages/settings';
 
 import { useAuth } from '../hooks/useAuth';
+import UserView from '../pages/users/UserView';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -47,7 +48,6 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
-
           
           {/* Tasks Routes */}
           <Route path="/tasks" element={<Tasks />}>
@@ -57,12 +57,11 @@ const AppRoutes = () => {
             <Route path=":taskId/edit" element={<TaskEdit />} />
           </Route>
 
-          {/* Users Routes */}
-          <Route path="/users" element={<Users />}>
-            <Route index element={<UserList />} />
-            <Route path="create" element={<UserCreate />} />
-            <Route path=":userId/edit" element={<UserEdit />} />
-          </Route>
+          {/* Users Routes - Flattened structure */}
+          <Route path="/users" element={<UserList />} />
+          <Route path="/users/create" element={<UserCreate />} />
+          <Route path="/users/:userId" element={<UserView />} />
+          <Route path="/users/:userId/edit" element={<UserEdit />} />
 
           {/* Calendar Route */}
           <Route path="/calendar" element={<Calendar />} />
