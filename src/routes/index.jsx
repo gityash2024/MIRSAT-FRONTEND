@@ -1,11 +1,32 @@
+// src/routes/index.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
 import AuthLayout from '../layouts/AuthLayout';
 import MainLayout from '../layouts/MainLayout';
+
+// Auth Pages
 import Login from '../pages/Login';
 import Register from '../pages/Register';
-import Dashboard from '../pages/Dashboard';  
+import Dashboard from '../pages/Dashboard';
+import Notifications from '../pages/notifications';
+
+// Main Pages
+import Tasks from '../pages/tasks';
+import TaskList from '../pages/tasks/TaskList';
+import TaskCreate from '../pages/tasks/TaskCreate';
+import TaskEdit from '../pages/tasks/TaskEdit';
+import TaskView from '../pages/tasks/TaskView';
+
+import Users from '../pages/users';
+import UserList from '../pages/users/UserList';
+import UserCreate from '../pages/users/UserCreate';
+import UserEdit from '../pages/users/UserEdit';
+
+import Calendar from '../pages/calendar';
+import Reports from '../pages/reports';
+import Settings from '../pages/settings';
+
 import { useAuth } from '../hooks/useAuth';
 
 const AppRoutes = () => {
@@ -25,7 +46,32 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          {/* Add more protected routes here later */}
+          <Route path="/notifications" element={<Notifications />} />
+
+          
+          {/* Tasks Routes */}
+          <Route path="/tasks" element={<Tasks />}>
+            <Route index element={<TaskList />} />
+            <Route path="create" element={<TaskCreate />} />
+            <Route path=":taskId" element={<TaskView />} />
+            <Route path=":taskId/edit" element={<TaskEdit />} />
+          </Route>
+
+          {/* Users Routes */}
+          <Route path="/users" element={<Users />}>
+            <Route index element={<UserList />} />
+            <Route path="create" element={<UserCreate />} />
+            <Route path=":userId/edit" element={<UserEdit />} />
+          </Route>
+
+          {/* Calendar Route */}
+          <Route path="/calendar" element={<Calendar />} />
+
+          {/* Reports Route */}
+          <Route path="/reports" element={<Reports />} />
+
+          {/* Settings Route */}
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
 

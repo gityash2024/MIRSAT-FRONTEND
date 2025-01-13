@@ -2,62 +2,52 @@ import React from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  Card, 
-  Typography,
-  LinearProgress,
-  Box
-} from '@mui/material';
-import {
-  Calendar,
-  CheckSquare,
-  Clock,
-  Activity
+  Calendar, 
+  CheckSquare, 
+  Clock, 
+  Activity 
 } from 'lucide-react';
 
 const DashboardContainer = styled.div`
+  min-height: 100vh;
   padding: 24px;
   background-color: #f5f7fb;
-  min-height: 100vh;
-  width: 100vw;
 `;
 
-const PageTitle = styled(Typography)`
-  margin-bottom: 24px;
+const WelcomeText = styled.h1`
   font-size: 24px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 32px;
 `;
 
-const StatsContainer = styled.div`
+const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
 `;
 
-const StatCard = styled(Card)`
-  padding: 20px;
+const StatCard = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
+  padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-  .icon {
-    color: ${props => props.iconColor || '#1976d2'};
+  .icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 16px;
   }
 
   .value {
     font-size: 28px;
-    font-weight: 600;
-    color: #333;
+    font-weight: 700;
+    color: #1a237e;
     margin: 8px 0;
   }
 
@@ -69,65 +59,103 @@ const StatCard = styled(Card)`
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
 `;
 
-const ContentCard = styled(Card)`
-  padding: 24px;
+const Card = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
+  padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
 
-  .card-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 24px;
+const CardTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 24px;
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+
+  .fill {
+    height: 100%;
+    background-color: #1a237e;
+    border-radius: 4px;
+    transition: width 0.3s ease;
   }
 `;
 
 const ProgressItem = styled.div`
   margin-bottom: 20px;
 
-  .progress-header {
+  .header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
   }
 
-  .progress-title {
+  .task-name {
     font-size: 14px;
     color: #666;
   }
 
-  .progress-value {
+  .percentage {
     font-size: 14px;
-    color: #333;
     font-weight: 500;
+    color: #1a237e;
   }
 `;
 
-const TeamPerformanceItem = styled.div`
+const TeamMemberItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-`;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
 
-const TeamMemberName = styled.span`
-  font-size: 14px;
-  color: #333;
-`;
+  &:hover {
+    background-color: #f5f7fb;
+  }
 
-const TeamMemberPerformance = styled.span`
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  .member-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #e3f2fd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a237e;
+      font-weight: 600;
+    }
+
+    .name {
+      font-size: 14px;
+      color: #333;
+    }
+  }
+
+  .performance {
+    padding: 4px 12px;
+    border-radius: 16px;
+    background-color: #e3f2fd;
+    color: #1a237e;
+    font-weight: 500;
+    font-size: 14px;
+  }
 `;
 
 const Dashboard = () => {
@@ -138,25 +166,29 @@ const Dashboard = () => {
       icon: Calendar,
       value: '24',
       label: 'Total Tasks',
-      iconColor: '#1976d2'
+      color: '#1976d2',
+      bgColor: '#e3f2fd'
     },
     {
       icon: CheckSquare,
       value: '16',
       label: 'Completed Tasks',
-      iconColor: '#2e7d32'
+      color: '#2e7d32',
+      bgColor: '#e8f5e9'
     },
     {
       icon: Clock,
       value: '8',
       label: 'Pending Reviews',
-      iconColor: '#ed6c02'
+      color: '#ed6c02',
+      bgColor: '#fff3e0'
     },
     {
       icon: Activity,
       value: '92%',
       label: 'Team Performance',
-      iconColor: '#9c27b0'
+      color: '#9c27b0',
+      bgColor: '#f3e5f5'
     }
   ];
 
@@ -176,57 +208,64 @@ const Dashboard = () => {
 
   return (
     <DashboardContainer>
-      <PageTitle>Welcome back, {user?.name}</PageTitle>
+      <WelcomeText>
+        Welcome back, {user?.name || 'Super Admin'}
+      </WelcomeText>
 
-      <StatsContainer>
+      <StatsGrid>
         {stats.map((stat, index) => (
-          <StatCard key={index} iconColor={stat.iconColor}>
-            <stat.icon className="icon" size={24} />
+          <StatCard key={index}>
+            <div 
+              className="icon-wrapper" 
+              style={{ backgroundColor: stat.bgColor }}
+            >
+              <stat.icon size={24} color={stat.color} />
+            </div>
             <div className="value">{stat.value}</div>
             <div className="label">{stat.label}</div>
           </StatCard>
         ))}
-      </StatsContainer>
+      </StatsGrid>
 
       <ContentGrid>
-        <ContentCard>
-          <Typography className="card-title">Task Progress</Typography>
-          <Box>
+        <Card>
+          <CardTitle>Task Progress</CardTitle>
+          <div>
             {taskProgress.map((task, index) => (
               <ProgressItem key={index}>
-                <div className="progress-header">
-                  <span className="progress-title">{task.name}</span>
-                  <span className="progress-value">{task.progress}%</span>
+                <div className="header">
+                  <span className="task-name">{task.name}</span>
+                  <span className="percentage">{task.progress}%</span>
                 </div>
-                <LinearProgress
-                  variant="determinate"
-                  value={task.progress}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: '#f5f5f5',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 4,
-                      backgroundColor: '#1976d2'
-                    }
-                  }}
-                />
+                <ProgressBar>
+                  <div 
+                    className="fill" 
+                    style={{ width: `${task.progress}%` }} 
+                  />
+                </ProgressBar>
               </ProgressItem>
             ))}
-          </Box>
-        </ContentCard>
+          </div>
+        </Card>
 
-        <ContentCard>
-          <Typography className="card-title">Team Performance</Typography>
-          <Box>
+        <Card>
+          <CardTitle>Team Performance</CardTitle>
+          <div>
             {teamPerformance.map((member, index) => (
-              <TeamPerformanceItem key={index}>
-                <TeamMemberName>{member.name}</TeamMemberName>
-                <TeamMemberPerformance>{member.performance}</TeamMemberPerformance>
-              </TeamPerformanceItem>
+              <TeamMemberItem key={index}>
+                <div className="member-info">
+                  <div className="avatar">
+                    {member.name.charAt(0)}
+                  </div>
+                  <span className="name">{member.name}</span>
+                </div>
+                <div className="performance">
+                  {member.performance}
+                </div>
+              </TeamMemberItem>
             ))}
-          </Box>
-        </ContentCard>
+          </div>
+        </Card>
       </ContentGrid>
     </DashboardContainer>
   );

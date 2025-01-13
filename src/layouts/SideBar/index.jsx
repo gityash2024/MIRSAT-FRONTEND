@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -9,31 +10,35 @@ import {
   Calendar,
   FileText,
   Settings,
-  LogOut
+  LogOut,
+  ChevronRight
 } from 'lucide-react';
 
-const SidebarWrapper = styled.div`
+const SidebarContainer = styled.div`
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
+  width: ${props => props.width}px;
   background: #1a237e;
-  width: ${props => props.isOpen ? '240px' : '64px'};
-  transition: width 0.3s;
   color: white;
+  transition: width 0.3s ease;
   z-index: 1000;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 `;
 
-const Logo = styled.div`
+const LogoSection = styled.div`
   height: 64px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 ${props => props.isOpen ? '20px' : '16px'};
   background: rgba(255, 255, 255, 0.1);
 
   img {
     height: 32px;
+    min-width: 32px;
   }
 
   span {
@@ -42,20 +47,37 @@ const Logo = styled.div`
     font-weight: 500;
     opacity: ${props => props.isOpen ? 1 : 0};
     transition: opacity 0.3s;
+    white-space: nowrap;
   }
 `;
 
-const MenuItems = styled.div`
+const MenuSection = styled.div`
+  flex: 1;
   padding: 20px 0;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
 `;
 
 const MenuItem = styled(Link)`
   display: flex;
   align-items: center;
-  padding: 12px 20px;
+  padding: 12px ${props => props.isOpen ? '20px' : '16px'};
   color: white;
   text-decoration: none;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  position: relative;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -63,6 +85,16 @@ const MenuItem = styled(Link)`
 
   &.active {
     background: rgba(255, 255, 255, 0.15);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #fff;
+    }
   }
 
   .icon {
@@ -77,8 +109,37 @@ const MenuItem = styled(Link)`
   }
 `;
 
-const Sidebar = ({ isOpen }) => {
+const LogoutSection = styled.div`
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const LogoutButton = styled.button`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  span {
+    margin-left: 12px;
+    opacity: ${props => props.isOpen ? 1 : 0};
+    transition: opacity 0.3s;
+  }
+`;
+
+const Sidebar = ({ isOpen, width }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -91,16 +152,21 @@ const Sidebar = ({ isOpen }) => {
     { icon: Settings, label: 'Settings', path: '/settings' }
   ];
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
-    <SidebarWrapper isOpen={isOpen}>
-      <Logo isOpen={isOpen}>
-        <img src="/mirsat-logo.svg" alt="Mirsat" />
+    <SidebarContainer width={width}>
+      <LogoSection isOpen={isOpen}>
+        <img src="/logo.png" alt="MIRSAT" />
         <span>MIRSAT</span>
-      </Logo>
+      </LogoSection>
       
-      <MenuItems>
+      <MenuSection>
         {menuItems.map((item) => (
-          (item.adminOnly && !isAdmin) ? null : (
+          (!item.adminOnly || (item.adminOnly && isAdmin)) && (
             <MenuItem 
               key={item.path}
               to={item.path}
@@ -109,11 +175,19 @@ const Sidebar = ({ isOpen }) => {
             >
               <item.icon className="icon" size={20} />
               <span>{item.label}</span>
+              {!isOpen && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
             </MenuItem>
           )
         ))}
-      </MenuItems>
-    </SidebarWrapper>
+      </MenuSection>
+
+      <LogoutSection>
+        <LogoutButton onClick={handleLogout} isOpen={isOpen}>
+          <LogOut size={20} />
+          <span>Logout</span>
+        </LogoutButton>
+      </LogoutSection>
+    </SidebarContainer>
   );
 };
 
