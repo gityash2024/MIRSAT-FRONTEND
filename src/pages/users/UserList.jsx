@@ -15,8 +15,10 @@ import {
   Eye,
   Check,
   X,
-  View
+  View,
+  EyeIcon
 } from 'lucide-react';
+import UserFilter from './components/UserFilters';
 
 export const mockUsers = [
   {
@@ -300,7 +302,13 @@ const MenuItem = styled.button`
     opacity: 0.7;
   }
 `;
-
+const FilterSection = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
 const DeleteConfirmDialog = styled.div`
   position: fixed;
   top: 0;
@@ -343,13 +351,16 @@ const DialogActions = styled.div`
 `;
 
 const UserList = () => {
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+const [filters, setFilters] = useState({
+  role: [],
+  status: [],
+  department: []
+});
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [filters, setFilters] = useState({
-    role: [],
-    status: []
-  });
+
 
   const handleDeleteClick = (user) => {
     setDeleteConfirm(user);
@@ -386,7 +397,8 @@ const UserList = () => {
         </SearchBox>
 
         <ButtonGroup>
-          <Button variant="secondary">
+          <Button variant="secondary"             onClick={() => setIsFilterVisible(!isFilterVisible)}
+          >
             <Filter size={18} />
             Filters
           </Button>
@@ -400,7 +412,14 @@ const UserList = () => {
           </Button>
         </ButtonGroup>
       </ActionBar>
-
+      {isFilterVisible && (
+  <FilterSection>
+    <UserFilter 
+      filters={filters} 
+      setFilters={setFilters}
+    />
+  </FilterSection>
+)}
       <UserTable>
         <Table>
           <thead>
@@ -447,7 +466,7 @@ const UserList = () => {
                 <td>
                   <ActionMenu>
                     <ActionButton as={Link} to={`/users/${user.id}`}>  
-                    <View/>
+                    <EyeIcon/>
                     </ActionButton>
                     <ActionButton as={Link} to={`/users/${user.id}/edit`}>  
                       <Edit size={16} />
