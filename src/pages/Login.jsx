@@ -350,10 +350,10 @@ const Login = () => {
               {isLoading ? 'Signing In...' : 'Sign In'}
             </SubmitButton>
 
-            <SignUpText>
+            {/* <SignUpText>
               Don't have an account?
               <Link to="/register">Sign Up</Link>
-            </SignUpText>
+            </SignUpText> */}
           </form>
         </LoginCard>
       </ContentWrapper>
