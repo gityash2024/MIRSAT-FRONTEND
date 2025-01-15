@@ -1,4 +1,3 @@
-// src/pages/tasks/index.jsx
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import TaskList from './TaskList';
@@ -10,10 +9,8 @@ const Tasks = () => {
   return (
     <div>
       {isListView ? (
-        // Show TaskList component directly when on the main tasks route
         <TaskList />
       ) : (
-        // Show nested routes (create, edit, view) using Outlet
         <Outlet />
       )}
     </div>
