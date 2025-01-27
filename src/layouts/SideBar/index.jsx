@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, width }) => {
     { icon: ClipboardList, label: 'Tasks', path: '/tasks' },
     { icon: Users, label: 'Users', path: '/users', adminOnly: true },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: FileText, label: 'Reports', path: '/reports' },
+    { icon: FileText, label: 'Inspesion Levels', path: '/inspection' },
     { icon: Settings, label: 'Settings', path: '/settings' }
   ];
 

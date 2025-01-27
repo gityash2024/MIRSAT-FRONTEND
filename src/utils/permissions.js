@@ -11,6 +11,7 @@ export const ROLES = {
     CREATE_TASK: 'create_task',
     ASSIGN_TASK: 'assign_task',
     VIEW_REPORTS: 'view_reports',
+    VIEW_INSPECTOR_REPORTS: 'view_reports',
     // ... other permissions
   };
   

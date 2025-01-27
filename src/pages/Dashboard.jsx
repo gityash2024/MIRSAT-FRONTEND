@@ -7,6 +7,7 @@ import {
   Clock, 
   Activity 
 } from 'lucide-react';
+import Reports from './reports';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -267,6 +268,7 @@ const Dashboard = () => {
           </div>
         </Card>
       </ContentGrid>
+      <Reports/>
     </DashboardContainer>
   );
 };

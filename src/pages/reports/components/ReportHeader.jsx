@@ -72,11 +72,9 @@ const ReportHeader = ({ onToggleFilters, dateRange, onDateRangeChange }) => {
       <TitleSection>
         <PageTitle>
           <FileText size={24} />
-          Reports & Analytics
-        </PageTitle>
-        <PageDescription>
           Comprehensive analysis and performance metrics
-        </PageDescription>
+        </PageTitle>
+       
       </TitleSection>
 
       <ActionButtons>
