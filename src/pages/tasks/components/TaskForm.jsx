@@ -16,6 +16,7 @@ const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #333;
+  margin-top: 8px;
 `;
 
 const Input = styled.input`
@@ -91,6 +92,7 @@ const TaskForm = ({ initialData, onSubmit }) => {
     description: '',
     type: '',
     assignee: '',
+    inspectionLevel: '',
     priority: '',
     dueDate: '',
     status: 'Pending'
@@ -112,7 +114,7 @@ const TaskForm = ({ initialData, onSubmit }) => {
   return (
     <Form onSubmit={handleSubmit}>
       <FormGroup>
-        <Label htmlFor="title">Task Title</Label>
+        <Label  htmlFor="title">Task Title</Label>
         <Input
           id="title"
           name="title"
@@ -167,6 +169,20 @@ const TaskForm = ({ initialData, onSubmit }) => {
             <option value="Jane Smith">Jane Smith</option>
             <option value="Mike Johnson">Mike Johnson</option>
             <option value="Sarah Williams">Sarah Williams</option>
+          </Select>
+        </FormGroup>
+        <FormGroup>
+          <Label htmlFor="inspectionLevel">Inspection Level</Label>
+          <Select
+            id="inspectionLevel"
+            name="inspectionLevel"
+            value={formData.inspectionLevel}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Inspection Level</option>
+            <option value="Initial Safety Inspection">Initial Safety Inspection</option>
+            <option value="Environmental Compliance">Environmental Compliance</option>
           </Select>
         </FormGroup>
 

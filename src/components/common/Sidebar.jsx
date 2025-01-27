@@ -25,7 +25,7 @@ const Sidebar = () => {
       { title: 'Users', path: '/users', icon: UserGroupIcon },
     ] : []),
     { title: 'Tasks', path: '/tasks', icon: ClipboardDocumentListIcon },
-    { title: 'Reports', path: '/reports', icon: ChartBarIcon },
+    { title: 'Inspection Levels', path: '/inspection', icon: ChartBarIcon },
     { title: 'Calendar', path: '/calendar', icon: CalendarIcon },
     ...(isAdmin || isManagement ? [
       { title: 'Settings', path: '/settings', icon: Cog6ToothIcon },

@@ -24,11 +24,15 @@ import UserCreate from '../pages/users/UserCreate';
 import UserEdit from '../pages/users/UserEdit';
 
 import Calendar from '../pages/calendar';
-import Reports from '../pages/reports';
 import Settings from '../pages/settings';
 
 import { useAuth } from '../hooks/useAuth';
 import UserView from '../pages/users/UserView';
+import InspectionLevel from '../pages/inspection';
+import InspectionLevelList from '../pages/inspection/InspectionLevelList';
+import InspectionLevelTree from '../pages/inspection/InspectionLevelTree';
+import InspectionLevelForm from '../pages/inspection/InspectionLevelForm';
+import InspectionLevelView from '../pages/inspection/InspectionLevelView';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -42,10 +46,17 @@ const AppRoutes = () => {
           <Route path="/register" element={<Register />} />
         </Route>
       </Route>
-
+     
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
+        <Route path="/inspection" element={<InspectionLevel />}>
+  <Route index element={<InspectionLevelList />} />
+  <Route path="tree" element={<InspectionLevelTree />} />
+  <Route path="create" element={<InspectionLevelForm />} />
+  <Route path=":id" element={<InspectionLevelView />} />
+  <Route path=":id/edit" element={<InspectionLevelForm />} />
+</Route>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           
@@ -66,9 +77,7 @@ const AppRoutes = () => {
           {/* Calendar Route */}
           <Route path="/calendar" element={<Calendar />} />
 
-          {/* Reports Route */}
-          <Route path="/reports" element={<Reports />} />
-
+         
           {/* Settings Route */}
           <Route path="/settings" element={<Settings />} />
         </Route>
