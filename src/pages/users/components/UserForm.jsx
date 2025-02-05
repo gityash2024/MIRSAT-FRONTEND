@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { Eye, EyeOff } from 'lucide-react';
 import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS } from '../../../utils/permissions';
 
 const Form = styled.form`
   display: grid;
+  gap: 24px;
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 `;
 
@@ -20,6 +27,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
+  width: 100%;
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -33,7 +41,31 @@ const Input = styled.input`
   }
 `;
 
+const PasswordWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+`;
+
+const PasswordInput = styled(Input)`
+  padding-right: 40px;
+`;
+
+const PasswordToggle = styled.button`
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #666;
+  display: flex;
+  align-items: center;
+`;
+
 const Select = styled.select`
+  width: 100%;
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -130,13 +162,7 @@ const Button = styled.button`
   `}
 `;
 
-const UserForm = ({ 
-  initialData = {}, 
-  onSubmit, 
-  onCancel,
-  submitButtonText = 'Save',
-  isSubmitting = false 
-}) => {
+const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Save', isSubmitting = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -153,8 +179,9 @@ const UserForm = ({
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Set default permissions when role changes
   useEffect(() => {
     if (formData.role && !initialData.permissions) {
       setFormData(prev => ({
@@ -166,7 +193,6 @@ const UserForm = ({
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.name) newErrors.name = 'Name is required';
     if (!formData.email) {
       newErrors.email = 'Email is required';
@@ -176,7 +202,6 @@ const UserForm = ({
     if (!formData.phone) newErrors.phone = 'Phone number is required';
     if (!formData.role) newErrors.role = 'Role is required';
     
-    // Only validate password for new users
     if (!initialData.id) {
       if (!formData.password) newErrors.password = 'Password is required';
       if (formData.password !== formData.confirmPassword) {
@@ -191,7 +216,6 @@ const UserForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Remove confirmPassword before submitting
       const submitData = { ...formData };
       delete submitData.confirmPassword;
       onSubmit(submitData);
@@ -205,7 +229,6 @@ const UserForm = ({
       [name]: value
     }));
     
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -225,9 +248,7 @@ const UserForm = ({
 
   const renderPermissionGroup = (groupName, permissions) => (
     <PermissionGroup key={groupName}>
-      <PermissionGroupTitle>
-        {groupName.replace(/_/g, ' ')}
-      </PermissionGroupTitle>
+      <PermissionGroupTitle>{groupName.replace(/_/g, ' ')}</PermissionGroupTitle>
       <PermissionList>
         {Object.entries(permissions).map(([key, value]) => (
           <PermissionItem key={value}>
@@ -246,48 +267,48 @@ const UserForm = ({
 
   return (
     <Form onSubmit={handleSubmit}>
-      <FormGroup>
-        <Label htmlFor="name">Full Name</Label>
-        <Input
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Enter full name"
-        />
-        {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-      </FormGroup>
-
-      <FormGroup>
-        <Label htmlFor="email">Email Address</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter email address"
-        />
-        {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-      </FormGroup>
-
-      <FormGroup>
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          placeholder="Enter phone number"
-        />
-        {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
-      </FormGroup>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <FormRow>
         <FormGroup>
-          <Label htmlFor="role">Role</Label>
+          <Label>Full Name</Label>
+          <Input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Enter full name"
+          />
+          {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Email Address</Label>
+          <Input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter email address"
+          />
+          {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+        </FormGroup>
+      </FormRow>
+
+      <FormRow>
+        <FormGroup>
+          <Label>Phone Number</Label>
+          <Input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="Enter phone number"
+          />
+          {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Role</Label>
           <Select
-            id="role"
             name="role"
             value={formData.role}
             onChange={handleChange}
@@ -300,11 +321,12 @@ const UserForm = ({
           </Select>
           {errors.role && <ErrorMessage>{errors.role}</ErrorMessage>}
         </FormGroup>
+      </FormRow>
 
+      <FormRow>
         <FormGroup>
-          <Label htmlFor="department">Department</Label>
+          <Label>Department</Label>
           <Select
-            id="department"
             name="department"
             value={formData.department}
             onChange={handleChange}
@@ -316,63 +338,83 @@ const UserForm = ({
             <option value="support">Support</option>
           </Select>
         </FormGroup>
-      </div>
+
+        <FormGroup>
+          <Label>Status</Label>
+          <Select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </Select>
+        </FormGroup>
+      </FormRow>
 
       {!initialData.id && (
-        <>
+        <FormRow>
           <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter password"
-            />
+            <Label>Password</Label>
+            <PasswordWrapper>
+              <PasswordInput
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter password"
+              />
+              <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </PasswordToggle>
+            </PasswordWrapper>
             {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm password"
-            />
-            {errors.confirmPassword && (
-              <ErrorMessage>{errors.confirmPassword}</ErrorMessage>
-            )}
+            <Label>Confirm Password</Label>
+            <PasswordWrapper>
+              <PasswordInput
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm password"
+              />
+              <PasswordToggle type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </PasswordToggle>
+            </PasswordWrapper>
+            {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
           </FormGroup>
-        </>
+        </FormRow>
       )}
 
-      <FormGroup>
-        <Label htmlFor="address">Address</Label>
-        <Input
-          id="address"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          placeholder="Enter address"
-        />
-      </FormGroup>
+      <FormRow>
+        <FormGroup>
+          <Label>Address</Label>
+          <Input
+            type="text"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Enter address"
+          />
+        </FormGroup>
 
-      <FormGroup>
-        <Label htmlFor="emergencyContact">Emergency Contact</Label>
-        <Input
-          id="emergencyContact"
-          name="emergencyContact"
-          value={formData.emergencyContact}
-          onChange={handleChange}
-          placeholder="Enter emergency contact"
-        />
-      </FormGroup>
+        <FormGroup>
+          <Label>Emergency Contact</Label>
+          <Input
+            type="text"
+            name="emergencyContact"
+            value={formData.emergencyContact}
+            onChange={handleChange}
+            placeholder="Enter emergency contact"
+          />
+        </FormGroup>
+      </FormRow>
 
-      {/* Permissions Section */}
       <PermissionsSection>
         <PermissionGroupTitle>Permissions</PermissionGroupTitle>
         {Object.entries(PERMISSIONS).map(([groupName, groupPermissions]) =>
@@ -381,14 +423,10 @@ const UserForm = ({
       </PermissionsSection>
 
       <ButtonGroup>
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button type="button" onClick={onCancel}>
           Cancel
         </Button>
-        <Button 
-          type="submit" 
-          variant="primary"
-          disabled={isSubmitting}
-        >
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : submitButtonText}
         </Button>
       </ButtonGroup>

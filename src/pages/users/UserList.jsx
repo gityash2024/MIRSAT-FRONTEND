@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { 
   UserPlus, 
   Search, 
@@ -19,6 +21,7 @@ import {
 import { toast } from 'react-toastify';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
+import { FileText } from 'lucide-react';
 
 import UserFilter from './components/UserFilters';
 import api from '../../services/api';
@@ -115,7 +118,61 @@ const Button = styled.button`
     }
   `}
 `;
+const ExportDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+   &.export-dropdown {
+    position: relative;
+  } 
+`;
 
+const DropdownContent = styled.div`
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  z-index: 100;
+  opacity: ${props => props.show ? 1 : 0};
+  visibility: ${props => props.show ? 'visible' : 'hidden'};
+  transform: translateY(${props => props.show ? '0' : '-10px'});
+  transition: all 0.2s ease;
+`;
+
+const DropdownItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: #333;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f7fb;
+  }
+
+  .icon {
+    color: #1a237e;
+    opacity: 0.7;
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+`;
 const UserTable = styled.div`
   background: white;
   border-radius: 12px;
@@ -312,6 +369,7 @@ const LoadingSpinner = styled.div`
 `;
 
 const UserList = () => {
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -328,7 +386,16 @@ const UserList = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
   const fetchUsers = async () => {
     try {
       const response = await api.get('/users');
@@ -339,6 +406,7 @@ const UserList = () => {
       setIsLoading(false);
     }
   };
+
 
   const handleDeleteClick = (user) => {
     setDeleteConfirm(user);
@@ -367,27 +435,131 @@ const UserList = () => {
       toast.error('Failed to update user status');
     }
   };
-
-  const handleExport = async () => {
+  const generatePDF = (users) => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setTextColor(26, 35, 126); // #1a237e
+    doc.text('User Management Report', 15, 15);
+    
+    // Add subtitle and date
+    doc.setFontSize(11);
+    doc.setTextColor(102, 102, 102); // #666666
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 25);
+  
+    // Prepare table data
+    const tableColumn = [
+      "User Details", 
+      "Role",
+      "Status",
+      "Last Active",
+      "Assigned Tasks"
+    ];
+  
+    const tableRows = users.map(user => [
+      `${user.name}\n${user.email}\n${user.phone}`,
+      user.role,
+      user.isActive ? 'Active' : 'Inactive',
+      formatTimestamp(user.lastLogin),
+      user.assignedTasks || 0
+    ]);
+  
+    // Add table
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 30 }
+      },
+      headStyles: {
+        fillColor: [26, 35, 126],
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 251]
+      },
+      didDrawCell: (data) => {
+        // Add special formatting for status column
+        if (data.section === 'body' && data.column.index === 2) {
+          const status = data.cell.raw;
+          doc.setFillColor(status === 'Active' ? '#e8f5e9' : '#ffebee');
+          doc.setTextColor(status === 'Active' ? '#2e7d32' : '#c62828');
+        }
+      }
+    });
+  
+    // Add footer
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor(128);
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        `Page ${i} of ${pageCount}`, 
+        doc.internal.pageSize.width - 20, 
+        doc.internal.pageSize.height - 10
+      );
+    }
+  
+    return doc;
+  };
+  const handleExport = async (format) => {
     try {
-      const response = await api.get('/users/export', { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'users.csv');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      setShowExportDropdown(false);
+      
+      switch(format) {
+        case 'pdf':
+          const doc = generatePDF(filteredUsers);
+          if (doc) {
+            doc.save('user-management-report.pdf');
+            toast.success('PDF exported successfully');
+          }
+          break;
+          
+        case 'csv':
+          try {
+            const response = await api.get('/users/export', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `users-${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('CSV exported successfully');
+          } catch (error) {
+            console.error('CSV export error:', error);
+            toast.error('Failed to export CSV');
+          }
+          break;
+  
+        default:
+          toast.error('Invalid export format');
+      }
     } catch (error) {
-      toast.error('Failed to export users');
+      console.error('Export error:', error);
+      toast.error(`Failed to export as ${format.toUpperCase()}`);
     }
   };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      user.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      user.phone?.toLowerCase().includes(searchTerm?.toLowerCase());
 
     const matchesRole = filters.role.length === 0 || filters.role.includes(user.role);
     const matchesStatus = filters.status.length === 0 || filters.status.includes(user.isActive ? 'Active' : 'Inactive');
@@ -424,11 +596,39 @@ const UserList = () => {
             Filters
           </Button>
           {hasPermission(PERMISSIONS.USERS.EXPORT_USERS) && (
-            <Button variant="secondary" onClick={handleExport}>
-              <Download size={18} />
-              Export
-            </Button>
-          )}
+  <ExportDropdown className="export-dropdown">
+    <Button 
+      variant="secondary" 
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowExportDropdown(!showExportDropdown);
+      }}
+    >
+      <Download size={18} />
+      Export
+    </Button>
+    <DropdownContent show={showExportDropdown}>
+      <DropdownItem 
+        onClick={(e) => {
+          e.stopPropagation();
+          handleExport('pdf');
+        }}
+      >
+        <FileText size={16} className="icon" />
+        Export as PDF
+      </DropdownItem>
+      {/* <DropdownItem 
+        onClick={(e) => {
+          e.stopPropagation();
+          handleExport('csv');
+        }}
+      >
+        <FileText size={16} className="icon" />
+        Export as CSV
+      </DropdownItem> */}
+    </DropdownContent>
+  </ExportDropdown>
+)}
        {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
             <Button variant="primary" as={Link} to="/users/create">
               <UserPlus size={18} />
