@@ -1,27 +1,34 @@
-import api from './api';
+// src/services/auth.service.js
+import api from '../services/api';
 
 export const authService = {
-  login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials);
+  async login(email, password) {
+    const response = await api.post('/auth/login', { email, password });
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     return response.data;
   },
 
-  register: async (userData) => {
+  async register(userData) {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
 
-  // dashboard: async (dashboard) => {
-  //   const response = await api.get('/auth/dashboard', dashboard);
-  //   return response.data;
-  // },
-  logout: async () => {
-    const response = await api.post('/auth/logout');
-    return response.data;
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
 
-  getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
-    return response.data;
+  getCurrentUser() {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  },
+
+  isAuthenticated() {
+    return !!localStorage.getItem('token');
   }
 };
+
+export default authService;

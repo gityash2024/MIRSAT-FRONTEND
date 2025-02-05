@@ -1,22 +1,13 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import styled from 'styled-components';
 import {
-  ArrowLeft,
-  Edit,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Shield,
-  AlertTriangle,
-  Clock,
-  ClipboardList,
-  CheckCircle2,
-  AlertCircle
+  ArrowLeft, Edit, User, Mail, Phone, MapPin, Calendar,
+  Shield, AlertTriangle, Clock, ClipboardList, CheckCircle2
 } from 'lucide-react';
-import { mockUsers } from './UserList';
+import { PERMISSIONS } from '../../utils/permissions';
+import { usePermissions } from '../../hooks/usePermissions';
+import { userService } from '../../services/user.service';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -33,7 +24,6 @@ const BackButton = styled.button`
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 16px;
-
   &:hover {
     color: #333;
   }
@@ -108,7 +98,6 @@ const EditButton = styled(Link)`
   cursor: pointer;
   text-decoration: none;
   transition: all 0.3s;
-
   &:hover {
     background: #f5f7fb;
   }
@@ -118,7 +107,6 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
-
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
   }
@@ -139,7 +127,6 @@ const CardTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
-
   .icon {
     opacity: 0.7;
   }
@@ -156,7 +143,6 @@ const DetailItem = styled.div`
   gap: 12px;
   color: #666;
   font-size: 14px;
-
   .icon {
     color: #1a237e;
     opacity: 0.7;
@@ -174,7 +160,6 @@ const PermissionItem = styled.div`
   gap: 8px;
   font-size: 14px;
   color: #333;
-
   .icon {
     color: #2e7d32;
   }
@@ -194,12 +179,10 @@ const StatCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-
   .label {
     font-size: 13px;
     color: #666;
   }
-
   .value {
     font-size: 24px;
     font-weight: 600;
@@ -207,23 +190,83 @@ const StatCard = styled.div`
   }
 `;
 
+const LoadingState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+`;
+
+const ErrorState = styled.div`
+  padding: 24px;
+  background: #fee2e2;
+  border-radius: 8px;
+  color: #dc2626;
+  margin-bottom: 24px;
+`;
+
 const UserView = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const user = mockUsers.find(u => u.id === parseInt(userId));
+  const { hasPermission } = usePermissions();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchUser();
+  }, [userId]);
+
+  const fetchUser = async () => {
+    try {
+      setLoading(true);
+      const response = await userService.getUser(userId);
+      setUser(response.data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error fetching user details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingState>Loading user details...</LoadingState>;
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <ErrorState>{error}</ErrorState>
+        <BackButton onClick={() => navigate('/users')}>
+          <ArrowLeft size={18} />
+          Back to Users
+        </BackButton>
+      </PageContainer>
+    );
+  }
 
   if (!user) {
-    return <div>User not found</div>;
+    return (
+      <PageContainer>
+        <ErrorState>User not found</ErrorState>
+        <BackButton onClick={() => navigate('/users')}>
+          <ArrowLeft size={18} />
+          Back to Users
+        </BackButton>
+      </PageContainer>
+    );
   }
 
   const stats = [
     {
       label: 'Assigned Tasks',
-      value: user.assignedTasks
+      value: user.assignedTasks || 0
     },
     {
       label: 'Days Active',
-      value: Math.floor((new Date() - new Date(user.joinDate)) / (1000 * 60 * 60 * 24))
+      value: Math.floor((new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24))
     }
   ];
 
@@ -243,14 +286,18 @@ const UserView = () => {
               <Shield size={16} />
               {user.role}
             </UserRole>
-            <StatusBadge status={user.status}>{user.status}</StatusBadge>
+            <StatusBadge status={user.isActive ? 'Active' : 'Inactive'}>
+              {user.isActive ? 'Active' : 'Inactive'}
+            </StatusBadge>
           </UserInfo>
         </UserHeader>
 
-        <EditButton to={`/users/${user.id}/edit`}>
-          <Edit size={16} />
-          Edit User
-        </EditButton>
+        {hasPermission(PERMISSIONS.USERS.EDIT) && (
+          <EditButton to={`/users/${user.id}/edit`}>
+            <Edit size={16} />
+            Edit User
+          </EditButton>
+        )}
       </Header>
 
       <ContentGrid>
@@ -276,15 +323,15 @@ const UserView = () => {
               </DetailItem>
               <DetailItem>
                 <Phone size={16} className="icon" />
-                {user.phone}
+                {user.phone || 'Not provided'}
               </DetailItem>
               <DetailItem>
                 <MapPin size={16} className="icon" />
-                {user.address}
+                {user.address || 'Not provided'}
               </DetailItem>
               <DetailItem>
                 <AlertTriangle size={16} className="icon" />
-                Emergency Contact: {user.emergencyContact}
+                Emergency Contact: {user.emergencyContact || 'Not provided'}
               </DetailItem>
             </DetailsList>
           </Card>
@@ -299,15 +346,15 @@ const UserView = () => {
             <DetailsList>
               <DetailItem>
                 <Calendar size={16} className="icon" />
-                Joined: {new Date(user.joinDate).toLocaleDateString()}
+                Joined: {new Date(user.createdAt).toLocaleDateString()}
               </DetailItem>
               <DetailItem>
                 <Clock size={16} className="icon" />
-                Last Active: {formatTimestamp(user.lastActive)}
+                Last Active: {formatTimestamp(user.lastLogin)}
               </DetailItem>
               <DetailItem>
                 <ClipboardList size={16} className="icon" />
-                Department: {user.department}
+                Department: {user.department || 'Not assigned'}
               </DetailItem>
             </DetailsList>
 
@@ -315,7 +362,7 @@ const UserView = () => {
               Permissions
             </CardTitle>
             <PermissionList>
-              {user.permissions.map((permission, index) => (
+              {user.permissions?.map((permission, index) => (
                 <PermissionItem key={index}>
                   <CheckCircle2 size={16} className="icon" />
                   {permission.split('_').map(word => 
@@ -332,6 +379,8 @@ const UserView = () => {
 };
 
 const formatTimestamp = (timestamp) => {
+  if (!timestamp) return 'Never';
+  
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now - date;

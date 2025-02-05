@@ -3,7 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, Edit } from 'lucide-react';
 import UserForm from './components/UserForm';
-import { mockUsers } from './UserList';
+import { toast } from 'react-hot-toast';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
+import api from '../../services/api';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -108,6 +111,11 @@ const Button = styled.button`
     &:hover {
       background: #151b4f;
     }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
   ` : `
     background: white;
     color: #1a237e;
@@ -119,20 +127,43 @@ const Button = styled.button`
   `}
 `;
 
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #1a237e;
+`;
+
 const UserEdit = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    const foundUser = mockUsers.find(u => u.id === parseInt(userId));
-    if (foundUser) {
-      setUser(foundUser);
-    }
+    fetchUser();
   }, [userId]);
+
+  if (!hasPermission(PERMISSIONS.EDIT_USER)) {
+    navigate('/users');
+    return null;
+  }
+
+  const fetchUser = async () => {
+    try {
+      const response = await api.get(`/users/${userId}`);
+      setUser(response.data.data);
+    } catch (error) {
+      toast.error('Failed to fetch user details');
+      navigate('/users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = (formData) => {
     setConfirmData(formData);
@@ -141,20 +172,22 @@ const UserEdit = () => {
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      // Here you would make the API call to update the user
-      console.log('Updating user:', confirmData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.put(`/users/${userId}`, confirmData);
+      toast.success('User updated successfully');
       navigate(`/users/${userId}`);
     } catch (error) {
-      console.error('Error updating user:', error);
+      toast.error(error.response?.data?.message || 'Error updating user');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return <LoadingSpinner>Loading...</LoadingSpinner>;
+  }
+
   if (!user) {
-    return <div>Loading...</div>;
+    return <div>User not found</div>;
   }
 
   return (

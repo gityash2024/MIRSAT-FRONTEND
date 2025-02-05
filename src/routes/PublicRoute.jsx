@@ -1,15 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useSelector } from 'react-redux';
 
 const PublicRoute = () => {
-  const { isAuthenticated } = useAuth();
-
-  // If already authenticated, redirect to dashboard
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Render child routes if not authenticated
   return <Outlet />;
 };
 

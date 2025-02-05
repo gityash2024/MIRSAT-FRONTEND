@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { 
   UserPlus, 
   Search, 
@@ -12,64 +14,18 @@ import {
   Shield,
   Mail,
   Phone,
-  Eye,
   Check,
   X,
-  View,
-  EyeIcon
+  EyeIcon,
+  Copy
 } from 'lucide-react';
-import UserFilter from './components/UserFilters';
+import { toast } from 'react-hot-toast';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
+import { FileText } from 'lucide-react';
 
-export const mockUsers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+966 50 123 4567',
-    role: 'Inspector',
-    status: 'Active',
-    lastActive: '2024-01-15T09:30:00',
-    assignedTasks: 12,
-    permissions: ['view_tasks', 'edit_tasks'],
-    department: 'Field Operations',
-    joinDate: '2023-06-15',
-    address: 'Riyadh, Saudi Arabia',
-    emergencyContact: '+966 50 987 6543',
-    profileImage: null
-  },
-  {
-    id: 2,
-    name: 'Sarah Williams',
-    email: 'sarah.w@example.com',
-    phone: '+966 50 234 5678',
-    role: 'Management',
-    status: 'Active',
-    lastActive: '2024-01-15T10:15:00',
-    assignedTasks: 8,
-    permissions: ['view_tasks', 'edit_tasks', 'assign_tasks', 'view_reports'],
-    department: 'Operations Management',
-    joinDate: '2023-04-20',
-    address: 'Jeddah, Saudi Arabia',
-    emergencyContact: '+966 50 876 5432',
-    profileImage: null
-  },
-  {
-    id: 3,
-    name: 'Mohammed Al-Said',
-    email: 'm.alsaid@example.com',
-    phone: '+966 50 345 6789',
-    role: 'Inspector',
-    status: 'Inactive',
-    lastActive: '2024-01-14T15:45:00',
-    assignedTasks: 0,
-    permissions: ['view_tasks'],
-    department: 'Field Operations',
-    joinDate: '2023-08-01',
-    address: 'Dammam, Saudi Arabia',
-    emergencyContact: '+966 50 765 4321',
-    profileImage: null
-  }
-];
+import UserFilter from './components/UserFilters';
+import api from '../../services/api';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -163,7 +119,61 @@ const Button = styled.button`
     }
   `}
 `;
+const ExportDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+   &.export-dropdown {
+    position: relative;
+  } 
+`;
 
+const DropdownContent = styled.div`
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  z-index: 100;
+  opacity: ${props => props.show ? 1 : 0};
+  visibility: ${props => props.show ? 'visible' : 'hidden'};
+  transform: translateY(${props => props.show ? '0' : '-10px'});
+  transition: all 0.2s ease;
+`;
+
+const DropdownItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: #333;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f7fb;
+  }
+
+  .icon {
+    color: #1a237e;
+    opacity: 0.7;
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+`;
 const UserTable = styled.div`
   background: white;
   border-radius: 12px;
@@ -302,6 +312,7 @@ const MenuItem = styled.button`
     opacity: 0.7;
   }
 `;
+
 const FilterSection = styled.div`
   background: white;
   border-radius: 12px;
@@ -309,6 +320,7 @@ const FilterSection = styled.div`
   margin-bottom: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
+
 const DeleteConfirmDialog = styled.div`
   position: fixed;
   top: 0;
@@ -328,7 +340,6 @@ const DialogContent = styled.div`
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 `;
 
 const DialogTitle = styled.h3`
@@ -350,16 +361,52 @@ const DialogActions = styled.div`
   gap: 12px;
 `;
 
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #1a237e;
+`;
+
 const UserList = () => {
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
-const [filters, setFilters] = useState({
-  role: [],
-  status: [],
-  department: []
-});
+  const [filters, setFilters] = useState({
+    role: [],
+    status: [],
+    department: []
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const { hasPermission, userRole } = usePermissions();
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setUsers(response.data.data);
+    } catch (error) {
+      toast.error('Failed to fetch users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   const handleDeleteClick = (user) => {
@@ -367,16 +414,169 @@ const [filters, setFilters] = useState({
     setActiveDropdown(null);
   };
 
-  const handleConfirmDelete = () => {
-    // Handle actual deletion here
-    console.log('Deleting user:', deleteConfirm.id);
-    setDeleteConfirm(null);
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/users/${deleteConfirm._id}`);
+      toast.success('User deleted successfully');
+      fetchUsers();
+      setDeleteConfirm(null);
+    } catch (error) {
+      toast.error('Failed to delete user');
+    }
   };
 
-  const toggleUserStatus = (userId) => {
-    // Handle status toggle here
-    console.log('Toggling status for user:', userId);
+const handleCopyEmail = (email) => {
+  navigator.clipboard.writeText(email);
+  toast.success('Email copied to clipboard');
+};
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      await api.put(`/users/${userId}`, {
+        isActive: !currentStatus
+      });
+      toast.success('User status updated successfully');
+      fetchUsers();
+    } catch (error) {
+      toast.error('Failed to update user status');
+    }
   };
+  const generatePDF = (users) => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setTextColor(26, 35, 126); // #1a237e
+    doc.text('User Management Report', 15, 15);
+    
+    // Add subtitle and date
+    doc.setFontSize(11);
+    doc.setTextColor(102, 102, 102); // #666666
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 25);
+  
+    // Prepare table data
+    const tableColumn = [
+      "User Details", 
+      "Role",
+      "Status",
+      "Last Active",
+      "Assigned Tasks"
+    ];
+  
+    const tableRows = users.map(user => [
+      `${user.name}\n${user.email}\n${user.phone}`,
+      user.role,
+      user.isActive ? 'Active' : 'Inactive',
+      formatTimestamp(user.lastLogin),
+      user.assignedTasks || 0
+    ]);
+  
+    // Add table
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 30 }
+      },
+      headStyles: {
+        fillColor: [26, 35, 126],
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 251]
+      },
+      didDrawCell: (data) => {
+        // Add special formatting for status column
+        if (data.section === 'body' && data.column.index === 2) {
+          const status = data.cell.raw;
+          doc.setFillColor(status === 'Active' ? '#e8f5e9' : '#ffebee');
+          doc.setTextColor(status === 'Active' ? '#2e7d32' : '#c62828');
+        }
+      }
+    });
+  
+    // Add footer
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor(128);
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        `Page ${i} of ${pageCount}`, 
+        doc.internal.pageSize.width - 20, 
+        doc.internal.pageSize.height - 10
+      );
+    }
+  
+    return doc;
+  };
+  const handleExport = async (format) => {
+    try {
+      setShowExportDropdown(false);
+      
+      switch(format) {
+        case 'pdf':
+          const doc = generatePDF(filteredUsers);
+          if (doc) {
+            doc.save('user-management-report.pdf');
+            toast.success('PDF exported successfully');
+          }
+          break;
+          
+        case 'csv':
+          try {
+            const response = await api.get('/users/export', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `users-${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('CSV exported successfully');
+          } catch (error) {
+            console.error('CSV export error:', error);
+            toast.error('Failed to export CSV');
+          }
+          break;
+  
+        default:
+          toast.error('Invalid export format');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export as ${format.toUpperCase()}`);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      user.phone?.toLowerCase().includes(searchTerm?.toLowerCase());
+
+    const matchesRole = filters.role.length === 0 || filters.role.includes(user.role);
+    const matchesStatus = filters.status.length === 0 || filters.status.includes(user.isActive ? 'Active' : 'Inactive');
+    const matchesDepartment = filters.department.length === 0 || filters.department.includes(user.department);
+
+    return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
+  });
+
+  if (isLoading) {
+    return <LoadingSpinner>Loading...</LoadingSpinner>;
+  }
 
   return (
     <PageContainer>
@@ -397,29 +597,62 @@ const [filters, setFilters] = useState({
         </SearchBox>
 
         <ButtonGroup>
-          <Button variant="secondary"             onClick={() => setIsFilterVisible(!isFilterVisible)}
-          >
+          <Button variant="secondary" onClick={() => setIsFilterVisible(!isFilterVisible)}>
             <Filter size={18} />
             Filters
           </Button>
-          <Button variant="secondary">
-            <Download size={18} />
-            Export
-          </Button>
-          <Button variant="primary" as={Link} to="/users/create">
-            <UserPlus size={18} />
-            Add User
-          </Button>
+          {hasPermission(PERMISSIONS.USERS.EXPORT_USERS) && (
+  <ExportDropdown className="export-dropdown">
+    <Button 
+      variant="secondary" 
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowExportDropdown(!showExportDropdown);
+      }}
+    >
+      <Download size={18} />
+      Export
+    </Button>
+    <DropdownContent show={showExportDropdown}>
+      <DropdownItem 
+        onClick={(e) => {
+          e.stopPropagation();
+          handleExport('pdf');
+        }}
+      >
+        <FileText size={16} className="icon" />
+        Export as PDF
+      </DropdownItem>
+      {/* <DropdownItem 
+        onClick={(e) => {
+          e.stopPropagation();
+          handleExport('csv');
+        }}
+      >
+        <FileText size={16} className="icon" />
+        Export as CSV
+      </DropdownItem> */}
+    </DropdownContent>
+  </ExportDropdown>
+)}
+       {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
+            <Button variant="primary" as={Link} to="/users/create">
+              <UserPlus size={18} />
+              Add User
+            </Button>
+          )}
         </ButtonGroup>
       </ActionBar>
+
       {isFilterVisible && (
-  <FilterSection>
-    <UserFilter 
-      filters={filters} 
-      setFilters={setFilters}
-    />
-  </FilterSection>
-)}
+        <FilterSection>
+          <UserFilter
+            filters={filters} 
+            setFilters={setFilters}
+          />
+        </FilterSection>
+      )}
+
       <UserTable>
         <Table>
           <thead>
@@ -433,8 +666,8 @@ const [filters, setFilters] = useState({
             </tr>
           </thead>
           <tbody>
-            {mockUsers.map(user => (
-              <tr key={user.id}>
+            {filteredUsers.map(user => (
+              <tr key={user._id}>
                 <td>
                   <UserInfo>
                     <span className="name">{user.name}</span>
@@ -443,8 +676,8 @@ const [filters, setFilters] = useState({
                         <Mail size={14} />
                         {user.email}
                       </span>
-                      <span className="item">
-                        <Phone size={14} />
+                      <span  style={{ cursor: 'pointer' }} onClick={() => handleCopyEmail(user.email)} className="item">
+                        <Copy size={14} />
                         {user.phone}
                       </span>
                     </div>
@@ -453,92 +686,90 @@ const [filters, setFilters] = useState({
                 <td>
                   <RoleBadge>
                     <Shield size={16} className="icon" />
-                    {user.role}
+                    {user.role?.toUpperCase()}
                   </RoleBadge>
                 </td>
                 <td>
-                  <StatusBadge status={user.status}>
-                    {user.status}
+                  <StatusBadge status={user.isActive ? 'Active' : 'Inactive'}>
+                    {user.isActive ? 'Active' : 'Inactive'}
                   </StatusBadge>
                 </td>
-                <td>{formatTimestamp(user.lastActive)}</td>
-                <td>{user.assignedTasks}</td>
+                <td>{formatTimestamp(user.lastLogin)}</td>
+                <td>{user.assignedTasks || 0}</td>
                 <td>
-                  <ActionMenu>
-                    <ActionButton as={Link} to={`/users/${user.id}`}>  
-                    <EyeIcon/>
-                    </ActionButton>
-                    <ActionButton as={Link} to={`/users/${user.id}/edit`}>  
-                      <Edit size={16} />
-                    </ActionButton>
-                    <ActionButton onClick={() => setActiveDropdown(activeDropdown === user.id ? null : user.id)}>
-                      <MoreVertical size={16} />
-                    </ActionButton>
-                    
-                    <DropdownMenu isOpen={activeDropdown === user.id}>
-                      <MenuItem onClick={() => toggleUserStatus(user.id)}>
-                        {user.status === 'Active' ? (
-                          <>
-                            <X size={16} className="icon" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <Check size={16} className="icon" />
-                            Activate
-                          </>
-                        )}
-                      </MenuItem>
-                      <MenuItem variant="danger" onClick={() => handleDeleteClick(user)}>
-                        <Trash2 size={16} className="icon" />
-                        Delete
-                      </MenuItem>
-                    </DropdownMenu>
-                  </ActionMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </UserTable>
-
-      {deleteConfirm && (
-        <DeleteConfirmDialog>
-          <DialogContent>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogMessage>
-              Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
-            </DialogMessage>
-            <DialogActions>
-              <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleConfirmDelete}>
-                Delete User
-              </Button>
-            </DialogActions>
-          </DialogContent>
-        </DeleteConfirmDialog>
-      )}
-    </PageContainer>
-  );
-};
-
-const formatTimestamp = (timestamp) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now - date;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
+                <ActionMenu>
+        {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
+          <ActionButton as={Link} to={`/users/${user._id}`}>
+            <EyeIcon size={16} />
+          </ActionButton>
+        )}
+        
+        {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
+          <ActionButton as={Link} to={`/users/${user._id}/edit`}>
+            <Edit size={16} />
+          </ActionButton>
+        )}
+        
+        {(hasPermission(PERMISSIONS.USERS.DELETE_USERS) || 
+          hasPermission(PERMISSIONS.USERS.MANAGE_PERMISSIONS)) && (
+          <ActionButton onClick={() => setActiveDropdown(activeDropdown === user._id ? null : user._id)}>
+            <MoreVertical size={16} />
+          </ActionButton>
+        )}
+      </ActionMenu>
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>
+                    No users found matching your criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </UserTable>
   
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-};
-
-export default UserList;
+        {deleteConfirm && (
+          <DeleteConfirmDialog>
+            <DialogContent>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogMessage>
+                Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
+              </DialogMessage>
+              <DialogActions>
+                <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" onClick={handleConfirmDelete}>
+                  Delete User
+                </Button>
+              </DialogActions>
+            </DialogContent>
+          </DeleteConfirmDialog>
+        )}
+      </PageContainer>
+    );
+  };
+  
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Never';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+  
+    if (hours < 24) {
+      return `${hours}h ago`;
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  
+  export default UserList;

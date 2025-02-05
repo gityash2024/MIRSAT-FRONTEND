@@ -1,22 +1,32 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { login as loginAction, logout as logoutAction } from '../store/slices/authSlice';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useSelector((state) => state.auth);
-  console.log(user, token, isAuthenticated,'useauth');
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const login = useCallback(async (email, password) => {
+    try {
+      await dispatch(loginAction({ email, password })).unwrap();
+      navigate('/dashboard');
+    } catch (error) {
+      throw error;
+    }
+  }, [dispatch, navigate]);
+
+  const logout = useCallback(() => {
+    dispatch(logoutAction());
     navigate('/login');
-  };
+  }, [dispatch, navigate]);
 
   return {
-    user,
-    token,
     isAuthenticated,
-    logout: handleLogout
+    user,
+    loading,
+    login,
+    logout
   };
 };
