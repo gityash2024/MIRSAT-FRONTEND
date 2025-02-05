@@ -1,21 +1,21 @@
 export default {
+  esbuild: {
+    target: 'es2015',
+    jsx: 'transform',
+    loader: 'jsx',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment'
+  },
   build: {
     target: 'es2015',
+    minify: false,
+    sourcemap: true,
     rollupOptions: {
-      external: [
-        '@fullcalendar/core',
-        '@fullcalendar/react'
-      ],
+      external: ['@fullcalendar/core', '@fullcalendar/react'],
       output: {
-        manualChunks: undefined
+        format: 'es',
+        strict: false
       }
-    },
-    commonjsOptions: {
-      transformMixedEsModules: true
-    },
-    minify: false
-  },
-  optimizeDeps: {
-    include: ['@fullcalendar/core', '@fullcalendar/react']
+    }
   }
 }
