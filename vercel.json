@@ -1,17 +1,5 @@
 {
-    "framework": "vite",
-    "buildCommand": "vite build",
-    "outputDirectory": "dist",
-    "routes": [
-      { "handle": "filesystem" },
-      { "src": "/(.*)", "dest": "/index.html" }
-    ],
-    "headers": [
-      {
-        "source": "/(.*)",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-store" }
-        ]
-      }
-    ]
-  }
+  "buildCommand": "vite build --debug",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null
+}
