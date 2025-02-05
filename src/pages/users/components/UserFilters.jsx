@@ -32,15 +32,29 @@ const CheckboxGroup = styled.div`
     input {
       width: 16px;
       height: 16px;
+      cursor: pointer;
     }
   }
 `;
 
 const UserFilter = ({ filters, setFilters }) => {
   const filterOptions = {
-    role: ['Inspector', 'Management', 'Admin', 'Support'],
-    status: ['Active', 'Inactive', 'Pending', 'Suspended'],
-    department: ['Field Operations', 'Operations Management', 'IT', 'Human Resources']
+    role: [
+      { value: 'admin', label: 'Admin' },
+      { value: 'manager', label: 'Manager' },
+      { value: 'inspector', label: 'Inspector' },
+      { value: 'support', label: 'Support' }
+    ],
+    status: [
+      { value: 'Active', label: 'Active' },
+      { value: 'Inactive', label: 'Inactive' }
+    ],
+    department: [
+      { value: 'field_operations', label: 'Field Operations' },
+      { value: 'operations_management', label: 'Operations Management' },
+      { value: 'administration', label: 'Administration' },
+      { value: 'support', label: 'Support' }
+    ]
   };
 
   const handleFilterChange = (category, value) => {
@@ -59,13 +73,13 @@ const UserFilter = ({ filters, setFilters }) => {
           <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
           <CheckboxGroup>
             {options.map(option => (
-              <label key={option}>
+              <label key={option.value}>
                 <input
                   type="checkbox"
-                  checked={filters[category].includes(option)}
-                  onChange={() => handleFilterChange(category, option)}
+                  checked={filters[category].includes(option.value)}
+                  onChange={() => handleFilterChange(category, option.value)}
                 />
-                {option}
+                {option.label}
               </label>
             ))}
           </CheckboxGroup>

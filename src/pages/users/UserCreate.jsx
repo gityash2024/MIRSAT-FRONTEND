@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import UserForm from './components/UserForm';
+import { toast } from 'react-toastify';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
+import api from '../../services/api';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -107,6 +111,11 @@ const Button = styled.button`
     &:hover {
       background: #151b4f;
     }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
   ` : `
     background: white;
     color: #1a237e;
@@ -120,8 +129,14 @@ const Button = styled.button`
 
 const UserCreate = () => {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
+
+  if (!hasPermission(PERMISSIONS.CREATE_USER)) {
+    navigate('/users');
+    return null;
+  }
 
   const handleSubmit = (formData) => {
     setConfirmData(formData);
@@ -130,13 +145,12 @@ const UserCreate = () => {
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      // Here you would make the API call to create the user
-      console.log('Creating user:', confirmData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.post('/users', confirmData);
+      toast.success('User created successfully');
       navigate('/users');
     } catch (error) {
       console.error('Error creating user:', error);
+      toast.error(error.response?.data?.message || 'Error creating user');
     } finally {
       setIsSubmitting(false);
     }

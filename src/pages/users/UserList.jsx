@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,64 +12,16 @@ import {
   Shield,
   Mail,
   Phone,
-  Eye,
   Check,
   X,
-  View,
   EyeIcon
 } from 'lucide-react';
-import UserFilter from './components/UserFilters';
+import { toast } from 'react-toastify';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
 
-export const mockUsers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+966 50 123 4567',
-    role: 'Inspector',
-    status: 'Active',
-    lastActive: '2024-01-15T09:30:00',
-    assignedTasks: 12,
-    permissions: ['view_tasks', 'edit_tasks'],
-    department: 'Field Operations',
-    joinDate: '2023-06-15',
-    address: 'Riyadh, Saudi Arabia',
-    emergencyContact: '+966 50 987 6543',
-    profileImage: null
-  },
-  {
-    id: 2,
-    name: 'Sarah Williams',
-    email: 'sarah.w@example.com',
-    phone: '+966 50 234 5678',
-    role: 'Management',
-    status: 'Active',
-    lastActive: '2024-01-15T10:15:00',
-    assignedTasks: 8,
-    permissions: ['view_tasks', 'edit_tasks', 'assign_tasks', 'view_reports'],
-    department: 'Operations Management',
-    joinDate: '2023-04-20',
-    address: 'Jeddah, Saudi Arabia',
-    emergencyContact: '+966 50 876 5432',
-    profileImage: null
-  },
-  {
-    id: 3,
-    name: 'Mohammed Al-Said',
-    email: 'm.alsaid@example.com',
-    phone: '+966 50 345 6789',
-    role: 'Inspector',
-    status: 'Inactive',
-    lastActive: '2024-01-14T15:45:00',
-    assignedTasks: 0,
-    permissions: ['view_tasks'],
-    department: 'Field Operations',
-    joinDate: '2023-08-01',
-    address: 'Dammam, Saudi Arabia',
-    emergencyContact: '+966 50 765 4321',
-    profileImage: null
-  }
-];
+import UserFilter from './components/UserFilters';
+import api from '../../services/api';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -302,6 +254,7 @@ const MenuItem = styled.button`
     opacity: 0.7;
   }
 `;
+
 const FilterSection = styled.div`
   background: white;
   border-radius: 12px;
@@ -309,6 +262,7 @@ const FilterSection = styled.div`
   margin-bottom: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
+
 const DeleteConfirmDialog = styled.div`
   position: fixed;
   top: 0;
@@ -328,7 +282,6 @@ const DialogContent = styled.div`
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 `;
 
 const DialogTitle = styled.h3`
@@ -350,33 +303,102 @@ const DialogActions = styled.div`
   gap: 12px;
 `;
 
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #1a237e;
+`;
+
 const UserList = () => {
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
-const [filters, setFilters] = useState({
-  role: [],
-  status: [],
-  department: []
-});
+  const [filters, setFilters] = useState({
+    role: [],
+    status: [],
+    department: []
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const { hasPermission, userRole } = usePermissions();
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setUsers(response.data.data);
+    } catch (error) {
+      toast.error('Failed to fetch users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDeleteClick = (user) => {
     setDeleteConfirm(user);
     setActiveDropdown(null);
   };
 
-  const handleConfirmDelete = () => {
-    // Handle actual deletion here
-    console.log('Deleting user:', deleteConfirm.id);
-    setDeleteConfirm(null);
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/users/${deleteConfirm._id}`);
+      toast.success('User deleted successfully');
+      fetchUsers();
+      setDeleteConfirm(null);
+    } catch (error) {
+      toast.error('Failed to delete user');
+    }
   };
 
-  const toggleUserStatus = (userId) => {
-    // Handle status toggle here
-    console.log('Toggling status for user:', userId);
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      await api.put(`/users/${userId}`, {
+        isActive: !currentStatus
+      });
+      toast.success('User status updated successfully');
+      fetchUsers();
+    } catch (error) {
+      toast.error('Failed to update user status');
+    }
   };
+
+  const handleExport = async () => {
+    try {
+      const response = await api.get('/users/export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'users.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error('Failed to export users');
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole = filters.role.length === 0 || filters.role.includes(user.role);
+    const matchesStatus = filters.status.length === 0 || filters.status.includes(user.isActive ? 'Active' : 'Inactive');
+    const matchesDepartment = filters.department.length === 0 || filters.department.includes(user.department);
+
+    return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
+  });
+
+  if (isLoading) {
+    return <LoadingSpinner>Loading...</LoadingSpinner>;
+  }
 
   return (
     <PageContainer>
@@ -397,29 +419,34 @@ const [filters, setFilters] = useState({
         </SearchBox>
 
         <ButtonGroup>
-          <Button variant="secondary"             onClick={() => setIsFilterVisible(!isFilterVisible)}
-          >
+          <Button variant="secondary" onClick={() => setIsFilterVisible(!isFilterVisible)}>
             <Filter size={18} />
             Filters
           </Button>
-          <Button variant="secondary">
-            <Download size={18} />
-            Export
-          </Button>
-          <Button variant="primary" as={Link} to="/users/create">
-            <UserPlus size={18} />
-            Add User
-          </Button>
+          {hasPermission(PERMISSIONS.USERS.EXPORT_USERS) && (
+            <Button variant="secondary" onClick={handleExport}>
+              <Download size={18} />
+              Export
+            </Button>
+          )}
+       {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
+            <Button variant="primary" as={Link} to="/users/create">
+              <UserPlus size={18} />
+              Add User
+            </Button>
+          )}
         </ButtonGroup>
       </ActionBar>
+
       {isFilterVisible && (
-  <FilterSection>
-    <UserFilter 
-      filters={filters} 
-      setFilters={setFilters}
-    />
-  </FilterSection>
-)}
+        <FilterSection>
+          <UserFilter
+            filters={filters} 
+            setFilters={setFilters}
+          />
+        </FilterSection>
+      )}
+
       <UserTable>
         <Table>
           <thead>
@@ -433,8 +460,8 @@ const [filters, setFilters] = useState({
             </tr>
           </thead>
           <tbody>
-            {mockUsers.map(user => (
-              <tr key={user.id}>
+            {filteredUsers.map(user => (
+              <tr key={user._id}>
                 <td>
                   <UserInfo>
                     <span className="name">{user.name}</span>
@@ -457,88 +484,86 @@ const [filters, setFilters] = useState({
                   </RoleBadge>
                 </td>
                 <td>
-                  <StatusBadge status={user.status}>
-                    {user.status}
+                  <StatusBadge status={user.isActive ? 'Active' : 'Inactive'}>
+                    {user.isActive ? 'Active' : 'Inactive'}
                   </StatusBadge>
                 </td>
-                <td>{formatTimestamp(user.lastActive)}</td>
-                <td>{user.assignedTasks}</td>
+                <td>{formatTimestamp(user.lastLogin)}</td>
+                <td>{user.assignedTasks || 0}</td>
                 <td>
-                  <ActionMenu>
-                    <ActionButton as={Link} to={`/users/${user.id}`}>  
-                    <EyeIcon/>
-                    </ActionButton>
-                    <ActionButton as={Link} to={`/users/${user.id}/edit`}>  
-                      <Edit size={16} />
-                    </ActionButton>
-                    <ActionButton onClick={() => setActiveDropdown(activeDropdown === user.id ? null : user.id)}>
-                      <MoreVertical size={16} />
-                    </ActionButton>
-                    
-                    <DropdownMenu isOpen={activeDropdown === user.id}>
-                      <MenuItem onClick={() => toggleUserStatus(user.id)}>
-                        {user.status === 'Active' ? (
-                          <>
-                            <X size={16} className="icon" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <Check size={16} className="icon" />
-                            Activate
-                          </>
-                        )}
-                      </MenuItem>
-                      <MenuItem variant="danger" onClick={() => handleDeleteClick(user)}>
-                        <Trash2 size={16} className="icon" />
-                        Delete
-                      </MenuItem>
-                    </DropdownMenu>
-                  </ActionMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </UserTable>
-
-      {deleteConfirm && (
-        <DeleteConfirmDialog>
-          <DialogContent>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogMessage>
-              Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
-            </DialogMessage>
-            <DialogActions>
-              <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleConfirmDelete}>
-                Delete User
-              </Button>
-            </DialogActions>
-          </DialogContent>
-        </DeleteConfirmDialog>
-      )}
-    </PageContainer>
-  );
-};
-
-const formatTimestamp = (timestamp) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now - date;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
+                <ActionMenu>
+        {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
+          <ActionButton as={Link} to={`/users/${user._id}`}>
+            <EyeIcon size={16} />
+          </ActionButton>
+        )}
+        
+        {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
+          <ActionButton as={Link} to={`/users/${user._id}/edit`}>
+            <Edit size={16} />
+          </ActionButton>
+        )}
+        
+        {(hasPermission(PERMISSIONS.USERS.DELETE_USERS) || 
+          hasPermission(PERMISSIONS.USERS.MANAGE_PERMISSIONS)) && (
+          <ActionButton onClick={() => setActiveDropdown(activeDropdown === user._id ? null : user._id)}>
+            <MoreVertical size={16} />
+          </ActionButton>
+        )}
+      </ActionMenu>
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>
+                    No users found matching your criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </UserTable>
   
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-};
-
-export default UserList;
+        {deleteConfirm && (
+          <DeleteConfirmDialog>
+            <DialogContent>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogMessage>
+                Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
+              </DialogMessage>
+              <DialogActions>
+                <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" onClick={handleConfirmDelete}>
+                  Delete User
+                </Button>
+              </DialogActions>
+            </DialogContent>
+          </DeleteConfirmDialog>
+        )}
+      </PageContainer>
+    );
+  };
+  
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Never';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+  
+    if (hours < 24) {
+      return `${hours}h ago`;
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  
+  export default UserList;

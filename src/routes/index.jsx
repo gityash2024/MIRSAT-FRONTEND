@@ -7,7 +7,6 @@ import MainLayout from '../layouts/MainLayout';
 
 // Auth Pages
 import Login from '../pages/Login';
-import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import Notifications from '../pages/notifications';
 
@@ -43,7 +42,6 @@ const AppRoutes = () => {
       <Route element={<PublicRoute />}>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
         </Route>
       </Route>
      

@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
@@ -11,7 +12,6 @@ import './App.css';
 
 function App() {
   useEffect(() => {
-    // Restore user from local storage on app reload
     store.dispatch(restoreUser());
   }, []);
 
@@ -49,3 +49,4 @@ function App() {
 }
 
 export default App;
+

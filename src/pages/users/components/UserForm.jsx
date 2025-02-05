@@ -1,70 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Shield, 
-  Calendar,
-  MapPin,
-  AlertTriangle,
-  Building2,
-  Lock
-} from 'lucide-react';
+import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS } from '../../../utils/permissions';
 
 const Form = styled.form`
   display: grid;
   gap: 24px;
 `;
 
-const FormSection = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const SectionTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a237e;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  .icon {
-    opacity: 0.7;
-  }
-`;
-
-const FormGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #333;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  .icon {
-    opacity: 0.7;
-  }
 `;
 
 const Input = styled.input`
@@ -78,10 +30,6 @@ const Input = styled.input`
     outline: none;
     border-color: #1a237e;
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
-  }
-
-  &::placeholder {
-    color: #9e9e9e;
   }
 `;
 
@@ -100,13 +48,33 @@ const Select = styled.select`
   }
 `;
 
-const CheckboxGroup = styled.div`
-  display: grid;
-  gap: 12px;
-  padding: 8px 0;
+const ErrorMessage = styled.span`
+  color: #dc2626;
+  font-size: 12px;
 `;
 
-const CheckboxLabel = styled.label`
+const PermissionsSection = styled.div`
+  margin-top: 20px;
+`;
+
+const PermissionGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const PermissionGroupTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 12px;
+`;
+
+const PermissionList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+`;
+
+const PermissionItem = styled.label`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -117,15 +85,7 @@ const CheckboxLabel = styled.label`
   input {
     width: 16px;
     height: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 4px;
-    cursor: pointer;
   }
-`;
-
-const ErrorMessage = styled.span`
-  color: #dc2626;
-  font-size: 12px;
 `;
 
 const ButtonGroup = styled.div`
@@ -156,7 +116,7 @@ const Button = styled.button`
     }
 
     &:disabled {
-      background: #9fa8da;
+      opacity: 0.7;
       cursor: not-allowed;
     }
   ` : `
@@ -170,52 +130,19 @@ const Button = styled.button`
   `}
 `;
 
-const roles = [
-  { value: 'inspector', label: 'Inspector' },
-  { value: 'management', label: 'Management' },
-  { value: 'admin', label: 'Admin' }
-];
-
-const departments = [
-  { value: 'field_operations', label: 'Field Operations' },
-  { value: 'operations_management', label: 'Operations Management' },
-  { value: 'administration', label: 'Administration' }
-];
-
-const permissions = {
-  tasks: [
-    { value: 'view_tasks', label: 'View Tasks' },
-    { value: 'create_tasks', label: 'Create Tasks' },
-    { value: 'edit_tasks', label: 'Edit Tasks' },
-    { value: 'delete_tasks', label: 'Delete Tasks' },
-    { value: 'assign_tasks', label: 'Assign Tasks' }
-  ],
-  reports: [
-    { value: 'view_reports', label: 'View Reports' },
-    { value: 'create_reports', label: 'Create Reports' },
-    { value: 'download_reports', label: 'Download Reports' }
-  ],
-  users: [
-    { value: 'view_users', label: 'View Users' },
-    { value: 'create_users', label: 'Create Users' },
-    { value: 'edit_users', label: 'Edit Users' },
-    { value: 'delete_users', label: 'Delete Users' }
-  ]
-};
-
 const UserForm = ({ 
   initialData = {}, 
   onSubmit, 
   onCancel,
   submitButtonText = 'Save',
-  isSubmitting = false
+  isSubmitting = false 
 }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    role: 'inspector',
-    department: 'field_operations',
+    role: 'user',
+    department: '',
     address: '',
     emergencyContact: '',
     status: 'active',
@@ -224,12 +151,22 @@ const UserForm = ({
     confirmPassword: '',
     ...initialData
   });
-  
+
   const [errors, setErrors] = useState({});
+
+  // Set default permissions when role changes
+  useEffect(() => {
+    if (formData.role && !initialData.permissions) {
+      setFormData(prev => ({
+        ...prev,
+        permissions: DEFAULT_PERMISSIONS[formData.role] || []
+      }));
+    }
+  }, [formData.role]);
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name) newErrors.name = 'Name is required';
     if (!formData.email) {
       newErrors.email = 'Email is required';
@@ -237,7 +174,10 @@ const UserForm = ({
       newErrors.email = 'Invalid email format';
     }
     if (!formData.phone) newErrors.phone = 'Phone number is required';
-    if (!initialData.id) { // Only validate password for new users
+    if (!formData.role) newErrors.role = 'Role is required';
+    
+    // Only validate password for new users
+    if (!initialData.id) {
       if (!formData.password) newErrors.password = 'Password is required';
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
@@ -251,7 +191,10 @@ const UserForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Remove confirmPassword before submitting
+      const submitData = { ...formData };
+      delete submitData.confirmPassword;
+      onSubmit(submitData);
     }
   };
 
@@ -261,6 +204,8 @@ const UserForm = ({
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when field is edited
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -269,216 +214,182 @@ const UserForm = ({
     }
   };
 
-  const handlePermissionChange = (e) => {
-    const { value, checked } = e.target;
+  const handlePermissionChange = (permission) => {
     setFormData(prev => ({
       ...prev,
-      permissions: checked
-        ? [...prev.permissions, value]
-        : prev.permissions.filter(p => p !== value)
+      permissions: prev.permissions.includes(permission)
+        ? prev.permissions.filter(p => p !== permission)
+        : [...prev.permissions, permission]
     }));
   };
 
+  const renderPermissionGroup = (groupName, permissions) => (
+    <PermissionGroup key={groupName}>
+      <PermissionGroupTitle>
+        {groupName.replace(/_/g, ' ')}
+      </PermissionGroupTitle>
+      <PermissionList>
+        {Object.entries(permissions).map(([key, value]) => (
+          <PermissionItem key={value}>
+            <input
+              type="checkbox"
+              checked={formData.permissions.includes(value)}
+              onChange={() => handlePermissionChange(value)}
+              disabled={formData.role === ROLES.SUPERADMIN}
+            />
+            {key.replace(/_/g, ' ')}
+          </PermissionItem>
+        ))}
+      </PermissionList>
+    </PermissionGroup>
+  );
+
   return (
     <Form onSubmit={handleSubmit}>
-      <FormSection>
-        <SectionTitle>
-          <User size={18} className="icon" />
-          Personal Information
-        </SectionTitle>
-        <FormGrid>
-          <FormGroup>
-            <Label>
-              <User size={14} className="icon" />
-              Full Name
-            </Label>
-            <Input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter full name"
-            />
-            {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-          </FormGroup>
+      <FormGroup>
+        <Label htmlFor="name">Full Name</Label>
+        <Input
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Enter full name"
+        />
+        {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+      </FormGroup>
 
-          <FormGroup>
-            <Label>
-              <Mail size={14} className="icon" />
-              Email Address
-            </Label>
-            <Input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email address"
-            />
-            {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-          </FormGroup>
+      <FormGroup>
+        <Label htmlFor="email">Email Address</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Enter email address"
+        />
+        {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+      </FormGroup>
 
-          <FormGroup>
-            <Label>
-              <Phone size={14} className="icon" />
-              Phone Number
-            </Label>
-            <Input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter phone number"
-            />
-            {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
-          </FormGroup>
+      <FormGroup>
+        <Label htmlFor="phone">Phone Number</Label>
+        <Input
+          id="phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          placeholder="Enter phone number"
+        />
+        {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+      </FormGroup>
 
-          <FormGroup>
-            <Label>
-              <AlertTriangle size={14} className="icon" />
-              Emergency Contact
-            </Label>
-            <Input
-              type="tel"
-              name="emergencyContact"
-              value={formData.emergencyContact}
-              onChange={handleChange}
-              placeholder="Enter emergency contact"
-            />
-          </FormGroup>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <FormGroup>
+          <Label htmlFor="role">Role</Label>
+          <Select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+          >
+            {Object.entries(ROLES).map(([key, value]) => (
+              <option key={value} value={value}>
+                {key.charAt(0) + key.slice(1).toLowerCase()}
+              </option>
+            ))}
+          </Select>
+          {errors.role && <ErrorMessage>{errors.role}</ErrorMessage>}
+        </FormGroup>
 
-          <FormGroup>
-            <Label>
-              <MapPin size={14} className="icon" />
-              Address
-            </Label>
-            <Input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Enter address"
-            />
-          </FormGroup>
-        </FormGrid>
-      </FormSection>
-
-      <FormSection>
-        <SectionTitle>
-          <Shield size={18} className="icon" />
-          Role & Access
-        </SectionTitle>
-        <FormGrid>
-          <FormGroup>
-            <Label>
-              <Shield size={14} className="icon" />
-              Role
-            </Label>
-            <Select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              {roles.map(role => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
-
-          <FormGroup>
-            <Label>
-              <Building2 size={14} className="icon" />
-              Department
-            </Label>
-            <Select
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-            >
-              {departments.map(dept => (
-                <option key={dept.value} value={dept.value}>
-                  {dept.label}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
-        </FormGrid>
-
-        <SectionTitle style={{ marginTop: '24px' }}>
-          Permissions
-        </SectionTitle>
-        {Object.entries(permissions).map(([category, perms]) => (
-          <div key={category}>
-            <Label style={{ marginTop: '16px', marginBottom: '8px' }}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </Label>
-            <CheckboxGroup>
-              {perms.map(permission => (
-                <CheckboxLabel key={permission.value}>
-                  <input
-                    type="checkbox"
-                    name="permissions"
-                    value={permission.value}
-                    checked={formData.permissions.includes(permission.value)}
-                    onChange={handlePermissionChange}
-                  />
-                  {permission.label}
-                </CheckboxLabel>
-              ))}
-            </CheckboxGroup>
-          </div>
-        ))}
-      </FormSection>
+        <FormGroup>
+          <Label htmlFor="department">Department</Label>
+          <Select
+            id="department"
+            name="department"
+            value={formData.department}
+            onChange={handleChange}
+          >
+            <option value="">Select Department</option>
+            <option value="field_operations">Field Operations</option>
+            <option value="operations_management">Operations Management</option>
+            <option value="administration">Administration</option>
+            <option value="support">Support</option>
+          </Select>
+        </FormGroup>
+      </div>
 
       {!initialData.id && (
-        <FormSection>
-          <SectionTitle>
-            <Lock size={18} className="icon" />
-            Account Security
-          </SectionTitle>
-          <FormGrid>
-            <FormGroup>
-              <Label>
-                <Lock size={14} className="icon" />
-                Password
-              </Label>
-              <Input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter password"
-              />
-              {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
-            </FormGroup>
+        <>
+          <FormGroup>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+            />
+            {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+          </FormGroup>
 
-            <FormGroup>
-              <Label>
-                <Lock size={14} className="icon" />
-                Confirm Password
-              </Label>
-              <Input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm password"
-              />
-              {errors.confirmPassword && (
-                <ErrorMessage>{errors.confirmPassword}</ErrorMessage>
-              )}
-            </FormGroup>
-          </FormGrid>
-        </FormSection>
+          <FormGroup>
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm password"
+            />
+            {errors.confirmPassword && (
+              <ErrorMessage>{errors.confirmPassword}</ErrorMessage>
+            )}
+          </FormGroup>
+        </>
       )}
+
+      <FormGroup>
+        <Label htmlFor="address">Address</Label>
+        <Input
+          id="address"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          placeholder="Enter address"
+        />
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor="emergencyContact">Emergency Contact</Label>
+        <Input
+          id="emergencyContact"
+          name="emergencyContact"
+          value={formData.emergencyContact}
+          onChange={handleChange}
+          placeholder="Enter emergency contact"
+        />
+      </FormGroup>
+
+      {/* Permissions Section */}
+      <PermissionsSection>
+        <PermissionGroupTitle>Permissions</PermissionGroupTitle>
+        {Object.entries(PERMISSIONS).map(([groupName, groupPermissions]) =>
+          renderPermissionGroup(groupName, groupPermissions)
+        )}
+      </PermissionsSection>
 
       <ButtonGroup>
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
-          {submitButtonText}
+        <Button 
+          type="submit" 
+          variant="primary"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Saving...' : submitButtonText}
         </Button>
       </ButtonGroup>
     </Form>

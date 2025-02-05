@@ -1,16 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useSelector } from 'react-redux';
 
 const PrivateRoute = () => {
-  const { isAuthenticated, token } = useAuth();
-
-  // Check if authenticated and token exists
-  if (!isAuthenticated || !token) {
-    // Redirect to login if not authenticated
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Render child routes if authenticated
   return <Outlet />;
 };
 
