@@ -2,8 +2,12 @@
     "builds": [
       {
         "src": "package.json",
-        "use": "@vercel/node",
-        "config": { "maxLambdaSize": "15mb" }
+        "use": "@vercel/static",
+        "config": { "dist": "dist" }
       }
+    ],
+    "routes": [
+      { "handle": "filesystem" },
+      { "src": "/(.*)", "dest": "/index.html" }
     ]
   }
