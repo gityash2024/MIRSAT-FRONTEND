@@ -1,21 +1,13 @@
-export default {
-  esbuild: {
-    target: 'es2015',
-    jsx: 'transform',
-    loader: 'jsx',
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment'
-  },
-  build: {
-    target: 'es2015',
-    minify: false,
-    sourcemap: true,
-    rollupOptions: {
-      external: ['@fullcalendar/core', '@fullcalendar/react'],
-      output: {
-        format: 'es',
-        strict: false
-      }
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
     }
   }
-}
+})
