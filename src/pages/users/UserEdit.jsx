@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, Edit } from 'lucide-react';
 import UserForm from './components/UserForm';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import api from '../../services/api';

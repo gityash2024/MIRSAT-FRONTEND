@@ -16,9 +16,10 @@ import {
   Phone,
   Check,
   X,
-  EyeIcon
+  EyeIcon,
+  Copy
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import { FileText } from 'lucide-react';
@@ -424,6 +425,11 @@ const UserList = () => {
     }
   };
 
+const handleCopyEmail = (email) => {
+  navigator.clipboard.writeText(email);
+  toast.success('Email copied to clipboard');
+};
+
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
       await api.put(`/users/${userId}`, {
@@ -670,8 +676,8 @@ const UserList = () => {
                         <Mail size={14} />
                         {user.email}
                       </span>
-                      <span className="item">
-                        <Phone size={14} />
+                      <span  style={{ cursor: 'pointer' }} onClick={() => handleCopyEmail(user.email)} className="item">
+                        <Copy size={14} />
                         {user.phone}
                       </span>
                     </div>
@@ -680,7 +686,7 @@ const UserList = () => {
                 <td>
                   <RoleBadge>
                     <Shield size={16} className="icon" />
-                    {user.role}
+                    {user.role?.toUpperCase()}
                   </RoleBadge>
                 </td>
                 <td>

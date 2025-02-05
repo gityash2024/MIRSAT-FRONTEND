@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { PERMISSIONS } from '../../utils/permissions';
 import { usePermissions } from '../../hooks/usePermissions';
+import { userService } from '../../services/user.service';
 
 const PageContainer = styled.div`
   padding: 24px;
