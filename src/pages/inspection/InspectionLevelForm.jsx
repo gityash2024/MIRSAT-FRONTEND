@@ -1,15 +1,9 @@
-// src/pages/inspection/InspectionLevelForm.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Minus, 
-  Move, 
-  Layers,
-} from 'lucide-react';
+import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
+import { ArrowLeft, Plus, Minus, Move, Layers } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { toast } from 'react-hot-toast';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -26,7 +20,7 @@ const BackButton = styled.button`
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 16px;
-
+  
   &:hover {
     color: #333;
   }
@@ -218,6 +212,11 @@ const Button = styled.button`
       background: #f5f7fb;
     }
   `}
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;
 
 const ErrorMessage = styled.span`
@@ -229,29 +228,34 @@ const ErrorMessage = styled.span`
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { loading, setLoading, handleError, inspectionService } = useOutletContext();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     type: 'safety',
-    subLevels: [{ id: Date.now(), name: '', order: 0 }]
+    status: 'active',
+    priority: 'medium',
+    subLevels: [{ id: Date.now(), name: '', description: '', order: 0 }]
   });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (id) {
-      // Fetch existing inspection level data
-      // For now using mock data
-      setFormData({
-        name: 'Initial Safety Inspection',
-        description: 'First level safety inspection for all facilities',
-        type: 'safety',
-        subLevels: [
-          { id: 1, name: 'Equipment Check', order: 0 },
-          { id: 2, name: 'Safety Protocol Verification', order: 1 }
-        ]
-      });
+      fetchInspectionLevel();
     }
   }, [id]);
+
+  const fetchInspectionLevel = async () => {
+    try {
+      setLoading(true);
+      const data = await inspectionService.getInspectionLevel(id);
+      setFormData(data);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -264,11 +268,11 @@ const InspectionLevelForm = () => {
     }
   };
 
-  const handleSubLevelChange = (id, value) => {
+  const handleSubLevelChange = (id, field, value) => {
     setFormData(prev => ({
       ...prev,
       subLevels: prev.subLevels.map(level => 
-        level.id === id ? { ...level, name: value } : level
+        level.id === id ? { ...level, [field]: value } : level
       )
     }));
   };
@@ -278,7 +282,12 @@ const InspectionLevelForm = () => {
       ...prev,
       subLevels: [
         ...prev.subLevels,
-        { id: Date.now(), name: '', order: prev.subLevels.length }
+        { 
+          id: Date.now(), 
+          name: '', 
+          description: '', 
+          order: prev.subLevels.length 
+        }
       ]
     }));
   };
@@ -310,21 +319,35 @@ const InspectionLevelForm = () => {
     if (formData.subLevels.some(level => !level.name)) {
       newErrors.subLevels = 'All sub-levels must have names';
     }
+    if (formData.subLevels.some(level => !level.description)) {
+      newErrors.subLevels = 'All sub-levels must have descriptions';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form data:', formData);
+    if (!validateForm() || loading) return;
+
+    try {
+      setLoading(true);
+      if (id) {
+        await inspectionService.updateInspectionLevel(id, formData);
+        toast.success('Inspection level updated successfully');
+      } else {
+        await inspectionService.createInspectionLevel(formData);
+        toast.success('Inspection level created successfully');
+      }
       navigate('/inspection');
+    } catch (error) {
+      handleError(error);
     }
   };
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/inspection')}>
+      <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
         <ArrowLeft size={18} />
         Back to Inspection Levels
       </BackButton>
@@ -351,17 +374,52 @@ const InspectionLevelForm = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter level name"
+                disabled={loading}
               />
               {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
             </FormGroup>
 
             <FormGroup>
               <Label>Type</Label>
-              <Select name="type" value={formData.type} onChange={handleChange}>
+              <Select 
+                name="type" 
+                value={formData.type} 
+                onChange={handleChange}
+                disabled={loading}
+              >
                 <option value="safety">Safety</option>
                 <option value="environmental">Environmental</option>
                 <option value="operational">Operational</option>
                 <option value="quality">Quality</option>
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Status</Label>
+              <Select 
+                name="status" 
+                value={formData.status} 
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Priority</Label>
+              <Select 
+                name="priority" 
+                value={formData.priority} 
+                onChange={handleChange}
+                disabled={loading}
+              >
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </Select>
             </FormGroup>
 
@@ -372,6 +430,7 @@ const InspectionLevelForm = () => {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Enter level description"
+                disabled={loading}
               />
               {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
             </FormGroup>
@@ -381,7 +440,7 @@ const InspectionLevelForm = () => {
         <FormSection>
           <SectionTitle>
             Sub Levels
-            <IconButton type="button" onClick={addSubLevel}>
+            <IconButton type="button" onClick={addSubLevel} disabled={loading}>
               <Plus size={16} />
             </IconButton>
           </SectionTitle>
@@ -396,8 +455,9 @@ const InspectionLevelForm = () => {
                   {formData.subLevels.map((level, index) => (
                     <Draggable
                       key={level.id}
-                      draggableId={level.id.toString()}
+                      draggableId={level?.id?.toString()}
                       index={index}
+                      isDragDisabled={loading}
                     >
                       {(provided, snapshot) => (
                         <SubLevelItem
@@ -411,13 +471,21 @@ const InspectionLevelForm = () => {
                           <SubLevelInput
                             type="text"
                             value={level.name}
-                            onChange={(e) => handleSubLevelChange(level.id, e.target.value)}
+                            onChange={(e) => handleSubLevelChange(level.id, 'name', e.target.value)}
                             placeholder="Enter sub-level name"
+                            disabled={loading}
+                          />
+                          <SubLevelInput
+                            type="text"
+                            value={level.description}
+                            onChange={(e) => handleSubLevelChange(level.id, 'description', e.target.value)}
+                            placeholder="Enter sub-level description"
+                            disabled={loading}
                           />
                           <IconButton
                             type="button"
                             onClick={() => removeSubLevel(level.id)}
-                            disabled={formData.subLevels.length === 1}
+                            disabled={formData.subLevels.length === 1 || loading}
                           >
                             <Minus size={16} />
                           </IconButton>
@@ -428,17 +496,25 @@ const InspectionLevelForm = () => {
                   {provided.placeholder}
                 </SubLevelsContainer>
               )}
-            </Droppable>
+              </Droppable>
           </DragDropContext>
           {errors.subLevels && <ErrorMessage>{errors.subLevels}</ErrorMessage>}
         </FormSection>
 
         <ButtonGroup>
-          <Button type="button" onClick={() => navigate('/inspection')}>
+          <Button 
+            type="button" 
+            onClick={() => navigate('/inspection')}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button type="submit" variant="primary">
-            {id ? 'Save Changes' : 'Create Level'}
+          <Button 
+            type="submit" 
+            variant="primary"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : (id ? 'Save Changes' : 'Create Level')}
           </Button>
         </ButtonGroup>
       </Form>

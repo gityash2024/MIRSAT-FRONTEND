@@ -1,20 +1,11 @@
-// src/pages/inspection/InspectionLevelList.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { 
-  Plus, 
-  Filter, 
-  Search, 
-  Download,
-  Layers,
-  ChevronRight,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Eye
-} from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
+import useDeleteConfirmation from '../../components/confirmationModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -92,6 +83,7 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  text-decoration: none;
 
   ${props => props.variant === 'primary' ? `
     background: #1a237e;
@@ -110,6 +102,11 @@ const Button = styled.button`
       background: #f5f7fb;
     }
   `}
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;
 
 const LevelGrid = styled.div`
@@ -129,11 +126,11 @@ const LevelCard = styled.div`
   }
 `;
 
-const LevelHeader = styled.div`
+const AccordionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  width: 100%;
 `;
 
 const LevelInfo = styled.div`
@@ -185,6 +182,11 @@ const ActionButton = styled.button`
     background: #f5f7fb;
     color: #1a237e;
   }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;
 
 const SubLevelsList = styled.div`
@@ -218,34 +220,106 @@ const SubLevelIcon = styled.div`
   justify-content: center;
 `;
 
-// Mock data for demonstration
-const mockInspectionLevels = [
-  {
-    id: 1,
-    name: 'Initial Safety Inspection',
-    description: 'First level safety inspection for all facilities',
-    type: 'Safety',
-    subLevels: [
-      { id: 1, name: 'Equipment Check', order: 1 },
-      { id: 2, name: 'Safety Protocol Verification', order: 2 },
-      { id: 3, name: 'Documentation Review', order: 3 }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Environmental Compliance',
-    description: 'Environmental standards and regulations check',
-    type: 'Environmental',
-    subLevels: [
-      { id: 4, name: 'Emissions Test', order: 1 },
-      { id: 5, name: 'Waste Management Review', order: 2 }
-    ]
-  }
-];
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 48px 0;
+  color: #666;
 
-const InspectionLevelList = () => {
+  h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #1a237e;
+  }
+
+  p {
+    margin-bottom: 16px;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+  color: #1a237e;
+`;
+
+const AccordionTrigger = styled(Accordion.Trigger)`
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+`;
+
+const AccordionContent = styled(Accordion.Content)`
+  overflow: hidden;
+`;
+
+const ChevronIcon = styled(ChevronDown)`
+  transition: transform 300ms;
+  [data-state=open] & {
+    transform: rotate(180deg);
+  }
+`;
+
+const AccordionRoot = styled(Accordion.Root)`
+  width: 100%;
+`;
+
+const InspectionLevelList = ({ loading, setLoading, handleError, inspectionService }) => {
+
+  const {
+    showDeleteConfirmation,
+    DeleteConfirmationModal
+  } = useDeleteConfirmation();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    type: [],
+    status: [],
+    priority: []
+  });
+  const [inspectionLevels, setInspectionLevels] = useState([]);
+
+  useEffect(() => {
+    fetchInspectionLevels();
+  }, [filters]);
+
+  const fetchInspectionLevels = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        ...filters,
+        search: searchTerm
+      };
+      const response = await inspectionService.getInspectionLevels(params);
+      setInspectionLevels(response.results || []);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    if (e.key === 'Enter') {
+      fetchInspectionLevels();
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+ 
+  
+
+
+  const onDeleteClick = (level) => {
+    showDeleteConfirmation(level._id, handleDelete);
+  };
+
 
   return (
     <PageContainer>
@@ -264,65 +338,126 @@ const InspectionLevelList = () => {
             type="text" 
             placeholder="Search inspection levels..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearch}
+            onKeyPress={(e) => e.key === 'Enter' && fetchInspectionLevels()}
+            disabled={loading}
           />
         </SearchBox>
 
         <ButtonGroup>
-          <Button variant="secondary" onClick={() => setShowFilters(!showFilters)}>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowFilters(!showFilters)}
+            disabled={loading}
+          >
             <Filter size={18} />
             Filters
           </Button>
-          <Button variant="secondary">
+          <Button 
+            variant="secondary"
+            disabled={loading}
+          >
             <Download size={18} />
             Export
           </Button>
-          <Button variant="primary" as={Link} to="/inspection/create">
+          <Button 
+            variant="primary" 
+            as={Link} 
+            to="/inspection/create"
+            disabled={loading}
+          >
             <Plus size={18} />
             Add Level
           </Button>
         </ButtonGroup>
       </ActionBar>
-      {showFilters && <InspectionLevelFilters />}
-      <LevelGrid>
-        {mockInspectionLevels.map(level => (
-          <LevelCard key={level.id}>
-            <LevelHeader>
-              <LevelInfo>
-                <LevelIcon>
-                  <Layers size={20} />
-                </LevelIcon>
-                <LevelDetails>
-                  <h3>{level.name}</h3>
-                  <p>{level.description}</p>
-                </LevelDetails>
-              </LevelInfo>
-              <LevelActions>
-                <ActionButton as={Link} to={`/inspection/${level.id}`}>
-                  <Eye size={16} />
-                </ActionButton>
-                <ActionButton as={Link} to={`/inspection/${level.id}/edit`}>
-                  <Edit size={16} />
-                </ActionButton>
-                <ActionButton onClick={() => console.log('Delete level:', level.id)}>
-                  <Trash2 size={16} />
-                </ActionButton>
-              </LevelActions>
-            </LevelHeader>
 
-            <SubLevelsList>
-              {level.subLevels.map(subLevel => (
-                <SubLevel key={subLevel.id}>
-                  <SubLevelIcon>
-                    <ChevronRight size={16} />
-                  </SubLevelIcon>
-                  <span>{subLevel.name}</span>
-                </SubLevel>
-              ))}
-            </SubLevelsList>
-          </LevelCard>
-        ))}
-      </LevelGrid>
+      {showFilters && (
+        <InspectionLevelFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClose={() => setShowFilters(false)}
+          loading={loading}
+        />
+      )}
+
+      {loading ? (
+        <LoadingSpinner>Loading...</LoadingSpinner>
+      ) : inspectionLevels.length === 0 ? (
+        <EmptyState>
+          <h3>No Inspection Levels Found</h3>
+          <p>Create your first inspection level to get started</p>
+          <Button 
+            variant="primary" 
+            as={Link} 
+            to="/inspection/create"
+          >
+            <Plus size={18} />
+            Add Level
+          </Button>
+        </EmptyState>
+      ) : (
+        <LevelGrid>
+          {inspectionLevels.map(level => (
+            <LevelCard key={level._id}>
+              <AccordionRoot type="single" collapsible>
+                <Accordion.Item value={level._id}>
+                  <AccordionTrigger>
+                    <AccordionHeader>
+                      <LevelInfo>
+                        <LevelIcon>
+                          <Layers size={20} />
+                        </LevelIcon>
+                        <LevelDetails>
+                          <h3>{level.name}</h3>
+                          <p>{level.description}</p>
+                        </LevelDetails>
+                      </LevelInfo>
+                      <LevelActions>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}`}
+                          disabled={loading}
+                        >
+                          <Eye size={16} />
+                        </ActionButton>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}/edit`}
+                          disabled={loading}
+                        >
+                          <Edit size={16} />
+                        </ActionButton>
+                        <ActionButton 
+        onClick={() => onDeleteClick(level)}
+        disabled={loading}
+      >
+        <Trash2 size={16} />
+      </ActionButton>
+                        <ChevronIcon size={16} />
+                      </LevelActions>
+                    </AccordionHeader>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SubLevelsList>
+                      {level.subLevels?.map(subLevel => (
+                        <SubLevel key={subLevel._id || subLevel.id}>
+                          <SubLevelIcon>
+                            <ChevronRight size={16} />
+                          </SubLevelIcon>
+                          <span>{subLevel.name}</span>
+                        </SubLevel>
+                      ))}
+                    </SubLevelsList>
+                  </AccordionContent>
+                </Accordion.Item>
+              </AccordionRoot>
+            </LevelCard>
+          ))}
+        </LevelGrid>
+      )}
+            <DeleteConfirmationModal />
+
     </PageContainer>
   );
 };

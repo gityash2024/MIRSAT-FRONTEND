@@ -1,3 +1,6 @@
+/* This code snippet is a React component named `Dashboard` that represents a dashboard interface. It
+includes styled components for various elements like the dashboard container, welcome text, stat
+cards, progress bars, team member items, etc. */
 import React from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../hooks/useAuth';
