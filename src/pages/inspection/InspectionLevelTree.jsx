@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import InspectionLevelFilters from './InspectionLevelFilters';
+import useDeleteConfirmation from '../../components/confirmationModal';
 
 const TreeContainer = styled.div`
   padding: 24px;
@@ -271,7 +272,7 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
-const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDelete }) => {
+const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDelete, onDeleteClick }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.subLevels && node.subLevels.length > 0;
 
@@ -295,7 +296,7 @@ const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDe
             <p>{node.description}</p>
           </NodeInfo>
           <StatusBadge type={node.type}>
-            {node.type.charAt(0).toUpperCase() + node.type.slice(1)}
+            {(node.type?.charAt(0).toUpperCase() + node.type?.slice(1)) || node._id} 
           </StatusBadge>
           <NodeActions>
             <ActionButton 
@@ -312,8 +313,8 @@ const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDe
             >
               <Edit size={14} />
             </ActionButton>
-            <ActionButton
-              onClick={() => onDelete(node._id)}
+            <ActionButton 
+              onClick={() => onDeleteClick(node)}
               disabled={loading}
             >
               <Trash2 size={14} />
@@ -325,12 +326,13 @@ const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDe
         <div>
           {node.subLevels.map((child, index) => (
             <TreeNodeComponent
-              key={child._id}
+              key={child._id || child.id}
               node={child}
               level={level + 1}
               isLastChild={index === node.subLevels.length - 1}
               loading={loading}
               onDelete={onDelete}
+              onDeleteClick={onDeleteClick}
             />
           ))}
         </div>
@@ -339,8 +341,7 @@ const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDe
   );
 };
 
-const InspectionLevelTree = () => {
-  const { loading, setLoading, handleError, inspectionService } = useOutletContext();
+const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionService }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -349,6 +350,7 @@ const InspectionLevelTree = () => {
     priority: []
   });
   const [treeData, setTreeData] = useState([]);
+  const { showDeleteConfirmation, DeleteConfirmationModal } = useDeleteConfirmation();
 
   useEffect(() => {
     fetchInspectionLevels();
@@ -382,10 +384,6 @@ const InspectionLevelTree = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inspection level?')) {
-      return;
-    }
-
     try {
       setLoading(true);
       await inspectionService.deleteInspectionLevel(id);
@@ -393,7 +391,13 @@ const InspectionLevelTree = () => {
       fetchInspectionLevels();
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const onDeleteClick = (node) => {
+    showDeleteConfirmation(node._id, handleDelete);
   };
 
   return (
@@ -473,10 +477,12 @@ const InspectionLevelTree = () => {
               isLastChild={index === treeData.length - 1}
               loading={loading}
               onDelete={handleDelete}
+              onDeleteClick={onDeleteClick}
             />
           ))
         )}
       </TreeCard>
+      <DeleteConfirmationModal />
     </TreeContainer>
   );
 };

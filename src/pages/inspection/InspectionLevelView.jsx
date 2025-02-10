@@ -1,8 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams, Link, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+`;
+
+const ModalCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+`;
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -154,28 +207,32 @@ const LevelHierarchy = styled.div`
 `;
 
 const HierarchyNode = styled.div`
+  margin-left: ${props => props.level * 32}px;
+  margin-bottom: 16px;
   position: relative;
-  padding-left: ${props => props.level * 24}px;
-  margin-bottom: 12px;
 
   &:before {
     content: '';
     position: absolute;
-    left: ${props => (props.level - 1) * 24 + 10}px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: ${props => props.isLast ? 'transparent' : '#e2e8f0'};
+    left: -16px;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background: #e2e8f0;
   }
 
   &:after {
     content: '';
     position: absolute;
-    left: ${props => (props.level - 1) * 24 + 10}px;
-    top: 20px;
-    width: 14px;
-    height: 2px;
+    left: -16px;
+    top: -8px;
+    bottom: ${props => props.isLast ? '50%' : '-8px'};
+    width: 2px;
     background: #e2e8f0;
+  }
+
+  &:first-child:after {
+    top: 50%;
   }
 `;
 
@@ -187,6 +244,7 @@ const NodeContent = styled.div`
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  position: relative;
 `;
 
 const NodeIcon = styled.div`
@@ -303,6 +361,7 @@ const InspectionLevelView = () => {
   const { id } = useParams();
   const { loading, setLoading, handleError, inspectionService } = useOutletContext();
   const [level, setLevel] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     fetchInspectionLevel();
@@ -322,10 +381,6 @@ const InspectionLevelView = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this inspection level?')) {
-      return;
-    }
-
     try {
       setLoading(true);
       await inspectionService.deleteInspectionLevel(id);
@@ -333,30 +388,32 @@ const InspectionLevelView = () => {
       navigate('/inspection');
     } catch (error) {
       handleError(error);
+    } finally {
+      setShowDeleteModal(false);
     }
   };
 
-  const renderHierarchy = (subLevels, level = 1, parentPath = []) => {
-    return subLevels.map((node, index) => {
-      const isLast = index === subLevels.length - 1;
-      const currentPath = [...parentPath, node._id];
-      
-      return (
-        <React.Fragment key={node._id}>
-          <HierarchyNode level={level} isLast={isLast}>
-            <NodeContent>
-              <NodeIcon>
-                <Layers size={16} />
-              </NodeIcon>
-              <NodeInfo>
-                <h4>{node.name}</h4>
-                <p>{node.description}</p>
-              </NodeInfo>
-            </NodeContent>
-          </HierarchyNode>
-        </React.Fragment>
-      );
-    });
+  const renderHierarchy = (nodes, parentLevel = 0) => {
+    return nodes.map((node, index) => (
+      <React.Fragment key={node._id}>
+        <HierarchyNode level={parentLevel} isLast={index === nodes.length - 1}>
+          <NodeContent>
+            <NodeIcon>
+              <Layers size={16} />
+            </NodeIcon>
+            <NodeInfo>
+              <h4>{node.name}</h4>
+              <p>{node.description}</p>
+            </NodeInfo>
+          </NodeContent>
+        </HierarchyNode>
+        {node.children && node.children.length > 0 && (
+          <div style={{ marginLeft: 32 }}>
+            {renderHierarchy(node.children, parentLevel + 1)}
+          </div>
+        )}
+      </React.Fragment>
+    ));
   };
 
   if (loading || !level) {
@@ -365,6 +422,24 @@ const InspectionLevelView = () => {
 
   return (
     <PageContainer>
+      {showDeleteModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalCloseButton onClick={() => setShowDeleteModal(false)}>
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <p>Are you sure you want to delete this inspection level? This action cannot be undone.</p>
+            <ModalActions>
+              <Button onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+              <Button variant="danger" onClick={handleDelete} disabled={loading}>Delete</Button>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
       <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
         <ArrowLeft size={18} />
         Back to Inspection Levels
@@ -392,7 +467,7 @@ const InspectionLevelView = () => {
           </Button>
           <Button 
             variant="danger"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteModal(true)}
             disabled={loading}
           >
             <Trash2 size={16} />

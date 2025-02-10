@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
+import useDeleteConfirmation from '../../components/confirmationModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -124,11 +126,11 @@ const LevelCard = styled.div`
   }
 `;
 
-const LevelHeader = styled.div`
+const AccordionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  width: 100%;
 `;
 
 const LevelInfo = styled.div`
@@ -242,7 +244,35 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
+const AccordionTrigger = styled(Accordion.Trigger)`
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+`;
+
+const AccordionContent = styled(Accordion.Content)`
+  overflow: hidden;
+`;
+
+const ChevronIcon = styled(ChevronDown)`
+  transition: transform 300ms;
+  [data-state=open] & {
+    transform: rotate(180deg);
+  }
+`;
+
+const AccordionRoot = styled(Accordion.Root)`
+  width: 100%;
+`;
+
 const InspectionLevelList = ({ loading, setLoading, handleError, inspectionService }) => {
+
+  const {
+    showDeleteConfirmation,
+    DeleteConfirmationModal
+  } = useDeleteConfirmation();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -282,21 +312,14 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
+ 
+  
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inspection level?')) {
-      return;
-    }
 
-    try {
-      setLoading(true);
-      await inspectionService.deleteInspectionLevel(id);
-      toast.success('Inspection level deleted successfully');
-      fetchInspectionLevels();
-    } catch (error) {
-      handleError(error);
-    }
+  const onDeleteClick = (level) => {
+    showDeleteConfirmation(level._id, handleDelete);
   };
+
 
   return (
     <PageContainer>
@@ -377,54 +400,64 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
         <LevelGrid>
           {inspectionLevels.map(level => (
             <LevelCard key={level._id}>
-              <LevelHeader>
-                <LevelInfo>
-                  <LevelIcon>
-                    <Layers size={20} />
-                  </LevelIcon>
-                  <LevelDetails>
-                    <h3>{level.name}</h3>
-                    <p>{level.description}</p>
-                  </LevelDetails>
-                </LevelInfo>
-                <LevelActions>
-                  <ActionButton 
-                    as={Link} 
-                    to={`/inspection/${level._id}`}
-                    disabled={loading}
-                  >
-                    <Eye size={16} />
-                  </ActionButton>
-                  <ActionButton 
-                    as={Link} 
-                    to={`/inspection/${level._id}/edit`}
-                    disabled={loading}
-                  >
-                    <Edit size={16} />
-                  </ActionButton>
-                  <ActionButton 
-                    onClick={() => handleDelete(level._id)}
-                    disabled={loading}
-                  >
-                    <Trash2 size={16} />
-                  </ActionButton>
-                </LevelActions>
-              </LevelHeader>
-
-              <SubLevelsList>
-                {level.subLevels?.map(subLevel => (
-                  <SubLevel key={subLevel._id}>
-                    <SubLevelIcon>
-                      <ChevronRight size={16} />
-                    </SubLevelIcon>
-                    <span>{subLevel.name}</span>
-                  </SubLevel>
-                ))}
-              </SubLevelsList>
+              <AccordionRoot type="single" collapsible>
+                <Accordion.Item value={level._id}>
+                  <AccordionTrigger>
+                    <AccordionHeader>
+                      <LevelInfo>
+                        <LevelIcon>
+                          <Layers size={20} />
+                        </LevelIcon>
+                        <LevelDetails>
+                          <h3>{level.name}</h3>
+                          <p>{level.description}</p>
+                        </LevelDetails>
+                      </LevelInfo>
+                      <LevelActions>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}`}
+                          disabled={loading}
+                        >
+                          <Eye size={16} />
+                        </ActionButton>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}/edit`}
+                          disabled={loading}
+                        >
+                          <Edit size={16} />
+                        </ActionButton>
+                        <ActionButton 
+        onClick={() => onDeleteClick(level)}
+        disabled={loading}
+      >
+        <Trash2 size={16} />
+      </ActionButton>
+                        <ChevronIcon size={16} />
+                      </LevelActions>
+                    </AccordionHeader>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SubLevelsList>
+                      {level.subLevels?.map(subLevel => (
+                        <SubLevel key={subLevel._id || subLevel.id}>
+                          <SubLevelIcon>
+                            <ChevronRight size={16} />
+                          </SubLevelIcon>
+                          <span>{subLevel.name}</span>
+                        </SubLevel>
+                      ))}
+                    </SubLevelsList>
+                  </AccordionContent>
+                </Accordion.Item>
+              </AccordionRoot>
             </LevelCard>
           ))}
         </LevelGrid>
       )}
+            <DeleteConfirmationModal />
+
     </PageContainer>
   );
 };
