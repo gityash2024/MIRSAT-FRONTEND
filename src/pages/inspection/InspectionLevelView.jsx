@@ -1,17 +1,9 @@
-// src/pages/inspection/InspectionLevelView.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  Layers,
-  Activity,
-  FileText
-} from 'lucide-react';
+import { useNavigate, useParams, Link, useOutletContext } from 'react-router-dom';
+import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-// Styled Components
 const PageContainer = styled.div`
   padding: 24px;
 `;
@@ -30,6 +22,11 @@ const BackButton = styled.button`
   
   &:hover {
     color: #333;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 
@@ -118,6 +115,11 @@ const Button = styled.button`
       }
     `;
   }}
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;
 
 const ContentGrid = styled.div`
@@ -288,95 +290,59 @@ const StatusBadge = styled.span`
     '#9c27b0'};
 `;
 
-// Mock data
-const mockLevel = {
-  id: 1,
-  name: 'Initial Safety Inspection',
-  description: 'First level safety inspection for all facilities',
-  type: 'Safety',
-  createdAt: '2024-01-15',
-  stats: {
-    completedTasks: 145,
-    activeInspectors: 12,
-    avgCompletionTime: '4.2h',
-    compliance: '92%'
-  },
-  hierarchy: [
-    {
-      id: 1,
-      name: 'Equipment Check',
-      description: 'Initial verification of all safety equipment',
-      subLevels: [
-        {
-          id: 4,
-          name: 'Personal Protection Equipment',
-          description: 'Check all PPE items'
-        },
-        {
-          id: 5,
-          name: 'Emergency Equipment',
-          description: 'Verify emergency response equipment'
-        }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Safety Protocol Verification',
-      description: 'Review and verify safety protocols',
-      subLevels: []
-    },
-    {
-      id: 3,
-      name: 'Documentation Review',
-      description: 'Review all safety documentation',
-      subLevels: []
-    }
-  ],
-  recentTasks: [
-    {
-      id: 1,
-      name: 'Marina Safety Equipment Inspection',
-      assignee: 'John Doe',
-      status: 'completed',
-      date: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Beach Safety Protocol Review',
-      assignee: 'Jane Smith',
-      status: 'in_progress',
-      date: '2024-01-16'
-    },
-    {
-      id: 3,
-      name: 'Emergency Response Equipment Check',
-      assignee: 'Mike Johnson',
-      status: 'pending',
-      date: '2024-01-17'
-    }
-  ]
-};
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+  color: #1a237e;
+`;
 
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { loading, setLoading, handleError, inspectionService } = useOutletContext();
   const [level, setLevel] = useState(null);
 
   useEffect(() => {
-    setLevel(mockLevel);
+    fetchInspectionLevel();
   }, [id]);
 
-  if (!level) {
-    return <div>{'Loading...'}</div>;
-  }
+  const fetchInspectionLevel = async () => {
+    try {
+      setLoading(true);
+      const data = await inspectionService.getInspectionLevel(id);
+      setLevel(data);
+    } catch (error) {
+      handleError(error);
+      navigate('/inspection');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const renderHierarchy = (nodes, level = 1, parentPath = []) => {
-    return nodes.map((node, index) => {
-      const isLast = index === nodes.length - 1;
-      const currentPath = [...parentPath, node.id];
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this inspection level?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await inspectionService.deleteInspectionLevel(id);
+      toast.success('Inspection level deleted successfully');
+      navigate('/inspection');
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const renderHierarchy = (subLevels, level = 1, parentPath = []) => {
+    return subLevels.map((node, index) => {
+      const isLast = index === subLevels.length - 1;
+      const currentPath = [...parentPath, node._id];
       
       return (
-        <React.Fragment key={node.id}>
+        <React.Fragment key={node._id}>
           <HierarchyNode level={level} isLast={isLast}>
             <NodeContent>
               <NodeIcon>
@@ -388,16 +354,18 @@ const InspectionLevelView = () => {
               </NodeInfo>
             </NodeContent>
           </HierarchyNode>
-          {node.subLevels && node.subLevels.length > 0 && 
-            renderHierarchy(node.subLevels, level + 1, currentPath)}
         </React.Fragment>
       );
     });
   };
 
+  if (loading || !level) {
+    return <LoadingSpinner>Loading...</LoadingSpinner>;
+  }
+
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/inspection')}>
+      <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
         <ArrowLeft size={18} />
         Back to Inspection Levels
       </BackButton>
@@ -414,11 +382,19 @@ const InspectionLevelView = () => {
         </HeaderInfo>
 
         <ButtonGroup>
-          <Button as={Link} to={`/inspection/${id}/edit`}>
+          <Button 
+            as={Link} 
+            to={`/inspection/${id}/edit`}
+            disabled={loading}
+          >
             <Edit size={16} />
             Edit Level
           </Button>
-          <Button variant="danger">
+          <Button 
+            variant="danger"
+            onClick={handleDelete}
+            disabled={loading}
+          >
             <Trash2 size={16} />
             Delete Level
           </Button>
@@ -433,7 +409,7 @@ const InspectionLevelView = () => {
               Level Hierarchy
             </CardTitle>
             <LevelHierarchy>
-              {renderHierarchy(level.hierarchy)}
+              {renderHierarchy(level.subLevels || [])}
             </LevelHierarchy>
           </Card>
         </div>
@@ -447,19 +423,19 @@ const InspectionLevelView = () => {
             <StatsList>
               <StatCard>
                 <StatLabel>Completed Tasks</StatLabel>
-                <StatValue>{level.stats.completedTasks}</StatValue>
+                <StatValue>{level.metrics?.completedTasks || 0}</StatValue>
               </StatCard>
               <StatCard>
                 <StatLabel>Active Inspectors</StatLabel>
-                <StatValue>{level.stats.activeInspectors}</StatValue>
+                <StatValue>{level.metrics?.activeInspectors || 0}</StatValue>
               </StatCard>
               <StatCard>
                 <StatLabel>Avg. Completion Time</StatLabel>
-                <StatValue>{level.stats.avgCompletionTime}</StatValue>
+                <StatValue>{level.metrics?.avgCompletionTime || '0h'}</StatValue>
               </StatCard>
               <StatCard>
                 <StatLabel>Compliance Rate</StatLabel>
-                <StatValue>{level.stats.compliance}</StatValue>
+                <StatValue>{level.metrics?.complianceRate || '0%'}</StatValue>
               </StatCard>
             </StatsList>
           </Card>
@@ -467,24 +443,28 @@ const InspectionLevelView = () => {
           <Card style={{ marginTop: '24px' }}>
             <CardTitle>
               <FileText size={18} />
-              Recent Tasks
+              Assigned Tasks
             </CardTitle>
-            <TasksList>
-              {level.recentTasks.map(task => (
-                <TaskItem key={task.id}>
-                  <NodeIcon background="#f0f9ff" color="#0284c7">
-                    <FileText size={16} />
-                  </NodeIcon>
-                  <TaskInfo>
-                    <h4>{task.name}</h4>
-                    <p>Assigned to {task.assignee}</p>
-                  </TaskInfo>
-                  <StatusBadge status={task.status}>
-                    {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-                  </StatusBadge>
-                </TaskItem>
-              ))}
-            </TasksList>
+            {level.assignedTasks && level.assignedTasks.length > 0 ? (
+              <TasksList>
+                {level.assignedTasks.map(task => (
+                  <TaskItem key={task._id}>
+                    <NodeIcon background="#f0f9ff" color="#0284c7">
+                      <FileText size={16} />
+                    </NodeIcon>
+                    <TaskInfo>
+                      <h4>{task.title}</h4>
+                      <p>{task.description}</p>
+                    </TaskInfo>
+                    <StatusBadge status={task.status}>
+                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                    </StatusBadge>
+                  </TaskItem>
+                ))}
+              </TasksList>
+            ) : (
+              <p>No tasks assigned</p>
+            )}
           </Card>
         </div>
       </ContentGrid>

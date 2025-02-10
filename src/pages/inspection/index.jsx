@@ -1,20 +1,37 @@
-// src/pages/inspection/index.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import InspectionLevelList from './InspectionLevelList';
+import { inspectionService } from '../../services/inspection.service';
 
 const InspectionLevel = () => {
   const location = useLocation();
   const isListView = location.pathname === '/inspection';
+  const [loading, setLoading] = useState(false);
+
+  const handleError = (error) => {
+    toast.error(error?.response?.data?.message || 'An error occurred');
+    setLoading(false);
+  };
+
+  const outletContext = {
+    loading,
+    setLoading,
+    handleError,
+    inspectionService
+  };
 
   return (
     <div>
       {isListView ? (
-        // Show InspectionLevelList component directly when on the main inspection route
-        <InspectionLevelList />
+        <InspectionLevelList 
+          loading={loading}
+          setLoading={setLoading}
+          handleError={handleError}
+          inspectionService={inspectionService}
+        />
       ) : (
-        // Show nested routes (create, edit, view) using Outlet
-        <Outlet />
+        <Outlet context={outletContext} />
       )}
     </div>
   );

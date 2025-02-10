@@ -1,9 +1,7 @@
-// src/pages/inspection/components/InspectionLevelFilters.jsx
 import React from 'react';
 import styled from 'styled-components';
 import { X, Check } from 'lucide-react';
 
-// Updated styled components to use $ prefix for props
 const FilterContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -154,17 +152,13 @@ const filterOptions = {
     { value: 'high', label: 'High Priority' },
     { value: 'medium', label: 'Medium Priority' },
     { value: 'low', label: 'Low Priority' }
-  ],
-  completionStatus: [
-    { value: 'completed', label: 'Completed' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'overdue', label: 'Overdue' }
   ]
 };
 
-const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
+const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading }) => {
   const handleFilterChange = (category, value) => {
+    if (loading) return;
+    
     const updatedFilters = {
       ...filters,
       [category]: filters[category]?.includes(value)
@@ -175,6 +169,8 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
   };
 
   const removeFilter = (category, value) => {
+    if (loading) return;
+    
     const updatedFilters = {
       ...filters,
       [category]: filters[category]?.filter(item => item !== value) || []
@@ -183,6 +179,8 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
   };
 
   const clearAllFilters = () => {
+    if (loading) return;
+    
     const clearedFilters = Object.keys(filterOptions).reduce((acc, key) => ({
       ...acc,
       [key]: []
@@ -197,9 +195,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
       <FilterContainer>
         {Object.entries(filterOptions).map(([category, options]) => (
           <FilterGroup key={category}>
-            <h3>{category.replace(/([A-Z])/g, ' $1').split('_').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ')}</h3>
+            <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
             <CheckboxGroup>
               {options.map(option => (
                 <CheckboxLabel key={option.value}>
@@ -207,6 +203,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
                     type="checkbox"
                     checked={filters[category]?.includes(option.value) || false}
                     onChange={() => handleFilterChange(category, option.value)}
+                    disabled={loading}
                   />
                   <CustomCheckbox $checked={filters[category]?.includes(option.value)}>
                     {filters[category]?.includes(option.value) && (
@@ -229,7 +226,10 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
               return option && (
                 <FilterTag key={`${category}-${value}`}>
                   {option.label}
-                  <button onClick={() => removeFilter(category, value)}>
+                  <button 
+                    onClick={() => removeFilter(category, value)}
+                    disabled={loading}
+                  >
                     <X size={12} />
                   </button>
                 </FilterTag>
@@ -241,11 +241,18 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose }) => {
 
       <FilterActions>
         {hasActiveFilters && (
-          <Button onClick={clearAllFilters}>
+          <Button 
+            onClick={clearAllFilters}
+            disabled={loading}
+          >
             Clear All
           </Button>
         )}
-        <Button $variant="primary" onClick={onClose}>
+        <Button 
+          $variant="primary" 
+          onClick={onClose}
+          disabled={loading}
+        >
           Apply Filters
         </Button>
       </FilterActions>
