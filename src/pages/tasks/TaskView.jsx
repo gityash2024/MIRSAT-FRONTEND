@@ -1,7 +1,7 @@
-// src/pages/tasks/TaskView.jsx
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Edit, 
@@ -9,128 +9,20 @@ import {
   User, 
   Calendar,
   AlertTriangle,
-  Send
+  Send,
+  Download,
+  Paperclip
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import TaskStatus from './components/TaskStatus';
 import TaskPriority from './components/TaskPriority';
+import TaskAssignee from './components/TaskAssignee';
+import { getTaskById, addTaskComment, updateTaskStatus } from '../../store/slices/taskSlice';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
 
 const PageContainer = styled.div`
   padding: 24px;
-`;
-const mockTasks = [
-  {
-    id: 1,
-    title: 'Beach Safety Inspection - Zone A',
-    description: 'Conduct comprehensive safety inspection of Zone A beach area, including lifeguard equipment, warning signs, and emergency response facilities.',
-    assignee: 'John Doe',
-    priority: 'High',
-    status: 'In Progress',
-    dueDate: '2024-01-20',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: [
-      {
-        id: 1,
-        author: 'Jane Smith',
-        content: 'Initial equipment check completed. Some life jackets need replacement.',
-        timestamp: '2024-01-16 09:30'
-      },
-      {
-        id: 2,
-        author: 'John Doe',
-        content: 'Ordered new life jackets, should arrive by tomorrow.',
-        timestamp: '2024-01-16 10:15'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Marina Equipment Verification - Dock B',
-    description: 'Verify all equipment at Dock B including mooring lines, cleats, and power pedestals.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'Pending',
-    dueDate: '2024-01-22',
-    created: '2024-01-14',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 3,
-    title: 'Safety Training Documentation Review',
-    description: 'Review and update all safety training documentation for compliance with new regulations.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-18',
-    created: '2024-01-12',
-    type: 'Documentation Review',
-    comments: []
-  },
-  {
-    id: 4,
-    title: 'Emergency Response Training - Staff Group A',
-    description: 'Conduct emergency response training session for Staff Group A.',
-    assignee: 'Sarah Williams',
-    priority: 'Medium',
-    status: 'Completed',
-    dueDate: '2024-01-15',
-    created: '2024-01-10',
-    type: 'Training',
-    comments: []
-  },
-  {
-    id: 5,
-    title: 'Beach Cleanliness Inspection - Zone B',
-    description: 'Inspect Zone B beach area for cleanliness and environmental compliance.',
-    assignee: 'John Doe',
-    priority: 'Low',
-    status: 'In Progress',
-    dueDate: '2024-01-21',
-    created: '2024-01-16',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 6,
-    title: 'Lifeguard Equipment Maintenance',
-    description: 'Perform routine maintenance on all lifeguard equipment at main tower.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Pending',
-    dueDate: '2024-01-23',
-    created: '2024-01-16',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 7,
-    title: 'Water Quality Testing - North Beach',
-    description: 'Conduct water quality tests at North Beach sampling points.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'In Progress',
-    dueDate: '2024-01-19',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 8,
-    title: 'Marina Security Protocol Update',
-    description: 'Review and update marina security protocols based on recent assessment.',
-    assignee: 'Sarah Williams',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-25',
-    created: '2024-01-17',
-    type: 'Documentation Review',
-    comments: []
-  
-  }
-];
-const Header = styled.div`
-  margin-bottom: 24px;
 `;
 
 const BackButton = styled.button`
@@ -232,6 +124,47 @@ const MetaItem = styled.div`
   }
 `;
 
+const AttachmentList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+`;
+
+const AttachmentItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 14px;
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .download-button {
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #1a237e;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+  }
+`;
+
 const CommentSection = styled.div`
   display: flex;
   flex-direction: column;
@@ -273,6 +206,11 @@ const SendButton = styled.button`
   &:hover {
     background: #151b4f;
   }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `;
 
 const Comment = styled.div`
@@ -303,38 +241,104 @@ const Comment = styled.div`
   }
 `;
 
+const LoadingState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+`;
+
+const TaskProgress = styled.div`
+  margin-top: 16px;
+  
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .progress-text {
+    font-size: 14px;
+    color: #666;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .fill {
+      height: 100%;
+      background: #1a237e;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+  }
+`;
+
 const TaskView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
-  const [task, setTask] = useState(null);
+  const dispatch = useDispatch();
+  const { hasPermission } = usePermissions();
+  
+  const { currentTask: task, loading } = useSelector((state) => state.tasks);
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    const foundTask = mockTasks.find(t => t.id === parseInt(taskId));
-    setTask(foundTask);
-  }, [taskId]);
+    if (taskId) {
+      dispatch(getTaskById(taskId));
+    }
+  }, [taskId, dispatch]);
 
-  if (!task) {
-    return <div>Loading...</div>;
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      await dispatch(addTaskComment({ id: taskId, content: newComment })).unwrap();
+      setNewComment('');
+      toast.success('Comment added successfully');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // const handleDownloadAttachment = async (attachmentId, filename) => {
+  //   try {
+  //     await dispatch(downloadTaskAttachment({ taskId, attachmentId, filename })).unwrap();
+  //   } catch (error) {
+  //     toast.error('Failed to download attachment');
+  //   }
+  // };
+
+  const handleStatusUpdate = async (newStatus) => {
+    try {
+      await dispatch(updateTaskStatus({
+        id: taskId,
+        status: newStatus,
+        comment: `Status updated to ${newStatus}`
+      })).unwrap();
+      toast.success('Status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  if (loading) {
+    return <LoadingState>Loading...</LoadingState>;
   }
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-
-    const comment = {
-      id: task.comments.length + 1,
-      author: 'Current User', // In real app, get from auth context
-      content: newComment,
-      timestamp: new Date().toLocaleString()
-    };
-
-    setTask(prev => ({
-      ...prev,
-      comments: [...prev.comments, comment]
-    }));
-    setNewComment('');
-  };
+  if (!task) {
+    return <div>Task not found</div>;
+  }
 
   return (
     <PageContainer>
@@ -348,13 +352,15 @@ const TaskView = () => {
           <TaskTitle>{task.title}</TaskTitle>
           <MetaItem>
             <Clock size={16} className="icon" />
-            Created on {task.created}
+            Created on {new Date(task.createdAt).toLocaleDateString()}
           </MetaItem>
         </div>
-        <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
-          <Edit size={16} />
-          Edit Task
-        </EditButton>
+        {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+          <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
+            <Edit size={16} />
+            Edit Task
+          </EditButton>
+        )}
       </TaskHeader>
 
       <ContentGrid>
@@ -362,6 +368,40 @@ const TaskView = () => {
           <Card>
             <CardTitle>Description</CardTitle>
             <Description>{task.description}</Description>
+            
+            {task.attachments?.length > 0 && (
+              <AttachmentList>
+                <h3>Attachments</h3>
+                {task.attachments.map(attachment => (
+                  <AttachmentItem key={attachment._id}>
+                    <div className="file-info">
+                      <Paperclip size={16} />
+                      {attachment.filename}
+                    </div>
+                    <button 
+                      className="download-button"
+                      // onClick={() => handleDownloadAttachment(attachment._id, attachment.filename)}
+                    >
+                      <Download size={14} />
+                      Download
+                    </button>
+                  </AttachmentItem>
+                ))}
+              </AttachmentList>
+            )}
+            
+            <TaskProgress>
+              <div className="progress-header">
+                <span className="progress-text">Overall Progress</span>
+                <span className="progress-text">{task.overallProgress}%</span>
+              </div>
+              <div className="progress-bar">
+                <div 
+                  className="fill" 
+                  style={{ width: `${task.overallProgress}%` }}
+                />
+              </div>
+            </TaskProgress>
           </Card>
 
           <Card>
@@ -373,16 +413,21 @@ const TaskView = () => {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                 />
-                <SendButton onClick={handleAddComment}>
+                <SendButton 
+                  onClick={handleAddComment}
+                  disabled={isSubmitting || !newComment.trim()}
+                >
                   <Send size={16} />
                   Post
                 </SendButton>
               </CommentInput>
-              {task.comments.map(comment => (
-                <Comment key={comment.id}>
+              {task.comments?.map(comment => (
+                <Comment key={comment._id}>
                   <div className="header">
-                    <span className="author">{comment.author}</span>
-                    <span className="timestamp">{comment.timestamp}</span>
+                    <span className="author">{comment.user.name}</span>
+                    <span className="timestamp">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </span>
                   </div>
                   <p className="content">{comment.content}</p>
                 </Comment>
@@ -397,19 +442,35 @@ const TaskView = () => {
             <div className="space-y-4">
               <MetaItem>
                 <User size={16} className="icon" />
-                Assignee: {task.assignee}
+                Assignees:
+                {task.assignedTo?.map(user => (
+                  <TaskAssignee 
+                    key={user._id}
+                    assignee={user.name}
+                    role={user.role}
+                  />
+                ))}
               </MetaItem>
               <MetaItem>
                 <Calendar size={16} className="icon" />
-                Due Date: {task.dueDate}
+                Due Date: {new Date(task.deadline).toLocaleDateString()}
               </MetaItem>
               <MetaItem>
                 <AlertTriangle size={16} className="icon" />
                 Priority: <TaskPriority priority={task.priority} />
               </MetaItem>
               <MetaItem>
-                Status: <TaskStatus status={task.status} />
+                Status: <TaskStatus 
+                  status={task.status}
+                  onStatusChange={handleStatusUpdate}
+                  canUpdate={hasPermission(PERMISSIONS.UPDATE_TASK_STATUS)}
+                />
               </MetaItem>
+              {task.location && (
+                <MetaItem>
+                  Location: {task.location}
+                </MetaItem>
+              )}
             </div>
           </Card>
         </div>

@@ -114,7 +114,7 @@ const LevelGrid = styled.div`
   gap: 16px;
 `;
 
-const LevelCard = styled.div`
+const LevelCard = styled.div`fetchInspectionLevels
   background: white;
   border-radius: 12px;
   padding: 20px;
@@ -267,6 +267,7 @@ const AccordionRoot = styled(Accordion.Root)`
   width: 100%;
 `;
 
+
 const InspectionLevelList = ({ loading, setLoading, handleError, inspectionService }) => {
 
   const {
@@ -294,6 +295,7 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
         search: searchTerm
       };
       const response = await inspectionService.getInspectionLevels(params);
+      console.log(response,'----------------response of inspection levels')
       setInspectionLevels(response.results || []);
     } catch (error) {
       handleError(error);

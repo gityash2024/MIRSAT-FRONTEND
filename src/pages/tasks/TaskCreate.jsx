@@ -51,9 +51,7 @@ const FormContainer = styled.div`
 const TaskCreate = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = (formData) => {
-    // Handle form submission
-    console.log(formData);
+  const handleCancel = () => {
     navigate('/tasks');
   };
 
@@ -69,7 +67,9 @@ const TaskCreate = () => {
       </Header>
 
       <FormContainer>
-        <TaskForm onSubmit={handleSubmit} />
+        <TaskForm 
+          onCancel={handleCancel} 
+        />
       </FormContainer>
     </PageContainer>
   );
