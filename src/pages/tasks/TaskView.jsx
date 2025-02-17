@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { 
   ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
   Send, Download, Paperclip, BarChart, TrendingUp, Users,
-  Circle, ChevronRight
+  Circle, ChevronRight, Filter
 } from 'lucide-react';
 import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
@@ -22,9 +22,33 @@ const PageContainer = styled.div`
 
 const Header = styled.div`
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+const HeaderTop = styled.div`
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+`;
+
+const HeaderFilters = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const FilterSelect = styled.select`
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
 `;
 
 const BackButton = styled.button`
@@ -171,50 +195,108 @@ const ProgressBar = styled.div`
   }
 `;
 
-const InspectionTimeline = styled.div`
+const MilestoneTimeline = styled.div`
   margin-top: 20px;
-`;
-
-const TimelineItem = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
   position: relative;
-  &:not(:last-child):before {
+  padding-left: 24px;
+  &:before {
     content: '';
     position: absolute;
     left: 7px;
-    top: 28px;
+    top: 0;
     bottom: 0;
     width: 2px;
-    background: ${props => props.completed ? '#1a237e' : '#e2e8f0'};
+    background: #e2e8f0;
   }
 `;
 
-const TimelineDot = styled.div`
+const MilestoneItem = styled.div`
+  position: relative;
+  padding: 16px 0;
+  &:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+  }
+`;
+
+
+
+const MilestoneContent = styled.div`
+  margin-left: 8px;
+`;
+
+const MilestoneHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const MilestoneTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+`;
+
+const MilestoneDot = styled.div`
+  position: absolute;
+  left: -24px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: ${props => props.completed ? '#1a237e' : '#e2e8f0'};
-  flex-shrink: 0;
+  background: ${({ status }) => 
+    status === 'completed' ? '#10b981' : 
+    status === 'in_progress' ? '#3b82f6' : 
+    '#e2e8f0'};
+  border: 2px solid white;
 `;
 
-const TimelineContent = styled.div`
-  flex: 1;
-  .title {
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 4px;
-  }
-  .description {
-    font-size: 14px;
-    color: #666;
-  }
+const MilestoneStatus = styled.span`
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: ${({ status }) => 
+    status === 'completed' ? '#ecfdf5' : 
+    status === 'in_progress' ? '#eff6ff' : 
+    '#f8fafc'};
+  color: ${({ status }) => 
+    status === 'completed' ? '#10b981' : 
+    status === 'in_progress' ? '#3b82f6' : 
+    '#64748b'};
+`;
+
+const MilestoneDescription = styled.p`
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0;
+`;
+
+const MilestoneProgress = styled.div`
+  margin-top: 12px;
+`;
+
+
+const AssigneeHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const AssigneeName = styled.h3`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+`;
+
+const AssigneeStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
 `;
 
 const ChartCard = styled(Card)`
-  height: 320px;
+  height: 340px;
 `;
 
 const CommentSection = styled.div`
@@ -239,7 +321,16 @@ const CommentInput = styled.div`
     }
   }
 `;
+const AssigneeProgress = styled.div`
+  margin-top: 24px;
+`;
 
+const AssigneeCard = styled.div`
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+`;
 const CommentList = styled.div`
   display: flex;
   flex-direction: column;
@@ -291,7 +382,6 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 `;
-
 const TaskView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -302,12 +392,19 @@ const TaskView = () => {
   task = task?.data;
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = useState('all');
 
   useEffect(() => {
     if (taskId) {
       dispatch(getTaskById(taskId));
     }
   }, [taskId, dispatch]);
+
+  useEffect(() => {
+    if (task?.assignedTo?.length > 0) {
+      setSelectedAssignee(task.assignedTo[0]._id);
+    }
+  }, [task?.assignedTo]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -337,49 +434,72 @@ const TaskView = () => {
     }
   };
 
-  if (loading) {
+  if (loading || !task) {
     return (
       <PageContainer>
-        <div>Loading...</div>
+        <div>{loading ? 'Loading...' : 'Task not found'}</div>
       </PageContainer>
     );
   }
 
-  if (!task) {
-    return (
-      <PageContainer>
-        <div>Task not found</div>
-      </PageContainer>
-    );
-  }
+  const getSubLevelStatus = (subLevelId) => {
+    const progressItem = task.progress?.find(p => p.subLevelId === subLevelId);
+    return progressItem?.status || 'pending';
+  };
 
-  const progressData = Array.from({ length: 7 }, (_, i) => ({
-    name: `Week ${i + 1}`,
-    progress: Math.floor(Math.random() * 100)
-  }));
+  const calculateAssigneeProgress = (assigneeId) => {
+    const assigneeProgress = task.progress?.filter(p => p.completedBy?._id === assigneeId);
+    const completed = assigneeProgress?.filter(p => p.status === 'completed').length || 0;
+    const inProgress = assigneeProgress?.filter(p => p.status === 'in_progress').length || 0;
+    const total = task.inspectionLevel?.subLevels?.length || 0;
+    return {
+      completed,
+      inProgress,
+      total,
+      percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    };
+  };
 
   const inspectionData = task.inspectionLevel?.subLevels?.map(level => ({
     name: level.name,
-    completed: level.isCompleted ? 100 : 0
+    completed: getSubLevelStatus(level._id) === 'completed' ? 100 : 
+              getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
   })) || [];
 
   return (
     <PageContainer>
       <Header>
-        <BackButton onClick={() => navigate('/tasks')}>
-          <ArrowLeft size={18} />
-          Back to Tasks
-        </BackButton>
-        <HeaderContent>
-          <PageTitle>{task.title}</PageTitle>
-          <SubTitle>Task Details and Progress</SubTitle>
-        </HeaderContent>
-        {hasPermission(PERMISSIONS.EDIT_TASKS) && (
-          <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
-            <Edit size={16} />
-            Edit Task
-          </EditButton>
-        )}
+        <HeaderTop>
+          <BackButton onClick={() => navigate('/tasks')}>
+            <ArrowLeft size={18} />
+            Back to Tasks
+          </BackButton>
+          <HeaderContent>
+            <PageTitle>{task.title}</PageTitle>
+            <SubTitle>Task Details and Progress</SubTitle>
+          </HeaderContent>
+          {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+            <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
+              <Edit size={16} />
+              Edit Task
+            </EditButton>
+          )}
+        </HeaderTop>
+        
+        <HeaderFilters>
+          <Filter size={16} />
+          <FilterSelect 
+            value={selectedAssignee}
+            onChange={(e) => setSelectedAssignee(e.target.value)}
+          >
+            <option value="all">All Assignees</option>
+            {task.assignedTo?.map(user => (
+              <option key={user._id} value={user._id}>
+                {user.name}
+              </option>
+            ))}
+          </FilterSelect>
+        </HeaderFilters>
       </Header>
 
       <ContentGrid>
@@ -392,11 +512,6 @@ const TaskView = () => {
             <Description>{task.description}</Description>
 
             <MetaGrid>
-              <MetaItem>
-                <User size={16} className="icon" />
-                <strong>Assignees:</strong>
-                <TaskAssignee assignees={task.assignedTo || []} maxDisplay={3} />
-              </MetaItem>
               <MetaItem>
                 <Calendar size={16} className="icon" />
                 <strong>Due Date:</strong>
@@ -418,43 +533,46 @@ const TaskView = () => {
               </MetaItem>
             </MetaGrid>
 
-            <StatsGrid>
-              <StatCard>
-                <div className="label">Overall Progress</div>
-                <div className="value">{task.overallProgress || 0}%</div>
-                <ProgressBar>
-                  <div className="fill" style={{ width: `${task.overallProgress || 0}%` }} />
-                </ProgressBar>
-              </StatCard>
-              <StatCard>
-                <div className="label">Sub-levels</div>
-                <div className="value">
-                  {task.inspectionLevel?.subLevels?.filter(sl => sl.isCompleted).length || 0}/
-                  {task.inspectionLevel?.subLevels?.length || 0}
-                </div>
-              </StatCard>
-              <StatCard>
-                <div className="label">Time Spent</div>
-                <div className="value">0 hrs</div>
-              </StatCard>
-            </StatsGrid>
+            <AssigneeProgress>
+            {selectedAssignee !== 'all' && task.assignedTo?.map(assignee => {
+  if (assignee._id === selectedAssignee) {
+    const progress = calculateAssigneeProgress(assignee._id);
+    return (
+      <AssigneeCard key={assignee._id}>
+        <AssigneeHeader>
+          <AssigneeName>{assignee.name}</AssigneeName>
+          <span>{progress.percentage}% Complete</span>
+        </AssigneeHeader>
+        <AssigneeStats>
+          <StatCard>
+            <div className="label">Completed</div>
+            <div className="value">{progress.completed}</div>
+          </StatCard>
+          <StatCard>
+            <div className="label">In Progress</div>
+            <div className="value">{progress.inProgress}</div>
+          </StatCard>
+          <StatCard>
+            <div className="label">Total</div>
+            <div className="value">{progress.total}</div>
+          </StatCard>
+        </AssigneeStats>
+        <ProgressBar>
+          <div 
+            className="fill" 
+            style={{ width: `${progress.percentage}%` }}
+          />
+        </ProgressBar>
+      </AssigneeCard>
+    );
+  }
+  return null;
+})}
+            </AssigneeProgress>
           </Card>
 
           <ChartCard>
-            <CardTitle>Progress Over Time</CardTitle>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="progress" stroke="#1a237e" />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard>
-            <CardTitle>Inspection Level Completion</CardTitle>
+            <CardTitle>Inspection Progress</CardTitle>
             <ResponsiveContainer width="100%" height={250}>
               <RechartsBarChart data={inspectionData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -465,22 +583,81 @@ const TaskView = () => {
               </RechartsBarChart>
             </ResponsiveContainer>
           </ChartCard>
+          <Card style={{ marginTop: '24px' }}>
+            <CardTitle>Comments</CardTitle>
+            <CommentSection>
+              <CommentInput>
+                <textarea 
+                  placeholder="Add a comment..." 
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button 
+                  onClick={handleAddComment}
+                  disabled={isSubmitting || !newComment.trim()}
+                >
+                  <Send size={16} />
+                  Post
+                </Button>
+              </CommentInput>
+
+              <CommentList>
+                {task.comments?.map((comment, index) => (
+                  <Comment key={index}>
+                    <div className="header">
+                      <span className="author">{comment.user?.name}</span>
+                      <span className="timestamp">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="content">{comment.content}</p>
+                  </Comment>
+                ))}
+                {(!task.comments || task.comments.length === 0) && (
+                  <p>No comments yet</p>
+                )}
+              </CommentList>
+            </CommentSection>
+          </Card>
         </MainContent>
 
         <div>
           <Card>
             <CardTitle>Inspection Milestones</CardTitle>
-            <InspectionTimeline>
-              {task.inspectionLevel?.subLevels?.map((level, index) => (
-                <TimelineItem key={level._id} completed={level.isCompleted}>
-                  <TimelineDot completed={level.isCompleted} />
-                  <TimelineContent>
-                    <div className="title">{level.name}</div>
-                    <div className="description">{level.description}</div>
-                  </TimelineContent>
-                </TimelineItem>
-              ))}
-            </InspectionTimeline>
+            <MilestoneTimeline>
+              {task.inspectionLevel?.subLevels?.map((level) => {
+                const status = getSubLevelStatus(level._id);
+                return (
+                  <MilestoneItem key={level._id}>
+                    <MilestoneDot status={status} />
+                    <MilestoneContent>
+                      <MilestoneHeader>
+                        <MilestoneTitle>{level.name}</MilestoneTitle>
+                        <MilestoneStatus status={status}>
+                          {status.replace('_', ' ')}
+                        </MilestoneStatus>
+                      </MilestoneHeader>
+                      <MilestoneDescription>
+                        {level.description}
+                      </MilestoneDescription>
+                      {status !== 'pending' && (
+                        <MilestoneProgress>
+                          <ProgressBar>
+                            <div 
+                              className="fill" 
+                              style={{ 
+                                width: status === 'completed' ? '100%' : '50%',
+                                background: status === 'completed' ? '#10b981' : '#3b82f6'
+                              }} 
+                            />
+                          </ProgressBar>
+                        </MilestoneProgress>
+                      )}
+                    </MilestoneContent>
+                  </MilestoneItem>
+                );
+              })}
+            </MilestoneTimeline>
           </Card>
 
           <Card style={{ marginTop: '24px' }}>
@@ -529,42 +706,7 @@ const TaskView = () => {
             )}
           </Card>
 
-          <Card style={{ marginTop: '24px' }}>
-            <CardTitle>Comments</CardTitle>
-            <CommentSection>
-              <CommentInput>
-                <textarea 
-                  placeholder="Add a comment..." 
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-                <Button 
-                  onClick={handleAddComment}
-                  disabled={isSubmitting || !newComment.trim()}
-                >
-                  <Send size={16} />
-                  Post
-                </Button>
-              </CommentInput>
-
-              <CommentList>
-                {task.comments?.map((comment, index) => (
-                  <Comment key={index}>
-                    <div className="header">
-                      <span className="author">{comment.user?.name}</span>
-                      <span className="timestamp">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="content">{comment.content}</p>
-                  </Comment>
-                ))}
-                {(!task.comments || task.comments.length === 0) && (
-                  <p>No comments yet</p>
-                )}
-              </CommentList>
-            </CommentSection>
-          </Card>
+      
         </div>
       </ContentGrid>
     </PageContainer>
