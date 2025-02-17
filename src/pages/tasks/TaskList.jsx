@@ -113,7 +113,12 @@ const FilterSection = styled.div`
 const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
-  const { tasks, loading, filters, pagination } = useSelector((state) => state.tasks);
+  const { tasks, loading, filters } = useSelector((state) => state.tasks);
+  const pagination = {
+    page: 1,
+    limit: 10,
+    total: tasks.length
+  }
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
