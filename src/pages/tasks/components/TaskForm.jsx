@@ -15,7 +15,6 @@ const FormRow = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
-
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
@@ -39,7 +38,6 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
-
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -55,7 +53,6 @@ const TextArea = styled.textarea`
   min-height: 100px;
   resize: vertical;
   transition: all 0.3s;
-
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -70,7 +67,6 @@ const Select = styled.select`
   font-size: 14px;
   background: white;
   transition: all 0.3s;
-
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -104,7 +100,6 @@ const SelectedItem = styled.span`
   align-items: center;
   gap: 4px;
   font-size: 12px;
-
   button {
     background: none;
     border: none;
@@ -113,7 +108,6 @@ const SelectedItem = styled.span`
     display: flex;
     align-items: center;
     color: #64748b;
-
     &:hover {
       color: #dc2626;
     }
@@ -139,7 +133,6 @@ const Option = styled.div`
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.2s;
-
   &:hover {
     background: #f1f5f9;
   }
@@ -160,7 +153,6 @@ const Switch = styled.div`
   border-radius: 20px;
   padding: 2px;
   transition: all 0.3s;
-
   &::before {
     content: '';
     position: absolute;
@@ -179,7 +171,6 @@ const AttachmentSection = styled.div`
   padding: 20px;
   text-align: center;
   transition: all 0.3s;
-
   &:hover {
     border-color: #1a237e;
   }
@@ -204,7 +195,6 @@ const AttachmentItem = styled.div`
   background: #f8fafc;
   border-radius: 4px;
   position: relative;
-
   button {
     background: none;
     border: none;
@@ -215,7 +205,6 @@ const AttachmentItem = styled.div`
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-
     &:hover {
       color: #dc2626;
     }
@@ -261,16 +250,13 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
-
   ${props => props.variant === 'primary' ? `
     background: #1a237e;
     color: white;
     border: none;
-
     &:hover {
       background: #151b4f;
     }
-
     &:disabled {
       opacity: 0.7;
       cursor: not-allowed;
@@ -279,7 +265,6 @@ const Button = styled.button`
     background: white;
     color: #1a237e;
     border: 1px solid #1a237e;
-
     &:hover {
       background: #f5f7fb;
     }
@@ -290,10 +275,18 @@ const TaskForm = React.memo(({
   initialData = {}, 
   onCancel, 
   submitButtonText = 'Save',
-  isSubmitting: propIsSubmitting = false 
+  isSubmitting: propIsSubmitting = false,
+  usersProp = [],
+  inspectionLevelsProp = []
 }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
+  const stateUsers = useSelector(state => state.users.users);
+  const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
+
+  const users = usersProp.length > 0 ? usersProp : stateUsers;
+  const inspectionLevels = inspectionLevelsProp.length > 0 ? inspectionLevelsProp : stateInspectionLevels;
+
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     description: initialData.description || '',
@@ -323,9 +316,6 @@ const TaskForm = React.memo(({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
 
-  const inspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
-  const users = useSelector(state => state.users.users);
-
   const handleFileUpload = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -344,6 +334,7 @@ const TaskForm = React.memo(({
       }
 
       const responseData = await response.json();
+      console.log(responseData)
       return responseData.fileUrl;
     } catch (error) {
       toast.error(`Error uploading file: ${error.message}`);
@@ -402,6 +393,7 @@ const TaskForm = React.memo(({
   const handleRemoveAttachment = (index) => {
     setAttachmentFiles(prev => prev.filter((_, i) => i !== index));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -413,8 +405,8 @@ const TaskForm = React.memo(({
       .map(file => file.url);
     const attachmentsData = uploadedAttachments.map(url => ({
       url: url,
-      filename: url.split('/').pop(), // Extract filename from URL
-      contentType: '' // You might want to determine this dynamically
+      filename: url.split('/').pop(),
+      contentType: ''
     }));
   
     const submissionData = {
@@ -447,6 +439,7 @@ const TaskForm = React.memo(({
       setIsSubmitting(false);
     }
   };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required';
@@ -546,10 +539,10 @@ const TaskForm = React.memo(({
           <MultiSelectHeader onClick={() => setShowUserDropdown(!showUserDropdown)}>
             {formData.assignedTo.length > 0 ? (
               formData.assignedTo.map(userId => {
-                const user = users.find(u => u._id === userId);
-                return (
+                const user = users?.find(u => u._id === userId);
+                return user ? (
                   <SelectedItem key={userId}>
-                    {user?.name}
+                    {user.name}
                     <button type="button" onClick={(e) => {
                       e.stopPropagation();
                       handleRemoveUser(userId);
@@ -557,7 +550,7 @@ const TaskForm = React.memo(({
                       <X size={12} />
                     </button>
                   </SelectedItem>
-                );
+                ) : null;
               })
             ) : (
               <span style={{ color: '#64748b' }}>Select users</span>
@@ -566,7 +559,7 @@ const TaskForm = React.memo(({
           </MultiSelectHeader>
           {showUserDropdown && (
             <MultiSelectDropdown>
-              {users.map(user => (
+              {users?.map(user => (
                 <Option
                   key={user._id}
                   onClick={() => handleUserToggle(user._id)}
