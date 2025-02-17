@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
 import TaskPriority from './TaskPriority';
+import TaskAssignee from './TaskAssignee';
+import { PERMISSIONS } from '../../../utils/permissions';
+import { deleteTaskAttachment } from '../../../store/slices/taskSlice';
+import usePermissions from '../../../hooks/usePermissions';
 
 const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 `;
 
@@ -20,6 +26,12 @@ const Table = styled.table`
     padding: 16px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    position: relative;
+    transition: all 0.2s ease;
   }
 
   th {
@@ -27,6 +39,12 @@ const Table = styled.table`
     font-weight: 600;
     color: #333;
     font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      background: #e8eaf6;
+    }
   }
 
   td {
@@ -39,91 +57,312 @@ const Table = styled.table`
   }
 `;
 
+const DialogContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+`;
+
+const DialogTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 8px;
+`;
+
+const DialogMessage = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+`;
+
+const DialogActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+`;
+
+const DialogButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  ${props => props.variant === 'danger' ? `
+    background: #dc2626;
+    color: white;
+    border: none;
+
+    &:hover {
+      background: #b91c1c;
+    }
+  ` : `
+    background: white;
+    color: #666;
+    border: 1px solid #e0e0e0;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  `}
+`;
+const LoadingOverlay = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #666;
+  font-size: 14px;
+`;
+
+const NoDataMessage = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #666;
+  font-size: 14px;
+`;
+
 const ActionsMenu = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+`;
+
+const PaginationInfo = styled.div`
+  color: #666;
+  font-size: 14px;
+`;
+
+const PaginationButtons = styled.div`
   display: flex;
   gap: 8px;
 `;
 
-const ActionButton = styled.button`
-  padding: 6px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #666;
+const PaginationButton = styled.button`
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  &:hover {
-    background: #f5f7fb;
-    color: #1a237e;
+  &:hover:not(:disabled) {
+    background: #f5f5f5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
-const TaskTable = ({ tasks, filters, searchTerm }) => {
+const DeleteConfirmDialog = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+`;
+
+
+
+const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
   const navigate = useNavigate();
-
-  const filteredTasks = tasks.filter(task => {
-    // Apply filters
-    const matchesStatus = filters.status.length === 0 || filters.status.includes(task.status);
-    const matchesPriority = filters.priority.length === 0 || filters.priority.includes(task.priority);
-    const matchesType = filters.type.length === 0 || filters.type.includes(task.type);
-    const matchesAssignee = filters.assignee.length === 0 || filters.assignee.includes(task.assignee);
-
-    // Apply search
-    const matchesSearch = 
-      searchTerm === '' || 
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.assignee.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesStatus && matchesPriority && matchesType && matchesAssignee && matchesSearch;
+  const dispatch = useDispatch();
+  const { hasPermission } = usePermissions();
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [sortConfig, setSortConfig] = useState({
+    key: 'createdAt',
+    direction: 'desc'
   });
 
-  const handleDeleteTask = (taskId) => {
-    // Add confirmation dialog and deletion logic here
-    console.log('Delete task:', taskId);
+  const handleSort = (key) => {
+    const direction = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    setSortConfig({ key, direction });
+    onSort?.({ key, direction });
   };
 
+  const handleViewTask = (taskId) => {
+    navigate(`/tasks/${taskId}`);
+    setActiveDropdown(null);
+  };
+
+  const handleEditTask = (taskId) => {
+    navigate(`/tasks/${taskId}/edit`);
+    setActiveDropdown(null);
+  };
+
+  const handleDeleteClick = (task) => {
+    setDeleteConfirm(task);
+    setActiveDropdown(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await dispatch(deleteTaskAttachment(deleteConfirm._id)).unwrap();
+      toast.success('Task deleted successfully');
+      setDeleteConfirm(null);
+    } catch (error) {
+      toast.error('Failed to delete task');
+    }
+  };
+
+  if (loading) {
+    return (
+      <TableContainer>
+        <LoadingOverlay>Loading tasks...</LoadingOverlay>
+      </TableContainer>
+    );
+  }
+
+  if (!tasks.length) {
+    return (
+      <TableContainer>
+        <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
+      </TableContainer>
+    );
+  }
+
   return (
-    <TableContainer>
-      <Table>
-        <thead>
-          <tr>
-            <th>Task Name</th>
-            <th>Type</th>
-            <th>Assignee</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Due Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredTasks.map(task => (
-            <tr key={task.id}>
-              <td>{task.title}</td>
-              <td>{task.type}</td>
-              <td>{task.assignee}</td>
-              <td><TaskPriority priority={task.priority} /></td>
-              <td><TaskStatus status={task.status} /></td>
-              <td>{task.dueDate}</td>
-              <td>
-                <ActionsMenu>
-                  <ActionButton onClick={() => navigate(`/tasks/${task.id}`)}>
-                    <Eye size={16} />
-                  </ActionButton>
-                  <ActionButton onClick={() => navigate(`/tasks/${task.id}/edit`)}>
-                    <Edit size={16} />
-                  </ActionButton>
-                  <ActionButton onClick={() => handleDeleteTask(task.id)}>
-                    <Trash size={16} />
-                  </ActionButton>
-                </ActionsMenu>
-              </td>
+    <>
+      <TableContainer>
+        <Table>
+          <thead>
+            <tr>
+              <th onClick={() => handleSort('title')}>Task Name</th>
+              <th onClick={() => handleSort('inspectionLevel')}>Inspection Level</th>
+              <th onClick={() => handleSort('assignedTo')}>Assignee</th>
+              <th onClick={() => handleSort('priority')}>Priority</th>
+              <th onClick={() => handleSort('status')}>Status</th>
+              <th onClick={() => handleSort('deadline')}>Due Date</th>
+              <th>Progress</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-    </TableContainer>
+          </thead>
+          <tbody>
+            {tasks.map(task => (
+              <tr key={task._id}>
+                <td>{task.title}</td>
+                <td>{task.inspectionLevel?.name}</td>
+                <td>
+                  <TaskAssignee 
+                    assignees={task.assignedTo} 
+                    maxDisplay={2}
+                  />
+                </td>
+                <td><TaskPriority priority={task.priority} /></td>
+                <td><TaskStatus status={task.status} /></td>
+                <td>{new Date(task.deadline).toLocaleDateString()}</td>
+                <td>{task.overallProgress}%</td>
+                <td>
+                  <ActionsMenu>
+                    {hasPermission(PERMISSIONS.VIEW_TASKS) && (
+                      <ActionButton onClick={() => handleViewTask(task._id)}>
+                        <Eye size={16} />
+                      </ActionButton>
+                    )}
+                    
+                    {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+                      <ActionButton onClick={() => handleEditTask(task._id)}>
+                        <Edit size={16} />
+                      </ActionButton>
+                    )}
+                    
+                    {hasPermission(PERMISSIONS.DELETE_TASKS) && (
+                      <ActionButton onClick={() => handleDeleteClick(task)}>
+                        <Trash size={16} />
+                      </ActionButton>
+                    )}
+                  </ActionsMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+
+        <PaginationContainer>
+          <PaginationInfo>
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+            {pagination.total} tasks
+          </PaginationInfo>
+          
+          <PaginationButtons>
+            <PaginationButton 
+              onClick={() => onPageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+            >
+              <ChevronLeft size={16} />
+            </PaginationButton>
+            
+            <PaginationButton
+              onClick={() => onPageChange(pagination.page + 1)}
+              disabled={pagination.page * pagination.limit >= pagination.total}
+            >
+              <ChevronRight size={16} />
+            </PaginationButton>
+          </PaginationButtons>
+        </PaginationContainer>
+      </TableContainer>
+
+      {deleteConfirm && (
+        <DeleteConfirmDialog>
+          <DialogContent>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogMessage>
+              Are you sure you want to delete "{deleteConfirm.title}"? This action cannot be undone.
+            </DialogMessage>
+            <DialogActions>
+              <DialogButton onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </DialogButton>
+              <DialogButton variant="danger" onClick={handleConfirmDelete}>
+                Delete Task
+              </DialogButton>
+            </DialogActions>
+          </DialogContent>
+        </DeleteConfirmDialog>
+      )}
+    </>
   );
 };
 

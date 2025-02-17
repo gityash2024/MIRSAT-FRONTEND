@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Flag, MoreHorizontal } from 'lucide-react';
 
 const PriorityBadge = styled.span`
   padding: 4px 8px;
@@ -12,7 +12,7 @@ const PriorityBadge = styled.span`
   gap: 4px;
 
   ${props => {
-    switch (props.priority.toLowerCase()) {
+    switch (props.priority?.toLowerCase()) {
       case 'high':
         return `
           background: #fee2e2;
@@ -37,11 +37,26 @@ const PriorityBadge = styled.span`
   }}
 `;
 
-const TaskPriority = ({ priority }) => (
-  <PriorityBadge priority={priority}>
-    {priority === 'high' && <AlertTriangle size={12} />}
-    {priority}
-  </PriorityBadge>
-);
+const TaskPriority = ({ priority }) => {
+  const getIcon = () => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return <AlertTriangle size={12} />;
+      case 'medium':
+        return <Flag size={12} />;
+      case 'low':
+        return <MoreHorizontal size={12} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <PriorityBadge priority={priority}>
+      {getIcon()}
+      {priority || 'None'}
+    </PriorityBadge>
+  );
+};
 
 export default TaskPriority;

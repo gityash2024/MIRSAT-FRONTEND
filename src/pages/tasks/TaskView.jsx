@@ -1,136 +1,54 @@
-// src/pages/tasks/TaskView.jsx
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, 
-  Edit, 
-  Clock, 
-  User, 
-  Calendar,
-  AlertTriangle,
-  Send
+  ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
+  Send, Download, Paperclip, BarChart, TrendingUp, Users,
+  Circle, ChevronRight, Filter
 } from 'lucide-react';
+import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'react-hot-toast';
 import TaskStatus from './components/TaskStatus';
 import TaskPriority from './components/TaskPriority';
+import TaskAssignee from './components/TaskAssignee';
+import { getTaskById, addTaskComment, updateTaskStatus } from '../../store/slices/taskSlice';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
 
 const PageContainer = styled.div`
   padding: 24px;
 `;
-const mockTasks = [
-  {
-    id: 1,
-    title: 'Beach Safety Inspection - Zone A',
-    description: 'Conduct comprehensive safety inspection of Zone A beach area, including lifeguard equipment, warning signs, and emergency response facilities.',
-    assignee: 'John Doe',
-    priority: 'High',
-    status: 'In Progress',
-    dueDate: '2024-01-20',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: [
-      {
-        id: 1,
-        author: 'Jane Smith',
-        content: 'Initial equipment check completed. Some life jackets need replacement.',
-        timestamp: '2024-01-16 09:30'
-      },
-      {
-        id: 2,
-        author: 'John Doe',
-        content: 'Ordered new life jackets, should arrive by tomorrow.',
-        timestamp: '2024-01-16 10:15'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Marina Equipment Verification - Dock B',
-    description: 'Verify all equipment at Dock B including mooring lines, cleats, and power pedestals.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'Pending',
-    dueDate: '2024-01-22',
-    created: '2024-01-14',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 3,
-    title: 'Safety Training Documentation Review',
-    description: 'Review and update all safety training documentation for compliance with new regulations.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-18',
-    created: '2024-01-12',
-    type: 'Documentation Review',
-    comments: []
-  },
-  {
-    id: 4,
-    title: 'Emergency Response Training - Staff Group A',
-    description: 'Conduct emergency response training session for Staff Group A.',
-    assignee: 'Sarah Williams',
-    priority: 'Medium',
-    status: 'Completed',
-    dueDate: '2024-01-15',
-    created: '2024-01-10',
-    type: 'Training',
-    comments: []
-  },
-  {
-    id: 5,
-    title: 'Beach Cleanliness Inspection - Zone B',
-    description: 'Inspect Zone B beach area for cleanliness and environmental compliance.',
-    assignee: 'John Doe',
-    priority: 'Low',
-    status: 'In Progress',
-    dueDate: '2024-01-21',
-    created: '2024-01-16',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 6,
-    title: 'Lifeguard Equipment Maintenance',
-    description: 'Perform routine maintenance on all lifeguard equipment at main tower.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Pending',
-    dueDate: '2024-01-23',
-    created: '2024-01-16',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 7,
-    title: 'Water Quality Testing - North Beach',
-    description: 'Conduct water quality tests at North Beach sampling points.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'In Progress',
-    dueDate: '2024-01-19',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 8,
-    title: 'Marina Security Protocol Update',
-    description: 'Review and update marina security protocols based on recent assessment.',
-    assignee: 'Sarah Williams',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-25',
-    created: '2024-01-17',
-    type: 'Documentation Review',
-    comments: []
-  
-  }
-];
+
 const Header = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
+`;
+
+const HeaderTop = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const HeaderFilters = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const FilterSelect = styled.select`
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
 `;
 
 const BackButton = styled.button`
@@ -143,25 +61,26 @@ const BackButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   padding: 8px 0;
-  margin-bottom: 16px;
-
   &:hover {
     color: #333;
   }
 `;
 
-const TaskHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+const HeaderContent = styled.div`
+  flex: 1;
+  margin: 0 24px;
 `;
 
-const TaskTitle = styled.h1`
+const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
   color: #1a237e;
   margin-bottom: 8px;
+`;
+
+const SubTitle = styled.p`
+  color: #666;
+  font-size: 14px;
 `;
 
 const EditButton = styled.button`
@@ -177,7 +96,6 @@ const EditButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-
   &:hover {
     background: #f5f7fb;
   }
@@ -185,12 +103,8 @@ const EditButton = styled.button`
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 3fr 1fr;
   gap: 24px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
 `;
 
 const MainContent = styled.div`
@@ -211,12 +125,23 @@ const CardTitle = styled.h2`
   font-weight: 600;
   color: #333;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
-const Description = styled.p`
+const Description = styled.div`
   color: #666;
   font-size: 14px;
   line-height: 1.6;
+  white-space: pre-line;
+`;
+
+const MetaGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 24px;
 `;
 
 const MetaItem = styled.div`
@@ -225,23 +150,163 @@ const MetaItem = styled.div`
   gap: 8px;
   color: #666;
   font-size: 14px;
-  margin-bottom: 12px;
-
   .icon {
     color: #1a237e;
   }
 `;
 
-const CommentSection = styled.div`
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+`;
+
+const StatCard = styled.div`
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  .label {
+    font-size: 12px;
+    color: #666;
+  }
+  .value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a237e;
+  }
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+  .fill {
+    height: 100%;
+    background: #1a237e;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+`;
+
+const MilestoneTimeline = styled.div`
+  margin-top: 20px;
+  position: relative;
+  padding-left: 24px;
+  &:before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+  }
+`;
+
+const MilestoneItem = styled.div`
+  position: relative;
+  padding: 16px 0;
+  &:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+  }
+`;
+
+
+
+const MilestoneContent = styled.div`
+  margin-left: 8px;
+`;
+
+const MilestoneHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const MilestoneTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+`;
+
+const MilestoneDot = styled.div`
+  position: absolute;
+  left: -24px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: ${({ status }) => 
+    status === 'completed' ? '#10b981' : 
+    status === 'in_progress' ? '#3b82f6' : 
+    '#e2e8f0'};
+  border: 2px solid white;
+`;
+
+const MilestoneStatus = styled.span`
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: ${({ status }) => 
+    status === 'completed' ? '#ecfdf5' : 
+    status === 'in_progress' ? '#eff6ff' : 
+    '#f8fafc'};
+  color: ${({ status }) => 
+    status === 'completed' ? '#10b981' : 
+    status === 'in_progress' ? '#3b82f6' : 
+    '#64748b'};
+`;
+
+const MilestoneDescription = styled.p`
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0;
+`;
+
+const MilestoneProgress = styled.div`
+  margin-top: 12px;
+`;
+
+
+const AssigneeHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const AssigneeName = styled.h3`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+`;
+
+const AssigneeStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const ChartCard = styled(Card)`
+  height: 340px;
+`;
+
+const CommentSection = styled.div`
+  margin-top: 24px;
 `;
 
 const CommentInput = styled.div`
   display: flex;
   gap: 12px;
-
+  margin-bottom: 24px;
   textarea {
     flex: 1;
     padding: 12px;
@@ -250,121 +315,275 @@ const CommentInput = styled.div`
     font-size: 14px;
     min-height: 80px;
     resize: vertical;
-
     &:focus {
       outline: none;
       border-color: #1a237e;
     }
   }
 `;
+const AssigneeProgress = styled.div`
+  margin-top: 24px;
+`;
 
-const SendButton = styled.button`
-  padding: 8px 16px;
-  background: #1a237e;
-  color: white;
-  border: none;
+const AssigneeCard = styled.div`
+  background: #f8fafc;
   border-radius: 8px;
-  cursor: pointer;
+  padding: 16px;
+  margin-bottom: 16px;
+`;
+const CommentList = styled.div`
   display: flex;
-  align-items: center;
-  gap: 8px;
-  align-self: flex-end;
-
-  &:hover {
-    background: #151b4f;
-  }
+  flex-direction: column;
+  gap: 16px;
 `;
 
 const Comment = styled.div`
-  padding: 16px;
+  background: #f8fafc;
   border-radius: 8px;
-  background: #f5f7fb;
-
+  padding: 16px;
   .header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
   }
-
   .author {
     font-weight: 500;
     color: #333;
   }
-
   .timestamp {
     font-size: 12px;
     color: #666;
   }
-
   .content {
-    font-size: 14px;
     color: #666;
+    font-size: 14px;
     line-height: 1.5;
   }
 `;
 
+const Button = styled.button`
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+  background: #1a237e;
+  color: white;
+  border: none;
+  cursor: pointer;
+  &:hover {
+    background: #151b4f;
+  }
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
 const TaskView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
-  const [task, setTask] = useState(null);
+  const dispatch = useDispatch();
+  const { hasPermission } = usePermissions();
+  
+  let { currentTask: task, loading } = useSelector((state) => state.tasks);
+  task = task?.data;
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = useState('all');
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    const foundTask = mockTasks.find(t => t.id === parseInt(taskId));
-    setTask(foundTask);
-  }, [taskId]);
+    if (taskId) {
+      dispatch(getTaskById(taskId));
+    }
+  }, [taskId, dispatch]);
 
-  if (!task) {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    if (task?.assignedTo?.length > 0) {
+      setSelectedAssignee(task.assignedTo[0]._id);
+    }
+  }, [task?.assignedTo]);
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      await dispatch(addTaskComment({ id: taskId, content: newComment })).unwrap();
+      setNewComment('');
+      toast.success('Comment added successfully');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus) => {
+    try {
+      await dispatch(updateTaskStatus({
+        id: taskId,
+        status: newStatus,
+        comment: `Status updated to ${newStatus}`
+      })).unwrap();
+      toast.success('Status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  if (loading || !task) {
+    return (
+      <PageContainer>
+        <div>{loading ? 'Loading...' : 'Task not found'}</div>
+      </PageContainer>
+    );
   }
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-
-    const comment = {
-      id: task.comments.length + 1,
-      author: 'Current User', // In real app, get from auth context
-      content: newComment,
-      timestamp: new Date().toLocaleString()
-    };
-
-    setTask(prev => ({
-      ...prev,
-      comments: [...prev.comments, comment]
-    }));
-    setNewComment('');
+  const getSubLevelStatus = (subLevelId) => {
+    const progressItem = task.progress?.find(p => p.subLevelId === subLevelId);
+    return progressItem?.status || 'pending';
   };
+
+  const calculateAssigneeProgress = (assigneeId) => {
+    const assigneeProgress = task.progress?.filter(p => p.completedBy?._id === assigneeId);
+    const completed = assigneeProgress?.filter(p => p.status === 'completed').length || 0;
+    const inProgress = assigneeProgress?.filter(p => p.status === 'in_progress').length || 0;
+    const total = task.inspectionLevel?.subLevels?.length || 0;
+    return {
+      completed,
+      inProgress,
+      total,
+      percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    };
+  };
+
+  const inspectionData = task.inspectionLevel?.subLevels?.map(level => ({
+    name: level.name,
+    completed: getSubLevelStatus(level._id) === 'completed' ? 100 : 
+              getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
+  })) || [];
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/tasks')}>
-        <ArrowLeft size={18} />
-        Back to Tasks
-      </BackButton>
-
-      <TaskHeader>
-        <div>
-          <TaskTitle>{task.title}</TaskTitle>
-          <MetaItem>
-            <Clock size={16} className="icon" />
-            Created on {task.created}
-          </MetaItem>
-        </div>
-        <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
-          <Edit size={16} />
-          Edit Task
-        </EditButton>
-      </TaskHeader>
+      <Header>
+        <HeaderTop>
+          <BackButton onClick={() => navigate('/tasks')}>
+            <ArrowLeft size={18} />
+            Back to Tasks
+          </BackButton>
+          <HeaderContent>
+            <PageTitle>{task.title}</PageTitle>
+            <SubTitle>Task Details and Progress</SubTitle>
+          </HeaderContent>
+          {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+            <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
+              <Edit size={16} />
+              Edit Task
+            </EditButton>
+          )}
+        </HeaderTop>
+        
+        <HeaderFilters>
+          <Filter size={16} />
+          <FilterSelect 
+            value={selectedAssignee}
+            onChange={(e) => setSelectedAssignee(e.target.value)}
+          >
+            <option value="all">All Assignees</option>
+            {task.assignedTo?.map(user => (
+              <option key={user._id} value={user._id}>
+                {user.name}
+              </option>
+            ))}
+          </FilterSelect>
+        </HeaderFilters>
+      </Header>
 
       <ContentGrid>
         <MainContent>
           <Card>
-            <CardTitle>Description</CardTitle>
+            <CardTitle>
+              <BarChart size={20} />
+              Overview
+            </CardTitle>
             <Description>{task.description}</Description>
+
+            <MetaGrid>
+              <MetaItem>
+                <Calendar size={16} className="icon" />
+                <strong>Due Date:</strong>
+                {new Date(task.deadline).toLocaleDateString()}
+              </MetaItem>
+              <MetaItem>
+                <AlertTriangle size={16} className="icon" />
+                <strong>Priority:</strong>
+                <TaskPriority priority={task.priority} />
+              </MetaItem>
+              <MetaItem>
+                <Clock size={16} className="icon" />
+                <strong>Status:</strong>
+                <TaskStatus 
+                  status={task.status}
+                  onStatusChange={handleStatusUpdate}
+                  canUpdate={hasPermission(PERMISSIONS.UPDATE_TASK_STATUS)}
+                />
+              </MetaItem>
+            </MetaGrid>
+
+            <AssigneeProgress>
+            {selectedAssignee !== 'all' && task.assignedTo?.map(assignee => {
+  if (assignee._id === selectedAssignee) {
+    const progress = calculateAssigneeProgress(assignee._id);
+    return (
+      <AssigneeCard key={assignee._id}>
+        <AssigneeHeader>
+          <AssigneeName>{assignee.name}</AssigneeName>
+          <span>{progress.percentage}% Complete</span>
+        </AssigneeHeader>
+        <AssigneeStats>
+          <StatCard>
+            <div className="label">Completed</div>
+            <div className="value">{progress.completed}</div>
+          </StatCard>
+          <StatCard>
+            <div className="label">In Progress</div>
+            <div className="value">{progress.inProgress}</div>
+          </StatCard>
+          <StatCard>
+            <div className="label">Total</div>
+            <div className="value">{progress.total}</div>
+          </StatCard>
+        </AssigneeStats>
+        <ProgressBar>
+          <div 
+            className="fill" 
+            style={{ width: `${progress.percentage}%` }}
+          />
+        </ProgressBar>
+      </AssigneeCard>
+    );
+  }
+  return null;
+})}
+            </AssigneeProgress>
           </Card>
 
-          <Card>
+          <ChartCard>
+            <CardTitle>Inspection Progress</CardTitle>
+            <ResponsiveContainer width="100%" height={250}>
+              <RechartsBarChart data={inspectionData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="completed" fill="#1a237e" />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <Card style={{ marginTop: '24px' }}>
             <CardTitle>Comments</CardTitle>
             <CommentSection>
               <CommentInput>
@@ -373,45 +592,121 @@ const TaskView = () => {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                 />
-                <SendButton onClick={handleAddComment}>
+                <Button 
+                  onClick={handleAddComment}
+                  disabled={isSubmitting || !newComment.trim()}
+                >
                   <Send size={16} />
                   Post
-                </SendButton>
+                </Button>
               </CommentInput>
-              {task.comments.map(comment => (
-                <Comment key={comment.id}>
-                  <div className="header">
-                    <span className="author">{comment.author}</span>
-                    <span className="timestamp">{comment.timestamp}</span>
-                  </div>
-                  <p className="content">{comment.content}</p>
-                </Comment>
-              ))}
+
+              <CommentList>
+                {task.comments?.map((comment, index) => (
+                  <Comment key={index}>
+                    <div className="header">
+                      <span className="author">{comment.user?.name}</span>
+                      <span className="timestamp">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="content">{comment.content}</p>
+                  </Comment>
+                ))}
+                {(!task.comments || task.comments.length === 0) && (
+                  <p>No comments yet</p>
+                )}
+              </CommentList>
             </CommentSection>
           </Card>
         </MainContent>
 
         <div>
           <Card>
-            <CardTitle>Task Details</CardTitle>
-            <div className="space-y-4">
-              <MetaItem>
-                <User size={16} className="icon" />
-                Assignee: {task.assignee}
-              </MetaItem>
-              <MetaItem>
-                <Calendar size={16} className="icon" />
-                Due Date: {task.dueDate}
-              </MetaItem>
-              <MetaItem>
-                <AlertTriangle size={16} className="icon" />
-                Priority: <TaskPriority priority={task.priority} />
-              </MetaItem>
-              <MetaItem>
-                Status: <TaskStatus status={task.status} />
-              </MetaItem>
-            </div>
+            <CardTitle>Inspection Milestones</CardTitle>
+            <MilestoneTimeline>
+              {task.inspectionLevel?.subLevels?.map((level) => {
+                const status = getSubLevelStatus(level._id);
+                return (
+                  <MilestoneItem key={level._id}>
+                    <MilestoneDot status={status} />
+                    <MilestoneContent>
+                      <MilestoneHeader>
+                        <MilestoneTitle>{level.name}</MilestoneTitle>
+                        <MilestoneStatus status={status}>
+                          {status.replace('_', ' ')}
+                        </MilestoneStatus>
+                      </MilestoneHeader>
+                      <MilestoneDescription>
+                        {level.description}
+                      </MilestoneDescription>
+                      {status !== 'pending' && (
+                        <MilestoneProgress>
+                          <ProgressBar>
+                            <div 
+                              className="fill" 
+                              style={{ 
+                                width: status === 'completed' ? '100%' : '50%',
+                                background: status === 'completed' ? '#10b981' : '#3b82f6'
+                              }} 
+                            />
+                          </ProgressBar>
+                        </MilestoneProgress>
+                      )}
+                    </MilestoneContent>
+                  </MilestoneItem>
+                );
+              })}
+            </MilestoneTimeline>
           </Card>
+
+          <Card style={{ marginTop: '24px' }}>
+            <CardTitle>Attachments</CardTitle>
+            {task.attachments?.length > 0 ? (
+              task.attachments.map((attachment, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px',
+                    background: '#f8fafc',
+                    borderRadius: '4px',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Paperclip size={16} />
+                    <span>{attachment.filename}</span>
+                  </div>
+                  <a 
+                    href={attachment.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      background: '#1a237e',
+                      color: 'white',
+                      textDecoration: 'none',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <Download size={16} />
+                    Download
+                  </a>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: '#666', fontSize: '14px' }}>No attachments</p>
+            )}
+          </Card>
+
+      
         </div>
       </ContentGrid>
     </PageContainer>

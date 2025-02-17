@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { 
-  Plus, 
-  Filter, 
-  Search, 
-  Download,
-  Calendar,
-  Clock,
-  AlertCircle,
-  CheckCircle
-} from 'lucide-react';
+import styled from 'styled-components';
+import { Plus, Filter, Search, Download } from 'lucide-react';
 import TaskFilter from './components/TaskFilter';
 import TaskTable from './components/TaskTable';
-import TaskStatus from './components/TaskStatus';
+import { fetchTasks, setFilters, setPagination } from '../../store/slices/taskSlice';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -116,135 +110,48 @@ const FilterSection = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
-const statsData = [
-  { label: 'Total Tasks', value: 125, icon: Calendar, color: '#1976d2' },
-  { label: 'In Progress', value: 42, icon: Clock, color: '#ed6c02' },
-  { label: 'Pending Review', value: 18, icon: AlertCircle, color: '#9c27b0' },
-  { label: 'Completed', value: 65, icon: CheckCircle, color: '#2e7d32' }
-];
-
-const mockTasks = [
-  {
-    id: 1,
-    title: 'Beach Safety Inspection - Zone A',
-    description: 'Conduct comprehensive safety inspection of Zone A beach area, including lifeguard equipment, warning signs, and emergency response facilities.',
-    assignee: 'John Doe',
-    priority: 'High',
-    status: 'In Progress',
-    dueDate: '2024-01-20',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: [
-      {
-        id: 1,
-        author: 'Jane Smith',
-        content: 'Initial equipment check completed. Some life jackets need replacement.',
-        timestamp: '2024-01-16 09:30'
-      },
-      {
-        id: 2,
-        author: 'John Doe',
-        content: 'Ordered new life jackets, should arrive by tomorrow.',
-        timestamp: '2024-01-16 10:15'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Marina Equipment Verification - Dock B',
-    description: 'Verify all equipment at Dock B including mooring lines, cleats, and power pedestals.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'Pending',
-    dueDate: '2024-01-22',
-    created: '2024-01-14',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 3,
-    title: 'Safety Training Documentation Review',
-    description: 'Review and update all safety training documentation for compliance with new regulations.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-18',
-    created: '2024-01-12',
-    type: 'Documentation Review',
-    comments: []
-  },
-  {
-    id: 4,
-    title: 'Emergency Response Training - Staff Group A',
-    description: 'Conduct emergency response training session for Staff Group A.',
-    assignee: 'Sarah Williams',
-    priority: 'Medium',
-    status: 'Completed',
-    dueDate: '2024-01-15',
-    created: '2024-01-10',
-    type: 'Training',
-    comments: []
-  },
-  {
-    id: 5,
-    title: 'Beach Cleanliness Inspection - Zone B',
-    description: 'Inspect Zone B beach area for cleanliness and environmental compliance.',
-    assignee: 'John Doe',
-    priority: 'Low',
-    status: 'In Progress',
-    dueDate: '2024-01-21',
-    created: '2024-01-16',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 6,
-    title: 'Lifeguard Equipment Maintenance',
-    description: 'Perform routine maintenance on all lifeguard equipment at main tower.',
-    assignee: 'Mike Johnson',
-    priority: 'High',
-    status: 'Pending',
-    dueDate: '2024-01-23',
-    created: '2024-01-16',
-    type: 'Equipment Check',
-    comments: []
-  },
-  {
-    id: 7,
-    title: 'Water Quality Testing - North Beach',
-    description: 'Conduct water quality tests at North Beach sampling points.',
-    assignee: 'Jane Smith',
-    priority: 'Medium',
-    status: 'In Progress',
-    dueDate: '2024-01-19',
-    created: '2024-01-15',
-    type: 'Safety Inspection',
-    comments: []
-  },
-  {
-    id: 8,
-    title: 'Marina Security Protocol Update',
-    description: 'Review and update marina security protocols based on recent assessment.',
-    assignee: 'Sarah Williams',
-    priority: 'High',
-    status: 'Under Review',
-    dueDate: '2024-01-25',
-    created: '2024-01-17',
-    type: 'Documentation Review',
-    comments: []
-  
-  }
-];
-
 const TaskList = () => {
+  const dispatch = useDispatch();
+  const { hasPermission } = usePermissions();
+  const { tasks, loading, filters } = useSelector((state) => state.tasks);
+  const pagination = {
+    page: 1,
+    limit: 10,
+    total: tasks.length
+  }
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    status: [],
-    priority: [],
-    type: [],
-    assignee: []
-  });
+
+  useEffect(() => {
+    loadTasks();
+  }, [filters, pagination.page, pagination.limit]);
+
+  const loadTasks = () => {
+    dispatch(fetchTasks({
+      ...filters,
+      search: searchTerm,
+      page: pagination.page,
+      limit: pagination.limit
+    }));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    dispatch(setFilters({ search: e.target.value }));
+  };
+
+  const handleFilterChange = (newFilters) => {
+    dispatch(setFilters(newFilters));
+    dispatch(setPagination({ page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    dispatch(setPagination({ page: newPage }));
+  };
+
+  const handleExport = () => {
+    // Implement export functionality
+  };
 
   return (
     <PageContainer>
@@ -260,7 +167,7 @@ const TaskList = () => {
             type="text" 
             placeholder="Search tasks..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </SearchBox>
 
@@ -272,14 +179,20 @@ const TaskList = () => {
             <Filter size={18} />
             Filters
           </Button>
-          <Button variant="secondary">
-            <Download size={18} />
-            Export
-          </Button>
-          <Button variant="primary" as={Link} to="/tasks/create">
-            <Plus size={18} />
-            Create Task
-          </Button>
+          
+          {hasPermission(PERMISSIONS.EXPORT_TASKS) && (
+            <Button variant="secondary" onClick={handleExport}>
+              <Download size={18} />
+              Export
+            </Button>
+          )}
+          
+          {hasPermission(PERMISSIONS.CREATE_TASKS) && (
+            <Button variant="primary" as={Link} to="/tasks/create">
+              <Plus size={18} />
+              Create Task
+            </Button>
+          )}
         </ButtonGroup>
       </ActionBar>
 
@@ -287,15 +200,16 @@ const TaskList = () => {
         <FilterSection>
           <TaskFilter 
             filters={filters} 
-            setFilters={setFilters}
+            setFilters={handleFilterChange}
           />
         </FilterSection>
       )}
 
       <TaskTable 
-        tasks={mockTasks}
-        filters={filters}
-        searchTerm={searchTerm}
+        tasks={tasks}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
       />
     </PageContainer>
   );
