@@ -267,9 +267,16 @@ const Login = () => {
     try {
       // Dispatch login thunk
       const resultAction = await dispatch(login(formData)).unwrap();
+
+    
       
-      // Navigation handled by Redux thunk success toast/notification
-      navigate('/dashboard');
+   console.log(resultAction,'resultAction')
+   if(resultAction?.user?.role==='user'){
+    navigate('/user-dashboard');
+   }else{
+
+     navigate('/dashboard');
+   }
     } catch (error) {
       // Handle login errors
       setApiError(error || 'Login failed. Please try again.');

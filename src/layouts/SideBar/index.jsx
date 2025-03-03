@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -141,21 +140,86 @@ const Sidebar = ({ isOpen, width }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === 'admin';
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: ClipboardList, label: 'Tasks', path: '/tasks' },
-    { icon: Users, label: 'Users', path: '/users', adminOnly: true },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: FileText, label: 'Inspesion Levels', path: '/inspection' },
-    { icon: Settings, label: 'Settings', path: '/settings' }
-  ];
+  // For users, create a restricted menu based on their permissions
+  const getUserMenuItems = () => {
+    const userMenuItems = [
+      {
+        icon: LayoutDashboard, 
+        label: 'Dashboard', 
+        path: '/user-dashboard',
+        permissions: ['view_tasks']
+      },
+      {
+        icon: ClipboardList, 
+        label: 'Tasks', 
+        path: '/user-task',
+        permissions: ['view_tasks']
+      }
+    ];
+
+    return userMenuItems.filter(item => 
+      item.permissions.some(perm => user?.permissions?.includes(perm))
+    );
+  };
+
+  // For admin and other roles, create a full menu
+  const getAdminMenuItems = () => [
+    {
+      icon: LayoutDashboard, 
+      label: 'Dashboard', 
+      path: '/dashboard',
+      permissions: []
+    },
+    {
+      icon: ClipboardList, 
+      label: 'Tasks', 
+      path: '/tasks',
+      permissions: ['view_tasks', 'create_tasks', 'edit_tasks', 'delete_tasks']
+    },
+    {
+      icon: Users, 
+      label: 'Users', 
+      path: '/users',
+      permissions: ['view_users', 'create_users', 'edit_users', 'delete_users']
+    },
+    {
+      icon: Calendar, 
+      label: 'Calendar', 
+      path: '/calendar',
+      permissions: ['view_calendar', 'manage_calendar', 'schedule_events']
+    },
+    {
+      icon: FileText, 
+      label: 'Inspection Levels', 
+      path: '/inspection',
+      permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
+    },
+    {
+      icon: Settings, 
+      label: 'Settings', 
+      path: '/settings',
+      permissions: ['view_settings', 'manage_settings', 'system_config']
+    }
+  ].filter(item => 
+    item.permissions.length === 0 || 
+    item.permissions.some(perm => user?.permissions?.includes(perm))
+  );
+
+  // Function to get menu items based on user role
+  const getMenuItems = () => {
+    return user?.role === 'user' 
+      ? getUserMenuItems() 
+      : getAdminMenuItems();
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Get menu items based on user role and permissions
+  const menuItems = getMenuItems();
 
   return (
     <SidebarContainer width={width}>
@@ -166,18 +230,16 @@ const Sidebar = ({ isOpen, width }) => {
       
       <MenuSection>
         {menuItems.map((item) => (
-          (!item.adminOnly || (item.adminOnly && isAdmin)) && (
-            <MenuItem 
-              key={item.path}
-              to={item.path}
-              className={location.pathname === item.path ? 'active' : ''}
-              isOpen={isOpen}
-            >
-              <item.icon className="icon" size={20} />
-              <span>{item.label}</span>
-              {!isOpen && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
-            </MenuItem>
-          )
+          <MenuItem 
+            key={item.path}
+            to={item.path}
+            className={location.pathname === item.path ? 'active' : ''}
+            isOpen={isOpen}
+          >
+            <item.icon className="icon" size={20} />
+            <span>{item.label}</span>
+            {!isOpen && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
+          </MenuItem>
         ))}
       </MenuSection>
 

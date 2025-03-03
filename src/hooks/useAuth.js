@@ -10,7 +10,8 @@ export const useAuth = () => {
 
   const login = useCallback(async (email, password) => {
     try {
-      await dispatch(loginAction({ email, password })).unwrap();
+      let result = await dispatch(loginAction({ email, password })).unwrap();
+      console.log(result,'result')
       navigate('/dashboard');
     } catch (error) {
       throw error;

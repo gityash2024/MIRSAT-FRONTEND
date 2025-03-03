@@ -32,6 +32,8 @@ import InspectionLevelList from '../pages/inspection/InspectionLevelList';
 import InspectionLevelTree from '../pages/inspection/InspectionLevelTree';
 import InspectionLevelForm from '../pages/inspection/InspectionLevelForm';
 import InspectionLevelView from '../pages/inspection/InspectionLevelView';
+import UserDashboard from '../pages/UserDashboard';
+import UserTasks from '../pages/UserTasks';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -56,6 +58,10 @@ const AppRoutes = () => {
   <Route path=":id/edit" element={<InspectionLevelForm />} />
 </Route>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/user-task" element={<UserTasks />} />
+
+
           <Route path="/notifications" element={<Notifications />} />
           
           {/* Tasks Routes */}
