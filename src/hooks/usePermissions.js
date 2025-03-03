@@ -1,7 +1,7 @@
 // src/hooks/usePermissions.js
 
 import { useSelector } from 'react-redux';
-import { PERMISSIONS, ROLES } from '../utils/permissions';
+import { PERMISSIONS, ROLE_PERMISSIONS, ROLES } from '../utils/permissions';
 
 export const usePermissions = () => {
   const user = useSelector(state => state.auth.user);

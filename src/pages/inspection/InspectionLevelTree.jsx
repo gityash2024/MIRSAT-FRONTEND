@@ -272,7 +272,14 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
-const TreeNodeComponent = ({ node, level = 0, isLastChild = false, loading, onDelete, onDeleteClick }) => {
+const TreeNodeComponent = ({ 
+  node, 
+  level = 0, 
+  isLastChild = false, 
+  loading, 
+  onDelete, 
+  onDeleteClick 
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.subLevels && node.subLevels.length > 0;
 

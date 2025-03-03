@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams, Link, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ModalOverlay = styled.div`
@@ -356,12 +356,56 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
+const NestedHierarchyNode = styled.div`
+  margin-left: ${props => props.level * 32}px;
+  margin-bottom: 16px;
+  position: relative;
+
+  &:before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background: #e2e8f0;
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: -8px;
+    bottom: ${props => props.isLast ? '50%' : '-8px'};
+    width: 2px;
+    background: #e2e8f0;
+  }
+
+  &:first-child:after {
+    top: 50%;
+  }
+`;
+
+const ExpandCollapseButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-right: 4px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { loading, setLoading, handleError, inspectionService } = useOutletContext();
   const [level, setLevel] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState({});
 
   useEffect(() => {
     fetchInspectionLevel();
@@ -372,6 +416,23 @@ const InspectionLevelView = () => {
       setLoading(true);
       const data = await inspectionService.getInspectionLevel(id);
       setLevel(data);
+
+      const expandedState = {};
+      const initExpandedState = (subLevels, prefix = '') => {
+        subLevels.forEach((node, index) => {
+          const nodeId = prefix ? `${prefix}.${index}` : `${index}`;
+          expandedState[nodeId] = true;
+          if (node.subLevels && node.subLevels.length > 0) {
+            initExpandedState(node.subLevels, nodeId);
+          }
+        });
+      };
+      
+      if (data.subLevels) {
+        initExpandedState(data.subLevels);
+      }
+      
+      setExpandedNodes(expandedState);
     } catch (error) {
       handleError(error);
       navigate('/inspection');
@@ -393,27 +454,46 @@ const InspectionLevelView = () => {
     }
   };
 
-  const renderHierarchy = (nodes, parentLevel = 0) => {
-    return nodes.map((node, index) => (
-      <React.Fragment key={node._id}>
-        <HierarchyNode level={parentLevel} isLast={index === nodes.length - 1}>
-          <NodeContent>
-            <NodeIcon>
-              <Layers size={16} />
-            </NodeIcon>
-            <NodeInfo>
-              <h4>{node.name}</h4>
-              <p>{node.description}</p>
-            </NodeInfo>
-          </NodeContent>
-        </HierarchyNode>
-        {node.children && node.children.length > 0 && (
-          <div style={{ marginLeft: 32 }}>
-            {renderHierarchy(node.children, parentLevel + 1)}
-          </div>
-        )}
-      </React.Fragment>
-    ));
+  const toggleNodeExpanded = (nodeId) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId]
+    }));
+  };
+
+  const renderHierarchy = (nodes, parentLevel = 0, parentId = '') => {
+    return nodes.map((node, index) => {
+      const nodeId = parentId ? `${parentId}.${index}` : `${index}`;
+      const hasChildren = node.subLevels && node.subLevels.length > 0;
+      const isExpanded = expandedNodes[nodeId];
+      
+      return (
+        <React.Fragment key={node._id || index}>
+          <NestedHierarchyNode level={parentLevel} isLast={index === nodes.length - 1}>
+            <NodeContent>
+              {hasChildren && (
+                <ExpandCollapseButton onClick={() => toggleNodeExpanded(nodeId)}>
+                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </ExpandCollapseButton>
+              )}
+              <NodeIcon>
+                <Layers size={16} />
+              </NodeIcon>
+              <NodeInfo>
+                <h4>{node.name}</h4>
+                <p>{node.description}</p>
+              </NodeInfo>
+            </NodeContent>
+          </NestedHierarchyNode>
+          
+          {hasChildren && isExpanded && (
+            <div style={{ marginLeft: 32 }}>
+              {renderHierarchy(node.subLevels, parentLevel + 1, nodeId)}
+            </div>
+          )}
+        </React.Fragment>
+      );
+    });
   };
 
   if (loading || !level) {

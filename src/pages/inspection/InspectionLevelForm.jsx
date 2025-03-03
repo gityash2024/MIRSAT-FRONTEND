@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, Move, Layers } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
 
@@ -225,18 +225,166 @@ const ErrorMessage = styled.span`
   margin-top: 4px;
 `;
 
+const NestedSubLevelsContainer = styled.div`
+  margin-left: 40px;
+  margin-top: 8px;
+`;
+
+const ExpandCollapseButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+// The main SubLevel component that handles a single level item
+const SubLevelRow = ({ 
+  level, 
+  parentPath = "",
+  onSubLevelChange, 
+  onRemoveSubLevel, 
+  onAddNestedSubLevel, 
+  loading,
+  dragHandleProps 
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasNestedLevels = level.subLevels && level.subLevels.length > 0;
+  const path = parentPath ? `${parentPath}.${level.id}` : `${level.id}`;
+  
+  return (
+    <>
+      <SubLevelItem isDragging={false}>
+        <DragHandle {...dragHandleProps}>
+          <Move size={16} />
+        </DragHandle>
+        
+        {hasNestedLevels && (
+          <ExpandCollapseButton 
+            onClick={() => setExpanded(!expanded)} 
+            type="button"
+          >
+            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </ExpandCollapseButton>
+        )}
+        
+        <SubLevelInput
+          type="text"
+          value={level.name || ""}
+          onChange={(e) => onSubLevelChange(path, 'name', e.target.value)}
+          placeholder="Enter sub-level name"
+          disabled={loading}
+        />
+        
+        <SubLevelInput
+          type="text"
+          value={level.description || ""}
+          onChange={(e) => onSubLevelChange(path, 'description', e.target.value)}
+          placeholder="Enter sub-level description"
+          disabled={loading}
+        />
+        
+        <IconButton
+          type="button"
+          onClick={() => onAddNestedSubLevel(path)}
+          disabled={loading}
+        >
+          <Plus size={16} />
+        </IconButton>
+        
+        <IconButton
+          type="button"
+          onClick={() => onRemoveSubLevel(path)}
+          disabled={loading}
+        >
+          <Minus size={16} />
+        </IconButton>
+      </SubLevelItem>
+      
+      {expanded && hasNestedLevels && (
+        <NestedSubLevelsContainer>
+          <NestedSubLevelsList
+            subLevels={level.subLevels}
+            parentPath={path}
+            onSubLevelChange={onSubLevelChange}
+            onRemoveSubLevel={onRemoveSubLevel}
+            onAddNestedSubLevel={onAddNestedSubLevel}
+            loading={loading}
+          />
+        </NestedSubLevelsContainer>
+      )}
+    </>
+  );
+};
+
+// Component to render a nested droppable list of sub-levels
+const NestedSubLevelsList = ({ 
+  subLevels, 
+  parentPath, 
+  onSubLevelChange, 
+  onRemoveSubLevel, 
+  onAddNestedSubLevel, 
+  loading 
+}) => {
+  const droppableId = `nested-${parentPath || "root"}`;
+  
+  return (
+    <Droppable droppableId={droppableId} type={droppableId}>
+      {(provided) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+        >
+          {subLevels.map((subLevel, index) => (
+            <Draggable
+              key={`${parentPath}-${subLevel.id}`}
+              draggableId={`${parentPath}-${subLevel.id}`}
+              index={index}
+              isDragDisabled={loading}
+            >
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                >
+                  <SubLevelRow
+                    level={subLevel}
+                    parentPath={parentPath}
+                    onSubLevelChange={onSubLevelChange}
+                    onRemoveSubLevel={onRemoveSubLevel}
+                    onAddNestedSubLevel={onAddNestedSubLevel}
+                    loading={loading}
+                    dragHandleProps={provided.dragHandleProps}
+                  />
+                </div>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  );
+};
+
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { loading, setLoading, handleError, inspectionService } = useOutletContext();
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     type: 'safety',
     status: 'active',
     priority: 'medium',
-    subLevels: [{ id: Date.now(), name: '', description: '', order: 0 }]
+    subLevels: [{ id: Date.now(), name: '', description: '', order: 0, subLevels: [] }]
   });
+  
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -249,7 +397,22 @@ const InspectionLevelForm = () => {
     try {
       setLoading(true);
       const data = await inspectionService.getInspectionLevel(id);
-      setFormData(data);
+      
+      // Process sublevel data - ensure each has an id and subLevels array
+      const processSubLevels = (subLevels) => {
+        return (subLevels || []).map(sl => ({
+          ...sl,
+          id: sl.id || sl._id || Date.now(),
+          subLevels: processSubLevels(sl.subLevels)
+        }));
+      };
+      
+      const processedData = {
+        ...data,
+        subLevels: processSubLevels(data.subLevels)
+      };
+      
+      setFormData(processedData);
     } catch (error) {
       handleError(error);
     } finally {
@@ -263,20 +426,106 @@ const InspectionLevelForm = () => {
       ...prev,
       [name]: value
     }));
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleSubLevelChange = (id, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      subLevels: prev.subLevels.map(level => 
-        level.id === id ? { ...level, [field]: value } : level
-      )
-    }));
+  // Helper to traverse the nested structure
+  const getNestedValue = (obj, path) => {
+    if (!path) return obj;
+    
+    const parts = path.split('.');
+    let current = obj;
+    
+    for (const part of parts) {
+      if (!current || current[part] === undefined) {
+        return undefined;
+      }
+      current = current[part];
+    }
+    
+    return current;
   };
 
+  // Helper to set nested values
+  const setNestedValue = (obj, path, key, value) => {
+    if (!path) {
+      obj[key] = value;
+      return obj;
+    }
+    
+    const parts = path.split('.');
+    let current = obj;
+    let parent = null;
+    let lastKey = null;
+    
+    // Navigate to the parent object
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      parent = current;
+      lastKey = part;
+      current = current[part];
+      
+      // If we encounter a non-existent path
+      if (current === undefined) {
+        return obj;
+      }
+    }
+    
+    // Update the value
+    if (parent && lastKey) {
+      parent[lastKey][key] = value;
+    }
+    
+    return obj;
+  };
+
+  // Handle change in sublevel fields
+  const handleSubLevelChange = (path, field, value) => {
+    setFormData(prev => {
+      // Handle top-level sublevels
+      if (!path.includes('.')) {
+        return {
+          ...prev,
+          subLevels: prev.subLevels.map(level => 
+            level.id.toString() === path ? { ...level, [field]: value } : level
+          )
+        };
+      }
+      
+      // Handle nested sublevels
+      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
+      const parts = path.split('.');
+      
+      // Traverse to the target sublevel
+      let current = newFormData.subLevels;
+      let target = null;
+      
+      for (const part of parts) {
+        // Find the sublevel with matching id in the current level
+        const sublevel = current.find(sl => sl.id.toString() === part);
+        if (!sublevel) return prev; // Path not found
+        
+        if (part === parts[parts.length - 1]) {
+          // This is the target sublevel
+          target = sublevel;
+        } else {
+          // Move to the next level
+          current = sublevel.subLevels || [];
+        }
+      }
+      
+      if (target) {
+        target[field] = value;
+      }
+      
+      return newFormData;
+    });
+  };
+
+  // Add a new top-level sublevel
   const addSubLevel = () => {
     setFormData(prev => ({
       ...prev,
@@ -286,62 +535,237 @@ const InspectionLevelForm = () => {
           id: Date.now(), 
           name: '', 
           description: '', 
-          order: prev.subLevels.length 
+          order: prev.subLevels.length,
+          subLevels: []
         }
       ]
     }));
   };
 
-  const removeSubLevel = (id) => {
-    setFormData(prev => ({
-      ...prev,
-      subLevels: prev.subLevels.filter(level => level.id !== id)
-    }));
+  // Add a nested sublevel to a parent
+  const addNestedSubLevel = (parentPath) => {
+    setFormData(prev => {
+      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
+      
+      if (!parentPath) {
+        // Add to top level if no parent path
+        newFormData.subLevels.push({
+          id: Date.now(),
+          name: '',
+          description: '',
+          order: newFormData.subLevels.length,
+          subLevels: []
+        });
+        return newFormData;
+      }
+      
+      const parts = parentPath.split('.');
+      let current = newFormData.subLevels;
+      
+      // Traverse to the parent sublevel
+      for (const part of parts) {
+        const sublevel = current.find(sl => sl.id.toString() === part);
+        if (!sublevel) return prev; // Path not found
+        
+        // Initialize subLevels array if it doesn't exist
+        if (!sublevel.subLevels) {
+          sublevel.subLevels = [];
+        }
+        
+        if (part === parts[parts.length - 1]) {
+          // This is the parent sublevel, add a new child
+          sublevel.subLevels.push({
+            id: Date.now(),
+            name: '',
+            description: '',
+            order: sublevel.subLevels.length,
+            subLevels: []
+          });
+        } else {
+          // Move to the next level
+          current = sublevel.subLevels;
+        }
+      }
+      
+      return newFormData;
+    });
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const items = Array.from(formData.subLevels);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setFormData(prev => ({
-      ...prev,
-      subLevels: items.map((item, index) => ({ ...item, order: index }))
-    }));
+  // Remove a sublevel
+  const removeSubLevel = (path) => {
+    if (!path) return;
+    
+    setFormData(prev => {
+      // Don't remove if it's the last remaining top-level sublevel
+      if (!path.includes('.') && prev.subLevels.length <= 1) {
+        return prev;
+      }
+      
+      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
+      const parts = path.split('.');
+      
+      if (parts.length === 1) {
+        // Remove from top level
+        newFormData.subLevels = newFormData.subLevels.filter(
+          sl => sl.id.toString() !== parts[0]
+        );
+        return newFormData;
+      }
+      
+      // For nested levels, we need to find the parent
+      const parentPath = parts.slice(0, -1);
+      let current = newFormData.subLevels;
+      let parent = null;
+      
+      // Traverse to the parent sublevel
+      for (let i = 0; i < parentPath.length; i++) {
+        const part = parentPath[i];
+        const sublevel = current.find(sl => sl.id.toString() === part);
+        if (!sublevel) return prev; // Path not found
+        
+        if (i === parentPath.length - 1) {
+          // This is the parent sublevel
+          parent = sublevel;
+        } else {
+          // Move to the next level
+          current = sublevel.subLevels || [];
+        }
+      }
+      
+      if (parent && parent.subLevels) {
+        // Remove the target sublevel from the parent's subLevels
+        parent.subLevels = parent.subLevels.filter(
+          sl => sl.id.toString() !== parts[parts.length - 1]
+        );
+      }
+      
+      return newFormData;
+    });
   };
 
+  // Handle drag and drop within the same list
+  const handleDragEnd = (result) => {
+    const { source, destination, type } = result;
+    
+    // Dropped outside a droppable area
+    if (!destination) return;
+    
+    // Handle reordering within the same droppable
+    if (source.droppableId === destination.droppableId) {
+      // Root level drag
+      if (type === 'subLevels' || source.droppableId === 'subLevels') {
+        setFormData(prev => {
+          const newSubLevels = [...prev.subLevels];
+          const [reorderedItem] = newSubLevels.splice(source.index, 1);
+          newSubLevels.splice(destination.index, 0, reorderedItem);
+          
+          return {
+            ...prev,
+            subLevels: newSubLevels.map((item, index) => ({ ...item, order: index }))
+          };
+        });
+      } 
+      // Nested level drag - more complex
+      else {
+        // Extract the parent path from the droppableId
+        const parentPath = source.droppableId.replace('nested-', '');
+        
+        setFormData(prev => {
+          const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
+          
+          // Find the parent's subLevels array
+          const parts = parentPath.split('.');
+          let current = newFormData.subLevels;
+          let target = null;
+          
+          for (const part of parts) {
+            const sublevel = current.find(sl => sl.id.toString() === part);
+            if (!sublevel) return prev; // Path not found
+            
+            target = sublevel;
+            current = sublevel.subLevels || [];
+          }
+          
+          if (target && target.subLevels) {
+            // Reorder the items
+            const [reorderedItem] = target.subLevels.splice(source.index, 1);
+            target.subLevels.splice(destination.index, 0, reorderedItem);
+            
+            // Update order properties
+            target.subLevels = target.subLevels.map((item, index) => ({
+              ...item,
+              order: index
+            }));
+          }
+          
+          return newFormData;
+        });
+      }
+    }
+    // Handle moves between different lists (more complex, not implemented yet)
+    else {
+      console.log("Moving between different levels not implemented");
+    }
+  };
+
+  // Validate the form
   const validateForm = () => {
     const newErrors = {};
+    
+    // Check basic fields
     if (!formData.name) newErrors.name = 'Name is required';
     if (!formData.description) newErrors.description = 'Description is required';
-    if (formData.subLevels.some(level => !level.name)) {
-      newErrors.subLevels = 'All sub-levels must have names';
+    
+    // Check all sublevel fields recursively
+    const validateSubLevels = (subLevels) => {
+      for (const level of subLevels) {
+        if (!level.name || !level.description) {
+          return false;
+        }
+        if (level.subLevels && level.subLevels.length > 0) {
+          if (!validateSubLevels(level.subLevels)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+    
+    if (!validateSubLevels(formData.subLevels)) {
+      newErrors.subLevels = 'All sub-levels must have names and descriptions';
     }
-    if (formData.subLevels.some(level => !level.description)) {
-      newErrors.subLevels = 'All sub-levels must have descriptions';
-    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm() || loading) return;
 
     try {
       setLoading(true);
+      
+      // Prepare data for API (handle any transformations needed)
+      const apiData = {
+        ...formData,
+        // If needed, transform the nested sublevel structure for the API
+      };
+      
       if (id) {
-        await inspectionService.updateInspectionLevel(id, formData);
+        await inspectionService.updateInspectionLevel(id, apiData);
         toast.success('Inspection level updated successfully');
       } else {
-        await inspectionService.createInspectionLevel(formData);
+        await inspectionService.createInspectionLevel(apiData);
         toast.success('Inspection level created successfully');
       }
+      
       navigate('/inspection');
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -445,8 +869,8 @@ const InspectionLevelForm = () => {
             </IconButton>
           </SectionTitle>
 
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="subLevels">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="subLevels" type="subLevels">
               {(provided) => (
                 <SubLevelsContainer
                   {...provided.droppableProps}
@@ -454,49 +878,32 @@ const InspectionLevelForm = () => {
                 >
                   {formData.subLevels.map((level, index) => (
                     <Draggable
-                      key={level.id}
-                      draggableId={level?.id?.toString()}
+                      key={level.id.toString()}
+                      draggableId={level.id.toString()}
                       index={index}
                       isDragDisabled={loading}
                     >
-                      {(provided, snapshot) => (
-                        <SubLevelItem
+                      {(provided) => (
+                        <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          isDragging={snapshot.isDragging}
                         >
-                          <DragHandle {...provided.dragHandleProps}>
-                            <Move size={16} />
-                          </DragHandle>
-                          <SubLevelInput
-                            type="text"
-                            value={level.name}
-                            onChange={(e) => handleSubLevelChange(level.id, 'name', e.target.value)}
-                            placeholder="Enter sub-level name"
-                            disabled={loading}
+                          <SubLevelRow
+                            level={level}
+                            onSubLevelChange={handleSubLevelChange}
+                            onRemoveSubLevel={removeSubLevel}
+                            onAddNestedSubLevel={addNestedSubLevel}
+                            loading={loading}
+                            dragHandleProps={provided.dragHandleProps}
                           />
-                          <SubLevelInput
-                            type="text"
-                            value={level.description}
-                            onChange={(e) => handleSubLevelChange(level.id, 'description', e.target.value)}
-                            placeholder="Enter sub-level description"
-                            disabled={loading}
-                          />
-                          <IconButton
-                            type="button"
-                            onClick={() => removeSubLevel(level.id)}
-                            disabled={formData.subLevels.length === 1 || loading}
-                          >
-                            <Minus size={16} />
-                          </IconButton>
-                        </SubLevelItem>
+                        </div>
                       )}
                     </Draggable>
                   ))}
                   {provided.placeholder}
                 </SubLevelsContainer>
               )}
-              </Droppable>
+            </Droppable>
           </DragDropContext>
           {errors.subLevels && <ErrorMessage>{errors.subLevels}</ErrorMessage>}
         </FormSection>

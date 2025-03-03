@@ -7,6 +7,22 @@ import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
 import useDeleteConfirmation from '../../components/confirmationModal';
 
+const flattenSubLevels = (subLevels, level = 0) => {
+  let result = [];
+  
+  if (!subLevels || !subLevels.length) return result;
+  
+  subLevels.forEach(subLevel => {
+    result.push({ ...subLevel, nestLevel: level });
+    
+    if (subLevel.subLevels && subLevel.subLevels.length > 0) {
+      result = [...result, ...flattenSubLevels(subLevel.subLevels, level + 1)];
+    }
+  });
+  
+  return result;
+};
+
 const PageContainer = styled.div`
   padding: 24px;
 `;
@@ -114,7 +130,7 @@ const LevelGrid = styled.div`
   gap: 16px;
 `;
 
-const LevelCard = styled.div`fetchInspectionLevels
+const LevelCard = styled.div`
   background: white;
   border-radius: 12px;
   padding: 20px;
@@ -431,19 +447,22 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
                           <Edit size={16} />
                         </ActionButton>
                         <ActionButton 
-        onClick={() => onDeleteClick(level)}
-        disabled={loading}
-      >
-        <Trash2 size={16} />
-      </ActionButton>
+                          onClick={() => onDeleteClick(level)}
+                          disabled={loading}
+                        >
+                          <Trash2 size={16} />
+                        </ActionButton>
                         <ChevronIcon size={16} />
                       </LevelActions>
                     </AccordionHeader>
                   </AccordionTrigger>
                   <AccordionContent>
                     <SubLevelsList>
-                      {level.subLevels?.map(subLevel => (
-                        <SubLevel key={subLevel._id || subLevel.id}>
+                      {flattenSubLevels(level.subLevels).map(subLevel => (
+                        <SubLevel 
+                          key={subLevel._id || subLevel.id} 
+                          style={{ marginLeft: `${subLevel.nestLevel * 20}px` }}
+                        >
                           <SubLevelIcon>
                             <ChevronRight size={16} />
                           </SubLevelIcon>
@@ -458,8 +477,7 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
           ))}
         </LevelGrid>
       )}
-            <DeleteConfirmationModal />
-
+      <DeleteConfirmationModal />
     </PageContainer>
   );
 };
