@@ -20,9 +20,8 @@ export const navigation = [
   },
   {
     title: 'Reports',
-    path: '/reports',
+    path: '/inspection',
     icon: ReportIcon,
-    permission: PERMISSIONS.VIEW_REPORTS
+    permission: PERMISSIONS.VIEW_INSPECTOR_REPORTS
   },
-  // ... other navigation items
 ];
