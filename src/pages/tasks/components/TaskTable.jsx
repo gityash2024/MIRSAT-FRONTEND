@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
@@ -202,23 +202,77 @@ const DeleteConfirmDialog = styled.div`
   z-index: 1000;
 `;
 
+const HeaderContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
 
+const HeaderText = styled.span`
+  flex-grow: 1;
+`;
 
-const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
+const SortIcon = styled.span`
+  display: inline-flex;
+  align-items: center;
+`;
+
+const RowNumber = styled.td`
+  width: 50px;
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+`;
+
+const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [sortConfig, setSortConfig] = useState({
-    key: 'createdAt',
-    direction: 'desc'
+    key: 'title',
+    direction: 'asc'
   });
+  const [sortedTasks, setSortedTasks] = useState([...initialTasks]);
+
+  useEffect(() => {
+    const sorted = [...initialTasks].sort((a, b) => {
+      if (!a || !b) return 0;
+
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      if (sortConfig.key === 'inspectionLevel') {
+        aValue = a.inspectionLevel?.name || '';
+        bValue = b.inspectionLevel?.name || '';
+      } else if (sortConfig.key === 'assignedTo') {
+        aValue = a.assignedTo?.[0]?.name || '';
+        bValue = b.assignedTo?.[0]?.name || '';
+      } else if (sortConfig.key === 'deadline') {
+        aValue = new Date(a.deadline || 0).getTime();
+        bValue = new Date(b.deadline || 0).getTime();
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setSortedTasks(sorted);
+  }, [initialTasks, sortConfig.key, sortConfig.direction]);
 
   const handleSort = (key) => {
     const direction = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
     setSortConfig({ key, direction });
-    onSort?.({ key, direction });
+    
+    if (onSort) {
+      onSort({ key, direction });
+    }
   };
 
   const handleViewTask = (taskId) => {
@@ -254,7 +308,7 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
     );
   }
 
-  if (!tasks.length) {
+  if (!sortedTasks.length) {
     return (
       <TableContainer>
         <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
@@ -268,19 +322,112 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
         <Table>
           <thead>
             <tr>
-              <th onClick={() => handleSort('title')}>Task Name</th>
-              <th onClick={() => handleSort('inspectionLevel')}>Inspection Level</th>
-              <th onClick={() => handleSort('assignedTo')}>Assignee</th>
-              <th onClick={() => handleSort('priority')}>Priority</th>
-              <th onClick={() => handleSort('status')}>Status</th>
-              <th onClick={() => handleSort('deadline')}>Due Date</th>
-              <th>Progress</th>
+              <th style={{ width: '50px', textAlign: 'center' }}>#</th>
+              <th onClick={() => handleSort('title')}>
+                <HeaderContent>
+                  <HeaderText>Task Name</HeaderText>
+                  {sortConfig.key === 'title' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('inspectionLevel')}>
+                <HeaderContent>
+                  <HeaderText>Inspection Level</HeaderText>
+                  {sortConfig.key === 'inspectionLevel' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('assignedTo')}>
+                <HeaderContent>
+                  <HeaderText>Assignee</HeaderText>
+                  {sortConfig.key === 'assignedTo' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('priority')}>
+                <HeaderContent>
+                  <HeaderText>Priority</HeaderText>
+                  {sortConfig.key === 'priority' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('status')}>
+                <HeaderContent>
+                  <HeaderText>Status</HeaderText>
+                  {sortConfig.key === 'status' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('deadline')}>
+                <HeaderContent>
+                  <HeaderText>Due Date</HeaderText>
+                  {sortConfig.key === 'deadline' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('overallProgress')}>
+                <HeaderContent>
+                  <HeaderText>Progress</HeaderText>
+                  {sortConfig.key === 'overallProgress' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {tasks.map(task => (
+            {sortedTasks.map((task, index) => (
               <tr key={task._id}>
+                <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                 <td>{task.title}</td>
                 <td>{task.inspectionLevel?.name}</td>
                 <td>

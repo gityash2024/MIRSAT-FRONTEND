@@ -1,8 +1,8 @@
 // src/pages/calendar/components/EventModal.jsx
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { X, Trash2 } from 'lucide-react';
-import { eventTypes, eventStatuses, assignees } from '../mockData';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -174,6 +174,11 @@ const Button = styled.button`
       }
     `}
   }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const ButtonGroup = styled.div`
@@ -190,11 +195,16 @@ const EventModal = ({
   onUpdate,
   onDelete
 }) => {
+  // Get data from Redux store
+  const { users } = useSelector((state) => state.users || { users: [] });
+  const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
+
   const [formData, setFormData] = useState({
     title: '',
     type: '',
     assignee: '',
-    status: '',
+    status: 'pending',
+    priority: 'medium',
     startDate: '',
     startTime: '',
     endDate: '',
@@ -202,16 +212,32 @@ const EventModal = ({
     description: ''
   });
 
+  // Available statuses and priorities
+  const statuses = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' }
+  ];
+
+  const priorities = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'urgent', label: 'Urgent' }
+  ];
+
   useEffect(() => {
     if (event) {
       const startDateTime = new Date(event.start);
-      const endDateTime = new Date(event.end);
+      const endDateTime = event.end ? new Date(event.end) : new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
 
       setFormData({
-        title: event.title,
-        type: event.type,
-        assignee: event.assignee,
-        status: event.status,
+        title: event.title || '',
+        type: event.type || '',
+        assignee: event.assignee || '',
+        status: event.status || 'pending',
+        priority: event.priority || 'medium',
         startDate: startDateTime.toISOString().split('T')[0],
         startTime: startDateTime.toTimeString().slice(0, 5),
         endDate: endDateTime.toISOString().split('T')[0],
@@ -220,13 +246,14 @@ const EventModal = ({
       });
     } else if (selectedDate) {
       const defaultEndTime = new Date(selectedDate);
-      defaultEndTime.setHours(defaultEndTime.getHours() + 1);
+      defaultEndTime.setHours(defaultEndTime.getHours() + 2);
 
       setFormData({
         title: '',
         type: '',
         assignee: '',
         status: 'pending',
+        priority: 'medium',
         startDate: selectedDate.toISOString().split('T')[0],
         startTime: selectedDate.toTimeString().slice(0, 5),
         endDate: defaultEndTime.toISOString().split('T')[0],
@@ -244,11 +271,10 @@ const EventModal = ({
       type: formData.type,
       assignee: formData.assignee,
       status: formData.status,
+      priority: formData.priority,
       start: new Date(`${formData.startDate}T${formData.startTime}`).toISOString(),
       end: new Date(`${formData.endDate}T${formData.endTime}`).toISOString(),
-      description: formData.description,
-      backgroundColor: '#1a237e',
-      borderColor: '#1a237e'
+      description: formData.description
     };
 
     if (event) {
@@ -296,16 +322,15 @@ const EventModal = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <FormGroup>
-                <Label>Event Type</Label>
+                <Label>Inspection Level</Label>
                 <Select
                   value={formData.type}
                   onChange={e => setFormData({ ...formData, type: e.target.value })}
-                  required
                 >
-                  <option value="">Select Type</option>
-                  {eventTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
+                  <option value="">Select Inspection Level</option>
+                  {levels?.results?.map(level => (
+                    <option key={level._id} value={level._id}>
+                      {level.name}
                     </option>
                   ))}
                 </Select>
@@ -316,12 +341,43 @@ const EventModal = ({
                 <Select
                   value={formData.assignee}
                   onChange={e => setFormData({ ...formData, assignee: e.target.value })}
-                  required
                 >
                   <option value="">Select Assignee</option>
-                  {assignees.map(assignee => (
-                    <option key={assignee.value} value={assignee.value}>
-                      {assignee.label}
+                  {users?.map(user => (
+                    <option key={user._id} value={user._id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <FormGroup>
+                <Label>Status</Label>
+                <Select
+                  value={formData.status}
+                  onChange={e => setFormData({ ...formData, status: e.target.value })}
+                  required
+                >
+                  {statuses.map(status => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+
+              <FormGroup>
+                <Label>Priority</Label>
+                <Select
+                  value={formData.priority}
+                  onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                  required
+                >
+                  {priorities.map(priority => (
+                    <option key={priority.value} value={priority.value}>
+                      {priority.label}
                     </option>
                   ))}
                 </Select>
@@ -371,22 +427,6 @@ const EventModal = ({
                 />
               </FormGroup>
             </div>
-
-            <FormGroup>
-              <Label>Status</Label>
-              <Select
-                value={formData.status}
-                onChange={e => setFormData({ ...formData, status: e.target.value })}
-                required
-              >
-                <option value="">Select Status</option>
-                {eventStatuses.map(status => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </Select>
-            </FormGroup>
 
             <FormGroup>
               <Label>Description</Label>
