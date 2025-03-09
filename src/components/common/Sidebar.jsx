@@ -10,7 +10,10 @@ import {
   Settings, 
   ChevronLeft,
   ChevronRight,
-  Home
+  Home,
+  User,
+  FileBarChart,
+  ListChecks
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/permissions';
@@ -161,90 +164,147 @@ const UserDetails = styled.div`
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   const isActiveRoute = (path) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  // Common items for all user types (except regular users)
-  const commonItems = [
-    {
-      title: 'Dashboard',
-      path: '/dashboard',
-      icon: Home,
-      permissions: ['view_dashboard']
-    },
-    {
-      title: 'Tasks',
-      path: '/tasks',
-      icon: ClipboardList,
-      permissions: ['view_tasks']
-    }
-  ];
-
-  // Admin, manager, inspector items
-  const privilegedItems = [
-    {
-      title: 'Inspection Levels',
-      path: '/inspection',
-      icon: Layers,
-      permissions: ['view_inspections'],
-      roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.INSPECTOR]
-    },
-    {
-      title: 'Users',
-      path: '/users',
-      icon: Users,
-      permissions: ['view_users'],
-      roles: [ROLES.ADMIN, ROLES.MANAGER]
-    },
-    {
-      title: 'Reports',
-      path: '/reports',
-      icon: BarChart,
-      permissions: ['view_reports'],
-      roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.INSPECTOR]
-    },
-    {
-      title: 'Calendar',
-      path: '/calendar',
-      icon: Calendar,
-      permissions: ['view_calendar'],
-      roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.INSPECTOR]
-    },
-    {
-      title: 'Settings',
-      path: '/settings',
-      icon: Settings,
-      permissions: ['view_settings'],
-      roles: [ROLES.ADMIN, ROLES.MANAGER]
-    }
-  ];
-  
-  // For regular users, we only show dashboard and tasks
-  const userItems = [
-    {
-      title: 'My Dashboard',
-      path: '/user-dashboard',
-      icon: Home,
-      permissions: ['view_dashboard']
-    },
-    {
-      title: 'My Tasks',
-      path: '/user-tasks',
-      icon: ClipboardList,
-      permissions: ['view_tasks']
-    }
-  ];
+  // Navigation configuration based on user roles
+  const navigationConfig = {
+    admin: [
+      {
+        title: 'Dashboard',
+        path: '/dashboard',
+        icon: Home
+      },
+      {
+        title: 'Tasks',
+        path: '/tasks',
+        icon: ClipboardList
+      },
+      {
+        title: 'Users',
+        path: '/users',
+        icon: Users
+      },
+      {
+        title: 'Inspection Levels',
+        path: '/inspection',
+        icon: ListChecks
+      },
+      {
+        title: 'Reports',
+        path: '/reports',
+        icon: FileBarChart
+      },
+      {
+        title: 'Calendar',
+        path: '/calendar',
+        icon: Calendar
+      },
+      {
+        title: 'Settings',
+        path: '/settings',
+        icon: Settings
+      },
+      {
+        title: 'Profile',
+        path: '/profile',
+        icon: User
+      }
+    ],
+    manager: [
+      {
+        title: 'Dashboard',
+        path: '/dashboard',
+        icon: Home
+      },
+      {
+        title: 'Tasks',
+        path: '/tasks',
+        icon: ClipboardList
+      },
+      {
+        title: 'Inspection Levels',
+        path: '/inspection',
+        icon: ListChecks
+      },
+      {
+        title: 'Reports',
+        path: '/reports',
+        icon: FileBarChart
+      },
+      {
+        title: 'Calendar',
+        path: '/calendar',
+        icon: Calendar
+      },
+      {
+        title: 'Profile',
+        path: '/profile',
+        icon: User
+      }
+    ],
+    inspector: [
+      {
+        title: 'Dashboard',
+        path: '/dashboard',
+        icon: Home
+      },
+      {
+        title: 'Tasks',
+        path: '/tasks',
+        icon: ClipboardList
+      },
+      {
+        title: 'Inspection Levels',
+        path: '/inspection',
+        icon: ListChecks
+      },
+      {
+        title: 'Calendar',
+        path: '/calendar',
+        icon: Calendar
+      },
+      {
+        title: 'Profile',
+        path: '/profile',
+        icon: User
+      }
+    ],
+    user: [
+      {
+        title: 'Dashboard',
+        path: '/user-dashboard',
+        icon: Home
+      },
+      {
+        title: 'My Tasks',
+        path: '/user-tasks',
+        icon: ClipboardList
+      },
+      {
+        title: 'Profile',
+        path: '/profile',
+        icon: User
+      }
+    ]
+  };
 
   // Determine which menu items to show based on user role
-  const displayItems = user?.role === ROLES.USER 
-    ? userItems 
-    : [...commonItems, ...privilegedItems.filter(item => 
-        item.roles && item.roles.includes(user?.role)
-      )];
+  const userRole = user?.role || 'user';
+  const menuItems = navigationConfig[userRole.toLowerCase()] || navigationConfig.user;
   
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <SidebarContainer collapsed={collapsed}>
       <Logo collapsed={collapsed}>
@@ -255,7 +315,7 @@ const Sidebar = () => {
       </Logo>
       
       <Nav>
-        {displayItems.map((item) => (
+        {menuItems.map((item) => (
           <NavItem 
             key={item.path}
             to={item.path}
@@ -272,7 +332,7 @@ const Sidebar = () => {
       
       <UserInfo collapsed={collapsed}>
         <Avatar>
-          {user?.name?.charAt(0) || 'U'}
+          {getInitials(user?.name)}
         </Avatar>
         <UserDetails collapsed={collapsed}>
           <span>{user?.name || 'User'}</span>

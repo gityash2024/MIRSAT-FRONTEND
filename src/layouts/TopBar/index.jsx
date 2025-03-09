@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useAuth } from '../../hooks/useAuth';
 import { Menu, Bell, User, ChevronDown, Settings, LogOut } from 'lucide-react';
 import { NotificationDropdown } from '../../pages/notifications';
+import { useNavigate } from 'react-router-dom';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -147,6 +148,7 @@ const MenuItem = styled.button`
 `;
 
 const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
+  const navigate=useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -194,14 +196,11 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
           </UserMenuTrigger>
 
           <UserMenuDropdown isOpen={isUserMenuOpen}>
-            <MenuItem onClick={() => {}}>
+            <MenuItem onClick={() => navigate('/profile')}>
               <User size={18} className="icon" />
               Profile
             </MenuItem>
-            <MenuItem onClick={() => {}}>
-              <Settings size={18} className="icon" />
-              Settings
-            </MenuItem>
+         
             <MenuItem onClick={logout} variant="danger">
               <LogOut size={18} className="icon" />
               Logout

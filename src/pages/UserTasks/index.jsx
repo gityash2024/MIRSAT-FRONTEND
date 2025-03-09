@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Search, Filter, ArrowDown, ArrowUp, PlayCircle, Clock, CheckCircle, XCircle, Activity } from 'lucide-react';
+import { 
+  Search, Filter, PlayCircle, Clock, CheckCircle, XCircle, 
+  Activity, Calendar, AlertTriangle, Loader, ChevronLeft, ChevronRight
+} from 'lucide-react';
+import { 
+  fetchUserTasks, 
+  startUserTask,
+  setFilters,
+  setPagination
+} from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
 
 const TasksContainer = styled.div`
@@ -313,6 +324,35 @@ const Pagination = styled.div`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+`;
+
+const PriorityBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  
+  ${props => {
+    switch(props.priority) {
+      case 'high':
+        return 'background-color: #ffebee; color: #d32f2f;';
+      case 'medium':
+        return 'background-color: #fff8e1; color: #f57c00;';
+      case 'low':
+        return 'background-color: #e8f5e9; color: #2e7d32;';
+      default:
+        return 'background-color: #f5f5f5; color: #616161;';
+    }
+  }}
+`;
+
 const StatusIcon = ({ status, size = 18 }) => {
   switch (status) {
     case 'pending':
@@ -338,104 +378,94 @@ const formatDate = (dateString) => {
 };
 
 const UserTasks = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  
   const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
   
-  // Sample data - in a real app this would come from API
-  useEffect(() => {
-    // Simulating API call
-    setTimeout(() => {
-      setTasks([
-        {
-          id: 1,
-          title: 'Beach Safety Inspection',
-          description: 'Conduct a comprehensive safety inspection of the North Beach area, ensuring all safety equipment is functional.',
-          status: 'in_progress',
-          deadline: '2025-03-10',
-          location: 'North Beach',
-          progress: 45,
-          priority: 'high',
-          inspectionLevel: 'Safety Level 2'
-        },
-        {
-          id: 2,
-          title: 'Marina Equipment Check',
-          description: 'Check all marina equipment including lifeboats, life jackets, and emergency communication devices.',
-          status: 'pending',
-          deadline: '2025-03-15',
-          location: 'West Marina',
-          progress: 0,
-          priority: 'medium',
-          inspectionLevel: 'Operational Level 1'
-        },
-        {
-          id: 3,
-          title: 'Environmental Impact Assessment',
-          description: 'Complete the quarterly environmental impact assessment for the harbor area.',
-          status: 'completed',
-          deadline: '2025-02-28',
-          location: 'Harbor Area',
-          progress: 100,
-          priority: 'medium',
-          inspectionLevel: 'Environmental Level 3'
-        },
-        {
-          id: 4,
-          title: 'Safety Training Verification',
-          description: 'Verify that all staff members have completed their mandatory safety training.',
-          status: 'pending',
-          deadline: '2025-03-20',
-          location: 'Main Office',
-          progress: 0,
-          priority: 'high',
-          inspectionLevel: 'Safety Level 1'
-        },
-        {
-          id: 5,
-          title: 'Equipment Inventory',
-          description: 'Conduct an inventory of all marine equipment and update the central database.',
-          status: 'in_progress',
-          deadline: '2025-03-12',
-          location: 'East Marina',
-          progress: 65,
-          priority: 'low',
-          inspectionLevel: 'Operational Level 2'
-        }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+  const { 
+    tasks, 
+    loading, 
+    actionLoading, 
+    error, 
+    filters, 
+    pagination 
+  } = useSelector((state) => state.userTasks);
 
-  const filteredTasks = tasks.filter(task => {
-    // Apply status filter
-    if (filter !== 'all' && task.status !== filter) {
-      return false;
+  useEffect(() => {
+    loadTasks();
+  }, [filters, pagination.page, pagination.limit]);
+
+  const loadTasks = () => {
+    const params = {
+      ...filters,
+      page: pagination.page,
+      limit: pagination.limit
+    };
+    
+    dispatch(fetchUserTasks(params));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    dispatch(setFilters({ search }));
+    dispatch(setPagination({ page: 1 }));
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
+
+  const handleFilterClick = (status) => {
+    setActiveFilter(status);
+    
+    if (status === 'all') {
+      dispatch(setFilters({ status: [] }));
+    } else {
+      dispatch(setFilters({ status: [status] }));
     }
     
-    // Apply search filter
-    if (search && !task.title.toLowerCase().includes(search.toLowerCase()) && 
-        !task.description.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
-  });
-  
-  const startTask = (taskId) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId ? { ...task, status: 'in_progress' } : task
-      )
-    );
+    dispatch(setPagination({ page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    dispatch(setPagination({ page: newPage }));
+  };
+
+  const handleStartTask = (taskId) => {
+    dispatch(startUserTask(taskId));
   };
   
   const viewTaskDetails = (taskId) => {
-    // In a real app, this would navigate to the task details page
-    console.log(`View task ${taskId} details`);
+    navigate(`/user-tasks/${taskId}`);
   };
+
+  // Check if a date is past due
+  const isPastDue = (deadline) => {
+    return new Date(deadline) < new Date() && true;
+  };
+
+  if (loading && tasks.results.length === 0) {
+    return (
+      <TasksContainer>
+        <PageHeader>
+          <Title>My Tasks</Title>
+          <Description>View and manage all your assigned tasks</Description>
+        </PageHeader>
+        
+        <LoadingContainer>
+          <Loader size={30} color="#1a237e" />
+        </LoadingContainer>
+      </TasksContainer>
+    );
+  }
 
   return (
     <TasksContainer>
@@ -451,40 +481,47 @@ const UserTasks = () => {
             type="text" 
             placeholder="Search tasks..." 
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
+            onKeyPress={handleKeyPress}
           />
         </SearchInput>
         
         <ButtonGroup>
-          <FilterButton onClick={() => setFilter('all')} 
-            style={{background: filter === 'all' ? '#e3f2fd' : '#f1f5f9'}}>
+          <FilterButton 
+            onClick={() => handleFilterClick('all')} 
+            style={{background: activeFilter === 'all' ? '#e3f2fd' : '#f1f5f9'}}
+          >
             <Filter size={16} />
             All
           </FilterButton>
-          <FilterButton onClick={() => setFilter('pending')}
-            style={{background: filter === 'pending' ? '#fff8e1' : '#f1f5f9'}}>
+          <FilterButton 
+            onClick={() => handleFilterClick('pending')}
+            style={{background: activeFilter === 'pending' ? '#fff8e1' : '#f1f5f9'}}
+          >
             <Clock size={16} />
             Pending
           </FilterButton>
-          <FilterButton onClick={() => setFilter('in_progress')}
-            style={{background: filter === 'in_progress' ? '#e1f5fe' : '#f1f5f9'}}>
+          <FilterButton 
+            onClick={() => handleFilterClick('in_progress')}
+            style={{background: activeFilter === 'in_progress' ? '#e1f5fe' : '#f1f5f9'}}
+          >
             <Activity size={16} />
             In Progress
           </FilterButton>
-          <FilterButton onClick={() => setFilter('completed')}
-            style={{background: filter === 'completed' ? '#e8f5e9' : '#f1f5f9'}}>
+          <FilterButton 
+            onClick={() => handleFilterClick('completed')}
+            style={{background: activeFilter === 'completed' ? '#e8f5e9' : '#f1f5f9'}}
+          >
             <CheckCircle size={16} />
             Completed
           </FilterButton>
         </ButtonGroup>
       </FilterBar>
       
-      {loading ? (
-        <div>Loading tasks...</div>
-      ) : filteredTasks.length > 0 ? (
+      {tasks.results.length > 0 ? (
         <TasksGrid>
-          {filteredTasks.map((task) => (
-            <TaskCard key={task.id}>
+          {tasks.results.map((task) => (
+            <TaskCard key={task._id}>
               <TaskHeader>
                 <TaskTitle>{task.title}</TaskTitle>
                 <StatusBadge status={task.status}>
@@ -497,19 +534,32 @@ const UserTasks = () => {
                 <TaskDescription>{task.description}</TaskDescription>
                 
                 <TaskDetailRow>
-                  <Clock size={16} />
-                  Deadline: {formatDate(task.deadline)}
+                  <Calendar size={16} />
+                  <span style={{ 
+                    color: isPastDue(task.deadline) && task.status !== 'completed' ? '#d32f2f' : '#666' 
+                  }}>
+                    Due: {formatDate(task.deadline)}
+                    {isPastDue(task.deadline) && task.status !== 'completed' && ' (Overdue)'}
+                  </span>
                 </TaskDetailRow>
                 
                 <TaskDetailRow>
-                  <Filter size={16} />
-                  Priority: {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  <AlertTriangle size={16} />
+                  Priority: 
+                  <PriorityBadge priority={task.priority}>
+                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  </PriorityBadge>
+                </TaskDetailRow>
+
+                <TaskDetailRow>
+                  <Activity size={16} />
+                  Inspection: {task.inspectionLevel?.name || 'N/A'}
                 </TaskDetailRow>
                 
-                <TaskProgress progress={task.progress}>
+                <TaskProgress progress={task.overallProgress || 0}>
                   <div className="progress-header">
                     <span className="progress-label">Completion</span>
-                    <span className="progress-percentage">{task.progress}%</span>
+                    <span className="progress-percentage">{task.overallProgress || 0}%</span>
                   </div>
                   <div className="progress-bar">
                     <div className="progress-fill"></div>
@@ -519,7 +569,7 @@ const UserTasks = () => {
               
               <TaskActions>
                 <TaskButton 
-                  onClick={() => viewTaskDetails(task.id)}
+                  onClick={() => viewTaskDetails(task._id)}
                 >
                   View Details
                 </TaskButton>
@@ -527,10 +577,17 @@ const UserTasks = () => {
                 {task.status === 'pending' && (
                   <TaskButton 
                     primary
-                    onClick={() => startTask(task.id)}
+                    onClick={() => handleStartTask(task._id)}
+                    disabled={actionLoading}
                   >
-                    <PlayCircle size={16} />
-                    Start Task
+                    {actionLoading ? (
+                      <Loader size={16} color="white" />
+                    ) : (
+                      <>
+                        <PlayCircle size={16} />
+                        Start Task
+                      </>
+                    )}
                   </TaskButton>
                 )}
               </TaskActions>
@@ -544,11 +601,34 @@ const UserTasks = () => {
         </EmptyTasks>
       )}
       
-      {filteredTasks.length > 0 && (
+      {tasks.totalPages > 1 && (
         <Pagination>
-          <button disabled>&lt;</button>
-          <button className="active">1</button>
-          <button disabled>&gt;</button>
+          <button 
+            disabled={pagination.page <= 1}
+            onClick={() => handlePageChange(pagination.page - 1)}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          
+          {[...Array(tasks.totalPages)].map((_, index) => (
+            <button 
+              key={index + 1}
+              className={pagination.page === index + 1 ? 'active' : ''}
+              onClick={() => handlePageChange(index + 1)}
+            >
+              {index + 1}
+            </button>
+          )).slice(
+            Math.max(0, pagination.page - 3),
+            Math.min(tasks.totalPages, pagination.page + 2)
+          )}
+          
+          <button 
+            disabled={pagination.page >= tasks.totalPages}
+            onClick={() => handlePageChange(pagination.page + 1)}
+          >
+            <ChevronRight size={18} />
+          </button>
         </Pagination>
       )}
     </TasksContainer>

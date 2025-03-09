@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   Calendar, 
   CheckSquare, 
   Clock, 
   AlertCircle,
-  ListChecks
+  ListChecks,
+  Loader,
+  TrendingUp,
+  Award
 } from 'lucide-react';
+import { fetchUserDashboardStats } from '../store/slices/userTasksSlice';
 import { useAuth } from '../hooks/useAuth';
 
 const DashboardContainer = styled.div`
@@ -189,64 +195,142 @@ const StatusItem = styled.div`
   }
 `;
 
+const PerformanceCard = styled.div`
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  
+  .metric-title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .metric-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a237e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 32px 16px;
+  
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a237e;
+    margin-bottom: 8px;
+  }
+  
+  p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+`;
+
 const UserDashboard = () => {
   const { user } = useAuth();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   
-  // Sample data - this would come from your API in a real implementation
-  const stats = [
-    {
-      icon: ListChecks,
-      value: '5',
-      label: 'Assigned Tasks',
-      color: '#1976d2',
-      bgColor: '#e3f2fd'
-    },
-    {
-      icon: CheckSquare,
-      value: '3',
-      label: 'Completed Tasks',
-      color: '#2e7d32',
-      bgColor: '#e8f5e9'
-    },
-    {
-      icon: Clock,
-      value: '2',
-      label: 'In Progress',
-      color: '#ed6c02',
-      bgColor: '#fff3e0'
-    },
-    {
-      icon: AlertCircle,
-      value: '1',
-      label: 'Upcoming Deadlines',
-      color: '#d32f2f',
-      bgColor: '#ffebee'
-    }
-  ];
+  const { dashboardStats, dashboardLoading, error } = useSelector((state) => state.userTasks);
+  const { stats, recentTasks, statusCounts, performance } = dashboardStats;
 
-  const recentTasks = [
-    { 
-      id: 1, 
-      name: 'Beach Safety Inspection', 
-      description: 'Inspect the safety equipment at North Beach area', 
-      status: 'in_progress',
-      deadline: '2025-03-10'
-    },
-    { 
-      id: 2, 
-      name: 'Marina Check', 
-      description: 'Complete the monthly marina security check', 
-      status: 'pending',
-      deadline: '2025-03-15'
-    }
-  ];
+  useEffect(() => {
+    dispatch(fetchUserDashboardStats());
+  }, [dispatch]);
 
-  const taskStatusCounts = [
-    { status: 'Pending', count: 2, color: '#f97316' },
-    { status: 'In Progress', count: 2, color: '#3b82f6' },
-    { status: 'Completed', count: 3, color: '#22c55e' },
-    { status: 'Overdue', count: 1, color: '#ef4444' },
-  ];
+  const handleViewTask = (taskId) => {
+    navigate(`/user-tasks/${taskId}`);
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status.toLowerCase()) {
+      case 'in_progress':
+        return <Clock size={16} />;
+      case 'completed':
+        return <CheckSquare size={16} />;
+      case 'pending':
+        return <AlertCircle size={16} />;
+      default:
+        return <AlertCircle size={16} />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'in_progress':
+        return '#e3f2fd';
+      case 'completed':
+        return '#e8f5e9';
+      case 'pending':
+        return '#fff3e0';
+      default:
+        return '#f5f5f5';
+    }
+  };
+
+  const getStatusTextColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'in_progress':
+        return '#1976d2';
+      case 'completed':
+        return '#2e7d32';
+      case 'pending':
+        return '#ed6c02';
+      default:
+        return '#666';
+    }
+  };
+
+  if (dashboardLoading) {
+    return (
+      <DashboardContainer>
+        <WelcomeText>
+          Welcome back, {user?.name || 'User'}
+        </WelcomeText>
+        <LoadingContainer>
+          <Loader size={30} color="#1a237e" />
+        </LoadingContainer>
+      </DashboardContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardContainer>
+        <WelcomeText>
+          Welcome back, {user?.name || 'User'}
+        </WelcomeText>
+        <Card>
+          <EmptyState>
+            <h3>Unable to load dashboard</h3>
+            <p>{error}</p>
+            <ActionButton 
+              variant="primary"
+              onClick={() => dispatch(fetchUserDashboardStats())}
+            >
+              Try Again
+            </ActionButton>
+          </EmptyState>
+        </Card>
+      </DashboardContainer>
+    );
+  }
 
   return (
     <DashboardContainer>
@@ -255,18 +339,27 @@ const UserDashboard = () => {
       </WelcomeText>
 
       <StatsGrid>
-        {stats.map((stat, index) => (
-          <StatCard key={index}>
-            <div 
-              className="icon-wrapper" 
-              style={{ backgroundColor: stat.bgColor }}
-            >
-              <stat.icon size={24} color={stat.color} />
-            </div>
-            <div className="value">{stat.value}</div>
-            <div className="label">{stat.label}</div>
-          </StatCard>
-        ))}
+        {stats?.map((stat, index) => {
+          const Icon = 
+            stat.icon === 'ListChecks' ? ListChecks :
+            stat.icon === 'CheckSquare' ? CheckSquare :
+            stat.icon === 'Clock' ? Clock :
+            stat.icon === 'AlertCircle' ? AlertCircle : 
+            Calendar;
+            
+          return (
+            <StatCard key={index}>
+              <div 
+                className="icon-wrapper" 
+                style={{ backgroundColor: stat.bgColor }}
+              >
+                <Icon size={24} color={stat.color} />
+              </div>
+              <div className="value">{stat.value}</div>
+              <div className="label">{stat.label}</div>
+            </StatCard>
+          );
+        })}
       </StatsGrid>
 
       <ContentGrid>
@@ -275,49 +368,112 @@ const UserDashboard = () => {
             <Calendar size={20} />
             Recent Tasks
           </CardTitle>
-          <div>
-            {recentTasks.map((task) => (
-              <TaskItem key={task.id}>
-                <div className="task-info">
-                  <div 
-                    className="status-icon" 
-                    style={{ 
-                      background: task.status === 'in_progress' ? '#e3f2fd' : '#fff3e0',
-                      color: task.status === 'in_progress' ? '#1976d2' : '#ed6c02'
-                    }}
-                  >
-                    {task.status === 'in_progress' ? 
-                      <Clock size={16} /> : 
-                      <AlertCircle size={16} />
-                    }
+          {recentTasks?.length > 0 ? (
+            <div>
+              {recentTasks.map((task) => (
+                <TaskItem key={task._id}>
+                  <div className="task-info">
+                    <div 
+                      className="status-icon" 
+                      style={{ 
+                        background: getStatusColor(task.status),
+                        color: getStatusTextColor(task.status)
+                      }}
+                    >
+                      {getStatusIcon(task.status)}
+                    </div>
+                    <div>
+                      <div className="task-name">{task.title}</div>
+                      <div className="task-description">
+                        {task.description.length > 60 
+                          ? `${task.description.substring(0, 60)}...` 
+                          : task.description}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="task-name">{task.name}</div>
-                    <div className="task-description">{task.description}</div>
+                  <div className="task-actions">
+                    <ActionButton 
+                      variant="primary"
+                      onClick={() => handleViewTask(task._id)}
+                    >
+                      View Details
+                    </ActionButton>
                   </div>
-                </div>
-                <div className="task-actions">
-                  <ActionButton variant="primary">View Details</ActionButton>
-                </div>
-              </TaskItem>
-            ))}
-          </div>
+                </TaskItem>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>
+              <h3>No recent tasks</h3>
+              <p>You don't have any recent tasks assigned to you.</p>
+            </EmptyState>
+          )}
         </Card>
 
-        <Card>
-          <CardTitle>
-            <ListChecks size={20} />
-            Task Status
-          </CardTitle>
-          <div>
-            {taskStatusCounts.map((item, index) => (
-              <StatusItem key={index} color={item.color}>
-                <div className="status-label">{item.status}</div>
-                <div className="status-count">{item.count}</div>
-              </StatusItem>
-            ))}
-          </div>
-        </Card>
+        <div>
+          <Card>
+            <CardTitle>
+              <ListChecks size={20} />
+              Task Status
+            </CardTitle>
+            {statusCounts?.length > 0 ? (
+              <div>
+                {statusCounts.map((item, index) => (
+                  <StatusItem key={index} color={item.color}>
+                    <div className="status-label">{item.status}</div>
+                    <div className="status-count">{item.count}</div>
+                  </StatusItem>
+                ))}
+              </div>
+            ) : (
+              <EmptyState>
+                <h3>No task status</h3>
+                <p>Status information is not available yet.</p>
+              </EmptyState>
+            )}
+          </Card>
+
+          <Card style={{ marginTop: '24px' }}>
+            <CardTitle>
+              <TrendingUp size={20} />
+              Performance Metrics
+            </CardTitle>
+            {performance ? (
+              <div>
+                <PerformanceCard>
+                  <div className="metric-title">Tasks Completed This Month</div>
+                  <div className="metric-value">
+                    <CheckSquare size={18} color="#2e7d32" />
+                    {performance.completedThisMonth}
+                  </div>
+                </PerformanceCard>
+                
+                <PerformanceCard>
+                  <div className="metric-title">Average Completion Time</div>
+                  <div className="metric-value">
+                    <Clock size={18} color="#1976d2" />
+                    {performance.avgCompletionTime} days
+                  </div>
+                </PerformanceCard>
+                
+                <PerformanceCard>
+                  <div className="metric-title">Completion Rate</div>
+                  <div className="metric-value">
+                    <Award size={18} color="#f57c00" />
+                    {performance.totalAssigned > 0 
+                      ? Math.round((performance.completedThisMonth / performance.totalAssigned) * 100) 
+                      : 0}%
+                  </div>
+                </PerformanceCard>
+              </div>
+            ) : (
+              <EmptyState>
+                <h3>No performance data</h3>
+                <p>Performance metrics will be available as you complete tasks.</p>
+              </EmptyState>
+            )}
+          </Card>
+        </div>
       </ContentGrid>
     </DashboardContainer>
   );
