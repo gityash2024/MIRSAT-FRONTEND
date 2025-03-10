@@ -31,13 +31,13 @@ export const userTaskService = {
     return response.data;
   },
 
-  // Add a comment to a task (reusing existing API endpoint)
+  // Add a comment to a task
   addTaskComment: async (taskId, content) => {
     const response = await api.post(`/tasks/${taskId}/comments`, { content });
     return response.data;
   },
 
-  // Upload attachment for a task (reusing existing API endpoint)
+  // Upload attachment for a task
   uploadTaskAttachment: async (taskId, file) => {
     const formData = new FormData();
     formData.append('file', file);

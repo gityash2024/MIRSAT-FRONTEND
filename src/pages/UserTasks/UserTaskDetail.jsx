@@ -14,6 +14,7 @@ import {
   updateUserTaskProgress,
   addUserTaskComment 
 } from '../../store/slices/userTasksSlice';
+import { userTaskService } from '../../services/userTask.service';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -216,6 +217,8 @@ const InspectionItem = styled.div`
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
+  margin-bottom: ${props => props.nested ? '8px' : '0'};
+  margin-left: ${props => props.indent ? `${props.indent * 20}px` : '0'};
 `;
 
 const InspectionHeader = styled.div`
@@ -579,6 +582,23 @@ const MetricCard = styled.div`
   }
 `;
 
+const SubLevelTimeItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #eaeaea;
+  font-size: 14px;
+  
+  .sublevel-name {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .time-spent {
+    color: #1a237e;
+  }
+`;
+
 const AttachmentList = styled.div`
   display: flex;
   flex-direction: column;
@@ -693,7 +713,6 @@ const UserTaskDetail = () => {
     }
     
     return () => {
-      // Reset state when component unmounts
       setExpandedItems({});
       setSelectedSubLevel(null);
       setNotes('');
@@ -709,32 +728,34 @@ const UserTaskDetail = () => {
     }));
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     
-    // Simple validation
     const validFiles = files.filter(file => 
-      file.type.match('image.*') && file.size <= 5 * 1024 * 1024 // 5MB limit
+      file.type.match('image.*') && file.size <= 5 * 1024 * 1024
     );
     
     if (validFiles.length !== files.length) {
       toast.error('Some files were rejected. Images must be under 5MB.');
     }
     
-    // Convert to base64 for preview
     const newPhotos = [...photos];
     
-    validFiles.forEach(file => {
+    for (const file of validFiles) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onloadend = () => {
         newPhotos.push({
           file,
-          preview: e.target.result
+          preview: reader.result
         });
         setPhotos([...newPhotos]);
       };
       reader.readAsDataURL(file);
-    });
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const removePhoto = (index) => {
@@ -749,10 +770,22 @@ const UserTaskDetail = () => {
     setIsSubmitting(true);
     
     try {
-      // Create an array of photo URLs (would typically be uploaded to a server)
-      const photoUrls = photos.map((photo, index) => 
-        `photo_${Date.now()}_${index}.jpg` // This is a placeholder
-      );
+      let uploadedPhotos = [];
+      
+      if (photos.length > 0) {
+        for (const photo of photos) {
+          if (photo.file) {
+            try {
+              const uploadedData = await userTaskService.uploadTaskAttachment(taskId, photo.file);
+              if (uploadedData.success && uploadedData.data) {
+                uploadedPhotos.push(uploadedData.data.url);
+              }
+            } catch (error) {
+              console.error('Failed to upload photo:', error);
+            }
+          }
+        }
+      }
       
       await dispatch(updateUserTaskProgress({
         taskId,
@@ -760,16 +793,17 @@ const UserTaskDetail = () => {
         data: {
           status,
           notes,
-          photos: photoUrls
+          photos: uploadedPhotos
         }
       })).unwrap();
       
-      // Reset form state
       setNotes('');
       setPhotos([]);
       setSelectedSubLevel(null);
+      toast.success(`Item marked as ${status.replace('_', ' ')}`);
     } catch (error) {
       console.error('Failed to update status:', error);
+      toast.error('Failed to update task status: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -788,6 +822,7 @@ const UserTaskDetail = () => {
       setNewComment('');
     } catch (error) {
       console.error('Failed to add comment:', error);
+      toast.error('Failed to add comment: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -811,6 +846,164 @@ const UserTaskDetail = () => {
     );
     
     return progressItem && progressItem.notes ? progressItem.notes : '';
+  };
+
+  const findSubLevelNameById = (subLevelId) => {
+    const findInList = (list) => {
+      if (!list || !Array.isArray(list)) return null;
+      
+      for (const item of list) {
+        if (item._id === subLevelId) return item.name;
+        
+        const foundInNested = findInList(item.subLevels);
+        if (foundInNested) return foundInNested;
+      }
+      
+      return null;
+    };
+    
+    return findInList(currentTask?.inspectionLevel?.subLevels) || 'Unknown';
+  };
+
+  const renderSubLevels = (subLevel, depth = 0) => {
+    const subLevelId = subLevel._id;
+    const isExpanded = expandedItems[subLevelId];
+    const status = getSubLevelStatus(subLevelId);
+    const notes = getSubLevelNotes(subLevelId);
+    const isSelected = selectedSubLevel === subLevelId;
+    
+    return (
+      <React.Fragment key={subLevelId}>
+        <InspectionItem indent={depth}>
+          <InspectionHeader 
+            onClick={() => toggleExpand(subLevelId)}
+            status={status}
+          >
+            <div className="inspection-title">
+              <div className="status-indicator" />
+              {subLevel.name}
+            </div>
+            
+            <StatusBadge status={status}>
+              <StatusIcon status={status} size={14} />
+              {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+            </StatusBadge>
+          </InspectionHeader>
+          
+          {isExpanded && (
+            <InspectionContent>
+              <div className="inspection-description">
+                {subLevel.description}
+              </div>
+              
+              {notes && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>Notes:</div>
+                  <div style={{ 
+                    padding: '12px', 
+                    background: '#f5f5f5', 
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}>
+                    {notes}
+                  </div>
+                </div>
+              )}
+              
+              {status !== 'completed' && (
+                <>
+                  <StatusButtonGroup>
+                    <StatusButton 
+                      status={isSelected ? 'in_progress' : 'pending'}
+                      onClick={() => setSelectedSubLevel(isSelected ? null : subLevelId)}
+                    >
+                      {isSelected ? 'Cancel' : 'Update Status'}
+                    </StatusButton>
+                    
+                    {isSelected && (
+                      <>
+                        <StatusButton 
+                          status="in_progress"
+                          onClick={() => handleStatusChange('in_progress')}
+                          disabled={isSubmitting || status === 'in_progress'}
+                        >
+                          <Activity size={16} />
+                          Mark as In Progress
+                        </StatusButton>
+                        
+                        <StatusButton 
+                          status="completed"
+                          onClick={() => handleStatusChange('completed')}
+                          disabled={isSubmitting}
+                        >
+                          <CheckCircle size={16} />
+                          Mark as Completed
+                        </StatusButton>
+                      </>
+                    )}
+                  </StatusButtonGroup>
+                  
+                  {isSelected && (
+                    <>
+                      <NotesSection>
+                        <div className="notes-label">Add Notes</div>
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Add details about the inspection item..."
+                        />
+                      </NotesSection>
+                      
+                      <PhotoUploadContainer>
+                        <div className="photos-label">Add Photos</div>
+                        <div 
+                          className="upload-area"
+                          onClick={() => fileInputRef.current.click()}
+                        >
+                          <Camera size={24} color="#1a237e" />
+                          <p>Click to upload photos</p>
+                          </div>
+                        <input 
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                        />
+                        
+                        {photos.length > 0 && (
+                          <PhotoPreviewsContainer>
+                            {photos.map((photo, index) => (
+                              <PhotoPreview key={index}>
+                                <img src={photo.preview} alt="Preview" />
+                                <button 
+                                  className="remove-button"
+                                  onClick={() => removePhoto(index)}
+                                >
+                                  ×
+                                </button>
+                              </PhotoPreview>
+                            ))}
+                          </PhotoPreviewsContainer>
+                        )}
+                      </PhotoUploadContainer>
+                    </>
+                  )}
+                </>
+              )}
+            </InspectionContent>
+          )}
+        </InspectionItem>
+
+        {isExpanded && subLevel.subLevels && subLevel.subLevels.length > 0 && (
+          <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px' }}>
+            {subLevel.subLevels.map(childSubLevel => 
+              renderSubLevels(childSubLevel, depth + 1)
+            )}
+          </div>
+        )}
+      </React.Fragment>
+    );
   };
 
   if (taskDetailsLoading && !currentTask) {
@@ -936,136 +1129,9 @@ const UserTaskDetail = () => {
             </CardTitle>
             
             <InspectionList>
-              {currentTask.inspectionLevel?.subLevels?.map((item) => {
-                const itemId = item._id;
-                const isExpanded = expandedItems[itemId];
-                const status = getSubLevelStatus(itemId);
-                const existingNotes = getSubLevelNotes(itemId);
-                const isSelected = selectedSubLevel === itemId;
-                
-                return (
-                  <InspectionItem key={itemId}>
-                    <InspectionHeader 
-                      onClick={() => toggleExpand(itemId)}
-                      status={status}
-                    >
-                      <div className="inspection-title">
-                        <div className="status-indicator" />
-                        {item.name}
-                      </div>
-                      
-                      <StatusBadge status={status}>
-                        <StatusIcon status={status} size={14} />
-                        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                      </StatusBadge>
-                    </InspectionHeader>
-                    
-                    {isExpanded && (
-                      <InspectionContent>
-                        <div className="inspection-description">
-                          {item.description}
-                        </div>
-                        
-                        {existingNotes && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontWeight: 500, marginBottom: '4px' }}>Notes:</div>
-                            <div style={{ 
-                              padding: '12px', 
-                              background: '#f5f5f5', 
-                              borderRadius: '8px',
-                              fontSize: '14px'
-                            }}>
-                              {existingNotes}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {status !== 'completed' && (
-                          <>
-                            <StatusButtonGroup>
-                              <StatusButton 
-                                status={isSelected && status === 'pending' ? 'in_progress' : 'in_progress'}
-                                onClick={() => setSelectedSubLevel(isSelected ? null : itemId)}
-                              >
-                                {isSelected ? 'Cancel' : 'Update Status'}
-                              </StatusButton>
-                              
-                              {isSelected && (
-                                <>
-                                  <StatusButton 
-                                    status="in_progress"
-                                    onClick={() => handleStatusChange('in_progress')}
-                                    disabled={isSubmitting || status === 'in_progress'}
-                                  >
-                                    <Activity size={16} />
-                                    Mark as In Progress
-                                  </StatusButton>
-                                  
-                                  <StatusButton 
-                                    status="completed"
-                                    onClick={() => handleStatusChange('completed')}
-                                    disabled={isSubmitting}
-                                  >
-                                    <CheckCircle size={16} />
-                                    Mark as Completed
-                                  </StatusButton>
-                                </>
-                              )}
-                            </StatusButtonGroup>
-                            
-                            {isSelected && (
-                              <>
-                                <NotesSection>
-                                  <div className="notes-label">Add Notes</div>
-                                  <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Add details about the inspection item..."
-                                  />
-                                </NotesSection>
-                                
-                                <PhotoUploadContainer>
-                                  <div className="photos-label">Add Photos</div>
-                                  <div 
-                                    className="upload-area"
-                                    onClick={() => fileInputRef.current.click()}
-                                  >
-                                    <Camera size={24} color="#1a237e" />
-                                    <p>Click to upload photos</p>
-                                  </div>
-                                  <input 
-                                    type="file"
-                                    ref={fileInputRef}
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handlePhotoUpload}
-                                  />
-                                  
-                                  {photos.length > 0 && (
-                                    <PhotoPreviewsContainer>
-                                      {photos.map((photo, index) => (
-                                        <PhotoPreview key={index}>
-                                          <img src={photo.preview} alt="Preview" />
-                                          <button 
-                                            className="remove-button"
-                                            onClick={() => removePhoto(index)}
-                                          >
-                                            ×
-                                          </button>
-                                        </PhotoPreview>
-                                      ))}
-                                    </PhotoPreviewsContainer>
-                                  )}
-                                </PhotoUploadContainer>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </InspectionContent>
-                    )}
-                  </InspectionItem>
-                );
-              })}
+              {currentTask.inspectionLevel?.subLevels?.map(item => 
+                renderSubLevels(item)
+              )}
             </InspectionList>
           </Card>
           
@@ -1150,6 +1216,29 @@ const UserTaskDetail = () => {
                 </div>
               </MetricCard>
             </TaskMetrics>
+          </Card>
+          
+          <Card>
+            <CardTitle>
+              <Clock size={20} />
+              Sublevel Time Tracking
+            </CardTitle>
+            
+            {currentTask.taskMetrics?.subLevelTimeSpent && 
+             Object.keys(currentTask.taskMetrics.subLevelTimeSpent).length > 0 ? (
+              <div>
+                {Object.entries(currentTask.taskMetrics.subLevelTimeSpent).map(([subLevelId, time]) => (
+                  <SubLevelTimeItem key={subLevelId}>
+                    <div className="sublevel-name">{findSubLevelNameById(subLevelId)}</div>
+                    <div className="time-spent">{time} hours</div>
+                  </SubLevelTimeItem>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                No time tracking data available
+              </p>
+            )}
           </Card>
           
           <Card>

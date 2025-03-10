@@ -72,18 +72,24 @@ export const addTaskComment = createAsyncThunk(
     }
   }
 );
-
+// In taskSlice.js
 export const uploadTaskAttachment = createAsyncThunk(
   'tasks/uploadTaskAttachment',
   async ({ id, file }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await api.post(`/tasks/${id}/attachments`, formData);
-      toast.success('Attachment uploaded successfully');
+      
+      const response = await api.post(`/tasks/${id}/attachments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success('File uploaded successfully');
       return response.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error uploading attachment');
+      toast.error(error.response?.data?.message || 'Error uploading file');
       return rejectWithValue(error.response?.data);
     }
   }

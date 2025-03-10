@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { userTaskService } from '../../services/userTask.service';
 import { toast } from 'react-hot-toast';
 
-// Async thunks
 export const fetchUserTasks = createAsyncThunk(
   'userTasks/fetchUserTasks',
   async (params, { rejectWithValue }) => {
@@ -75,7 +74,6 @@ export const addUserTaskComment = createAsyncThunk(
   }
 );
 
-// Slice
 const userTasksSlice = createSlice({
   name: 'userTasks',
   initialState: {
@@ -126,7 +124,6 @@ const userTasksSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch user tasks
       .addCase(fetchUserTasks.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -141,7 +138,6 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      // Fetch dashboard stats
       .addCase(fetchUserDashboardStats.pending, (state) => {
         state.dashboardLoading = true;
         state.error = null;
@@ -156,7 +152,6 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      // Fetch task details
       .addCase(fetchUserTaskDetails.pending, (state) => {
         state.taskDetailsLoading = true;
         state.error = null;
@@ -171,14 +166,12 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      // Start task
       .addCase(startUserTask.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
       .addCase(startUserTask.fulfilled, (state, action) => {
         state.actionLoading = false;
-        // Update task in tasks list
         const updatedTask = action.payload;
         state.tasks.results = state.tasks.results.map(task => 
           task._id === updatedTask._id ? updatedTask : task
@@ -191,7 +184,6 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      // Update task progress
       .addCase(updateUserTaskProgress.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
@@ -200,12 +192,10 @@ const userTasksSlice = createSlice({
         state.actionLoading = false;
         const updatedTask = action.payload;
         
-        // Update current task if it's the same one
         if (state.currentTask && state.currentTask._id === updatedTask._id) {
           state.currentTask = updatedTask;
         }
         
-        // Update task in tasks list
         state.tasks.results = state.tasks.results.map(task => 
           task._id === updatedTask._id ? updatedTask : task
         );
@@ -218,7 +208,6 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      // Add task comment
       .addCase(addUserTaskComment.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
@@ -226,7 +215,6 @@ const userTasksSlice = createSlice({
       .addCase(addUserTaskComment.fulfilled, (state, action) => {
         state.actionLoading = false;
         
-        // Update current task if it exists
         if (state.currentTask) {
           const updatedTask = action.payload;
           state.currentTask = updatedTask;

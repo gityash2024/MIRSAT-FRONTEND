@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Upload, Users, X, File } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
-import { createTask, updateTask } from '../../../store/slices/taskSlice';
+import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
 
 const Form = styled.form`
@@ -317,129 +317,117 @@ const TaskForm = React.memo(({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
 
-  const handleFileUpload = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
 
-    try {
-      const response = await fetch(
-        "https://chirag-backend.onrender.com/api/files/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to upload file: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
-      console.log(responseData)
-      return responseData.fileUrl;
-    } catch (error) {
-      toast.error(`Error uploading file: ${error.message}`);
-      return null;
-    }
-  };
-
-  const handleAttachmentChange = async (event) => {
-    const files = Array.from(event.target.files);
-    const uploadPromises = files.map(async (file) => {
-      const newAttachment = {
-        name: file.name,
-        file,
-        progress: 0,
-        uploading: true
-      };
-      
-      setAttachmentFiles(prev => [...prev, newAttachment]);
-
-      try {
-        const uploadedUrl = await handleFileUpload(file);
-        
-        if (uploadedUrl) {
-          setAttachmentFiles(prev => 
-            prev.map(att => 
-              att.name === file.name 
-                ? { 
-                    ...att, 
-                    url: uploadedUrl, 
-                    progress: 100, 
-                    uploading: false 
-                  }
-                : att
-            )
-          );
-          return uploadedUrl;
-        } else {
-          setAttachmentFiles(prev => 
-            prev.filter(att => att.name !== file.name)
-          );
-          return null;
-        }
-      } catch (error) {
-        setAttachmentFiles(prev => 
-          prev.filter(att => att.name !== file.name)
-        );
-        return null;
-      }
-    });
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+const handleAttachmentChange = async (event) => {
+  const files = Array.from(event.target.files);
+  const newAttachments = [...attachmentFiles];
+  
+  files.forEach(file => {
+    const newAttachment = {
+      name: file.name,
+      file,
+      progress: 0,
+      uploading: true
+    };
+    
+    newAttachments.push(newAttachment);
+  });
+  
+  setAttachmentFiles(newAttachments);
+  
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+};
 
   const handleRemoveAttachment = (index) => {
     setAttachmentFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    const uploadedAttachments = attachmentFiles
-      .filter(file => file.url)
-      .map(file => file.url);
-    const attachmentsData = uploadedAttachments.map(url => ({
-      url: url,
-      filename: url.split('/').pop(),
-      contentType: ''
-    }));
+ // In TaskForm.js
+const handleSubmit = async (e) => {
+  e.preventDefault();
   
+  if (!validateForm()) {
+    return;
+  }
+  
+  try {
+    setIsSubmitting(true);
+    
+    // Prepare task data without attachments first
     const submissionData = {
       ...formData,
       assignedTo: Array.isArray(formData.assignedTo) 
         ? formData.assignedTo 
         : [formData.assignedTo],
-      attachments: attachmentsData,
     };
-  
-    try {
-      setIsSubmitting(true);
+    
+    // Filter out already uploaded attachments
+    const existingAttachments = attachmentFiles
+      .filter(file => file.existing || file.url)
+      .map(file => ({
+        url: file.url,
+        filename: file.name,
+        _id: file._id,
+        contentType: ''
+      }));
       
-      if (initialData._id) {
-        await dispatch(updateTask({ 
+    // Upload new files
+    const filesToUpload = attachmentFiles.filter(file => file.file && !file.url);
+    
+    if (initialData._id && filesToUpload.length > 0) {
+      // For existing tasks, upload files one by one
+      for (const fileData of filesToUpload) {
+        const formData = new FormData();
+        formData.append('file', fileData.file);
+        
+        await dispatch(uploadTaskAttachment({ 
           id: initialData._id, 
-          data: submissionData 
+          file: fileData.file 
         })).unwrap();
-      } else {
-        await dispatch(createTask(submissionData)).unwrap();
       }
-  
-      toast.success(initialData._id ? 'Task updated successfully' : 'Task created successfully');
-  
-      handleCancel();
-    } catch (error) {
-      console.error('Task submission error:', error);
-      toast.error(error.message || 'Failed to save task');
-    } finally {
-      setIsSubmitting(false);
+      
+      // Then update the task details
+      await dispatch(updateTask({ 
+        id: initialData._id, 
+        data: submissionData 
+      })).unwrap();
+    } else if (initialData._id) {
+      // Just update the task if no new files
+      await dispatch(updateTask({ 
+        id: initialData._id, 
+        data: {
+          ...submissionData,
+          attachments: existingAttachments
+        }
+      })).unwrap();
+    } else {
+      // For new tasks, we need to create the task first, then upload files
+      const newTask = await dispatch(createTask(submissionData)).unwrap();
+      
+      // Then upload files if any
+      for (const fileData of filesToUpload) {
+        const formData = new FormData();
+        formData.append('file', fileData.file);
+        
+        await dispatch(uploadTaskAttachment({ 
+          id: newTask.data._id, 
+          file: fileData.file 
+        })).unwrap();
+      }
     }
-  };
+    
+    toast.success(initialData._id ? 'Task updated successfully' : 'Task created successfully');
+    handleCancel();
+  } catch (error) {
+    console.error('Task submission error:', error);
+    toast.error(error.message || 'Failed to save task');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const validateForm = () => {
     const newErrors = {};
