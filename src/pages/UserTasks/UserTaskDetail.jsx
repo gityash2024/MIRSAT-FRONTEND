@@ -379,7 +379,7 @@ const InspectionItem = styled.div`
   border: 1px solid rgba(229, 231, 235, 0.7);
   border-radius: 14px;
   overflow: hidden;
-  margin-bottom: ${props => props.nested ? '10px' : '0'};
+  margin-bottom:15px;
   margin-left: ${props => props.indent ? `${props.indent * 24}px` : '0'};
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
