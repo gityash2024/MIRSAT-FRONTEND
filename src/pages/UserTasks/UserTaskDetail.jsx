@@ -17,42 +17,73 @@ import {
 import { userTaskService } from '../../services/userTask.service';
 
 const PageContainer = styled.div`
-  padding: 24px;
-  background-color: #f5f7fb;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
   min-height: 100vh;
+  
+  @media (min-width: 768px) {
+    padding: 28px;
+  }
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: none;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.8);
   border: none;
-  color: #666;
+  color: #1a237e;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 16px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
   &:hover {
-    color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    color: #0d1186;
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const Header = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08);
+  margin-bottom: 28px;
+  transition: all 0.4s ease;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  
+  &:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 3px 10px rgba(26, 35, 126, 0.1);
+    transform: translateY(-3px);
+  }
+  
+  @media (min-width: 768px) {
+    padding: 28px;
+  }
 `;
 
 const HeaderContent = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 16px;
+  flex-direction: column;
+  gap: 20px;
+  
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
   }
 `;
 
@@ -61,103 +92,207 @@ const TitleSection = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: #1a237e;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  
+  @media (min-width: 768px) {
+    font-size: 26px;
+  }
 `;
 
 const Description = styled.p`
-  color: #666;
+  color: #4b5563;
   font-size: 14px;
+  line-height: 1.6;
   margin-bottom: 16px;
   white-space: pre-wrap;
 `;
 
 const MetaGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 18px;
   margin-top: 24px;
+  
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
 `;
 
 const MetaItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #666;
+  gap: 10px;
+  color: #4b5563;
   font-size: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.7);
+  }
+  
   svg {
     color: #1a237e;
+    flex-shrink: 0;
+  }
+  
+  strong {
+    font-weight: 600;
   }
 `;
 
 const StatusBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: 8px;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   
   ${props => {
     switch(props.status) {
       case 'pending':
-        return 'background-color: #fff8e1; color: #f57c00;';
+        return `
+          background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+          color: #e65100;
+          border: 1px solid rgba(245, 124, 0, 0.2);
+        `;
       case 'in_progress':
-        return 'background-color: #e1f5fe; color: #0288d1;';
+        return `
+          background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+          color: #0069c0;
+          border: 1px solid rgba(2, 136, 209, 0.2);
+        `;
       case 'completed':
-        return 'background-color: #e8f5e9; color: #388e3c;';
+        return `
+          background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+          color: #2e7d32;
+          border: 1px solid rgba(56, 142, 60, 0.2);
+        `;
       case 'incomplete':
-        return 'background-color: #ffebee; color: #d32f2f;';
+        return `
+          background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+          color: #c62828;
+          border: 1px solid rgba(211, 47, 47, 0.2);
+        `;
       default:
-        return 'background-color: #f5f5f5; color: #616161;';
+        return `
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #424242;
+          border: 1px solid rgba(97, 97, 97, 0.2);
+        `;
     }
   }}
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (min-width: 768px) {
+    margin-left: 8px;
+  }
 `;
 
 const PriorityBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 8px;
   font-size: 12px;
-  margin-left: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
   
   ${props => {
     switch(props.priority) {
       case 'high':
-        return 'background-color: #ffebee; color: #d32f2f;';
+        return `
+          background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+          color: #c62828;
+          border: 1px solid rgba(211, 47, 47, 0.2);
+        `;
       case 'medium':
-        return 'background-color: #fff8e1; color: #f57c00;';
+        return `
+          background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+          color: #e65100;
+          border: 1px solid rgba(245, 124, 0, 0.2);
+        `;
       case 'low':
-        return 'background-color: #e8f5e9; color: #2e7d32;';
+        return `
+          background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+          color: #2e7d32;
+          border: 1px solid rgba(46, 125, 50, 0.2);
+        `;
       default:
-        return 'background-color: #f5f5f5; color: #616161;';
+        return `
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #424242;
+          border: 1px solid rgba(97, 97, 97, 0.2);
+        `;
     }
   }}
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  margin-left: 6px;
 `;
 
 const ProgressSection = styled.div`
-  margin-top: 16px;
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.8);
+  }
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
+  height: 12px;
+  background: rgba(224, 224, 224, 0.6);
+  border-radius: 8px;
   overflow: hidden;
-  margin-top: 8px;
+  margin-top: 10px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
   
   .progress-fill {
     height: 100%;
-    background-color: #1a237e;
-    border-radius: 4px;
+    background: linear-gradient(90deg, #1a237e 0%, #5c6bc0 100%);
+    border-radius: 8px;
     width: ${props => props.progress}%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -168,236 +303,345 @@ const ProgressHeader = styled.div`
   
   .progress-label {
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: #333;
   }
   
   .progress-percentage {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: #1a237e;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 10px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   }
 `;
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 3fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 28px;
   
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+  @media (min-width: 1024px) {
+    grid-template-columns: 3fr 1fr;
   }
 `;
 
 const Card = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 28px;
+  transition: all 0.35s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  
+  &:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+  }
+  
+  @media (min-width: 768px) {
+    padding: 28px;
+  }
 `;
 
 const CardTitle = styled.h2`
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1a237e;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 16px;
+  
+  svg {
+    color: #3f51b5;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+  }
+  
+  @media (min-width: 768px) {
+    font-size: 20px;
+  }
 `;
 
 const InspectionList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
 `;
 
 const InspectionItem = styled.div`
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid rgba(229, 231, 235, 0.7);
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: ${props => props.nested ? '8px' : '0'};
-  margin-left: ${props => props.indent ? `${props.indent * 20}px` : '0'};
+  margin-bottom: ${props => props.nested ? '10px' : '0'};
+  margin-left: ${props => props.indent ? `${props.indent * 24}px` : '0'};
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  
+  &:hover {
+    border-color: rgba(199, 210, 254, 0.8);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
 `;
 
 const InspectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 16px;
-  background: #f8fafc;
+  padding: 18px 20px;
+  background: rgba(249, 250, 251, 0.8);
   cursor: pointer;
   user-select: none;
+  transition: background 0.3s ease;
+  
+  &:hover {
+    background: rgba(241, 245, 249, 0.9);
+  }
   
   .inspection-title {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     font-weight: 500;
     color: #333;
   }
   
   .status-indicator {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: ${props => {
       switch(props.status) {
-        case 'completed': return '#4caf50';
-        case 'in_progress': return '#2196f3';
-        default: return '#e0e0e0';
+        case 'completed': return 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)';
+        case 'in_progress': return 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)';
+        default: return 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)';
       }
     }};
+    transition: all 0.3s ease;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 `;
 
 const InspectionContent = styled.div`
-  padding: 16px;
-  border-top: 1px solid #e0e0e0;
+  padding: 20px;
+  border-top: 1px solid rgba(229, 231, 235, 0.7);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
   
   .inspection-description {
     font-size: 14px;
-    color: #666;
-    margin-bottom: 16px;
+    color: #4b5563;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
   }
 `;
 
 const StatusButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
   
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     flex-direction: column;
   }
 `;
 
 const StatusButton = styled.button`
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  
   ${props => {
     switch(props.status) {
       case 'pending':
         return `
-          background: #f5f5f5;
-          color: #666;
-          border: 1px solid #e0e0e0;
-          &:hover { background: #eeeeee; }
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #424242;
+          border: 1px solid rgba(224, 224, 224, 0.7);
+          &:hover { 
+            background: linear-gradient(135deg, #eeeeee 0%, #e0e0e0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+          }
         `;
       case 'in_progress':
         return `
-          background: #e3f2fd;
-          color: #1976d2;
-          border: 1px solid #bbdefb;
-          &:hover { background: #bbdefb; }
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          color: #0069c0;
+          border: 1px solid rgba(33, 150, 243, 0.3);
+          &:hover { 
+            background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(33, 150, 243, 0.12);
+          }
         `;
       case 'completed':
         return `
-          background: #e8f5e9;
-          color: #388e3c;
-          border: 1px solid #c8e6c9;
-          &:hover { background: #c8e6c9; }
+          background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+          color: #2e7d32;
+          border: 1px solid rgba(76, 175, 80, 0.3);
+          &:hover { 
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(76, 175, 80, 0.12);
+          }
         `;
       default:
         return `
-          background: #f5f5f5;
-          color: #666;
-          border: 1px solid #e0e0e0;
-          &:hover { background: #eeeeee; }
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #424242;
+          border: 1px solid rgba(224, 224, 224, 0.7);
+          &:hover { 
+            background: linear-gradient(135deg, #eeeeee 0%, #e0e0e0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+          }
         `;
     }
   }}
   
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
+  
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  svg {
+    flex-shrink: 0;
   }
 `;
 
 const NotesSection = styled.div`
-  margin-top: 16px;
+  margin-top: 24px;
   
   .notes-label {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   
   textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    border-radius: 12px;
     font-size: 14px;
-    min-height: 100px;
+    min-height: 110px;
     resize: vertical;
     margin-bottom: 16px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
     
     &:focus {
       outline: none;
       border-color: #1a237e;
-      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+      box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.1);
+      background: rgba(255, 255, 255, 0.9);
     }
   }
 `;
 
 const SubmitButton = styled.button`
-  padding: 8px 16px;
-  background: #1a237e;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
   
   &:hover {
-    background: #151b4f;
+    background: linear-gradient(135deg, #151b4f 0%, #2c3889 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26, 35, 126, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(26, 35, 126, 0.2);
   }
   
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 12px rgba(26, 35, 126, 0.1);
+  }
+  
+  svg {
+    flex-shrink: 0;
   }
 `;
 
 const PhotoUploadContainer = styled.div`
-  margin-top: 16px;
+  margin-top: 24px;
   
   .photos-label {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   
   .upload-area {
-    border: 2px dashed #e0e0e0;
-    border-radius: 8px;
-    padding: 16px;
+    border: 2px dashed rgba(209, 213, 219, 0.7);
+    border-radius: 14px;
+    padding: 24px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
     
     &:hover {
       border-color: #1a237e;
+      background: rgba(255, 255, 255, 0.7);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
     }
     
     p {
       font-size: 14px;
-      color: #666;
-      margin-top: 8px;
+      color: #6b7280;
+      margin-top: 10px;
+      font-weight: 500;
     }
   }
   
@@ -409,63 +653,98 @@ const PhotoUploadContainer = styled.div`
 const PhotoPreviewsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 16px;
+  margin-top: 20px;
 `;
 
 const PhotoPreview = styled.div`
   position: relative;
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  transform: perspective(800px) rotateY(0deg);
+  
+  &:hover {
+    transform: perspective(800px) rotateY(5deg) translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1);
+    
+    img {
+      transform: scale(1.08);
+    }
+  }
   
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
   }
   
   .remove-button {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
     border: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(3px);
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.1);
+    }
   }
 `;
 
 const CommentSection = styled.div`
-  margin-top: 24px;
+  margin-top: 28px;
 `;
 
 const CommentInput = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 28px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  }
   
   textarea {
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    border-radius: 12px;
     font-size: 14px;
-    min-height: 80px;
+    min-height: 90px;
     resize: vertical;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.7);
     
     &:focus {
       outline: none;
       border-color: #1a237e;
-      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+      box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+      background: rgba(255, 255, 255, 0.9);
     }
   }
   
@@ -478,35 +757,57 @@ const CommentInput = styled.div`
 const CommentList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 `;
 
 const Comment = styled.div`
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  
+  &:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    background: rgba(248, 250, 252, 0.9);
+  }
   
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   
   .author {
-    font-weight: 500;
+    font-weight: 600;
     color: #333;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
   .timestamp {
     font-size: 12px;
-    color: #666;
+    color: #6b7280;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 3px 8px;
+    border-radius: 12px;
   }
   
   .content {
-    color: #666;
+    color: #4b5563;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
   }
 `;
 
@@ -515,22 +816,39 @@ const ProgressWidget = styled.div`
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  height: 200px;
+  height: 220px;
   position: relative;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.4s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+  }
   
   .progress-circle {
-    width: 150px;
-    height: 150px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
-    background: conic-gradient(
-      #1a237e ${props => props.progress}%, 
-      #f1f5f9 ${props => props.progress}% 100%
-    );
+    background: ${props => `conic-gradient(#1a237e ${props.progress}%, #f1f5f9 ${props.progress}% 100%)`};
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    transform: none;
+    
+    &:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
     
     &::before {
       content: '';
@@ -539,20 +857,28 @@ const ProgressWidget = styled.div`
       height: 120px;
       border-radius: 50%;
       background: white;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
     }
   }
   
   .progress-text {
     position: absolute;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     color: #1a237e;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    z-index: 2;
   }
   
   .progress-label {
-    margin-top: 16px;
-    font-size: 14px;
-    color: #666;
+    margin-top: 18px;
+    font-size: 15px;
+    color: #4b5563;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   }
 `;
 
@@ -561,33 +887,65 @@ const TaskMetrics = styled.div`
 `;
 
 const MetricCard = styled.div`
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
+  background: rgba(248, 250, 252, 0.7);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 14px;
+  transition: all 0.35s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  transform: perspective(800px) rotateY(0deg);
+  
+  &:hover {
+    background: rgba(248, 250, 252, 0.85);
+    transform: perspective(800px) rotateY(5deg) translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  }
   
   .metric-label {
     font-size: 14px;
-    color: #666;
-    margin-bottom: 8px;
+    color: #6b7280;
+    margin-bottom: 10px;
+    font-weight: 500;
   }
   
   .metric-value {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: #1a237e;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
   }
 `;
 
 const SubLevelTimeItem = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid #eaeaea;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(237, 242, 247, 0.7);
   font-size: 14px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.5);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(4px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  &:first-child {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
   
   .sublevel-name {
     font-weight: 500;
@@ -596,48 +954,74 @@ const SubLevelTimeItem = styled.div`
   
   .time-spent {
     color: #1a237e;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 8px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 `;
 
 const AttachmentList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 18px;
 `;
 
 const AttachmentItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
+  padding: 14px;
+  background: rgba(248, 250, 252, 0.7);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03);
+  
+  &:hover {
+    background: rgba(248, 250, 252, 0.9);
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  }
   
   .file-info {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
   }
   
   .file-name {
     font-size: 14px;
     color: #333;
+    font-weight: 500;
   }
   
   a {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: #1a237e;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
     color: white;
     text-decoration: none;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(26, 35, 126, 0.15);
     
     &:hover {
-      background: #151b4f;
+      background: linear-gradient(135deg, #151b4f 0%, #2c3889 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(26, 35, 126, 0.2);
+    }
+    
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 5px rgba(26, 35, 126, 0.15);
     }
   }
 `;
@@ -648,11 +1032,12 @@ const LoadingOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(8px);
 `;
 
 const StatusIcon = ({ status, size = 18 }) => {
@@ -897,13 +1282,18 @@ const UserTaskDetail = () => {
               </div>
               
               {notes && (
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>Notes:</div>
+                <div style={{ marginBottom: '18px' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '8px' }}>Notes:</div>
                   <div style={{ 
-                    padding: '12px', 
-                    background: '#f5f5f5', 
-                    borderRadius: '8px',
-                    fontSize: '14px'
+                    padding: '14px', 
+                    background: 'rgba(248, 250, 252, 0.8)', 
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    color: '#4b5563',
+                    lineHeight: '1.6',
+                    border: '1px solid rgba(255, 255, 255, 0.7)',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                    backdropFilter: 'blur(5px)'
                   }}>
                     {notes}
                   </div>
@@ -960,7 +1350,7 @@ const UserTaskDetail = () => {
                           className="upload-area"
                           onClick={() => fileInputRef.current.click()}
                         >
-                          <Camera size={24} color="#1a237e" />
+                          <Camera size={28} color="#1a237e" />
                           <p>Click to upload photos</p>
                           </div>
                         <input 
@@ -996,7 +1386,7 @@ const UserTaskDetail = () => {
         </InspectionItem>
 
         {isExpanded && subLevel.subLevels && subLevel.subLevels.length > 0 && (
-          <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px' }}>
+          <div style={{ marginLeft: `${depth * 28 + 28}px`, marginTop: '16px', marginBottom: '16px' }}>
             {subLevel.subLevels.map(childSubLevel => 
               renderSubLevels(childSubLevel, depth + 1)
             )}
@@ -1014,7 +1404,7 @@ const UserTaskDetail = () => {
           Back to Tasks
         </BackButton>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <Loader size={30} color="#1a237e" />
+          <Loader size={32} color="#1a237e" />
         </div>
       </PageContainer>
     );
@@ -1031,7 +1421,7 @@ const UserTaskDetail = () => {
           <CardTitle>Error</CardTitle>
           <p>{error}</p>
           <SubmitButton 
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: '18px' }}
             onClick={() => dispatch(fetchUserTaskDetails(taskId))}
           >
             Try Again
@@ -1060,7 +1450,10 @@ const UserTaskDetail = () => {
     <PageContainer>
       {actionLoading && (
         <LoadingOverlay>
-          <Loader size={40} color="#1a237e" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+            <Loader size={44} color="#1a237e" />
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a237e' }}>Processing...</div>
+          </div>
         </LoadingOverlay>
       )}
       
@@ -1084,12 +1477,12 @@ const UserTaskDetail = () => {
         
         <MetaGrid>
           <MetaItem>
-            <Calendar size={16} />
+            <Calendar size={18} />
             <strong>Due Date:</strong> {formatDate(currentTask.deadline)}
           </MetaItem>
           
           <MetaItem>
-            <AlertTriangle size={16} />
+            <AlertTriangle size={18} />
             <strong>Priority:</strong>
             <PriorityBadge priority={currentTask.priority}>
               {currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}
@@ -1098,13 +1491,13 @@ const UserTaskDetail = () => {
           
           {currentTask.location && (
             <MetaItem>
-              <Map size={16} />
+              <Map size={18} />
               <strong>Location:</strong> {currentTask.location}
             </MetaItem>
           )}
           
           <MetaItem>
-            <Info size={16} />
+            <Info size={18} />
             <strong>Inspection Type:</strong> {currentTask.inspectionLevel?.type || 'N/A'}
           </MetaItem>
         </MetaGrid>
@@ -1124,7 +1517,7 @@ const UserTaskDetail = () => {
         <div>
           <Card>
             <CardTitle>
-              <CheckSquare size={20} />
+              <CheckSquare size={22} />
               Inspection Items
             </CardTitle>
             
@@ -1137,7 +1530,7 @@ const UserTaskDetail = () => {
           
           <Card>
             <CardTitle>
-              <FileText size={20} />
+              <FileText size={22} />
               Comments
             </CardTitle>
             
@@ -1170,7 +1563,16 @@ const UserTaskDetail = () => {
               ))}
               
               {(!currentTask.comments || currentTask.comments.length === 0) && (
-                <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                <p style={{ 
+                  color: '#6b7280', 
+                  fontSize: '14px', 
+                  textAlign: 'center', 
+                  padding: '16px',
+                  background: 'rgba(255, 255, 255, 0.6)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.7)',
+                  backdropFilter: 'blur(5px)'
+                }}>
                   No comments yet
                 </p>
               )}
@@ -1181,7 +1583,7 @@ const UserTaskDetail = () => {
         <div>
           <Card>
             <CardTitle>
-              <Activity size={20} />
+              <Activity size={22} />
               Task Progress
             </CardTitle>
             
@@ -1195,7 +1597,7 @@ const UserTaskDetail = () => {
               <MetricCard>
                 <div className="metric-label">Time Spent</div>
                 <div className="metric-value">
-                  <Clock size={16} color="#1976d2" />
+                  <Clock size={18} color="#1976d2" />
                   {currentTask.taskMetrics?.timeSpent || 0} hours
                 </div>
               </MetricCard>
@@ -1203,7 +1605,7 @@ const UserTaskDetail = () => {
               <MetricCard>
                 <div className="metric-label">Items Completed</div>
                 <div className="metric-value">
-                  <CheckCircle size={16} color="#388e3c" />
+                  <CheckCircle size={18} color="#388e3c" />
                   {currentTask.taskMetrics?.userProgress || 0} of {currentTask.taskMetrics?.totalSubTasks || 0}
                 </div>
               </MetricCard>
@@ -1211,7 +1613,7 @@ const UserTaskDetail = () => {
               <MetricCard>
                 <div className="metric-label">Your Completion Rate</div>
                 <div className="metric-value">
-                  <Activity size={16} color="#f57c00" />
+                  <Activity size={18} color="#f57c00" />
                   {currentTask.taskMetrics?.completionRate || 0}%
                 </div>
               </MetricCard>
@@ -1220,7 +1622,7 @@ const UserTaskDetail = () => {
           
           <Card>
             <CardTitle>
-              <Clock size={20} />
+              <Clock size={22} />
               Sublevel Time Tracking
             </CardTitle>
             
@@ -1235,7 +1637,16 @@ const UserTaskDetail = () => {
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+              <p style={{ 
+                color: '#6b7280', 
+                fontSize: '14px', 
+                textAlign: 'center', 
+                padding: '16px',
+                background: 'rgba(255, 255, 255, 0.6)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(5px)'
+              }}>
                 No time tracking data available
               </p>
             )}
@@ -1243,7 +1654,7 @@ const UserTaskDetail = () => {
           
           <Card>
             <CardTitle>
-              <PaperclipIcon size={20} />
+              <PaperclipIcon size={22} />
               Attachments
             </CardTitle>
             
@@ -1252,7 +1663,7 @@ const UserTaskDetail = () => {
                 {currentTask.attachments.map((attachment, index) => (
                   <AttachmentItem key={index}>
                     <div className="file-info">
-                      <PaperclipIcon size={16} color="#1a237e" />
+                      <PaperclipIcon size={18} color="#1a237e" />
                       <span className="file-name">{attachment.filename}</span>
                     </div>
                     <a 
@@ -1267,7 +1678,16 @@ const UserTaskDetail = () => {
                 ))}
               </AttachmentList>
             ) : (
-              <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+              <p style={{ 
+                color: '#6b7280', 
+                fontSize: '14px', 
+                textAlign: 'center', 
+                padding: '16px',
+                background: 'rgba(255, 255, 255, 0.6)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(5px)'
+              }}>
                 No attachments available
               </p>
             )}
@@ -1275,7 +1695,7 @@ const UserTaskDetail = () => {
           
           <Card>
             <CardTitle>
-              <Clock size={20} />
+              <Clock size={22} />
               Status History
             </CardTitle>
             
@@ -1283,57 +1703,101 @@ const UserTaskDetail = () => {
               <div style={{ 
                 display: 'flex', 
                 flexDirection: 'column', 
-                gap: '12px' 
+                gap: '14px' 
               }}>
                 {currentTask.statusHistory.map((status, index) => (
                   <div 
                     key={index}
                     style={{
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '16px',
+                      background: 'rgba(248, 250, 252, 0.7)',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      transition: 'all 0.3s ease',
+                      border: '1px solid rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(5px)',
+                      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.03)',
+                      transform: 'perspective(800px) rotateY(0deg)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'perspective(800px) rotateY(3deg) translateY(-3px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.06)';
+                      e.currentTarget.style.background = 'rgba(248, 250, 252, 0.85)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'perspective(800px) rotateY(0deg)';
+                      e.currentTarget.style.boxShadow = '0 3px 8px rgba(0, 0, 0, 0.03)';
+                      e.currentTarget.style.background = 'rgba(248, 250, 252, 0.7)';
                     }}
                   >
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'space-between',
-                      marginBottom: '4px'
+                      marginBottom: '8px'
                     }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '8px' 
+                        gap: '10px' 
                       }}>
-                        <StatusIcon status={status.status} size={16} />
-                        <span style={{ fontWeight: 500 }}>
+                        <StatusIcon status={status.status} size={18} />
+                        <span style={{ 
+                          fontWeight: 600, 
+                          background: 'rgba(255, 255, 255, 0.6)',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          fontSize: '13px'
+                        }}>
                           {status.status.charAt(0).toUpperCase() + status.status.slice(1).replace('_', ' ')}
                         </span>
                       </div>
-                      <span style={{ fontSize: '12px', color: '#666' }}>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        color: '#6b7280',
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        padding: '3px 8px',
+                        borderRadius: '12px'
+                      }}>
                         {formatDateTime(status.timestamp)}
                       </span>
                     </div>
                     
                     {status.comment && (
-                      <div style={{ marginTop: '4px', color: '#666' }}>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        color: '#4b5563', 
+                        lineHeight: '1.5',
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255, 255, 255, 0.6)'
+                      }}>
                         {status.comment}
                       </div>
                     )}
                     
                     <div style={{ 
-                      marginTop: '4px', 
+                      marginTop: '8px', 
                       fontSize: '12px',
-                      color: '#666'
+                      color: '#6b7280'
                     }}>
-                      By: {status.changedBy?.name || 'User'}
+                      By: <span style={{ fontWeight: '600' }}>{status.changedBy?.name || 'User'}</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+              <p style={{ 
+                color: '#6b7280', 
+                fontSize: '14px', 
+                textAlign: 'center', 
+                padding: '16px',
+                background: 'rgba(255, 255, 255, 0.6)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(5px)'
+              }}>
                 No status changes recorded
               </p>
             )}

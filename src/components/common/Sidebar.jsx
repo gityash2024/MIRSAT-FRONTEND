@@ -23,13 +23,19 @@ const SidebarContainer = styled.div`
   color: white;
   height: 100vh;
   width: ${props => props.collapsed ? '70px' : '260px'};
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   display: flex;
   flex-direction: column;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 100;
+  
+  @media (max-width: 768px) {
+    width: 260px;
+    transform: translateX(${props => props.collapsed ? '-100%' : '0'});
+    box-shadow: ${props => props.collapsed ? 'none' : '0 0 15px rgba(0, 0, 0, 0.2)'};
+  }
 `;
 
 const Logo = styled.div`
@@ -46,6 +52,16 @@ const Logo = styled.div`
     width: ${props => props.collapsed ? '0' : 'auto'};
     overflow: hidden;
     transition: all 0.3s ease;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+      opacity: 1;
+      width: auto;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    justify-content: space-between;
   }
 `;
 
@@ -62,6 +78,9 @@ const ToggleButton = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
+  }
+    @media (min-width: 768px) {
+    display: none;
   }
 `;
 
@@ -102,6 +121,10 @@ const StyledLink = styled.div`
       background: white;
     }
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem 1.5rem;
+  }
 `;
 
 const IconWrapper = styled.div`
@@ -120,13 +143,23 @@ const NavText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    opacity: 1;
+    width: auto;
+  }
 `;
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const isMobile = window.innerWidth <= 768;
+  const effectiveCollapsed = isMobile 
+    ? (typeof isOpen !== 'undefined' ? !isOpen : false) 
+    : collapsed;
   
   const isActiveRoute = (path) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -244,14 +277,26 @@ const Sidebar = () => {
   const handleNavigation = (path) => {
     console.log(`Navigating to: ${path}`);
     navigate(path);
+    
+    if (isMobile && setIsOpen) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleToggle = () => {
+    if (isMobile && setIsOpen) {
+      setIsOpen(!isOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
   };
 
   return (
-    <SidebarContainer collapsed={collapsed}>
-      <Logo collapsed={collapsed}>
-        {!collapsed && <h1>MIRSAT</h1>}
-        <ToggleButton onClick={() => setCollapsed(!collapsed)}>
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+    <SidebarContainer collapsed={effectiveCollapsed}>
+      <Logo collapsed={effectiveCollapsed}>
+        {!effectiveCollapsed && <h1>MIRSAT</h1>}
+        <ToggleButton onClick={handleToggle}>
+          {effectiveCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </ToggleButton>
       </Logo>
       
@@ -260,13 +305,13 @@ const Sidebar = () => {
           <StyledLink 
             key={item.path}
             className={isActiveRoute(item.path) ? 'active' : ''}
-            collapsed={collapsed}
+            collapsed={effectiveCollapsed}
             onClick={() => handleNavigation(item.path)}
           >
             <IconWrapper>
               <item.icon size={20} />
             </IconWrapper>
-            <NavText collapsed={collapsed}>{item.title}</NavText>
+            <NavText collapsed={effectiveCollapsed}>{item.title}</NavText>
           </StyledLink>
         ))}
       </Nav>

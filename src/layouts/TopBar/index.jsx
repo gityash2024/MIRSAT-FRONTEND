@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../hooks/useAuth';
-import { Bell, User, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, User, ChevronDown, LogOut, Menu } from 'lucide-react';
 import { NotificationDropdown } from '../../pages/notifications';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,10 +15,40 @@ const TopbarContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0 24px;
-  justify-content: flex-end;
+  justify-content: flex-end; /* Change from space-between to flex-end */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: left 0.3s ease;
   z-index: 50;
+  
+  @media (max-width: 768px) {
+    left: 0;
+    padding: 0 16px;
+    justify-content: space-between; /* Keep space-between only for mobile */
+  }
+`;
+
+const LeftSection = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+  }
+`;
+
+const HamburgerButton = styled.button`
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
 `;
 
 const RightSection = styled.div`
@@ -93,6 +123,10 @@ const UserMenuTrigger = styled.button`
       font-size: 12px;
       color: #666;
     }
+    
+    @media (max-width: 576px) {
+      display: none;
+    }
   }
 `;
 
@@ -138,7 +172,8 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
-  const sidebarWidth = isSidebarOpen ? 260 : 70;
+  const isMobile = window.innerWidth <= 768;
+  const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 260 : 70);
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
 
@@ -158,6 +193,12 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
 
   return (
     <TopbarContainer sidebarWidth={sidebarWidth}>
+      <LeftSection>
+        <HamburgerButton onClick={toggleSidebar}>
+          <Menu size={24} />
+        </HamburgerButton>
+      </LeftSection>
+      
       <RightSection>
         <NotificationContainer ref={notificationRef}>
           <NotificationButton onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
@@ -178,7 +219,6 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
           </UserMenuTrigger>
 
           <UserMenuDropdown isOpen={isUserMenuOpen}>
-           
             <MenuItem onClick={logout} variant="danger">
               <LogOut size={18} className="icon" />
               Logout
