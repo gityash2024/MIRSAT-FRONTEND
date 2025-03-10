@@ -134,7 +134,19 @@ export const deleteTaskAttachment = createAsyncThunk(
     }
   }
 );
-
+export const deleteTask = createAsyncThunk(
+  'tasks/deleteTask',
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      toast.success('Task deleted successfully');
+      return id;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error deleting task');
+      return rejectWithValue(error.response?.data);
+    }
+  }
+);
 const taskSlice = createSlice({
   name: 'tasks',
   initialState,
@@ -230,6 +242,21 @@ const taskSlice = createSlice({
           state.currentTask = action.payload;
         }
       })
+      .addCase(deleteTask.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteTask.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tasks = state.tasks.filter(task => task._id !== action.payload);
+        if (state.currentTask?._id === action.payload) {
+          state.currentTask = null;
+        }
+      })
+      .addCase(deleteTask.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(deleteTaskAttachment.fulfilled, (state, action) => {
         if (state.currentTask?._id === action.payload._id) {
           state.currentTask = action.payload;
@@ -244,6 +271,7 @@ const taskSlice = createSlice({
           state.currentTask = action.payload;
         }
       });
+      
   }
 });
 

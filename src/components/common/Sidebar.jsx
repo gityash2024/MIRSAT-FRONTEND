@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   BarChart, 
@@ -73,7 +73,7 @@ const Nav = styled.nav`
   overflow-y: auto;
 `;
 
-const NavItem = styled(Link)`
+const StyledLink = styled.div`
   display: flex;
   align-items: center;
   padding: 0.875rem ${props => props.collapsed ? '0.75rem' : '1.5rem'};
@@ -81,6 +81,7 @@ const NavItem = styled(Link)`
   color: rgba(255, 255, 255, 0.7);
   transition: all 0.3s ease;
   position: relative;
+  cursor: pointer;
   
   &:hover {
     color: white;
@@ -121,56 +122,16 @@ const NavText = styled.span`
   transition: all 0.3s ease;
 `;
 
-const UserInfo = styled.div`
-  margin-top: auto;
-  padding: 1rem ${props => props.collapsed ? '0.5rem' : '1.5rem'};
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-`;
-
-const Avatar = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  flex-shrink: 0;
-`;
-
-const UserDetails = styled.div`
-  display: ${props => props.collapsed ? 'none' : 'flex'};
-  flex-direction: column;
-  opacity: ${props => props.collapsed ? '0' : '1'};
-  transition: all 0.3s ease;
-  overflow: hidden;
-  
-  span:first-child {
-    font-weight: 500;
-    font-size: 0.875rem;
-  }
-  
-  span:last-child {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    text-transform: capitalize;
-  }
-`;
-
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   
   const isActiveRoute = (path) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  // Navigation configuration based on user roles
   const navigationConfig = {
     admin: [
       {
@@ -194,11 +155,6 @@ const Sidebar = () => {
         icon: ListChecks
       },
       {
-        title: 'Reports',
-        path: '/reports',
-        icon: FileBarChart
-      },
-      {
         title: 'Calendar',
         path: '/calendar',
         icon: Calendar
@@ -207,11 +163,6 @@ const Sidebar = () => {
         title: 'Settings',
         path: '/settings',
         icon: Settings
-      },
-      {
-        title: 'Profile',
-        path: '/profile',
-        icon: User
       }
     ],
     manager: [
@@ -229,11 +180,6 @@ const Sidebar = () => {
         title: 'Inspection Levels',
         path: '/inspection',
         icon: ListChecks
-      },
-      {
-        title: 'Reports',
-        path: '/reports',
-        icon: FileBarChart
       },
       {
         title: 'Calendar',
@@ -292,17 +238,12 @@ const Sidebar = () => {
     ]
   };
 
-  // Determine which menu items to show based on user role
-  const userRole = user?.role || 'user';
-  const menuItems = navigationConfig[userRole.toLowerCase()] || navigationConfig.user;
-  
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+  const userRole = user?.role?.toLowerCase() || 'user';
+  const menuItems = navigationConfig[userRole] || navigationConfig.user;
+
+  const handleNavigation = (path) => {
+    console.log(`Navigating to: ${path}`);
+    navigate(path);
   };
 
   return (
@@ -316,29 +257,19 @@ const Sidebar = () => {
       
       <Nav>
         {menuItems.map((item) => (
-          <NavItem 
+          <StyledLink 
             key={item.path}
-            to={item.path}
             className={isActiveRoute(item.path) ? 'active' : ''}
             collapsed={collapsed}
+            onClick={() => handleNavigation(item.path)}
           >
             <IconWrapper>
               <item.icon size={20} />
             </IconWrapper>
             <NavText collapsed={collapsed}>{item.title}</NavText>
-          </NavItem>
+          </StyledLink>
         ))}
       </Nav>
-      
-      <UserInfo collapsed={collapsed}>
-        <Avatar>
-          {getInitials(user?.name)}
-        </Avatar>
-        <UserDetails collapsed={collapsed}>
-          <span>{user?.name || 'User'}</span>
-          <span>{user?.role || 'Role'}</span>
-        </UserDetails>
-      </UserInfo>
     </SidebarContainer>
   );
 };

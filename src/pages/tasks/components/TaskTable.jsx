@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
 import TaskPriority from './TaskPriority';
 import TaskAssignee from './TaskAssignee';
 import { PERMISSIONS } from '../../../utils/permissions';
-import { deleteTaskAttachment } from '../../../store/slices/taskSlice';
 import usePermissions from '../../../hooks/usePermissions';
-
+import { deleteTask } from '../../../store/slices/taskSlice';
 const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
@@ -110,6 +109,7 @@ const DialogButton = styled.button`
     }
   `}
 `;
+
 const LoadingOverlay = styled.div`
   display: flex;
   justify-content: center;
@@ -202,23 +202,185 @@ const DeleteConfirmDialog = styled.div`
   z-index: 1000;
 `;
 
+const HeaderContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
 
+const HeaderText = styled.span`
+  flex-grow: 1;
+`;
 
-const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
+const SortIcon = styled.span`
+  display: inline-flex;
+  align-items: center;
+`;
+
+const RowNumber = styled.td`
+  width: 50px;
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: ${props => {
+    if (props.value < 30) return '#dc2626';
+    if (props.value < 70) return '#f59e0b';
+    return '#10b981';
+  }};
+  width: ${props => `${props.value}%`};
+  border-radius: 4px;
+  transition: width 0.3s ease;
+`;
+
+const ProgressText = styled.div`
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+`;
+
+const SublevelsModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+`;
+
+const SublevelsModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
+const SublevelsModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const SublevelsModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+`;
+
+const SublevelsModalCloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const TreeContainer = styled.div`
+  padding-left: 0;
+`;
+
+const TreeItemContainer = styled.div`
+  padding-left: ${props => props.level * 20}px;
+  margin-bottom: 8px;
+`;
+
+const TreeItem = styled.div`
+  padding: 8px;
+  border-radius: 6px;
+  background: ${props => props.level === 0 ? '#f0f4f8' : 'transparent'};
+  border-left: ${props => props.level > 0 ? '2px solid #e0e0e0' : 'none'};
+  margin-left: ${props => props.level > 0 ? '8px' : '0'};
+  font-weight: ${props => props.level === 0 ? '500' : '400'};
+`;
+
+const TreeItemName = styled.div`
+  margin-bottom: 4px;
+`;
+
+const TreeItemDescription = styled.div`
+  font-size: 12px;
+  color: #666;
+`;
+
+const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [sublevelsModal, setSublevelsModal] = useState(null);
   const [sortConfig, setSortConfig] = useState({
-    key: 'createdAt',
-    direction: 'desc'
+    key: 'title',
+    direction: 'asc'
   });
+  const [sortedTasks, setSortedTasks] = useState([...initialTasks]);
+
+  useEffect(() => {
+    const sorted = [...initialTasks].sort((a, b) => {
+      if (!a || !b) return 0;
+
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      if (sortConfig.key === 'inspectionLevel') {
+        aValue = a.inspectionLevel?.name || '';
+        bValue = b.inspectionLevel?.name || '';
+      } else if (sortConfig.key === 'assignedTo') {
+        aValue = a.assignedTo?.[0]?.name || '';
+        bValue = b.assignedTo?.[0]?.name || '';
+      } else if (sortConfig.key === 'deadline') {
+        aValue = new Date(a.deadline || 0).getTime();
+        bValue = new Date(b.deadline || 0).getTime();
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setSortedTasks(sorted);
+  }, [initialTasks, sortConfig.key, sortConfig.direction]);
 
   const handleSort = (key) => {
     const direction = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
     setSortConfig({ key, direction });
-    onSort?.({ key, direction });
+    
+    if (onSort) {
+      onSort({ key, direction });
+    }
   };
 
   const handleViewTask = (taskId) => {
@@ -238,12 +400,37 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
 
   const handleConfirmDelete = async () => {
     try {
-      await dispatch(deleteTaskAttachment(deleteConfirm._id)).unwrap();
-      toast.success('Task deleted successfully');
+      await dispatch(deleteTask(deleteConfirm._id)).unwrap();
       setDeleteConfirm(null);
     } catch (error) {
       toast.error('Failed to delete task');
     }
+  };
+
+  const handleViewSublevels = (task) => {
+    setSublevelsModal(task);
+  };
+
+  const renderTreeItems = (subLevels, level = 0) => {
+    if (!subLevels || subLevels.length === 0) return null;
+    
+    return (
+      <>
+        {subLevels.map((item) => (
+          <React.Fragment key={item._id}>
+            <TreeItemContainer level={level}>
+              <TreeItem level={level}>
+                <TreeItemName>{item.name}</TreeItemName>
+                {item.description && (
+                  <TreeItemDescription>{item.description}</TreeItemDescription>
+                )}
+              </TreeItem>
+            </TreeItemContainer>
+            {item.subLevels && renderTreeItems(item.subLevels, level + 1)}
+          </React.Fragment>
+        ))}
+      </>
+    );
   };
 
   if (loading) {
@@ -254,7 +441,7 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
     );
   }
 
-  if (!tasks.length) {
+  if (!sortedTasks.length) {
     return (
       <TableContainer>
         <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
@@ -268,21 +455,124 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
         <Table>
           <thead>
             <tr>
-              <th onClick={() => handleSort('title')}>Task Name</th>
-              <th onClick={() => handleSort('inspectionLevel')}>Inspection Level</th>
-              <th onClick={() => handleSort('assignedTo')}>Assignee</th>
-              <th onClick={() => handleSort('priority')}>Priority</th>
-              <th onClick={() => handleSort('status')}>Status</th>
-              <th onClick={() => handleSort('deadline')}>Due Date</th>
-              <th>Progress</th>
+              <th style={{ width: '50px', textAlign: 'center' }}>#</th>
+              <th onClick={() => handleSort('title')}>
+                <HeaderContent>
+                  <HeaderText>Task Name</HeaderText>
+                  {sortConfig.key === 'title' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('inspectionLevel')}>
+                <HeaderContent>
+                  <HeaderText>Inspection Level</HeaderText>
+                  {sortConfig.key === 'inspectionLevel' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th>Sublevels</th>
+              <th onClick={() => handleSort('assignedTo')}>
+                <HeaderContent>
+                  <HeaderText>Assignee</HeaderText>
+                  {sortConfig.key === 'assignedTo' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('priority')}>
+                <HeaderContent>
+                  <HeaderText>Priority</HeaderText>
+                  {sortConfig.key === 'priority' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('status')}>
+                <HeaderContent>
+                  <HeaderText>Status</HeaderText>
+                  {sortConfig.key === 'status' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('deadline')}>
+                <HeaderContent>
+                  <HeaderText>Due Date</HeaderText>
+                  {sortConfig.key === 'deadline' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
+              <th onClick={() => handleSort('overallProgress')}>
+                <HeaderContent>
+                  <HeaderText>Progress</HeaderText>
+                  {sortConfig.key === 'overallProgress' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {tasks.map(task => (
+            {sortedTasks.map((task, index) => (
               <tr key={task._id}>
+                <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                 <td>{task.title}</td>
-                <td>{task.inspectionLevel?.name}</td>
+                <td>{task.inspectionLevel?.name || '--'}</td>
+                <td>
+                  {task.inspectionLevel?.subLevels?.length > 0 ? (
+                    <ActionButton onClick={() => handleViewSublevels(task)}>
+                      <List size={16} />
+                    </ActionButton>
+                  ) : (
+                    '--'
+                  )}
+                </td>
                 <td>
                   <TaskAssignee 
                     assignees={task.assignedTo} 
@@ -292,7 +582,12 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
                 <td><TaskPriority priority={task.priority} /></td>
                 <td><TaskStatus status={task.status} /></td>
                 <td>{new Date(task.deadline).toLocaleDateString()}</td>
-                <td>{task.overallProgress}%</td>
+                <td>
+                  <ProgressBar>
+                    <ProgressFill value={task.overallProgress || 0} />
+                  </ProgressBar>
+                  <ProgressText>{task.overallProgress || 0}%</ProgressText>
+                </td>
                 <td>
                   <ActionsMenu>
                     {hasPermission(PERMISSIONS.VIEW_TASKS) && (
@@ -361,6 +656,24 @@ const TaskTable = ({ tasks, loading, pagination, onPageChange, onSort }) => {
             </DialogActions>
           </DialogContent>
         </DeleteConfirmDialog>
+      )}
+
+      {sublevelsModal && (
+        <SublevelsModalOverlay>
+          <SublevelsModalContent>
+            <SublevelsModalHeader>
+              <SublevelsModalTitle>
+                {sublevelsModal.inspectionLevel?.name || 'Inspection Sublevels'}
+              </SublevelsModalTitle>
+              <SublevelsModalCloseButton onClick={() => setSublevelsModal(null)}>
+                &times;
+              </SublevelsModalCloseButton>
+            </SublevelsModalHeader>
+            <TreeContainer>
+              {renderTreeItems(sublevelsModal.inspectionLevel?.subLevels || [])}
+            </TreeContainer>
+          </SublevelsModalContent>
+        </SublevelsModalOverlay>
       )}
     </>
   );

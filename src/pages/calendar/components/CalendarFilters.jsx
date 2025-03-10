@@ -1,8 +1,9 @@
 // src/pages/calendar/components/CalendarFilters.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { X } from 'lucide-react';
-import { eventTypes, eventStatuses, assignees } from '../mockData';
+import { X, Search } from 'lucide-react';
+import { setFilters } from '../../../store/slices/taskSlice';
 
 const FiltersContainer = styled.div`
   background: white;
@@ -31,6 +32,8 @@ const CheckboxGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
 `;
 
 const Checkbox = styled.label`
@@ -87,61 +90,125 @@ const FilterTag = styled.div`
   }
 `;
 
+const SearchContainer = styled.div`
+  position: relative;
+  margin-bottom: 20px;
+  
+  input {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+
+    &:focus {
+      outline: none;
+      border-color: #1a237e;
+      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    }
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+  }
+`;
+
+const priorities = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' }
+];
+
+const statuses = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' }
+];
+
 const CalendarFilters = ({ onFilterChange }) => {
-  const [filters, setFilters] = useState({
-    types: [],
-    statuses: [],
-    assignees: []
-  });
+  const dispatch = useDispatch();
+  const { filters } = useSelector((state) => state.tasks);
+  const { users } = useSelector((state) => state.users || { users: [] });
+  const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
+  
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    dispatch(setFilters({ search: e.target.value }));
+    onFilterChange();
+  };
 
   const handleFilterChange = (category, value) => {
-    const updatedFilters = {
-      ...filters,
-      [category]: filters[category].includes(value)
-        ? filters[category].filter(item => item !== value)
-        : [...filters[category], value]
-    };
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
+    const currentValues = filters[category] || [];
+    const updatedValues = currentValues.includes(value)
+      ? currentValues.filter(item => item !== value)
+      : [...currentValues, value];
+    
+    dispatch(setFilters({ [category]: updatedValues }));
+    onFilterChange();
   };
 
   const removeFilter = (category, value) => {
-    const updatedFilters = {
-      ...filters,
-      [category]: filters[category].filter(item => item !== value)
-    };
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
+    const currentValues = filters[category] || [];
+    const updatedValues = currentValues.filter(item => item !== value);
+    
+    dispatch(setFilters({ [category]: updatedValues }));
+    onFilterChange();
+  };
+
+  const getFilterLabel = (category, value) => {
+    if (category === 'status') {
+      return statuses.find(s => s.value === value)?.label || value;
+    }
+    if (category === 'priority') {
+      return priorities.find(p => p.value === value)?.label || value;
+    }
+    if (category === 'assignedTo') {
+      return users.find(u => u._id === value)?.name || value;
+    }
+    if (category === 'inspectionLevel') {
+      return levels?.results?.find(l => l._id === value)?.name || value;
+    }
+    return value;
+  };
+
+  const hasActiveFilters = () => {
+    return Object.entries(filters).some(([key, values]) => {
+      if (key === 'search') return !!values;
+      return Array.isArray(values) && values.length > 0;
+    });
   };
 
   return (
     <FiltersContainer>
+      <SearchContainer>
+        <Search className="search-icon" size={18} />
+        <input
+          type="text"
+          placeholder="Search events..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+      </SearchContainer>
+    
       <FiltersGrid>
-        <FilterGroup>
-          <h3>Event Type</h3>
-          <CheckboxGroup>
-            {eventTypes.map(type => (
-              <Checkbox key={type.value}>
-                <input
-                  type="checkbox"
-                  checked={filters.types.includes(type.value)}
-                  onChange={() => handleFilterChange('types', type.value)}
-                />
-                {type.label}
-              </Checkbox>
-            ))}
-          </CheckboxGroup>
-        </FilterGroup>
-
         <FilterGroup>
           <h3>Status</h3>
           <CheckboxGroup>
-            {eventStatuses.map(status => (
+            {statuses.map(status => (
               <Checkbox key={status.value}>
                 <input
                   type="checkbox"
-                  checked={filters.statuses.includes(status.value)}
-                  onChange={() => handleFilterChange('statuses', status.value)}
+                  checked={(filters.status || []).includes(status.value)}
+                  onChange={() => handleFilterChange('status', status.value)}
                 />
                 {status.label}
               </Checkbox>
@@ -150,34 +217,81 @@ const CalendarFilters = ({ onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Assignee</h3>
+          <h3>Priority</h3>
           <CheckboxGroup>
-            {assignees.map(assignee => (
-              <Checkbox key={assignee.value}>
+            {priorities.map(priority => (
+              <Checkbox key={priority.value}>
                 <input
                   type="checkbox"
-                  checked={filters.assignees.includes(assignee.value)}
-                  onChange={() => handleFilterChange('assignees', assignee.value)}
+                  checked={(filters.priority || []).includes(priority.value)}
+                  onChange={() => handleFilterChange('priority', priority.value)}
                 />
-                {assignee.label}
+                {priority.label}
+              </Checkbox>
+            ))}
+          </CheckboxGroup>
+        </FilterGroup>
+
+        <FilterGroup>
+          <h3>Assignee</h3>
+          <CheckboxGroup>
+            {users?.map(user => (
+              <Checkbox key={user._id}>
+                <input
+                  type="checkbox"
+                  checked={(filters.assignedTo || []).includes(user._id)}
+                  onChange={() => handleFilterChange('assignedTo', user._id)}
+                />
+                {user.name}
+              </Checkbox>
+            ))}
+          </CheckboxGroup>
+        </FilterGroup>
+
+        <FilterGroup>
+          <h3>Inspection Level</h3>
+          <CheckboxGroup>
+            {levels?.results?.map(level => (
+              <Checkbox key={level._id}>
+                <input
+                  type="checkbox"
+                  checked={(filters.inspectionLevel || []).includes(level._id)}
+                  onChange={() => handleFilterChange('inspectionLevel', level._id)}
+                />
+                {level.name}
               </Checkbox>
             ))}
           </CheckboxGroup>
         </FilterGroup>
       </FiltersGrid>
 
-      {Object.entries(filters).some(([_, values]) => values.length > 0) && (
+      {hasActiveFilters() && (
         <ActiveFilters>
-          {Object.entries(filters).map(([category, values]) =>
-            values.map(value => (
+          {filters.search && (
+            <FilterTag>
+              Search: {filters.search}
+              <button onClick={() => {
+                setSearchTerm('');
+                dispatch(setFilters({ search: '' }));
+                onFilterChange();
+              }}>
+                <X size={12} />
+              </button>
+            </FilterTag>
+          )}
+          
+          {Object.entries(filters).map(([category, values]) => {
+            if (category === 'search' || !Array.isArray(values)) return null;
+            
+            return values.map(value => (
               <FilterTag key={`${category}-${value}`}>
-                {value}
+                {getFilterLabel(category, value)}
                 <button onClick={() => removeFilter(category, value)}>
                   <X size={12} />
                 </button>
               </FilterTag>
-            ))
-          )}
+            ));
+          })}
         </ActiveFilters>
       )}
     </FiltersContainer>

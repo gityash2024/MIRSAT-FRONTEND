@@ -17,7 +17,9 @@ import {
   Check,
   X,
   EyeIcon,
-  Copy
+  Copy,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -369,6 +371,68 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+`;
+
+const PaginationInfo = styled.div`
+  color: #666;
+  font-size: 14px;
+`;
+
+const PaginationButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const PaginationButton = styled.button`
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: #f5f5f5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const PageNumberButton = styled.button`
+  background: ${props => props.active ? '#1a237e' : 'white'};
+  color: ${props => props.active ? 'white' : '#333'};
+  border: 1px solid ${props => props.active ? '#1a237e' : '#e0e0e0'};
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: ${props => props.active ? '#1a237e' : '#f5f5f5'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 const UserList = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [users, setUsers] = useState([]);
@@ -383,10 +447,20 @@ const UserList = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const { hasPermission, userRole } = usePermissions();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(5);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+  
+  useEffect(() => {
+    // Reset to first page when filters or search changes
+    setCurrentPage(1);
+  }, [searchTerm, filters]);
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showExportDropdown && !event.target.closest('.export-dropdown')) {
@@ -397,6 +471,7 @@ const UserList = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showExportDropdown]);
+  
   const fetchUsers = async () => {
     try {
       const response = await api.get('/users');
@@ -407,7 +482,6 @@ const UserList = () => {
       setIsLoading(false);
     }
   };
-
 
   const handleDeleteClick = (user) => {
     setDeleteConfirm(user);
@@ -425,10 +499,10 @@ const UserList = () => {
     }
   };
 
-const handleCopyEmail = (email) => {
-  navigator.clipboard.writeText(email);
-  toast.success('Email copied to clipboard');
-};
+  const handleCopyEmail = (email) => {
+    navigator.clipboard.writeText(email);
+    toast.success('Email copied to clipboard');
+  };
 
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
@@ -441,6 +515,7 @@ const handleCopyEmail = (email) => {
       toast.error('Failed to update user status');
     }
   };
+  
   const generatePDF = (users) => {
     const doc = new jsPDF();
     
@@ -521,6 +596,7 @@ const handleCopyEmail = (email) => {
   
     return doc;
   };
+  
   const handleExport = async (format) => {
     try {
       setShowExportDropdown(false);
@@ -574,6 +650,40 @@ const handleCopyEmail = (email) => {
     return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
   });
 
+  // Get current users for pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const firstPage = () => setCurrentPage(1);
+  const lastPage = () => setCurrentPage(totalPages);
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const showPages = 5; // Show at most 5 page numbers
+    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let endPage = startPage + showPages - 1;
+    
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - showPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
+  };
+
   if (isLoading) {
     return <LoadingSpinner>Loading...</LoadingSpinner>;
   }
@@ -602,40 +712,40 @@ const handleCopyEmail = (email) => {
             Filters
           </Button>
           {hasPermission(PERMISSIONS.USERS.EXPORT_USERS) && (
-  <ExportDropdown className="export-dropdown">
-    <Button 
-      variant="secondary" 
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowExportDropdown(!showExportDropdown);
-      }}
-    >
-      <Download size={18} />
-      Export
-    </Button>
-    <DropdownContent show={showExportDropdown}>
-      <DropdownItem 
-        onClick={(e) => {
-          e.stopPropagation();
-          handleExport('pdf');
-        }}
-      >
-        <FileText size={16} className="icon" />
-        Export as PDF
-      </DropdownItem>
-      {/* <DropdownItem 
-        onClick={(e) => {
-          e.stopPropagation();
-          handleExport('csv');
-        }}
-      >
-        <FileText size={16} className="icon" />
-        Export as CSV
-      </DropdownItem> */}
-    </DropdownContent>
-  </ExportDropdown>
-)}
-       {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
+            <ExportDropdown className="export-dropdown">
+              <Button 
+                variant="secondary" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowExportDropdown(!showExportDropdown);
+                }}
+              >
+                <Download size={18} />
+                Export
+              </Button>
+              <DropdownContent show={showExportDropdown}>
+                <DropdownItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleExport('pdf');
+                  }}
+                >
+                  <FileText size={16} className="icon" />
+                  Export as PDF
+                </DropdownItem>
+                {/* <DropdownItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleExport('csv');
+                  }}
+                >
+                  <FileText size={16} className="icon" />
+                  Export as CSV
+                </DropdownItem> */}
+              </DropdownContent>
+            </ExportDropdown>
+          )}
+          {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
             <Button variant="primary" as={Link} to="/users/create">
               <UserPlus size={18} />
               Add User
@@ -666,7 +776,7 @@ const handleCopyEmail = (email) => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map(user => (
+            {currentUsers.map(user => (
               <tr key={user._id}>
                 <td>
                   <UserInfo>
@@ -676,7 +786,7 @@ const handleCopyEmail = (email) => {
                         <Mail size={14} />
                         {user.email}
                       </span>
-                      <span  style={{ cursor: 'pointer' }} onClick={() => handleCopyEmail(user.email)} className="item">
+                      <span style={{ cursor: 'pointer' }} onClick={() => handleCopyEmail(user.email)} className="item">
                         <Copy size={14} />
                         {user.phone}
                       </span>
@@ -697,79 +807,114 @@ const handleCopyEmail = (email) => {
                 <td>{formatTimestamp(user.lastLogin)}</td>
                 <td>{user.assignedTasks || 0}</td>
                 <td>
-                <ActionMenu>
-        {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
-          <ActionButton as={Link} to={`/users/${user._id}`}>
-            <EyeIcon size={16} />
-          </ActionButton>
-        )}
+                  <ActionMenu>
+                    {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
+                      <ActionButton as={Link} to={`/users/${user._id}`}>
+                        <EyeIcon size={16} />
+                      </ActionButton>
+                    )}
+                    
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
+                      <ActionButton as={Link} to={`/users/${user._id}/edit`}>
+                        <Edit size={16} />
+                      </ActionButton>
+                    )}
+                    
+                    {(hasPermission(PERMISSIONS.USERS.DELETE_USERS) || 
+                      hasPermission(PERMISSIONS.USERS.MANAGE_PERMISSIONS)) && (
+                      <ActionButton onClick={() => setActiveDropdown(activeDropdown === user._id ? null : user._id)}>
+                        <MoreVertical size={16} />
+                      </ActionButton>
+                    )}
+                  </ActionMenu>
+                </td>
+              </tr>
+            ))}
+            {currentUsers.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>
+                  No users found matching your criteria.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </Table>
         
-        {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
-          <ActionButton as={Link} to={`/users/${user._id}/edit`}>
-            <Edit size={16} />
-          </ActionButton>
-        )}
-        
-        {(hasPermission(PERMISSIONS.USERS.DELETE_USERS) || 
-          hasPermission(PERMISSIONS.USERS.MANAGE_PERMISSIONS)) && (
-          <ActionButton onClick={() => setActiveDropdown(activeDropdown === user._id ? null : user._id)}>
-            <MoreVertical size={16} />
-          </ActionButton>
-        )}
-      </ActionMenu>
-                  </td>
-                </tr>
+        {/* Pagination */}
+        {filteredUsers.length > 0 && (
+          <PaginationContainer>
+            <PaginationInfo>
+              Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+            </PaginationInfo>
+            
+            <PaginationButtons>
+              <PaginationButton onClick={firstPage} disabled={currentPage === 1}>
+                First
+              </PaginationButton>
+              <PaginationButton onClick={prevPage} disabled={currentPage === 1}>
+                <ChevronLeft size={16} />
+              </PaginationButton>
+              
+              {getPageNumbers().map(number => (
+                <PageNumberButton 
+                  key={number}
+                  active={currentPage === number}
+                  onClick={() => paginate(number)}
+                >
+                  {number}
+                </PageNumberButton>
               ))}
-              {filteredUsers.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>
-                    No users found matching your criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </UserTable>
-  
-        {deleteConfirm && (
-          <DeleteConfirmDialog>
-            <DialogContent>
-              <DialogTitle>Delete User</DialogTitle>
-              <DialogMessage>
-                Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
-              </DialogMessage>
-              <DialogActions>
-                <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" onClick={handleConfirmDelete}>
-                  Delete User
-                </Button>
-              </DialogActions>
-            </DialogContent>
-          </DeleteConfirmDialog>
+              
+              <PaginationButton onClick={nextPage} disabled={currentPage === totalPages}>
+                <ChevronRight size={16} />
+              </PaginationButton>
+              <PaginationButton onClick={lastPage} disabled={currentPage === totalPages}>
+                Last
+              </PaginationButton>
+            </PaginationButtons>
+          </PaginationContainer>
         )}
-      </PageContainer>
-    );
-  };
+      </UserTable>
+
+      {deleteConfirm && (
+        <DeleteConfirmDialog>
+          <DialogContent>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogMessage>
+              Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
+            </DialogMessage>
+            <DialogActions>
+              <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirmDelete}>
+                Delete User
+              </Button>
+            </DialogActions>
+          </DialogContent>
+        </DeleteConfirmDialog>
+      )}
+    </PageContainer>
+  );
+};
+
+const formatTimestamp = (timestamp) => {
+  if (!timestamp) return 'Never';
   
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return 'Never';
-    
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   
-    if (hours < 24) {
-      return `${hours}h ago`;
-    }
-    
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-  
-  export default UserList;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+export default UserList;

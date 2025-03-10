@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../hooks/useAuth';
-import { Menu, Bell, User, ChevronDown, Settings, LogOut } from 'lucide-react';
+import { Bell, User, ChevronDown, LogOut } from 'lucide-react';
 import { NotificationDropdown } from '../../pages/notifications';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,25 +15,10 @@ const TopbarContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0 24px;
-  justify-content: space-between;
+  justify-content: flex-end;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: left 0.3s ease;
-  z-index: 900;
-`;
-
-const MenuButton = styled.button`
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  transition: background 0.3s;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
+  z-index: 50;
 `;
 
 const RightSection = styled.div`
@@ -124,6 +109,7 @@ const UserMenuDropdown = styled.div`
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
   transform: translateY(${props => props.isOpen ? '0' : '-10px'});
   transition: all 0.3s;
+  z-index: 100;
 `;
 
 const MenuItem = styled.button`
@@ -148,11 +134,11 @@ const MenuItem = styled.button`
 `;
 
 const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
-  const sidebarWidth = isSidebarOpen ? 240 : 64;
+  const sidebarWidth = isSidebarOpen ? 260 : 70;
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
 
@@ -172,10 +158,6 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
 
   return (
     <TopbarContainer sidebarWidth={sidebarWidth}>
-      <MenuButton onClick={toggleSidebar}>
-        <Menu size={20} />
-      </MenuButton>
-
       <RightSection>
         <NotificationContainer ref={notificationRef}>
           <NotificationButton onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
@@ -188,19 +170,15 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
         <UserMenuContainer ref={userMenuRef}>
           <UserMenuTrigger onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
             <div className="user-info">
-              <div className="name">{user?.name || 'Super Admin'}</div>
-              <div className="role">{user?.role || 'Administrator'}</div>
+              <div className="name">{user?.name || 'User'}</div>
+              <div className="role">{user?.role || 'User'}</div>
             </div>
             <User size={20} />
             <ChevronDown size={16} />
           </UserMenuTrigger>
 
           <UserMenuDropdown isOpen={isUserMenuOpen}>
-            <MenuItem onClick={() => navigate('/profile')}>
-              <User size={18} className="icon" />
-              Profile
-            </MenuItem>
-         
+           
             <MenuItem onClick={logout} variant="danger">
               <LogOut size={18} className="icon" />
               Logout

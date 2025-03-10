@@ -1,27 +1,113 @@
-import { PERMISSIONS } from '../utils/permissions';
+import {
+  LayoutDashboard,
+  Clipboard,
+  Users,
+  Settings,
+  Calendar,
+  ListChecks,
+  FileBarChart,
+  User
+} from 'lucide-react';
 
-export const navigation = [
-  {
-    title: 'Dashboard',
-    path: '/dashboard',
-    icon: DashboardIcon
-  },
-  {
-    title: 'Users',
-    path: '/users',
-    icon: PeopleIcon,
-    permission: PERMISSIONS.VIEW_USERS
-  },
-  {
-    title: 'Tasks',
-    path: '/tasks',
-    icon: TaskIcon,
-    permission: PERMISSIONS.VIEW_TASKS
-  },
-  {
-    title: 'Reports',
-    path: '/inspection',
-    icon: ReportIcon,
-    permission: PERMISSIONS.VIEW_INSPECTOR_REPORTS
-  },
-];
+const navigation = {
+  admin: [
+    {
+      title: 'Dashboard',
+      path: '/dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      title: 'Tasks',
+      path: '/tasks',
+      icon: Clipboard
+    },
+    {
+      title: 'Users',
+      path: '/users',
+      icon: Users
+    },
+    {
+      title: 'Inspection Levels',
+      path: '/inspection-levels',
+      icon: ListChecks
+    },
+    {
+      title: 'Reports',
+      path: '/reports',
+      icon: FileBarChart
+    },
+    {
+      title: 'Calendar',
+      path: '/calendar',
+      icon: Calendar
+    },
+    {
+      title: 'Settings',
+      path: '/settings',
+      icon: Settings
+    }
+  ],
+  manager: [
+    {
+      title: 'Dashboard',
+      path: '/dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      title: 'Tasks',
+      path: '/tasks',
+      icon: Clipboard
+    },
+    {
+      title: 'Inspection Levels',
+      path: '/inspection-levels',
+      icon: ListChecks
+    },
+    {
+      title: 'Reports',
+      path: '/reports',
+      icon: FileBarChart
+    },
+    {
+      title: 'Calendar',
+      path: '/calendar',
+      icon: Calendar
+    }
+  ],
+  inspector: [
+    {
+      title: 'Dashboard',
+      path: '/dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      title: 'Tasks',
+      path: '/tasks',
+      icon: Clipboard
+    },
+    {
+      title: 'Calendar',
+      path: '/calendar',
+      icon: Calendar
+    }
+  ],
+  user: [
+    {
+      title: 'Dashboard',
+      path: '/user-dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      title: 'My Tasks',
+      path: '/user-tasks',
+      icon: Clipboard
+    },
+    {
+      title: 'My Profile',
+      path: '/profile',
+      icon: User
+    }
+  ]
+};
+
+export default navigation;

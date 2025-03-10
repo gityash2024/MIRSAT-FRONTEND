@@ -378,6 +378,8 @@ const formatDate = (dateString) => {
 };
 
 const UserTasks = () => {
+  console.log("UserTasks component mounted");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -385,14 +387,23 @@ const UserTasks = () => {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   
+  const defaultState = {
+    tasks: { results: [], totalPages: 0, page: 1, limit: 10 },
+    loading: false,
+    actionLoading: false,
+    error: null,
+    filters: {},
+    pagination: { page: 1, limit: 10 }
+  };
+  
   const { 
-    tasks, 
-    loading, 
-    actionLoading, 
-    error, 
-    filters, 
-    pagination 
-  } = useSelector((state) => state.userTasks);
+    tasks = defaultState.tasks, 
+    loading = defaultState.loading, 
+    actionLoading = defaultState.actionLoading, 
+    error = defaultState.error, 
+    filters = defaultState.filters, 
+    pagination = defaultState.pagination 
+  } = useSelector((state) => state.userTasks || defaultState);
 
   useEffect(() => {
     loadTasks();
@@ -447,12 +458,11 @@ const UserTasks = () => {
     navigate(`/user-tasks/${taskId}`);
   };
 
-  // Check if a date is past due
   const isPastDue = (deadline) => {
     return new Date(deadline) < new Date() && true;
   };
 
-  if (loading && tasks.results.length === 0) {
+  if (loading && (!tasks.results || tasks.results.length === 0)) {
     return (
       <TasksContainer>
         <PageHeader>
@@ -518,7 +528,7 @@ const UserTasks = () => {
         </ButtonGroup>
       </FilterBar>
       
-      {tasks.results.length > 0 ? (
+      {tasks.results && tasks.results.length > 0 ? (
         <TasksGrid>
           {tasks.results.map((task) => (
             <TaskCard key={task._id}>
@@ -588,6 +598,16 @@ const UserTasks = () => {
                         Start Task
                       </>
                     )}
+                  </TaskButton>
+                )}
+                
+                {task.status === 'in_progress' && (
+                  <TaskButton 
+                    primary
+                    onClick={() => viewTaskDetails(task._id)}
+                  >
+                    <PlayCircle size={16} />
+                    Continue
                   </TaskButton>
                 )}
               </TaskActions>

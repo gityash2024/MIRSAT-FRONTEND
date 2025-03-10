@@ -1,15 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import taskReducer from './slices/taskSlice';
 import userReducer from './slices/userSlice';
+import taskReducer from './slices/taskSlice';
 import inspectionLevelReducer from './slices/inspectionLevelSlice';
 import userTasksReducer from './slices/userTasksSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    tasks: taskReducer,
     users: userReducer,
+    tasks: taskReducer,
     inspectionLevels: inspectionLevelReducer,
     userTasks: userTasksReducer
   },
@@ -18,3 +18,5 @@ export const store = configureStore({
       serializableCheck: false
     })
 });
+
+export default store;

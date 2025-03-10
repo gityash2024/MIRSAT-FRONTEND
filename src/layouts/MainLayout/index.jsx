@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import Sidebar from '../SideBar';
+import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
 
 const LayoutContainer = styled.div`
@@ -28,11 +28,12 @@ const MainContent = styled.div`
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sidebarWidth = isSidebarOpen ? 240 : 64;
+  const location = useLocation();
 
-  // Add click event listener to handle clicks outside sidebar when collapsed
+  console.log("MainLayout rendering, path:", location.pathname);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // If sidebar is collapsed and user clicks outside
       if (!isSidebarOpen && !event.target.closest('.sidebar')) {
         setIsSidebarOpen(true);
       }
@@ -45,7 +46,6 @@ const MainLayout = () => {
   }, [isSidebarOpen]);
 
   const toggleSidebar = (event) => {
-    // Prevent event from bubbling to document click handler
     event.stopPropagation();
     setIsSidebarOpen(!isSidebarOpen);
   };
