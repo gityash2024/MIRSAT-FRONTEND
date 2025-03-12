@@ -374,8 +374,16 @@ const NestedSubLevelsList = ({
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { loading, setLoading, handleError, inspectionService } = useOutletContext()||{};
-  
+  const contextValue = useOutletContext() || {};
+  const loading = contextValue.loading || false;
+  const setLoading = contextValue.setLoading || (() => {});
+  const handleError = contextValue.handleError || ((error) => console.error(error));
+  const inspectionService = contextValue.inspectionService || {
+    getInspectionLevel: async () => ({}),
+    createInspectionLevel: async () => ({}),
+    updateInspectionLevel: async () => ({})
+  };
+    
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -739,26 +747,34 @@ const InspectionLevelForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm() || loading) return;
-
+  
     try {
       setLoading(true);
       
-      // Prepare data for API (handle any transformations needed)
+      // Prepare data for API
       const apiData = {
-        ...formData,
-        // If needed, transform the nested sublevel structure for the API
+        ...formData
       };
       
       if (id) {
-        await inspectionService.updateInspectionLevel(id, apiData);
-        toast.success('Inspection level updated successfully');
+        if (typeof inspectionService.updateInspectionLevel === 'function') {
+          await inspectionService.updateInspectionLevel(id, apiData);
+          toast.success('Inspection level updated successfully');
+        } else {
+          console.error('inspectionService.updateInspectionLevel is not a function');
+          toast.error('Could not update inspection level due to a configuration error');
+        }
       } else {
-        await inspectionService.createInspectionLevel(apiData);
-        toast.success('Inspection level created successfully');
+        if (typeof inspectionService.createInspectionLevel === 'function') {
+          await inspectionService.createInspectionLevel(apiData);
+          toast.success('Inspection level created successfully');
+        } else {
+          console.error('inspectionService.createInspectionLevel is not a function');
+          toast.error('Could not create inspection level due to a configuration error');
+        }
       }
       
       navigate('/inspection');
