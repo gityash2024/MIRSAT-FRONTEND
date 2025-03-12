@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   LineChart, 
@@ -12,7 +12,7 @@ import {
   ReferenceLine 
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { complianceData } from '../mockData';
+import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
   background: white;
@@ -99,6 +99,16 @@ const MetricTrend = styled.div`
   margin-top: 4px;
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+`;
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -139,19 +149,73 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const categories = ['overall', 'safety', 'procedures'];
-
-const TrendAnalysisChart = () => {
+const TrendAnalysisChart = ({ dateRange, filters }) => {
+  const [categories, setCategories] = useState(['overall', 'safety', 'procedures']);
   const [selectedCategory, setSelectedCategory] = useState('overall');
+  const [trendData, setTrendData] = useState({
+    data: [],
+    metrics: {
+      currentValue: 0,
+      previousValue: 0,
+      trend: 0,
+      average: 0,
+      min: 0,
+      max: 0
+    },
+    loading: true,
+    error: null
+  });
   
-  // Calculate metrics
-  const currentValue = complianceData.trends[complianceData.trends.length - 1][selectedCategory];
-  const previousValue = complianceData.trends[complianceData.trends.length - 2][selectedCategory];
-  const trend = ((currentValue - previousValue) / previousValue * 100).toFixed(1);
-  
-  const average = (complianceData.trends.reduce((acc, curr) => acc + curr[selectedCategory], 0) / complianceData.trends.length).toFixed(1);
-  const min = Math.min(...complianceData.trends.map(d => d[selectedCategory]));
-  const max = Math.max(...complianceData.trends.map(d => d[selectedCategory]));
+  useEffect(() => {
+    const fetchTrendData = async () => {
+      try {
+        setTrendData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          category: selectedCategory,
+          ...filters
+        };
+        
+        const response = await api.get('/reports/trend-analysis', { params });
+        
+        setTrendData({
+          data: response.data.data || [],
+          metrics: response.data.metrics || {
+            currentValue: 0,
+            previousValue: 0,
+            trend: 0,
+            average: 0,
+            min: 0,
+            max: 0
+          },
+          loading: false,
+          error: null
+        });
+        
+        if (response.data.categories && response.data.categories.length > 0) {
+          setCategories(response.data.categories);
+        }
+      } catch (error) {
+        setTrendData({
+          data: [],
+          metrics: {
+            currentValue: 0,
+            previousValue: 0,
+            trend: 0,
+            average: 0,
+            min: 0,
+            max: 0
+          },
+          loading: false,
+          error: error.message || 'Failed to fetch trend data'
+        });
+      }
+    };
+
+    fetchTrendData();
+  }, [dateRange, selectedCategory, filters]);
 
   return (
     <ChartContainer
@@ -173,13 +237,21 @@ const TrendAnalysisChart = () => {
             >
               {category.charAt(0).toUpperCase() + category.slice(1)}
             </CategoryButton>
-            ))}
-            </CategorySelect>
-          </ChartHeader>
-    
+          ))}
+        </CategorySelect>
+      </ChartHeader>
+
+      {trendData.loading ? (
+        <LoadingContainer>Loading trend data...</LoadingContainer>
+      ) : trendData.error ? (
+        <LoadingContainer>Error: {trendData.error}</LoadingContainer>
+      ) : trendData.data.length === 0 ? (
+        <LoadingContainer>No trend data available</LoadingContainer>
+      ) : (
+        <>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
-              data={complianceData.trends}
+              data={trendData.data}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -207,26 +279,28 @@ const TrendAnalysisChart = () => {
               />
             </LineChart>
           </ResponsiveContainer>
-    
+
           <SummaryMetrics>
             <MetricCard highlight={true}>
               <MetricLabel>Current Performance</MetricLabel>
-              <MetricValue>{currentValue}%</MetricValue>
-              <MetricTrend value={trend}>
-                {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% vs previous
+              <MetricValue>{trendData.metrics.currentValue}%</MetricValue>
+              <MetricTrend value={trendData.metrics.trend}>
+                {trendData.metrics.trend > 0 ? '↑' : '↓'} {Math.abs(trendData.metrics.trend)}% vs previous
               </MetricTrend>
             </MetricCard>
             <MetricCard>
               <MetricLabel>Average Performance</MetricLabel>
-              <MetricValue>{average}%</MetricValue>
+              <MetricValue>{trendData.metrics.average}%</MetricValue>
             </MetricCard>
             <MetricCard>
               <MetricLabel>Range</MetricLabel>
-              <MetricValue>{min}% - {max}%</MetricValue>
+              <MetricValue>{trendData.metrics.min}% - {trendData.metrics.max}%</MetricValue>
             </MetricCard>
           </SummaryMetrics>
-        </ChartContainer>
-      );
-    };
-    
-    export default TrendAnalysisChart;
+        </>
+      )}
+    </ChartContainer>
+  );
+};
+
+export default TrendAnalysisChart;

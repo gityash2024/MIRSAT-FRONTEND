@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { 
   RadarChart, 
@@ -10,7 +10,7 @@ import {
   Tooltip
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { complianceData } from '../mockData';
+import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
   background: white;
@@ -81,14 +81,13 @@ const ProgressFill = styled(motion.div)`
   width: ${props => props.score}%;
 `;
 
-const WeightBadge = styled.span`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px 6px;
-  background: #f1f5f9;
-  border-radius: 12px;
-  font-size: 11px;
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+  font-size: 16px;
   color: #64748b;
 `;
 
@@ -139,11 +138,49 @@ const getScoreColor = (score) => {
   return '#dc2626';
 };
 
-const ComplianceChart = () => {
-  const totalScore = complianceData.categories.reduce(
-    (acc, curr) => acc + (curr.score * curr.weight) / 100,
-    0
-  ).toFixed(1);
+const ComplianceChart = ({ dateRange, filters }) => {
+  const [complianceData, setComplianceData] = useState({
+    categories: [],
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchComplianceData = async () => {
+      try {
+        setComplianceData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          ...filters
+        };
+        
+        const response = await api.get('/reports/compliance', { params });
+        
+        setComplianceData({
+          categories: response.data.categories || [],
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setComplianceData({
+          categories: [],
+          loading: false,
+          error: error.message || 'Failed to fetch compliance data'
+        });
+      }
+    };
+
+    fetchComplianceData();
+  }, [dateRange, filters]);
+
+  const totalScore = complianceData.categories.length > 0 
+    ? complianceData.categories.reduce(
+        (acc, curr) => acc + (curr.score * curr.weight) / 100,
+        0
+      ).toFixed(1)
+    : 0;
 
   return (
     <ChartContainer
@@ -156,48 +193,57 @@ const ComplianceChart = () => {
         <Subtitle>Overall compliance score: {totalScore}%</Subtitle>
       </ChartHeader>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <RadarChart data={complianceData.categories} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-          <PolarGrid gridType="polygon" />
-          <PolarAngleAxis
-            dataKey="name"
-            tick={{ fill: '#64748b', fontSize: 11 }}
-          />
-          <PolarRadiusAxis 
-            angle={30} 
-            domain={[0, 100]}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-          />
-          <Radar
-            name="Score"
-            dataKey="score"
-            stroke="#1a237e"
-            fill="#1a237e"
-            fillOpacity={0.2}
-          />
-          <Tooltip content={<CustomTooltip />} />
-        </RadarChart>
-      </ResponsiveContainer>
-
-      <MetricsList>
-        {complianceData.categories.map(category => (
-          <MetricCard key={category.name}>
-            {/* <WeightBadge>Weight: {category.weight}%</WeightBadge> */}
-            <MetricHeader>
-              <MetricName>{category.name}</MetricName>
-              <MetricScore score={category.score}>{category.score}%</MetricScore>
-            </MetricHeader>
-            <ProgressBar>
-              <ProgressFill
-                score={category.score}
-                initial={{ width: 0 }}
-                animate={{ width: `${category.score}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
+      {complianceData.loading ? (
+        <LoadingContainer>Loading compliance data...</LoadingContainer>
+      ) : complianceData.error ? (
+        <LoadingContainer>Error: {complianceData.error}</LoadingContainer>
+      ) : complianceData.categories.length === 0 ? (
+        <LoadingContainer>No compliance data available</LoadingContainer>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={300}>
+            <RadarChart data={complianceData.categories} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <PolarGrid gridType="polygon" />
+              <PolarAngleAxis
+                dataKey="name"
+                tick={{ fill: '#64748b', fontSize: 11 }}
               />
-            </ProgressBar>
-          </MetricCard>
-        ))}
-      </MetricsList>
+              <PolarRadiusAxis 
+                angle={30} 
+                domain={[0, 100]}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+              />
+              <Radar
+                name="Score"
+                dataKey="score"
+                stroke="#1a237e"
+                fill="#1a237e"
+                fillOpacity={0.2}
+              />
+              <Tooltip content={<CustomTooltip />} />
+            </RadarChart>
+          </ResponsiveContainer>
+
+          <MetricsList>
+            {complianceData.categories.map(category => (
+              <MetricCard key={category.name}>
+                <MetricHeader>
+                  <MetricName>{category.name}</MetricName>
+                  <MetricScore score={category.score}>{category.score}%</MetricScore>
+                </MetricHeader>
+                <ProgressBar>
+                  <ProgressFill
+                    score={category.score}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${category.score}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                  />
+                </ProgressBar>
+              </MetricCard>
+            ))}
+          </MetricsList>
+        </>
+      )}
     </ChartContainer>
   );
 };

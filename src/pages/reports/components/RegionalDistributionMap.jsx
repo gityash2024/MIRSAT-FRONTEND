@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   BarChart, 
@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { Map, AlertTriangle, Activity } from 'lucide-react';
-import { regionalData } from '../mockData';
+import api from '../../../services/api';
 
 const MapContainer = styled(motion.div)`
   background: white;
@@ -149,6 +149,16 @@ const IssueCount = styled.span`
   font-weight: 500;
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+`;
+
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
@@ -185,33 +195,61 @@ const CustomTooltip = ({ active, payload }) => {
 
 const COLORS = ['#1a237e', '#1565c0', '#1976d2', '#1e88e5', '#2196f3'];
 
-const RegionalDistributionMap = () => {
+const RegionalDistributionMap = ({ dateRange, filters }) => {
   const [selectedRegion, setSelectedRegion] = useState(null);
-
-  const totalInspections = regionalData.reduce((acc, curr) => acc + curr.count, 0);
-  const avgCompliance = (regionalData.reduce((acc, curr) => acc + curr.compliance, 0) / regionalData.length).toFixed(1);
-  const totalIssues = regionalData.reduce((acc, curr) => acc + curr.issues, 0);
-
-  const criticalIssues = [
-    {
-      name: 'Equipment Malfunction',
-      location: 'South Marina',
-      count: 3,
-      color: '#dc2626'
+  const [regionalData, setRegionalData] = useState({
+    data: [],
+    criticalIssues: [],
+    metrics: {
+      totalInspections: 0,
+      avgCompliance: 0,
+      totalIssues: 0
     },
-    {
-      name: 'Safety Protocol Breach',
-      location: 'North Beach',
-      count: 2,
-      color: '#f59e0b'
-    },
-    {
-      name: 'Documentation Missing',
-      location: 'East Coast',
-      count: 4,
-      color: '#2563eb'
-    }
-  ];
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchRegionalData = async () => {
+      try {
+        setRegionalData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          ...filters
+        };
+        
+        const response = await api.get('/reports/regional-distribution', { params });
+        
+        setRegionalData({
+          data: response.data.data || [],
+          criticalIssues: response.data.criticalIssues || [],
+          metrics: response.data.metrics || {
+            totalInspections: 0,
+            avgCompliance: 0,
+            totalIssues: 0
+          },
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setRegionalData({
+          data: [],
+          criticalIssues: [],
+          metrics: {
+            totalInspections: 0,
+            avgCompliance: 0,
+            totalIssues: 0
+          },
+          loading: false,
+          error: error.message || 'Failed to fetch regional data'
+        });
+      }
+    };
+
+    fetchRegionalData();
+  }, [dateRange, filters]);
 
   return (
     <MapContainer
@@ -227,90 +265,98 @@ const RegionalDistributionMap = () => {
         <Subtitle>Distribution of inspections and compliance across regions</Subtitle>
       </Header>
 
-      <ContentGrid>
-        <div>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={regionalData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="region" 
-                tick={{ fill: '#64748b' }}
-                axisLine={{ stroke: '#e2e8f0' }}
-              />
-              <YAxis 
-                tick={{ fill: '#64748b' }}
-                axisLine={{ stroke: '#e2e8f0' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#1a237e">
-                {regionalData.map((entry, index) => (
-                  <Cell 
-                    key={entry.region}
-                    fill={COLORS[index % COLORS.length]}
-                    opacity={selectedRegion === entry.region || !selectedRegion ? 1 : 0.5}
-                    onMouseEnter={() => setSelectedRegion(entry.region)}
-                    onMouseLeave={() => setSelectedRegion(null)}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      {regionalData.loading ? (
+        <LoadingContainer>Loading regional data...</LoadingContainer>
+      ) : regionalData.error ? (
+        <LoadingContainer>Error: {regionalData.error}</LoadingContainer>
+      ) : regionalData.data.length === 0 ? (
+        <LoadingContainer>No regional data available</LoadingContainer>
+      ) : (
+        <ContentGrid>
+          <div>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={regionalData.data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="region" 
+                  tick={{ fill: '#64748b' }}
+                  axisLine={{ stroke: '#e2e8f0' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#64748b' }}
+                  axisLine={{ stroke: '#e2e8f0' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill="#1a237e">
+                  {regionalData.data.map((entry, index) => (
+                    <Cell 
+                      key={entry.region}
+                      fill={COLORS[index % COLORS.length]}
+                      opacity={selectedRegion === entry.region || !selectedRegion ? 1 : 0.5}
+                      onMouseEnter={() => setSelectedRegion(entry.region)}
+                      onMouseLeave={() => setSelectedRegion(null)}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
 
-          <IssuesList>
-            {criticalIssues.map((issue, index) => (
-              <IssueItem key={index}>
-                <IssueInfo>
-                  <IssueIcon color={issue.color}>
-                    <AlertTriangle size={16} />
-                  </IssueIcon>
-                  <IssueDetails>
-                    <IssueName>{issue.name}</IssueName>
-                    <IssueLocation>{issue.location}</IssueLocation>
-                  </IssueDetails>
-                </IssueInfo>
-                <IssueCount color={issue.color}>
-                  {issue.count} issues
-                </IssueCount>
-              </IssueItem>
-            ))}
-          </IssuesList>
-        </div>
+            <IssuesList>
+              {regionalData.criticalIssues.map((issue, index) => (
+                <IssueItem key={index}>
+                  <IssueInfo>
+                    <IssueIcon color={issue.color}>
+                      <AlertTriangle size={16} />
+                    </IssueIcon>
+                    <IssueDetails>
+                      <IssueName>{issue.name}</IssueName>
+                      <IssueLocation>{issue.location}</IssueLocation>
+                    </IssueDetails>
+                  </IssueInfo>
+                  <IssueCount color={issue.color}>
+                    {issue.count} issues
+                  </IssueCount>
+                </IssueItem>
+              ))}
+            </IssuesList>
+          </div>
 
-        <MetricsList>
-          <MetricCard color="#1a237e">
-            <MetricHeader>
-              <MetricName>Total Inspections</MetricName>
-              <Activity size={16} color="#1a237e" />
-            </MetricHeader>
-            <MetricValue>
-              {totalInspections.toLocaleString()}
-              <MetricUnit>inspections</MetricUnit>
-            </MetricValue>
-          </MetricCard>
+          <MetricsList>
+            <MetricCard color="#1a237e">
+              <MetricHeader>
+                <MetricName>Total Inspections</MetricName>
+                <Activity size={16} color="#1a237e" />
+              </MetricHeader>
+              <MetricValue>
+                {regionalData.metrics.totalInspections.toLocaleString()}
+                <MetricUnit>inspections</MetricUnit>
+              </MetricValue>
+            </MetricCard>
 
-          <MetricCard color="#2196f3">
-            <MetricHeader>
-              <MetricName>Average Compliance</MetricName>
-              <Activity size={16} color="#2196f3" />
-            </MetricHeader>
-            <MetricValue>
-              {avgCompliance}
-              <MetricUnit>%</MetricUnit>
-            </MetricValue>
-          </MetricCard>
+            <MetricCard color="#2196f3">
+              <MetricHeader>
+                <MetricName>Average Compliance</MetricName>
+                <Activity size={16} color="#2196f3" />
+              </MetricHeader>
+              <MetricValue>
+                {regionalData.metrics.avgCompliance}
+                <MetricUnit>%</MetricUnit>
+              </MetricValue>
+            </MetricCard>
 
-          <MetricCard color="#f59e0b">
-            <MetricHeader>
-              <MetricName>Total Issues</MetricName>
-              <AlertTriangle size={16} color="#f59e0b" />
-            </MetricHeader>
-            <MetricValue>
-              {totalIssues}
-              <MetricUnit>issues</MetricUnit>
-            </MetricValue>
-          </MetricCard>
-        </MetricsList>
-      </ContentGrid>
+            <MetricCard color="#f59e0b">
+              <MetricHeader>
+                <MetricName>Total Issues</MetricName>
+                <AlertTriangle size={16} color="#f59e0b" />
+              </MetricHeader>
+              <MetricValue>
+                {regionalData.metrics.totalIssues}
+                <MetricUnit>issues</MetricUnit>
+              </MetricValue>
+            </MetricCard>
+          </MetricsList>
+        </ContentGrid>
+      )}
     </MapContainer>
   );
 };

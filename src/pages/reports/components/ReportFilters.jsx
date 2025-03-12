@@ -176,7 +176,7 @@ const ReportFilters = ({ filters, onFilterChange }) => {
       ...filters,
       [category]: filters[category]?.includes(value)
         ? filters[category].filter(item => item !== value)
-        : [...filters[category], value]
+        : [...(filters[category] || []), value]
     };
     onFilterChange(updatedFilters);
   };
@@ -197,7 +197,7 @@ const ReportFilters = ({ filters, onFilterChange }) => {
     onFilterChange(clearedFilters);
   };
 
-  const hasActiveFilters = Object.values(filters).some(arr => arr.length > 0);
+  const hasActiveFilters = Object.values(filters).some(arr => arr && arr.length > 0);
 
   return (
     <FiltersContainer>
@@ -212,8 +212,8 @@ const ReportFilters = ({ filters, onFilterChange }) => {
                   checked={filters.regions?.includes(region)}
                   onChange={() => handleCheckboxChange('regions', region)}
                 />
-                <CustomCheckbox checked={filters?.regions?.includes(region)}>
-                  {filters?.regions?.includes(region) && (
+                <CustomCheckbox checked={filters.regions?.includes(region)}>
+                  {filters.regions?.includes(region) && (
                     <Check size={12} color="white" />
                   )}
                 </CustomCheckbox>
@@ -230,7 +230,7 @@ const ReportFilters = ({ filters, onFilterChange }) => {
               <Checkbox key={type}>
                 <input
                   type="checkbox"
-                  checked={filters?.inspectionTypes?.includes(type)}
+                  checked={filters.inspectionTypes?.includes(type)}
                   onChange={() => handleCheckboxChange('inspectionTypes', type)}
                 />
                 <CustomCheckbox checked={filters.inspectionTypes?.includes(type)}>
@@ -290,7 +290,7 @@ const ReportFilters = ({ filters, onFilterChange }) => {
       {hasActiveFilters && (
         <ActiveFilters>
           {Object.entries(filters).map(([category, values]) =>
-            values.map(value => (
+            values && values.map(value => (
               <FilterTag key={`${category}-${value}`}>
                 {value}
                 <button onClick={() => handleRemoveFilter(category, value)}>

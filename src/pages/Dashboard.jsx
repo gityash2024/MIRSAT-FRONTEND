@@ -1,15 +1,14 @@
-/* This code snippet is a React component named `Dashboard` that represents a dashboard interface. It
-includes styled components for various elements like the dashboard container, welcome text, stat
-cards, progress bars, team member items, etc. */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useAuth } from '../hooks/useAuth';
+import { useDispatch } from 'react-redux';
 import { 
   Calendar, 
   CheckSquare, 
   Clock, 
-  Activity 
+  ShieldCheck
 } from 'lucide-react';
+import api from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 import Reports from './reports';
 
 const DashboardContainer = styled.div`
@@ -162,53 +161,119 @@ const TeamMemberItem = styled.div`
   }
 `;
 
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #1a237e;
+`;
+
+const EmptyState = styled.div`
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+`;
+
 const Dashboard = () => {
   const { user } = useAuth();
+  const dispatch = useDispatch();
+  const [dashboardData, setDashboardData] = useState({
+    stats: [],
+    taskProgress: [],
+    teamPerformance: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const stats = [
-    {
-      icon: Calendar,
-      value: '24',
-      label: 'Total Tasks',
-      color: '#1976d2',
-      bgColor: '#e3f2fd'
-    },
-    {
-      icon: CheckSquare,
-      value: '16',
-      label: 'Completed Tasks',
-      color: '#2e7d32',
-      bgColor: '#e8f5e9'
-    },
-    {
-      icon: Clock,
-      value: '8',
-      label: 'Pending Reviews',
-      color: '#ed6c02',
-      bgColor: '#fff3e0'
-    },
-    {
-      icon: Activity,
-      value: '92%',
-      label: 'Team Performance',
-      color: '#9c27b0',
-      bgColor: '#f3e5f5'
+  // Direct API call to avoid any Redux issues
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const timestamp = new Date().getTime();
+      const response = await api.get(`/dashboard/stats?_=${timestamp}`);
+      
+      console.log("Dashboard data received:", response.data);
+      
+      if (response.data && response.data.success) {
+        setDashboardData({
+          stats: response.data.stats || [],
+          taskProgress: response.data.taskProgress || [],
+          teamPerformance: response.data.teamPerformance || []
+        });
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError(err.message || "Failed to fetch dashboard data");
+      setLoading(false);
     }
-  ];
+  };
 
-  const taskProgress = [
-    { name: 'Beach Inspections', progress: 75 },
-    { name: 'Marina Safety Checks', progress: 60 },
-    { name: 'Equipment Verification', progress: 90 },
-    { name: 'Documentation Review', progress: 45 }
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+    
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
-  const teamPerformance = [
-    { name: 'John Doe', performance: '95%' },
-    { name: 'Jane Smith', performance: '88%' },
-    { name: 'Mike Johnson', performance: '82%' },
-    { name: 'Sarah Williams', performance: '90%' }
-  ];
+  const renderStatCards = () => {
+    const { stats } = dashboardData;
+    
+    if (!stats || stats.length === 0) {
+      return [...Array(4)].map((_, index) => (
+        <StatCard key={index}>
+          <div className="icon-wrapper" style={{ backgroundColor: '#f5f7fb' }}>
+            {index === 0 && <Calendar size={24} color="#1976d2" />}
+            {index === 1 && <CheckSquare size={24} color="#2e7d32" />}
+            {index === 2 && <Clock size={24} color="#ed6c02" />}
+            {index === 3 && <ShieldCheck size={24} color="#9c27b0" />}
+          </div>
+          <div className="value">0</div>
+          <div className="label">
+            {index === 0 && 'Total Tasks'}
+            {index === 1 && 'Completed Tasks'}
+            {index === 2 && 'Pending Reviews'}
+            {index === 3 && 'Compliance Score'}
+          </div>
+        </StatCard>
+      ));
+    }
+
+    return stats.map((stat, index) => {
+      let Icon;
+      switch (stat.icon) {
+        case 'Calendar':
+          Icon = Calendar;
+          break;
+        case 'CheckSquare':
+          Icon = CheckSquare;
+          break;
+        case 'Clock':
+          Icon = Clock;
+          break;
+        case 'ShieldCheck':
+          Icon = ShieldCheck;
+          break;
+        default:
+          Icon = Calendar;
+      }
+
+      return (
+        <StatCard key={index}>
+          <div className="icon-wrapper" style={{ backgroundColor: stat.bgColor }}>
+            <Icon size={24} color={stat.color} />
+          </div>
+          <div className="value">{stat.value}</div>
+          <div className="label">{stat.label}</div>
+        </StatCard>
+      );
+    });
+  };
 
   return (
     <DashboardContainer>
@@ -217,60 +282,66 @@ const Dashboard = () => {
       </WelcomeText>
 
       <StatsGrid>
-        {stats.map((stat, index) => (
-          <StatCard key={index}>
-            <div 
-              className="icon-wrapper" 
-              style={{ backgroundColor: stat.bgColor }}
-            >
-              <stat.icon size={24} color={stat.color} />
-            </div>
-            <div className="value">{stat.value}</div>
-            <div className="label">{stat.label}</div>
-          </StatCard>
-        ))}
+        {loading && dashboardData.stats.length === 0 ? (
+          <LoadingSpinner>Loading dashboard statistics...</LoadingSpinner>
+        ) : (
+          renderStatCards()
+        )}
       </StatsGrid>
 
       <ContentGrid>
         <Card>
           <CardTitle>Task Progress</CardTitle>
-          <div>
-            {taskProgress.map((task, index) => (
-              <ProgressItem key={index}>
-                <div className="header">
-                  <span className="task-name">{task.name}</span>
-                  <span className="percentage">{task.progress}%</span>
-                </div>
-                <ProgressBar>
-                  <div 
-                    className="fill" 
-                    style={{ width: `${task.progress}%` }} 
-                  />
-                </ProgressBar>
-              </ProgressItem>
-            ))}
-          </div>
+          {loading && dashboardData.taskProgress.length === 0 ? (
+            <LoadingSpinner>Loading task progress...</LoadingSpinner>
+          ) : dashboardData.taskProgress && dashboardData.taskProgress.length > 0 ? (
+            <div>
+              {dashboardData.taskProgress.map((task, index) => (
+                <ProgressItem key={index}>
+                  <div className="header">
+                    <span className="task-name">{task.name}</span>
+                    <span className="percentage">{task.progress}%</span>
+                  </div>
+                  <ProgressBar>
+                    <div 
+                      className="fill" 
+                      style={{ width: `${task.progress}%` }} 
+                    />
+                  </ProgressBar>
+                </ProgressItem>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No task progress data available</EmptyState>
+          )}
         </Card>
 
         <Card>
-          <CardTitle>Team Performance</CardTitle>
-          <div>
-            {teamPerformance.map((member, index) => (
-              <TeamMemberItem key={index}>
-                <div className="member-info">
-                  <div className="avatar">
-                    {member.name.charAt(0)}
+          <CardTitle>Inspector Performance</CardTitle>
+          {loading && dashboardData.teamPerformance.length === 0 ? (
+            <LoadingSpinner>Loading inspector performance...</LoadingSpinner>
+          ) : dashboardData.teamPerformance && dashboardData.teamPerformance.length > 0 ? (
+            <div>
+              {dashboardData.teamPerformance.map((member, index) => (
+                <TeamMemberItem key={index}>
+                  <div className="member-info">
+                    <div className="avatar">
+                      {member.name ? member.name.charAt(0) : 'U'}
+                    </div>
+                    <span className="name">{member.name}</span>
                   </div>
-                  <span className="name">{member.name}</span>
-                </div>
-                <div className="performance">
-                  {member.performance}
-                </div>
-              </TeamMemberItem>
-            ))}
-          </div>
+                  <div className="performance">
+                    {member.performance}
+                  </div>
+                </TeamMemberItem>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No inspector performance data available</EmptyState>
+          )}
         </Card>
       </ContentGrid>
+      
       <Reports/>
     </DashboardContainer>
   );

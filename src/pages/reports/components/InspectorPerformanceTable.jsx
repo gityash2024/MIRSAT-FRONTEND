@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import {
@@ -12,7 +12,7 @@ import {
   Filter,
   Download
 } from 'lucide-react';
-import { inspectorPerformance } from '../mockData';
+import api from '../../../services/api';
 
 const TableContainer = styled(motion.div)`
   background: white;
@@ -122,6 +122,12 @@ const Th = styled.th`
   color: #1a237e;
   background: #f8fafc;
   border-bottom: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f1f5f9;
+  }
 `;
 
 const Td = styled.td`
@@ -184,10 +190,57 @@ const ActivityBar = styled.div`
   border-radius: 2px;
 `;
 
-const InspectorPerformanceTable = () => {
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+`;
+
+const InspectorPerformanceTable = ({ dateRange, filters }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('tasksCompleted');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [inspectorData, setInspectorData] = useState({
+    data: [],
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchInspectorData = async () => {
+      try {
+        setInspectorData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          sort: sortBy,
+          order: sortOrder,
+          ...filters
+        };
+        
+        const response = await api.get('/reports/inspector-performance', { params });
+        
+        setInspectorData({
+          data: response.data || [],
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setInspectorData({
+          data: [],
+          loading: false,
+          error: error.message || 'Failed to fetch inspector data'
+        });
+      }
+    };
+
+    fetchInspectorData();
+  }, [dateRange, filters, sortBy, sortOrder]);
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -198,12 +251,7 @@ const InspectorPerformanceTable = () => {
     }
   };
 
-  const sortedData = [...inspectorPerformance].sort((a, b) => {
-    const order = sortOrder === 'asc' ? 1 : -1;
-    return (a[sortBy] - b[sortBy]) * order;
-  });
-
-  const filteredData = sortedData.filter(inspector =>
+  const filteredData = inspectorData.data.filter(inspector =>
     inspector.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -248,87 +296,110 @@ const InspectorPerformanceTable = () => {
         </ActionButtons>
       </TableControls>
 
-      <Table>
-        <thead>
-          <tr>
-            <Th>Inspector Name</Th>
-            <Th>Tasks Completed</Th>
-            <Th>Avg. Completion Time</Th>
-            <Th>Compliance Rate</Th>
-            <Th>Rating</Th>
-            <Th>Recent Activity</Th>
-            <Th>Performance Trend</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((inspector) => {
-            const maxActivity = Math.max(...inspector.recentActivity.map(a => a.count));
-            return (
-              <tr key={inspector.id}>
-                <Td style={{ fontWeight: 500, color: '#1a237e' }}>
-                  {inspector.name}
-                </Td>
-                <Td>{inspector.tasksCompleted}</Td>
-                <Td>{inspector.avgCompletionTime} hours</Td>
-                <Td>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span>{inspector.complianceRate}%</span>
-                    <Progress>
-                      <ProgressBar value={inspector.complianceRate} />
-                    </Progress>
-                  </div>
-                </Td>
-                <Td>
-                  <Rating>
-                    {[...Array(5)].map((_, index) => (
-                      <Star
-                        key={index}
-                        size={14}
-                        fill={index < Math.floor(inspector.rating) ? 'currentColor' : 'none'}
-                      />
-                    ))}
-                    <span style={{ marginLeft: '4px', color: '#64748b' }}>
-                      {inspector.rating}
-                    </span>
-                  </Rating>
-                </Td>
-                <Td>
-                  <ActivityChart>
-                    {inspector.recentActivity.map((activity, index) => (
-                      <ActivityBar
-                        key={index}
-                        value={activity.count}
-                        max={maxActivity}
-                        color={
-                          activity.type === 'Beach' ? '#2563eb' :
-                          activity.type === 'Marina' ? '#16a34a' :
-                          '#9333ea'
-                        }
-                        title={`${activity.type}: ${activity.count} tasks`}
-                      />
-                    ))}
-                  </ActivityChart>
-                </Td>
-                <Td>
-                  <PerformanceIndicator trend={Math.random() > 0.5 ? 1 : -1}>
-                    {Math.random() > 0.5 ? (
-                      <>
-                        <ArrowUpRight size={16} />
-                        +{(Math.random() * 10).toFixed(1)}%
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDownRight size={16} />
-                        -{(Math.random() * 10).toFixed(1)}%
-                      </>
-                    )}
-                  </PerformanceIndicator>
-                </Td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+      {inspectorData.loading ? (
+        <LoadingContainer>Loading inspector data...</LoadingContainer>
+      ) : inspectorData.error ? (
+        <LoadingContainer>Error: {inspectorData.error}</LoadingContainer>
+      ) : filteredData.length === 0 ? (
+        <LoadingContainer>No inspector data available</LoadingContainer>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <Th onClick={() => handleSort('name')}>
+                Inspector Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+              <Th onClick={() => handleSort('tasksCompleted')}>
+                Tasks Completed {sortBy === 'tasksCompleted' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+              <Th onClick={() => handleSort('avgCompletionTime')}>
+                Avg. Completion Time {sortBy === 'avgCompletionTime' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+              <Th onClick={() => handleSort('complianceRate')}>
+                Compliance Rate {sortBy === 'complianceRate' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+              <Th onClick={() => handleSort('rating')}>
+                Rating {sortBy === 'rating' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+              <Th>Recent Activity</Th>
+              <Th onClick={() => handleSort('performanceTrend')}>
+                Performance Trend {sortBy === 'performanceTrend' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((inspector) => {
+              const maxActivity = inspector.recentActivity && inspector.recentActivity.length 
+                ? Math.max(...inspector.recentActivity.map(a => a.count))
+                : 0;
+                
+              return (
+                <tr key={inspector.id}>
+                  <Td style={{ fontWeight: 500, color: '#1a237e' }}>
+                    {inspector.name}
+                  </Td>
+                  <Td>{inspector.tasksCompleted}</Td>
+                  <Td>{inspector.avgCompletionTime} hours</Td>
+                  <Td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span>{inspector.complianceRate}%</span>
+                      <Progress>
+                        <ProgressBar value={inspector.complianceRate} />
+                      </Progress>
+                    </div>
+                  </Td>
+                  <Td>
+                    <Rating>
+                      {[...Array(5)].map((_, index) => (
+                        <Star
+                          key={index}
+                          size={14}
+                          fill={index < Math.floor(inspector.rating) ? 'currentColor' : 'none'}
+                        />
+                      ))}
+                      <span style={{ marginLeft: '4px', color: '#64748b' }}>
+                        {inspector.rating}
+                      </span>
+                    </Rating>
+                  </Td>
+                  <Td>
+                    <ActivityChart>
+                      {inspector.recentActivity && inspector.recentActivity.map((activity, index) => (
+                        <ActivityBar
+                          key={index}
+                          value={activity.count}
+                          max={maxActivity}
+                          color={
+                            activity.type === 'Beach' ? '#2563eb' :
+                            activity.type === 'Marina' ? '#16a34a' :
+                            '#9333ea'
+                          }
+                          title={`${activity.type}: ${activity.count} tasks`}
+                        />
+                      ))}
+                    </ActivityChart>
+                  </Td>
+                  <Td>
+                    <PerformanceIndicator trend={inspector.performanceTrend}>
+                      {inspector.performanceTrend > 0 ? (
+                        <>
+                          <ArrowUpRight size={16} />
+                          +{inspector.performanceTrend}%
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownRight size={16} />
+                          {inspector.performanceTrend}%
+                        </>
+                      )}
+                    </PerformanceIndicator>
+                  </Td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      )}
     </TableContainer>
   );
 };

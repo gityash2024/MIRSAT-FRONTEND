@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { FileText, Filter, Download, Calendar } from 'lucide-react';
-import DateRangePicker  from '../../../components/ui/date-range-picker';
+import DateRangePicker from '../../../components/ui/date-range-picker';
 
 const Header = styled.div`
   display: flex;
@@ -72,9 +72,11 @@ const ReportHeader = ({ onToggleFilters, dateRange, onDateRangeChange }) => {
       <TitleSection>
         <PageTitle>
           <FileText size={24} />
-          Comprehensive analysis and performance metrics
+          Comprehensive Analysis and Performance Metrics
         </PageTitle>
-       
+        <PageDescription>
+          Overview of task completion, inspection status, and team performance
+        </PageDescription>
       </TitleSection>
 
       <ActionButtons>

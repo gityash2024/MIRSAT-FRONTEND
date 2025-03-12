@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { 
@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   Users
 } from 'lucide-react';
-import { performanceData } from '../mockData';
+import api from '../../../services/api';
 
 const MetricsGrid = styled.div`
   display: grid;
@@ -126,70 +126,20 @@ const ProgressFill = styled(motion.div)`
   width: ${props => props.value}%;
 `;
 
-const metrics = [
-  {
-    title: 'Total Inspections',
-    icon: ClipboardCheck,
-    background: '#e3f2fd',
-    color: '#1565c0',
-    value: performanceData.totalInspections.current,
-    unit: 'inspections',
-    trend: performanceData.totalInspections.trend,
-    breakdown: performanceData.totalInspections.breakdown
-  },
-  {
-    title: 'Completion Rate',
-    icon: TrendingUp,
-    background: '#e8f5e9',
-    color: '#2e7d32',
-    value: performanceData.completionRate.current,
-    unit: '%',
-    trend: performanceData.completionRate.trend,
-    breakdown: performanceData.completionRate.breakdown
-  },
-  {
-    title: 'Avg. Completion Time',
-    icon: Clock,
-    background: '#fff3e0',
-    color: '#ed6c02',
-    value: performanceData.avgCompletionTime.current,
-    unit: 'hours',
-    trend: performanceData.avgCompletionTime.trend,
-    breakdown: performanceData.avgCompletionTime.breakdown
-  },
-  {
-    title: 'Compliance Score',
-    icon: ShieldCheck,
-    background: '#f3e5f5',
-    color: '#9c27b0',
-    value: performanceData.complianceScore.current,
-    unit: '%',
-    trend: performanceData.complianceScore.trend,
-    breakdown: performanceData.complianceScore.breakdown
-  },
-  {
-    title: 'Critical Issues',
-    icon: AlertTriangle,
-    background: '#ffebee',
-    color: '#d32f2f',
-    value: performanceData.criticalIssues.current,
-    unit: 'issues',
-    trend: performanceData.criticalIssues.trend,
-    breakdown: performanceData.criticalIssues.breakdown
-  },
-  {
-    title: 'Active Inspectors',
-    icon: Users,
-    background: '#e8eaf6',
-    color: '#3f51b5',
-    value: performanceData.activeInspectors.current,
-    unit: 'inspectors',
-    trend: performanceData.activeInspectors.trend,
-    breakdown: performanceData.activeInspectors.breakdown
-  }
-];
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+  grid-column: 1 / -1;
+`;
 
 const MetricBreakdown = ({ data }) => {
+  if (!data || Object.keys(data).length === 0) return null;
+  
   const total = Object.values(data).reduce((acc, val) => acc + val, 0);
   
   return (
@@ -213,12 +163,65 @@ const MetricBreakdown = ({ data }) => {
   );
 };
 
-const PerformanceMetrics = () => {
+const PerformanceMetrics = ({ dateRange, filters }) => {
+  const [metrics, setMetrics] = useState({
+    data: [],
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setMetrics(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          ...filters
+        };
+        
+        const response = await api.get('/reports/performance-metrics', { params });
+        
+        setMetrics({
+          data: response.data || [],
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setMetrics({
+          data: [],
+          loading: false,
+          error: error.message || 'Failed to fetch metrics data'
+        });
+      }
+    };
+
+    fetchMetrics();
+  }, [dateRange, filters]);
+
+  const renderIcon = (iconName, size = 24) => {
+    switch (iconName) {
+      case 'ClipboardCheck': return <ClipboardCheck size={size} />;
+      case 'TrendingUp': return <TrendingUp size={size} />;
+      case 'Clock': return <Clock size={size} />;
+      case 'ShieldCheck': return <ShieldCheck size={size} />;
+      case 'AlertTriangle': return <AlertTriangle size={size} />;
+      case 'Users': return <Users size={size} />;
+      default: return <ClipboardCheck size={size} />;
+    }
+  };
+
   return (
     <MetricsGrid>
-      {metrics.map((metric, index) => {
-        const IconComponent = metric.icon;
-        return (
+      {metrics.loading ? (
+        <LoadingContainer>Loading metrics data...</LoadingContainer>
+      ) : metrics.error ? (
+        <LoadingContainer>Error: {metrics.error}</LoadingContainer>
+      ) : metrics.data.length === 0 ? (
+        <LoadingContainer>No metrics data available</LoadingContainer>
+      ) : (
+        metrics.data.map((metric, index) => (
           <MetricCard
             key={metric.title}
             initial={{ opacity: 0, y: 20 }}
@@ -227,7 +230,7 @@ const PerformanceMetrics = () => {
           >
             <MetricHeader>
               <IconWrapper background={metric.background} color={metric.color}>
-                <IconComponent size={24} />
+                {renderIcon(metric.icon)}
               </IconWrapper>
               <MetricTitle>{metric.title}</MetricTitle>
             </MetricHeader>
@@ -247,8 +250,8 @@ const PerformanceMetrics = () => {
 
             {metric.breakdown && <MetricBreakdown data={metric.breakdown} />}
           </MetricCard>
-        );
-      })}
+        ))
+      )}
     </MetricsGrid>
   );
 };

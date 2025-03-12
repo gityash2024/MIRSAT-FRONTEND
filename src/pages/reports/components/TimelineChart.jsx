@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { 
@@ -10,7 +10,7 @@ import {
   ChevronRight,
   MoreVertical 
 } from 'lucide-react';
-import { issueData } from '../mockData';
+import api from '../../../services/api';
 
 const TimelineContainer = styled(motion.div)`
   background: white;
@@ -187,11 +187,54 @@ const ActionButton = styled.button`
   gap: 4px;
 `;
 
-const TimelineChart = () => {
-  const [filter, setFilter] = useState('all');
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+`;
 
-  const filteredData = filter === 'all' ? issueData.timeline : 
-    issueData.timeline.filter(item => item.status === filter);
+const TimelineChart = ({ dateRange, filters }) => {
+  const [filter, setFilter] = useState('all');
+  const [timelineData, setTimelineData] = useState({
+    data: [],
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchTimelineData = async () => {
+      try {
+        setTimelineData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          status: filter !== 'all' ? filter : undefined,
+          ...filters
+        };
+        
+        const response = await api.get('/reports/activity-timeline', { params });
+        
+        setTimelineData({
+          data: response.data || [],
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setTimelineData({
+          data: [],
+          loading: false,
+          error: error.message || 'Failed to fetch timeline data'
+        });
+      }
+    };
+
+    fetchTimelineData();
+  }, [dateRange, filter, filters]);
 
   return (
     <TimelineContainer
@@ -219,48 +262,56 @@ const TimelineChart = () => {
         </Tab>
       </FilterTabs>
 
-      <Timeline>
-        {filteredData.map((item, index) => (
-          <TimelineItem
-            key={item.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <TimelineIcon 
-              background={item.status === 'critical' ? '#fee2e2' : '#f0fdf4'}
-              color={item.status === 'critical' ? '#dc2626' : '#16a34a'}
+      {timelineData.loading ? (
+        <LoadingContainer>Loading timeline data...</LoadingContainer>
+      ) : timelineData.error ? (
+        <LoadingContainer>Error: {timelineData.error}</LoadingContainer>
+      ) : timelineData.data.length === 0 ? (
+        <LoadingContainer>No timeline data available</LoadingContainer>
+      ) : (
+        <Timeline>
+          {timelineData.data.map((item, index) => (
+            <TimelineItem
+              key={item.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              {item.status === 'critical' ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}
-            </TimelineIcon>
-            <TimelineContent>
-              <TimelineHeader>
-                <TimelineTitle>{item.title}</TimelineTitle>
-                <TimelineTime>
-                  <Clock size={12} />
-                  {item.time}
-                </TimelineTime>
-              </TimelineHeader>
-              <TimelineDescription>{item.description}</TimelineDescription>
-              {item.tags && (
-                <TimelineTags>
-                  {item.tags.map((tag, i) => (
-                    <Tag key={i} background={tag.background} color={tag.color}>
-                      {tag.label}
-                    </Tag>
-                  ))}
-                </TimelineTags>
-              )}
-              <TimelineActions>
-                <ActionButton>
-                  View Details
-                  <ChevronRight size={14} />
-                </ActionButton>
-              </TimelineActions>
-            </TimelineContent>
-          </TimelineItem>
-        ))}
-      </Timeline>
+              <TimelineIcon 
+                background={item.status === 'critical' ? '#fee2e2' : '#f0fdf4'}
+                color={item.status === 'critical' ? '#dc2626' : '#16a34a'}
+              >
+                {item.status === 'critical' ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}
+              </TimelineIcon>
+              <TimelineContent>
+                <TimelineHeader>
+                  <TimelineTitle>{item.title}</TimelineTitle>
+                  <TimelineTime>
+                    <Clock size={12} />
+                    {new Date(item.timestamp).toLocaleString()}
+                  </TimelineTime>
+                </TimelineHeader>
+                <TimelineDescription>{item.description}</TimelineDescription>
+                {item.tags && (
+                  <TimelineTags>
+                    {item.tags.map((tag, i) => (
+                      <Tag key={i} background={tag.background} color={tag.color}>
+                        {tag.label}
+                      </Tag>
+                    ))}
+                  </TimelineTags>
+                )}
+                <TimelineActions>
+                  <ActionButton>
+                    View Details
+                    <ChevronRight size={14} />
+                  </ActionButton>
+                </TimelineActions>
+              </TimelineContent>
+            </TimelineItem>
+          ))}
+        </Timeline>
+      )}
     </TimelineContainer>
   );
 };

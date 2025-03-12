@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
+import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
   background: white;
@@ -64,14 +65,17 @@ const StatusValue = styled.span`
   color: #1a237e;
 `;
 
-const COLORS = ['#1a237e', '#4caf50', '#ff9800', '#f44336'];
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+  font-size: 16px;
+  color: #64748b;
+`;
 
-const statusData = [
-  { name: 'Completed', value: 458, percentage: 45.8 },
-  { name: 'In Progress', value: 287, percentage: 28.7 },
-  { name: 'Pending', value: 156, percentage: 15.6 },
-  { name: 'Delayed', value: 99, percentage: 9.9 }
-];
+const COLORS = ['#1a237e', '#4caf50', '#ff9800', '#f44336'];
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -103,7 +107,7 @@ const CustomLegend = ({ payload }) => {
     <div style={{ display: 'flex', justifyContent: 'center', gap: '24px' }}>
       {payload.map((entry, index) => (
         <LegendItem key={entry.value}>
-          <LegendColor color={COLORS[index]} />
+          <LegendColor color={COLORS[index % COLORS.length]} />
           <span>{entry.value}</span>
         </LegendItem>
       ))}
@@ -111,7 +115,43 @@ const CustomLegend = ({ payload }) => {
   );
 };
 
-const InspectionStatusChart = () => {
+const InspectionStatusChart = ({ dateRange, filters }) => {
+  const [statusData, setStatusData] = useState({
+    data: [],
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchStatusData = async () => {
+      try {
+        setStatusData(prev => ({ ...prev, loading: true, error: null }));
+        
+        const params = {
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          ...filters
+        };
+        
+        const response = await api.get('/reports/status-distribution', { params });
+        
+        setStatusData({
+          data: response.data || [],
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        setStatusData({
+          data: [],
+          loading: false,
+          error: error.message || 'Failed to fetch status data'
+        });
+      }
+    };
+
+    fetchStatusData();
+  }, [dateRange, filters]);
+
   return (
     <ChartContainer
       initial={{ opacity: 0, y: 20 }}
@@ -123,45 +163,55 @@ const InspectionStatusChart = () => {
         <Subtitle>Current status breakdown of all inspections</Subtitle>
       </ChartHeader>
 
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={statusData}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={80}
-            paddingAngle={2}
-            dataKey="value"
-          >
-            {statusData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={COLORS[index]} 
-                stroke="white"
-                strokeWidth={2}
+      {statusData.loading ? (
+        <LoadingContainer>Loading status data...</LoadingContainer>
+      ) : statusData.error ? (
+        <LoadingContainer>Error: {statusData.error}</LoadingContainer>
+      ) : statusData.data.length === 0 ? (
+        <LoadingContainer>No status data available</LoadingContainer>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={statusData.data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {statusData.data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    stroke="white"
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+              <Legend 
+                content={<CustomLegend />}
+                verticalAlign="bottom" 
+                height={36}
               />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend 
-            content={<CustomLegend />}
-            verticalAlign="bottom" 
-            height={36}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+            </PieChart>
+          </ResponsiveContainer>
 
-      <StatusList>
-        {statusData.map((status, index) => (
-          <StatusItem key={status.name}>
-            <StatusLabel>{status.name}</StatusLabel>
-            <StatusValue style={{ color: COLORS[index] }}>
-              {status.value.toLocaleString()}
-            </StatusValue>
-          </StatusItem>
-        ))}
-      </StatusList>
+          <StatusList>
+            {statusData.data.map((status, index) => (
+              <StatusItem key={status.name}>
+                <StatusLabel>{status.name}</StatusLabel>
+                <StatusValue style={{ color: COLORS[index % COLORS.length] }}>
+                  {status.value.toLocaleString()}
+                </StatusValue>
+              </StatusItem>
+            ))}
+          </StatusList>
+        </>
+      )}
     </ChartContainer>
   );
 };

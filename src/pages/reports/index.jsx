@@ -34,15 +34,12 @@ const ReportsGrid = styled.div`
   margin-top: 24px;
 `;
 
-// Grid item wrapper with configurable size
 const GridItem = styled.div`
   grid-column: span ${props => props.span || 12};
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 
   @media (max-width: 1536px) {
     grid-column: span ${props => Math.min(props.span + 2, 12)};
@@ -64,15 +61,14 @@ const Reports = () => {
     end: new Date()
   });
   const [selectedFilters, setSelectedFilters] = useState({
-    inspectors: [],
     regions: [],
-    taskTypes: [],
-    status: []
+    inspectionTypes: [],
+    status: [],
+    priority: []
   });
 
   const handleFilterChange = (filters) => {
     setSelectedFilters(filters);
-    // Here you would typically fetch new data based on filters
   };
 
   return (
@@ -91,42 +87,36 @@ const Reports = () => {
       )}
 
       <ReportsGrid>
-        {/* Performance Metrics Overview */}
         <GridItem span={12}>
-          <PerformanceMetrics dateRange={dateRange} />
+          <PerformanceMetrics dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
-        {/* Main Charts Section */}
         <GridItem span={8}>
-          <TaskCompletionChart dateRange={dateRange} />
+          <TaskCompletionChart dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
         <GridItem span={4}>
-          <InspectionStatusChart />
-        </GridItem>
-
-        {/* Inspector Performance */}
-        <GridItem span={6}>
-          <TrendAnalysisChart dateRange={dateRange} />
+          <InspectionStatusChart dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
         <GridItem span={6}>
-          <ComplianceChart dateRange={dateRange} />
+          <TrendAnalysisChart dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
-        {/* Regional Distribution Map */}
+        <GridItem span={6}>
+          <ComplianceChart dateRange={dateRange} filters={selectedFilters} />
+        </GridItem>
+
         <GridItem span={8}>
-          <RegionalDistributionMap />
+          <RegionalDistributionMap dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
-        {/* Timeline */}
         <GridItem span={4}>
-          <TimelineChart dateRange={dateRange} />
+          <TimelineChart dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
-        {/* Inspector Performance Table */}
         <GridItem span={12}>
-          <InspectorPerformanceTable dateRange={dateRange} />
+          <InspectorPerformanceTable dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
       </ReportsGrid>
     </ReportsContainer>
