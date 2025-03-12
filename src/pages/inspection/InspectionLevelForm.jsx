@@ -747,34 +747,26 @@ const InspectionLevelForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm() || loading) return;
-  
+
     try {
       setLoading(true);
       
-      // Prepare data for API
+      // Prepare data for API (handle any transformations needed)
       const apiData = {
-        ...formData
+        ...formData,
+        // If needed, transform the nested sublevel structure for the API
       };
       
       if (id) {
-        if (typeof inspectionService.updateInspectionLevel === 'function') {
-          await inspectionService.updateInspectionLevel(id, apiData);
-          toast.success('Inspection level updated successfully');
-        } else {
-          console.error('inspectionService.updateInspectionLevel is not a function');
-          toast.error('Could not update inspection level due to a configuration error');
-        }
+        await inspectionService.updateInspectionLevel(id, apiData);
+        toast.success('Inspection level updated successfully');
       } else {
-        if (typeof inspectionService.createInspectionLevel === 'function') {
-          await inspectionService.createInspectionLevel(apiData);
-          toast.success('Inspection level created successfully');
-        } else {
-          console.error('inspectionService.createInspectionLevel is not a function');
-          toast.error('Could not create inspection level due to a configuration error');
-        }
+        await inspectionService.createInspectionLevel(apiData);
+        toast.success('Inspection level created successfully');
       }
       
       navigate('/inspection');
