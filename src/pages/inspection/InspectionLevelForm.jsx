@@ -4,7 +4,8 @@ import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
-
+// At the top of your file with other imports
+import { inspectionService } from '../../services/inspection.service';
 const PageContainer = styled.div`
   padding: 24px;
 `;
@@ -374,16 +375,13 @@ const NestedSubLevelsList = ({
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const contextValue = useOutletContext() || {};
-  const loading = contextValue.loading || false;
-  const setLoading = contextValue.setLoading || (() => {});
-  const handleError = contextValue.handleError || ((error) => console.error(error));
-  const inspectionService = contextValue.inspectionService || {
-    getInspectionLevel: async () => ({}),
-    createInspectionLevel: async () => ({}),
-    updateInspectionLevel: async () => ({})
+  const [loading, setLoading] = useState(false);
+  
+  // Add this function since it's no longer coming from context
+  const handleError = (error) => {
+    console.error('Error:', error);
+    toast.error(error.message || 'An error occurred');
   };
-    
   const [formData, setFormData] = useState({
     name: '',
     description: '',
