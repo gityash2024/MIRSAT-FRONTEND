@@ -374,7 +374,7 @@ const NestedSubLevelsList = ({
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { loading, setLoading, handleError, inspectionService } = useOutletContext();
+  const { loading, setLoading, handleError, inspectionService } = useOutletContext()||{};
   
   const [formData, setFormData] = useState({
     name: '',
