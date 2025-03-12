@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useDispatch } from 'react-redux';
 import { 
   Calendar, 
   CheckSquare, 
@@ -10,6 +9,7 @@ import {
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import Reports from './reports';
+import ScrollAnimation from '../components/common/ScrollAnimation';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -178,7 +178,6 @@ const EmptyState = styled.div`
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const dispatch = useDispatch();
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     taskProgress: [],
@@ -187,7 +186,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Direct API call to avoid any Redux issues
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -226,21 +224,23 @@ const Dashboard = () => {
     
     if (!stats || stats.length === 0) {
       return [...Array(4)].map((_, index) => (
-        <StatCard key={index}>
-          <div className="icon-wrapper" style={{ backgroundColor: '#f5f7fb' }}>
-            {index === 0 && <Calendar size={24} color="#1976d2" />}
-            {index === 1 && <CheckSquare size={24} color="#2e7d32" />}
-            {index === 2 && <Clock size={24} color="#ed6c02" />}
-            {index === 3 && <ShieldCheck size={24} color="#9c27b0" />}
-          </div>
-          <div className="value">0</div>
-          <div className="label">
-            {index === 0 && 'Total Tasks'}
-            {index === 1 && 'Completed Tasks'}
-            {index === 2 && 'Pending Reviews'}
-            {index === 3 && 'Compliance Score'}
-          </div>
-        </StatCard>
+        <ScrollAnimation key={index} animation="fadeIn" delay={index * 0.1}>
+          <StatCard>
+            <div className="icon-wrapper" style={{ backgroundColor: '#f5f7fb' }}>
+              {index === 0 && <Calendar size={24} color="#1976d2" />}
+              {index === 1 && <CheckSquare size={24} color="#2e7d32" />}
+              {index === 2 && <Clock size={24} color="#ed6c02" />}
+              {index === 3 && <ShieldCheck size={24} color="#9c27b0" />}
+            </div>
+            <div className="value">0</div>
+            <div className="label">
+              {index === 0 && 'Total Tasks'}
+              {index === 1 && 'Completed Tasks'}
+              {index === 2 && 'Pending Reviews'}
+              {index === 3 && 'Compliance Score'}
+            </div>
+          </StatCard>
+        </ScrollAnimation>
       ));
     }
 
@@ -264,22 +264,26 @@ const Dashboard = () => {
       }
 
       return (
-        <StatCard key={index}>
-          <div className="icon-wrapper" style={{ backgroundColor: stat.bgColor }}>
-            <Icon size={24} color={stat.color} />
-          </div>
-          <div className="value">{stat.value}</div>
-          <div className="label">{stat.label}</div>
-        </StatCard>
+        <ScrollAnimation key={index} animation="fadeIn" delay={index * 0.1}>
+          <StatCard>
+            <div className="icon-wrapper" style={{ backgroundColor: stat.bgColor }}>
+              <Icon size={24} color={stat.color} />
+            </div>
+            <div className="value">{stat.value}</div>
+            <div className="label">{stat.label}</div>
+          </StatCard>
+        </ScrollAnimation>
       );
     });
   };
 
   return (
     <DashboardContainer>
-      <WelcomeText>
-        Welcome back, {user?.name || 'Super Admin'}
-      </WelcomeText>
+      <ScrollAnimation animation="slideUp">
+        <WelcomeText>
+          Welcome back, {user?.name || 'Super Admin'}
+        </WelcomeText>
+      </ScrollAnimation>
 
       <StatsGrid>
         {loading && dashboardData.stats.length === 0 ? (
@@ -290,59 +294,65 @@ const Dashboard = () => {
       </StatsGrid>
 
       <ContentGrid>
-        <Card>
-          <CardTitle>Task Progress</CardTitle>
-          {loading && dashboardData.taskProgress.length === 0 ? (
-            <LoadingSpinner>Loading task progress...</LoadingSpinner>
-          ) : dashboardData.taskProgress && dashboardData.taskProgress.length > 0 ? (
-            <div>
-              {dashboardData.taskProgress.map((task, index) => (
-                <ProgressItem key={index}>
-                  <div className="header">
-                    <span className="task-name">{task.name}</span>
-                    <span className="percentage">{task.progress}%</span>
-                  </div>
-                  <ProgressBar>
-                    <div 
-                      className="fill" 
-                      style={{ width: `${task.progress}%` }} 
-                    />
-                  </ProgressBar>
-                </ProgressItem>
-              ))}
-            </div>
-          ) : (
-            <EmptyState>No task progress data available</EmptyState>
-          )}
-        </Card>
-
-        <Card>
-          <CardTitle>Inspector Performance</CardTitle>
-          {loading && dashboardData.teamPerformance.length === 0 ? (
-            <LoadingSpinner>Loading inspector performance...</LoadingSpinner>
-          ) : dashboardData.teamPerformance && dashboardData.teamPerformance.length > 0 ? (
-            <div>
-              {dashboardData.teamPerformance.map((member, index) => (
-                <TeamMemberItem key={index}>
-                  <div className="member-info">
-                    <div className="avatar">
-                      {member.name ? member.name.charAt(0) : 'U'}
+        <ScrollAnimation animation="slideIn" delay={0.3}>
+          <Card>
+            <CardTitle>Task Progress</CardTitle>
+            {loading && dashboardData.taskProgress.length === 0 ? (
+              <LoadingSpinner>Loading task progress...</LoadingSpinner>
+            ) : dashboardData.taskProgress && dashboardData.taskProgress.length > 0 ? (
+              <div>
+                {dashboardData.taskProgress.map((task, index) => (
+                  <ProgressItem key={index}>
+                    <div className="header">
+                      <span className="task-name">{task.name}</span>
+                      <span className="percentage">{task.progress}%</span>
                     </div>
-                    <span className="name">{member.name}</span>
-                  </div>
-                  <div className="performance">
-                    {member.performance}
-                  </div>
-                </TeamMemberItem>
-              ))}
-            </div>
-          ) : (
-            <EmptyState>No inspector performance data available</EmptyState>
-          )}
-        </Card>
+                    <ProgressBar>
+                      <div 
+                        className="fill" 
+                        style={{ width: `${task.progress}%` }} 
+                      />
+                    </ProgressBar>
+                  </ProgressItem>
+                ))}
+              </div>
+            ) : (
+              <EmptyState>No task progress data available</EmptyState>
+            )}
+          </Card>
+        </ScrollAnimation>
+
+        <ScrollAnimation animation="slideIn" delay={0.4}>
+          <Card>
+            <CardTitle>Inspector Performance</CardTitle>
+            {loading && dashboardData.teamPerformance.length === 0 ? (
+              <LoadingSpinner>Loading inspector performance...</LoadingSpinner>
+            ) : dashboardData.teamPerformance && dashboardData.teamPerformance.length > 0 ? (
+              <div>
+                {dashboardData.teamPerformance.map((member, index) => (
+                  <TeamMemberItem key={index}>
+                    <div className="member-info">
+                      <div className="avatar">
+                        {member.name ? member.name.charAt(0) : 'U'}
+                      </div>
+                      <span className="name">{member.name}</span>
+                    </div>
+                    <div className="performance">
+                      {member.performance}
+                    </div>
+                  </TeamMemberItem>
+                ))}
+              </div>
+            ) : (
+              <EmptyState>No inspector performance data available</EmptyState>
+            )}
+          </Card>
+        </ScrollAnimation>
       </ContentGrid>
       
-      <Reports/>
+      <ScrollAnimation animation="fadeIn" delay={0.5}>
+        <Reports/>
+      </ScrollAnimation>
     </DashboardContainer>
   );
 };
