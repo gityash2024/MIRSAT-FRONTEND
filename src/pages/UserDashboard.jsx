@@ -301,7 +301,7 @@ const UserDashboard = () => {
     return (
       <DashboardContainer>
         <WelcomeText>
-          Welcome back, {user?.name || 'User'}
+          Welcome back, {user?.name || 'Inspector'}
         </WelcomeText>
         <LoadingContainer>
           <Loader size={30} color="#1a237e" />
@@ -314,7 +314,7 @@ const UserDashboard = () => {
     return (
       <DashboardContainer>
         <WelcomeText>
-          Welcome back, {user?.name || 'User'}
+          Welcome back, {user?.name || 'Inspector'}
         </WelcomeText>
         <Card>
           <EmptyState>
@@ -335,7 +335,7 @@ const UserDashboard = () => {
   return (
     <DashboardContainer>
       <WelcomeText>
-        Welcome back, {user?.name || 'User'}
+        Welcome back, {user?.name || 'Inspector'}
       </WelcomeText>
 
       <StatsGrid>

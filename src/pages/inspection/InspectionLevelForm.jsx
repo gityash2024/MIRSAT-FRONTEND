@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
-// At the top of your file with other imports
 import { inspectionService } from '../../services/inspection.service';
+
 const PageContainer = styled.div`
   padding: 24px;
 `;
@@ -243,6 +243,30 @@ const ExpandCollapseButton = styled.button`
   }
 `;
 
+const LoadingSpinner = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+  color: #1a237e;
+  gap: 12px;
+  
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1a237e;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 // The main SubLevel component that handles a single level item
 const SubLevelRow = ({ 
   level, 
@@ -253,7 +277,7 @@ const SubLevelRow = ({
   loading,
   dragHandleProps 
 }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const hasNestedLevels = level.subLevels && level.subLevels.length > 0;
   const path = parentPath ? `${parentPath}.${level.id}` : `${level.id}`;
   
@@ -268,6 +292,7 @@ const SubLevelRow = ({
           <ExpandCollapseButton 
             onClick={() => setExpanded(!expanded)} 
             type="button"
+            disabled={loading}
           >
             {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </ExpandCollapseButton>
@@ -376,12 +401,14 @@ const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(!!id);
   
-  // Add this function since it's no longer coming from context
+  // Add this function for error handling
   const handleError = (error) => {
     console.error('Error:', error);
     toast.error(error.message || 'An error occurred');
   };
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -401,7 +428,7 @@ const InspectionLevelForm = () => {
 
   const fetchInspectionLevel = async () => {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       const data = await inspectionService.getInspectionLevel(id);
       
       // Process sublevel data - ensure each has an id and subLevels array
@@ -420,9 +447,11 @@ const InspectionLevelForm = () => {
       
       setFormData(processedData);
     } catch (error) {
+      console.error('Error fetching inspection level:', error);
       handleError(error);
+      navigate('/inspection');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -436,56 +465,6 @@ const InspectionLevelForm = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
-  };
-
-  // Helper to traverse the nested structure
-  const getNestedValue = (obj, path) => {
-    if (!path) return obj;
-    
-    const parts = path.split('.');
-    let current = obj;
-    
-    for (const part of parts) {
-      if (!current || current[part] === undefined) {
-        return undefined;
-      }
-      current = current[part];
-    }
-    
-    return current;
-  };
-
-  // Helper to set nested values
-  const setNestedValue = (obj, path, key, value) => {
-    if (!path) {
-      obj[key] = value;
-      return obj;
-    }
-    
-    const parts = path.split('.');
-    let current = obj;
-    let parent = null;
-    let lastKey = null;
-    
-    // Navigate to the parent object
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      parent = current;
-      lastKey = part;
-      current = current[part];
-      
-      // If we encounter a non-existent path
-      if (current === undefined) {
-        return obj;
-      }
-    }
-    
-    // Update the value
-    if (parent && lastKey) {
-      parent[lastKey][key] = value;
-    }
-    
-    return obj;
   };
 
   // Handle change in sublevel fields
@@ -708,10 +687,6 @@ const InspectionLevelForm = () => {
         });
       }
     }
-    // Handle moves between different lists (more complex, not implemented yet)
-    else {
-      console.log("Moving between different levels not implemented");
-    }
   };
 
   // Validate the form
@@ -769,11 +744,23 @@ const InspectionLevelForm = () => {
       
       navigate('/inspection');
     } catch (error) {
+      console.error('Error saving inspection level:', error);
       handleError(error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <PageContainer>
+        <LoadingSpinner>
+          <div className="spinner"></div>
+          <p>Loading inspection level data...</p>
+        </LoadingSpinner>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

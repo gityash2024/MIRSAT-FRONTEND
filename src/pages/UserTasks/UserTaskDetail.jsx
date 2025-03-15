@@ -1555,7 +1555,7 @@ const UserTaskDetail = () => {
               {currentTask.comments?.map((comment, index) => (
                 <Comment key={index}>
                   <div className="header">
-                    <span className="author">{comment.user?.name || 'User'}</span>
+                    <span className="author">{comment.user?.name || 'Inspector'}</span>
                     <span className="timestamp">{formatDateTime(comment.createdAt)}</span>
                   </div>
                   <p className="content">{comment.content}</p>
@@ -1782,7 +1782,7 @@ const UserTaskDetail = () => {
                       fontSize: '12px',
                       color: '#6b7280'
                     }}>
-                      By: <span style={{ fontWeight: '600' }}>{status.changedBy?.name || 'User'}</span>
+                      By: <span style={{ fontWeight: '600' }}>{status.changedBy?.name || 'Inspector'}</span>
                     </div>
                   </div>
                 ))}

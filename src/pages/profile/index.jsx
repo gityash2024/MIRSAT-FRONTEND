@@ -410,7 +410,7 @@ const UserProfile = () => {
           
           <ProfileInfo>
             <div className="name">{user?.name}</div>
-            <div className="role">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'User'}</div>
+            <div className="role">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}</div>
           </ProfileInfo>
           
           <ProfileMetaList>
@@ -429,7 +429,7 @@ const UserProfile = () => {
             <ProfileMetaItem>
               <Shield size={18} className="icon" />
               <div className="label">Role</div>
-              <div className="value">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'User'}</div>
+              <div className="value">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}</div>
             </ProfileMetaItem>
             
             <ProfileMetaItem>

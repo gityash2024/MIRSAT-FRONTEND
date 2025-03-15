@@ -285,7 +285,7 @@ const TaskForm = React.memo(({
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
 
   let users = usersProp.length > 0 ? usersProp : stateUsers;
-  users=users?.filter(user => user.role === 'user');
+  users=users?.filter(user => user.role === 'inspector');
   const inspectionLevels = inspectionLevelsProp.length > 0 ? inspectionLevelsProp : stateInspectionLevels;
 
   const [formData, setFormData] = useState({

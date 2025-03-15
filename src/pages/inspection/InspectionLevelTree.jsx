@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter } from 'lucide-react';
+import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import InspectionLevelFilters from './InspectionLevelFilters';
-import useDeleteConfirmation from '../../components/confirmationModal';
+import SubLevelViewModal from './SubLevelViewModal';
+import SubLevelEditModal from './SubLevelEditModal';
 
 const TreeContainer = styled.div`
   padding: 24px;
@@ -266,10 +267,80 @@ const EmptyState = styled.div`
 
 const LoadingSpinner = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 48px 0;
   color: #1a237e;
+  gap: 12px;
+  
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1a237e;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 450px;
+  max-width: 90vw;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+`;
+
+const ModalCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
 `;
 
 const TreeNodeComponent = ({ 
@@ -278,10 +349,14 @@ const TreeNodeComponent = ({
   isLastChild = false, 
   loading, 
   onDelete, 
-  onDeleteClick 
+  onViewSubLevel,
+  onEditSubLevel,
+  parentPath = '',
+  index
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.subLevels && node.subLevels.length > 0;
+  const nodePath = parentPath ? `${parentPath}.${index}` : `${index}`;
 
   return (
     <>
@@ -302,26 +377,48 @@ const TreeNodeComponent = ({
             <h4>{node.name}</h4>
             <p>{node.description}</p>
           </NodeInfo>
+          
           <StatusBadge type={node.type}>
-            {(node.type?.charAt(0).toUpperCase() + node.type?.slice(1)) || node._id} 
+            {(node.type?.charAt(0).toUpperCase() + node.type?.slice(1))|| node?._id|| 'Default'} 
           </StatusBadge>
           <NodeActions>
+            {level === 0 ? (
+              // Main level - navigate to view/edit pages
+              <>
+                <ActionButton 
+                  as={Link} 
+                  to={`/inspection/${node._id}`}
+                  disabled={loading}
+                >
+                  <Eye size={14} />
+                </ActionButton>
+                <ActionButton 
+                  as={Link} 
+                  to={`/inspection/${node._id}/edit`}
+                  disabled={loading}
+                >
+                  <Edit size={14} />
+                </ActionButton>
+              </>
+            ) : (
+              // Sub-levels - open modals
+              <>
+                <ActionButton 
+                  onClick={() => onViewSubLevel(node, nodePath)}
+                  disabled={loading}
+                >
+                  <Eye size={14} />
+                </ActionButton>
+                <ActionButton 
+                  onClick={() => onEditSubLevel(node, nodePath)}
+                  disabled={loading}
+                >
+                  <Edit size={14} />
+                </ActionButton>
+              </>
+            )}
             <ActionButton 
-              as={Link} 
-              to={`/inspection/${node._id}`}
-              disabled={loading}
-            >
-              <Eye size={14} />
-            </ActionButton>
-            <ActionButton 
-              as={Link} 
-              to={`/inspection/${node._id}/edit`}
-              disabled={loading}
-            >
-              <Edit size={14} />
-            </ActionButton>
-            <ActionButton 
-              onClick={() => onDeleteClick(node)}
+              onClick={() => onDelete(node)}
               disabled={loading}
             >
               <Trash2 size={14} />
@@ -331,15 +428,18 @@ const TreeNodeComponent = ({
       </TreeNode>
       {hasChildren && isExpanded && (
         <div>
-          {node.subLevels.map((child, index) => (
+          {node.subLevels.map((child, idx) => (
             <TreeNodeComponent
-              key={child._id || child.id}
+              key={child._id || child.id || idx}
               node={child}
               level={level + 1}
-              isLastChild={index === node.subLevels.length - 1}
+              isLastChild={idx === node.subLevels.length - 1}
               loading={loading}
               onDelete={onDelete}
-              onDeleteClick={onDeleteClick}
+              onViewSubLevel={onViewSubLevel}
+              onEditSubLevel={onEditSubLevel}
+              parentPath={nodePath}
+              index={idx}
             />
           ))}
         </div>
@@ -357,7 +457,14 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
     priority: []
   });
   const [treeData, setTreeData] = useState([]);
-  const { showDeleteConfirmation, DeleteConfirmationModal } = useDeleteConfirmation();
+  
+  // State for modals
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [nodeToDelete, setNodeToDelete] = useState(null);
+  const [selectedSubLevel, setSelectedSubLevel] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedNodePath, setSelectedNodePath] = useState('');
 
   useEffect(() => {
     fetchInspectionLevels();
@@ -373,7 +480,9 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
       const response = await inspectionService.getInspectionLevels(params);
       setTreeData(response.results || []);
     } catch (error) {
+      console.error('Error fetching inspection levels:', error);
       handleError(error);
+      toast.error('Failed to load inspection levels');
     } finally {
       setLoading(false);
     }
@@ -381,6 +490,9 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+  };
+  
+  const handleSearchKeyPress = (e) => {
     if (e.key === 'Enter') {
       fetchInspectionLevels();
     }
@@ -390,25 +502,123 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
     setFilters(newFilters);
   };
 
-  const handleDelete = async (id) => {
+  const onDeleteClick = (node) => {
+    setNodeToDelete(node);
+    setDeleteModalVisible(true);
+  };
+  
+  const handleDelete = async () => {
+    if (!nodeToDelete) return;
+    
     try {
       setLoading(true);
-      await inspectionService.deleteInspectionLevel(id);
-      toast.success('Inspection level deleted successfully');
-      fetchInspectionLevels();
+      if (nodeToDelete._id) { // Main level
+        await inspectionService.deleteInspectionLevel(nodeToDelete._id);
+        toast.success('Inspection level deleted successfully');
+        fetchInspectionLevels();
+      } else {
+        // This would be for sub-levels if you implement deleting them
+        toast.error('Deleting sub-levels directly is not supported.');
+      }
     } catch (error) {
-      handleError(error);
+      console.error('Error deleting node:', error);
+      toast.error(error.message || 'Failed to delete inspection level');
+    } finally {
+      setDeleteModalVisible(false);
+      setNodeToDelete(null);
+      setLoading(false);
+    }
+  };
+  
+  const onViewSubLevel = (subLevel, path) => {
+    setSelectedSubLevel(subLevel);
+    setSelectedNodePath(path);
+    setShowViewModal(true);
+  };
+  
+  const onEditSubLevel = (subLevel, path) => {
+    setSelectedSubLevel(subLevel);
+    setSelectedNodePath(path);
+    setShowEditModal(true);
+  };
+  
+  const handleUpdateSubLevel = async (updatedSubLevel) => {
+    try {
+      setLoading(true);
+      
+      // Find the parent inspection level
+      const pathParts = selectedNodePath.split('.');
+      const topLevelIndex = parseInt(pathParts[0], 10);
+      const parentLevel = treeData[topLevelIndex];
+      
+      if (parentLevel && parentLevel._id) {
+        await inspectionService.updateSubLevel(parentLevel._id, updatedSubLevel._id, updatedSubLevel);
+        toast.success('Sub level updated successfully');
+        setShowEditModal(false);
+        fetchInspectionLevels(); // Refresh the tree
+      } else {
+        toast.error('Could not determine parent level');
+      }
+    } catch (error) {
+      console.error('Error updating sub level:', error);
+      toast.error(error.message || 'Failed to update sub level');
     } finally {
       setLoading(false);
     }
   };
 
-  const onDeleteClick = (node) => {
-    showDeleteConfirmation(node._id, handleDelete);
-  };
-
   return (
     <TreeContainer>
+      {deleteModalVisible && nodeToDelete && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalCloseButton 
+                onClick={() => setDeleteModalVisible(false)}
+                disabled={loading}
+              >
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <p>Are you sure you want to delete <strong>{nodeToDelete.name}</strong>?</p>
+            <p>This action cannot be undone.</p>
+            <ModalActions>
+              <Button 
+                onClick={() => setDeleteModalVisible(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleDelete}
+                disabled={loading}
+                style={{ background: '#dc2626' }}
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+      
+      {showViewModal && selectedSubLevel && (
+        <SubLevelViewModal 
+          subLevel={selectedSubLevel} 
+          onClose={() => setShowViewModal(false)} 
+        />
+      )}
+      
+      {showEditModal && selectedSubLevel && (
+        <SubLevelEditModal 
+          subLevel={selectedSubLevel} 
+          onClose={() => setShowEditModal(false)}
+          onSave={handleUpdateSubLevel}
+          loading={loading}
+        />
+      )}
+
       <Header>
         <PageTitle>
           <Layers size={24} />
@@ -425,7 +635,7 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
             placeholder="Search inspection levels..."
             value={searchTerm}
             onChange={handleSearch}
-            onKeyPress={(e) => e.key === 'Enter' && fetchInspectionLevels()}
+            onKeyPress={handleSearchKeyPress}
             disabled={loading}
           />
         </SearchBox>
@@ -462,7 +672,10 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
 
       <TreeCard>
         {loading ? (
-          <LoadingSpinner>Loading...</LoadingSpinner>
+          <LoadingSpinner>
+            <div className="spinner"></div>
+            <p>Loading inspection levels...</p>
+          </LoadingSpinner>
         ) : treeData.length === 0 ? (
           <EmptyState>
             <h3>No Inspection Levels Found</h3>
@@ -479,17 +692,18 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
         ) : (
           treeData.map((node, index) => (
             <TreeNodeComponent
-              key={node._id}
+              key={node._id || index}
               node={node}
+              index={index}
               isLastChild={index === treeData.length - 1}
               loading={loading}
-              onDelete={handleDelete}
-              onDeleteClick={onDeleteClick}
+              onDelete={onDeleteClick}
+              onViewSubLevel={onViewSubLevel}
+              onEditSubLevel={onEditSubLevel}
             />
           ))
         )}
       </TreeCard>
-      <DeleteConfirmationModal />
     </TreeContainer>
   );
 };

@@ -46,9 +46,8 @@ export const usePermissions = () => {
 
     // Other roles can create roles lower in hierarchy
     const roleHierarchy = {
-      [ROLES.MANAGER]: [ROLES.INSPECTOR, ROLES.USER],
-      [ROLES.INSPECTOR]: [ROLES.USER],
-      [ROLES.USER]: []
+      [ROLES.MANAGER]: [ROLES.INSPECTOR],
+      [ROLES.INSPECTOR]: [],
     };
 
     return roleHierarchy[user.role] || [];

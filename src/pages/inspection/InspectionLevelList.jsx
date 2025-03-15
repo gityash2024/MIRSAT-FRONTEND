@@ -1,12 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
 import useDeleteConfirmation from '../../components/confirmationModal';
+import {   FileText } from 'lucide-react';
+import { DownloadDone, FileDownloadRounded } from '@mui/icons-material';
+const ExportDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+`;
 
+const DropdownContent = styled.div`
+  display: ${props => props.show ? 'block' : 'none'};
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 180px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+  z-index: 10;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 5px;
+`;
+
+const DropdownItem = styled.a`
+  color: #333;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #f8fafc;
+    color: #1a237e;
+  }
+`;
 const flattenSubLevels = (subLevels, level = 0) => {
   let result = [];
   
@@ -172,6 +205,8 @@ const LevelDetails = styled.div`
     font-weight: 600;
     color: #1a237e;
     margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start; 
   }
 
   p {
@@ -254,10 +289,26 @@ const EmptyState = styled.div`
 
 const LoadingSpinner = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 48px 0;
   color: #1a237e;
+  gap: 12px;
+  
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1a237e;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const AccordionTrigger = styled(Accordion.Trigger)`
@@ -283,13 +334,67 @@ const AccordionRoot = styled(Accordion.Root)`
   width: 100%;
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 450px;
+  max-width: 90vw;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+`;
+
+const ModalCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+`;
+
 
 const InspectionLevelList = ({ loading, setLoading, handleError, inspectionService }) => {
-
   const {
     showDeleteConfirmation,
     DeleteConfirmationModal
   } = useDeleteConfirmation();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -298,6 +403,40 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
     priority: []
   });
   const [inspectionLevels, setInspectionLevels] = useState([]);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [levelToDelete, setLevelToDelete] = useState(null);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+
+  const handleExport = async (format) => {
+    try {
+      setLoading(true);
+      
+      // Build query parameters from current filters
+      const params = {
+        ...filters
+      };
+      
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      
+      // Call the service function
+      await inspectionService.exportInspectionLevels(format, params);
+      
+      // Hide dropdown
+      setShowExportDropdown(false);
+      
+      toast.success(`Successfully exported to ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error(`Error exporting to ${format}:`, error);
+      toast.error(`Failed to export to ${format}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   useEffect(() => {
     fetchInspectionLevels();
@@ -311,10 +450,10 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
         search: searchTerm
       };
       const response = await inspectionService.getInspectionLevels(params);
-      console.log(response,'----------------response of inspection levels')
       setInspectionLevels(response.results || []);
     } catch (error) {
       handleError(error);
+      toast.error('Failed to load inspection levels');
     } finally {
       setLoading(false);
     }
@@ -322,6 +461,9 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+  };
+  
+  const handleSearchKeyPress = (e) => {
     if (e.key === 'Enter') {
       fetchInspectionLevels();
     }
@@ -330,17 +472,67 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
- 
   
-
-
-  const onDeleteClick = (level) => {
-    showDeleteConfirmation(level._id, handleDelete);
+// Replace the current onDeleteClick function with this:
+const onDeleteClick = (level) => {
+  console.log(level, 'level');
+  // Use this approach if you want to use the custom hook
+  setLevelToDelete(level);
+  setDeleteModalVisible(true);
+  
+  // Or remove the above two lines and use this if you want to use the custom hook's modal
+  // showDeleteConfirmation(level._id, handleDelete, level.name);
+};
+  
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+      await inspectionService.deleteInspectionLevel(id);
+      toast.success('Inspection level deleted successfully');
+      fetchInspectionLevels();
+    } catch (error) {
+      console.error('Error deleting inspection level:', error);
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
   };
-
-
   return (
     <PageContainer>
+     {deleteModalVisible && levelToDelete && (
+  <ModalOverlay>
+    <ModalContent>
+      <ModalHeader>
+        <ModalTitle>Delete Inspection Level</ModalTitle>
+        <ModalCloseButton 
+          onClick={() => setDeleteModalVisible(false)}
+          disabled={loading}
+        >
+          <ChevronDown size={20} />
+        </ModalCloseButton>
+      </ModalHeader>
+      <p>Are you sure you want to delete <strong>{levelToDelete.name}</strong>?</p>
+      <p>This action cannot be undone.</p>
+      <ModalActions>
+        <Button 
+          onClick={() => setDeleteModalVisible(false)}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button 
+          variant="primary" 
+          onClick={() => handleDelete(levelToDelete._id)}
+          disabled={loading}
+          style={{ background: '#dc2626' }}
+        >
+          {loading ? 'Deleting...' : 'Delete'}
+        </Button>
+      </ModalActions>
+    </ModalContent>
+  </ModalOverlay>
+)}
+
       <Header>
         <PageTitle>
           <Layers size={24} />
@@ -357,7 +549,7 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
             placeholder="Search inspection levels..." 
             value={searchTerm}
             onChange={handleSearch}
-            onKeyPress={(e) => e.key === 'Enter' && fetchInspectionLevels()}
+            onKeyPress={handleSearchKeyPress}
             disabled={loading}
           />
         </SearchBox>
@@ -371,13 +563,28 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
             <Filter size={18} />
             Filters
           </Button>
-          <Button 
-            variant="secondary"
-            disabled={loading}
-          >
-            <Download size={18} />
-            Export
-          </Button>
+         <ExportDropdown>
+  <Button 
+    variant="secondary"
+    onClick={() => setShowExportDropdown(!showExportDropdown)}
+    disabled={loading}
+  >
+    <DownloadDone size={18} />  
+    Export
+    <ChevronDownCircle size={14} />
+  </Button>
+  <DropdownContent show={showExportDropdown}>
+  <DropdownItem onClick={() => handleExport('docx')}>
+  <FileText size={16} />
+  Export as Word
+    </DropdownItem>
+    <DropdownItem onClick={() => handleExport('pdf')}>
+      <FileText size={16} />
+      Export as PDF
+    </DropdownItem>
+  
+  </DropdownContent>
+</ExportDropdown>
           <Button 
             variant="primary" 
             as={Link} 
@@ -400,7 +607,10 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
       )}
 
       {loading ? (
-        <LoadingSpinner>Loading...</LoadingSpinner>
+        <LoadingSpinner>
+          <div className="spinner"></div>
+          <p>Loading inspection levels...</p>
+        </LoadingSpinner>
       ) : inspectionLevels.length === 0 ? (
         <EmptyState>
           <h3>No Inspection Levels Found</h3>
@@ -432,28 +642,33 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
                         </LevelDetails>
                       </LevelInfo>
                       <LevelActions>
-                        <ActionButton 
-                          as={Link} 
-                          to={`/inspection/${level._id}`}
-                          disabled={loading}
-                        >
-                          <Eye size={16} />
-                        </ActionButton>
-                        <ActionButton 
-                          as={Link} 
-                          to={`/inspection/${level._id}/edit`}
-                          disabled={loading}
-                        >
-                          <Edit size={16} />
-                        </ActionButton>
-                        <ActionButton 
-                          onClick={() => onDeleteClick(level)}
-                          disabled={loading}
-                        >
-                          <Trash2 size={16} />
-                        </ActionButton>
-                        <ChevronIcon size={16} />
-                      </LevelActions>
+  <ActionButton 
+    as={Link} 
+    to={`/inspection/${level._id}`}
+    disabled={loading}
+    onClick={(e) => e.stopPropagation()} // Add this line
+  >
+    <Eye size={16} />
+  </ActionButton>
+  <ActionButton 
+    as={Link} 
+    to={`/inspection/${level._id}/edit`}
+    disabled={loading}
+    onClick={(e) => e.stopPropagation()} // Add this line
+  >
+    <Edit size={16} />
+  </ActionButton>
+  <ActionButton 
+    onClick={(e) => {
+      e.stopPropagation(); // Add this to prevent accordion toggling
+      onDeleteClick(level);
+    }}
+    disabled={loading}
+  >
+    <Trash2 size={16} />
+  </ActionButton>
+  <ChevronIcon size={16} />
+</LevelActions>
                     </AccordionHeader>
                   </AccordionTrigger>
                   <AccordionContent>
@@ -477,7 +692,6 @@ const InspectionLevelList = ({ loading, setLoading, handleError, inspectionServi
           ))}
         </LevelGrid>
       )}
-      <DeleteConfirmationModal />
     </PageContainer>
   );
 };

@@ -34,6 +34,28 @@ export const inspectionService = {
   async reorderSubLevels(inspectionId, data) {
     const response = await api.post(`/inspection/${inspectionId}/sub-levels/reorder`, data);
     return response.data;
+  },
+  async exportInspectionLevels(format, params) {
+    const response = await api.get(`/inspection/export/${format}`, { 
+      params,
+      responseType: 'blob' 
+    });
+    
+    // Create a URL for the blob
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    
+    // Create a link element and trigger the download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inspection-levels.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    return response.data;
   }
 };
 

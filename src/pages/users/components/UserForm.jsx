@@ -167,7 +167,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     name: '',
     email: '',
     phone: '',
-    role: 'user',
+    role: 'inspector',
     department: '',
     address: '',
     emergencyContact: '',
@@ -183,10 +183,21 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (formData.role && !initialData.permissions) {
+    if (formData.role) {
+      let newPermissions = [];
+      
+      if (formData.role === ROLES.ADMIN) {
+        newPermissions = Object.values(PERMISSIONS).flatMap(group => Object.values(group));
+      } else if (formData.role === ROLES.INSPECTOR) {
+        const taskPermissions = PERMISSIONS.TASK_DASHBOARD ? Object.values(PERMISSIONS.TASK_DASHBOARD) : [];
+        newPermissions = taskPermissions;
+      } else if (!initialData.permissions) {
+        newPermissions = DEFAULT_PERMISSIONS[formData.role] || [];
+      }
+      
       setFormData(prev => ({
         ...prev,
-        permissions: DEFAULT_PERMISSIONS[formData.role] || []
+        permissions: newPermissions
       }));
     }
   }, [formData.role]);
@@ -246,24 +257,30 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     }));
   };
 
-  const renderPermissionGroup = (groupName, permissions) => (
-    <PermissionGroup key={groupName}>
-      <PermissionGroupTitle>{groupName.replace(/_/g, ' ')}</PermissionGroupTitle>
-      <PermissionList>
-        {Object.entries(permissions).map(([key, value]) => (
-          <PermissionItem key={value}>
-            <input
-              type="checkbox"
-              checked={formData.permissions.includes(value)}
-              onChange={() => handlePermissionChange(value)}
-              disabled={formData.role === ROLES.SUPERADMIN}
-            />
-            {key.replace(/_/g, ' ')}
-          </PermissionItem>
-        ))}
-      </PermissionList>
-    </PermissionGroup>
-  );
+  const renderPermissionGroup = (groupName, permissions) => {
+    if (groupName === 'SETTINGS') return null;
+    
+    return (
+      <PermissionGroup key={groupName}>
+        <PermissionGroupTitle>{groupName.replace(/_/g, ' ')}</PermissionGroupTitle>
+        <PermissionList>
+          {Object.entries(permissions).map(([key, value]) => (
+            <PermissionItem key={value}>
+              <input
+                type="checkbox"
+                checked={formData.permissions.includes(value)}
+                onChange={() => handlePermissionChange(value)}
+                disabled={formData.role === ROLES.ADMIN}
+              />
+              {key.replace(/_/g, ' ')}
+            </PermissionItem>
+          ))}
+        </PermissionList>
+      </PermissionGroup>
+    );
+  };
+
+  const showPermissionsSection = formData.role === ROLES.MANAGER;
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -415,12 +432,14 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         </FormGroup>
       </FormRow>
 
-      <PermissionsSection>
-        <PermissionGroupTitle>Permissions</PermissionGroupTitle>
-        {Object.entries(PERMISSIONS).map(([groupName, groupPermissions]) =>
-          renderPermissionGroup(groupName, groupPermissions)
-        )}
-      </PermissionsSection>
+      {showPermissionsSection && (
+        <PermissionsSection>
+          <PermissionGroupTitle>Permissions</PermissionGroupTitle>
+          {Object.entries(PERMISSIONS).filter(([groupName]) => groupName !== 'SETTINGS').map(([groupName, groupPermissions]) =>
+            renderPermissionGroup(groupName, groupPermissions)
+          )}
+        </PermissionsSection>
+      )}
 
       <ButtonGroup>
         <Button type="button" onClick={onCancel}>

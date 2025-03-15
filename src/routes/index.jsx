@@ -47,7 +47,7 @@ const AppRoutes = () => {
         path="/"
         element={
           isAuthenticated ? (
-            user?.role === ROLES.USER ? (
+            user?.role === ROLES.INSPECTOR ? (
               <Navigate to="/user-dashboard" replace />
             ) : (
               <Navigate to="/dashboard" replace />
@@ -141,7 +141,7 @@ const AppRoutes = () => {
         </Route>
       </Route>
       
-      <Route element={<PrivateRoute allowedRoles={[ROLES.USER]} />}>
+      <Route element={<PrivateRoute allowedRoles={[ROLES.INSPECTOR]} />}>
         <Route element={<MainLayout />}>
           <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/user-tasks" element={<UserTasks />} />

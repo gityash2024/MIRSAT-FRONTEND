@@ -5,7 +5,7 @@ const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   
   if (isAuthenticated) {
-    if (user?.role === 'user') {
+    if (user?.role === 'inspector') {
       return <Navigate to="/user-dashboard" replace />;
     } else {
       return <Navigate to="/dashboard" replace />;

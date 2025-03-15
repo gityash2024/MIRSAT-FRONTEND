@@ -165,114 +165,98 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  const navigationConfig = {
-    admin: [
-      {
-        title: 'Dashboard',
-        path: '/dashboard',
-        icon: Home
-      },
-      {
-        title: 'Tasks',
-        path: '/tasks',
-        icon: ClipboardList
-      },
-      {
-        title: 'Users',
-        path: '/users',
-        icon: Users
-      },
-      {
-        title: 'Inspection Levels',
-        path: '/inspection',
-        icon: ListChecks
-      },
-      {
-        title: 'Calendar',
-        path: '/calendar',
-        icon: Calendar
-      },
-      {
-        title: 'Settings',
-        path: '/settings',
-        icon: Settings
-      }
-    ],
-    manager: [
-      {
-        title: 'Dashboard',
-        path: '/dashboard',
-        icon: Home
-      },
-      {
-        title: 'Tasks',
-        path: '/tasks',
-        icon: ClipboardList
-      },
-      {
-        title: 'Inspection Levels',
-        path: '/inspection',
-        icon: ListChecks
-      },
-      {
-        title: 'Calendar',
-        path: '/calendar',
-        icon: Calendar
-      },
-      {
-        title: 'Profile',
-        path: '/profile',
-        icon: User
-      }
-    ],
-    inspector: [
-      {
-        title: 'Dashboard',
-        path: '/dashboard',
-        icon: Home
-      },
-      {
-        title: 'Tasks',
-        path: '/tasks',
-        icon: ClipboardList
-      },
-      {
-        title: 'Inspection Levels',
-        path: '/inspection',
-        icon: ListChecks
-      },
-      {
-        title: 'Calendar',
-        path: '/calendar',
-        icon: Calendar
-      },
-      {
-        title: 'Profile',
-        path: '/profile',
-        icon: User
-      }
-    ],
-    user: [
-      {
-        title: 'Dashboard',
-        path: '/user-dashboard',
-        icon: Home
-      },
-      {
-        title: 'My Tasks',
-        path: '/user-tasks',
-        icon: ClipboardList
-      },
-      {
-        title: 'Profile',
-        path: '/profile',
-        icon: User
-      }
-    ]
+  // Check if user has specific permission
+  const hasPermission = (permission) => {
+    if (!user || !user.permissions) return false;
+    return user.permissions.includes(permission);
   };
 
-  const userRole = user?.role?.toLowerCase() || 'user';
-  const menuItems = navigationConfig[userRole] || navigationConfig.user;
+  // Define navigation items with required permissions
+  const navigationItems = [
+    {
+      title: 'Dashboard',
+      path: '/dashboard',
+      icon: Home,
+      permission: 'view_dashboard',
+      roles: ['admin', 'manager', 'inspector']
+    },
+    {
+      title: 'Tasks',
+      path: '/tasks',
+      icon: ClipboardList,
+      permission: 'view_tasks',
+      roles: ['admin', 'manager']
+    },
+    {
+      title: 'My Tasks',
+      path: '/user-tasks',
+      icon: ClipboardList,
+      permission: 'view_tasks',
+      roles: ['inspector']
+    },
+    {
+      title: 'Users',
+      path: '/users',
+      icon: Users,
+      permission: 'view_users',
+      roles: ['admin']
+    },
+    {
+      title: 'Inspection Levels',
+      path: '/inspection',
+      icon: ListChecks,
+      permission: 'view_inspections',
+      roles: ['admin', 'manager']
+    },
+    {
+      title: 'Calendar',
+      path: '/calendar',
+      icon: Calendar,
+      permission: 'view_calendar',
+      roles: ['admin', 'manager']
+    },
+    {
+      title: 'Settings',
+      path: '/settings',
+      icon: Settings,
+      permission: 'view_settings',
+      roles: ['admin']
+    },
+    {
+      title: 'Profile',
+      path: '/profile',
+      icon: User,
+      permission: null, // No permission required for profile
+      roles: ['manager', 'inspector']
+    }
+  ];
+
+  const userRole = user?.role?.toLowerCase() || 'inspector';
+
+  // Get menu items based on role and permissions
+  const getMenuItems = () => {
+    // For admin and inspector, show all items designated for their role
+    if (userRole === 'admin' || userRole === 'inspector') {
+      return navigationItems.filter(item => item.roles.includes(userRole));
+    }
+    
+    // For manager, check permissions
+    if (userRole === 'manager') {
+      return navigationItems.filter(item => {
+        // Include the item if it's for manager role and either has no permission requirement
+        // or the user has the required permission
+        return (
+          item.roles.includes('manager') && 
+          (item.permission === null || hasPermission(item.permission))
+        );
+      });
+    }
+    
+    // Default: show nothing if role doesn't match
+    return [];
+  };
+
+  const menuItems = getMenuItems();
 
   const handleNavigation = (path) => {
     console.log(`Navigating to: ${path}`);

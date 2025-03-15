@@ -271,7 +271,7 @@ const Login = () => {
     
       
    console.log(resultAction,'resultAction')
-   if(resultAction?.user?.role==='user'){
+   if(resultAction?.user?.role==='inspector'){
     navigate('/user-dashboard');
    }else{
 

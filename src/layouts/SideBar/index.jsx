@@ -208,7 +208,7 @@ const Sidebar = ({ isOpen, width }) => {
 
   // Function to get menu items based on user role
   const getMenuItems = () => {
-    return user?.role === 'user' 
+    return user?.role === 'inspector' 
       ? getUserMenuItems() 
       : getAdminMenuItems();
   };

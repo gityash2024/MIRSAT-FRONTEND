@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useParams, Link, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { inspectionService } from '../../services/inspection.service';
+import SubLevelViewModal from './SubLevelViewModal';
+import SubLevelEditModal from './SubLevelEditModal';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -274,6 +277,37 @@ const NodeInfo = styled.div`
   }
 `;
 
+const NodeActions = styled.div`
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  ${NodeContent}:hover & {
+    opacity: 1;
+  }
+`;
+
+const ActionButton = styled.button`
+  padding: 6px;
+  background: white;
+  border: none;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #1a237e;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
 const StatsList = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -399,13 +433,39 @@ const ExpandCollapseButton = styled.button`
   }
 `;
 
+const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  text-align: center;
+  color: #dc2626;
+  
+  h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  
+  p {
+    color: #666;
+    margin-bottom: 16px;
+  }
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { loading, setLoading, handleError, inspectionService } = useOutletContext();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [level, setLevel] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState({});
+  
+  // States for sublevel modals
+  const [selectedSubLevel, setSelectedSubLevel] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchInspectionLevel();
@@ -414,11 +474,14 @@ const InspectionLevelView = () => {
   const fetchInspectionLevel = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await inspectionService.getInspectionLevel(id);
       setLevel(data);
 
       const expandedState = {};
       const initExpandedState = (subLevels, prefix = '') => {
+        if (!subLevels || !Array.isArray(subLevels)) return;
+        
         subLevels.forEach((node, index) => {
           const nodeId = prefix ? `${prefix}.${index}` : `${index}`;
           expandedState[nodeId] = true;
@@ -434,8 +497,9 @@ const InspectionLevelView = () => {
       
       setExpandedNodes(expandedState);
     } catch (error) {
-      handleError(error);
-      navigate('/inspection');
+      console.error('Error fetching inspection level:', error);
+      setError(error.message || 'Failed to load inspection level');
+      toast.error('Failed to load inspection level');
     } finally {
       setLoading(false);
     }
@@ -448,9 +512,11 @@ const InspectionLevelView = () => {
       toast.success('Inspection level deleted successfully');
       navigate('/inspection');
     } catch (error) {
-      handleError(error);
+      console.error('Error deleting inspection level:', error);
+      toast.error(error.message || 'Failed to delete inspection level');
     } finally {
       setShowDeleteModal(false);
+      setLoading(false);
     }
   };
 
@@ -460,8 +526,61 @@ const InspectionLevelView = () => {
       [nodeId]: !prev[nodeId]
     }));
   };
+  
+  // Find a sublevel by path (e.g., "0.1.2")
+  const findSubLevelByPath = (path) => {
+    if (!level || !level.subLevels) return null;
+    
+    const indices = path.split('.');
+    let currentLevel = level.subLevels;
+    let currentNode = null;
+    
+    for (const index of indices) {
+      if (!currentLevel[index]) return null;
+      currentNode = currentLevel[index];
+      currentLevel = currentNode.subLevels || [];
+    }
+    
+    return currentNode;
+  };
+  
+  // Handle sublevel view action
+  const handleViewSubLevel = (path) => {
+    const subLevel = findSubLevelByPath(path);
+    if (subLevel) {
+      setSelectedSubLevel(subLevel);
+      setShowViewModal(true);
+    }
+  };
+  
+  // Handle sublevel edit action
+  const handleEditSubLevel = (path) => {
+    const subLevel = findSubLevelByPath(path);
+    if (subLevel) {
+      setSelectedSubLevel(subLevel);
+      setShowEditModal(true);
+    }
+  };
+  
+  // Update sublevel after edit
+  const handleUpdateSubLevel = async (updatedSubLevel) => {
+    try {
+      setLoading(true);
+      await inspectionService.updateSubLevel(id, updatedSubLevel._id, updatedSubLevel);
+      toast.success('Sub level updated successfully');
+      setShowEditModal(false);
+      fetchInspectionLevel(); // Refresh data
+    } catch (error) {
+      console.error('Error updating sub level:', error);
+      toast.error(error.message || 'Failed to update sub level');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderHierarchy = (nodes, parentLevel = 0, parentId = '') => {
+    if (!nodes || !Array.isArray(nodes)) return null;
+    
     return nodes.map((node, index) => {
       const nodeId = parentId ? `${parentId}.${index}` : `${index}`;
       const hasChildren = node.subLevels && node.subLevels.length > 0;
@@ -483,6 +602,20 @@ const InspectionLevelView = () => {
                 <h4>{node.name}</h4>
                 <p>{node.description}</p>
               </NodeInfo>
+              <NodeActions>
+                <ActionButton 
+                  onClick={() => handleViewSubLevel(nodeId)}
+                  disabled={loading}
+                >
+                  <Info size={14} />
+                </ActionButton>
+                <ActionButton 
+                  onClick={() => handleEditSubLevel(nodeId)}
+                  disabled={loading}
+                >
+                  <Edit size={14} />
+                </ActionButton>
+              </NodeActions>
             </NodeContent>
           </NestedHierarchyNode>
           
@@ -496,8 +629,45 @@ const InspectionLevelView = () => {
     });
   };
 
-  if (loading || !level) {
-    return <LoadingSpinner>Loading...</LoadingSpinner>;
+  if (loading) {
+    return (
+      <PageContainer>
+        <LoadingSpinner>
+          <div className="spinner"></div>
+          <p>Loading inspection level...</p>
+        </LoadingSpinner>
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <ErrorContainer>
+          <h3>Error Loading Inspection Level</h3>
+          <p>{error}</p>
+          <Button onClick={() => navigate('/inspection')}>
+            <ArrowLeft size={18} />
+            Back to Inspection Levels
+          </Button>
+        </ErrorContainer>
+      </PageContainer>
+    );
+  }
+
+  if (!level) {
+    return (
+      <PageContainer>
+        <ErrorContainer>
+          <h3>Inspection Level Not Found</h3>
+          <p>The inspection level you're looking for doesn't exist or has been removed</p>
+          <Button onClick={() => navigate('/inspection')}>
+            <ArrowLeft size={18} />
+            Back to Inspection Levels
+          </Button>
+        </ErrorContainer>
+      </PageContainer>
+    );
   }
 
   return (
@@ -518,6 +688,22 @@ const InspectionLevelView = () => {
             </ModalActions>
           </ModalContent>
         </ModalOverlay>
+      )}
+      
+      {showViewModal && selectedSubLevel && (
+        <SubLevelViewModal 
+          subLevel={selectedSubLevel} 
+          onClose={() => setShowViewModal(false)} 
+        />
+      )}
+      
+      {showEditModal && selectedSubLevel && (
+        <SubLevelEditModal 
+          subLevel={selectedSubLevel} 
+          onClose={() => setShowEditModal(false)}
+          onSave={handleUpdateSubLevel}
+          loading={loading}
+        />
       )}
 
       <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
@@ -603,7 +789,7 @@ const InspectionLevelView = () => {
             {level.assignedTasks && level.assignedTasks.length > 0 ? (
               <TasksList>
                 {level.assignedTasks.map(task => (
-                  <TaskItem key={task._id}>
+                  <TaskItem key={task._id || `task-${Math.random()}`}>
                     <NodeIcon background="#f0f9ff" color="#0284c7">
                       <FileText size={16} />
                     </NodeIcon>
@@ -611,8 +797,8 @@ const InspectionLevelView = () => {
                       <h4>{task.title}</h4>
                       <p>{task.description}</p>
                     </TaskInfo>
-                    <StatusBadge status={task.status}>
-                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                    <StatusBadge status={task.status || 'pending'}>
+                      {task.status ? (task.status.charAt(0).toUpperCase() + task.status.slice(1)) : 'Pending'}
                     </StatusBadge>
                   </TaskItem>
                 ))}

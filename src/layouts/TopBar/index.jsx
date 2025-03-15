@@ -211,8 +211,8 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
         <UserMenuContainer ref={userMenuRef}>
           <UserMenuTrigger onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
             <div className="user-info">
-              <div className="name">{user?.name || 'User'}</div>
-              <div className="role">{user?.role || 'User'}</div>
+              <div className="name">{user?.name || 'Inspector'}</div>
+              <div className="role">{user?.role || 'Inspector'}</div>
             </div>
             <User size={20} />
             <ChevronDown size={16} />

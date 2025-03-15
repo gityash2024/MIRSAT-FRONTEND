@@ -62,6 +62,38 @@ const TabButton = styled.button`
       opacity: 0.6;
     `}
   }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1a237e;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const InspectionLevel = () => {
@@ -71,7 +103,8 @@ const InspectionLevel = () => {
   const [viewType, setViewType] = useState('normal');
 
   const handleError = (error) => {
-    toast.error(error?.response?.data?.message || 'An error occurred');
+    console.error('Error:', error);
+    toast.error(error?.response?.data?.message || error?.message || 'An error occurred');
     setLoading(false);
   };
 
@@ -105,12 +138,19 @@ const InspectionLevel = () => {
 
   return (
     <Container>
+      {loading && (
+        <LoadingOverlay>
+          <div className="spinner" />
+        </LoadingOverlay>
+      )}
+      
       {isListView && (
         <TabContainer>
           <TabGroup>
             <TabButton 
               active={viewType === 'normal'} 
               onClick={() => setViewType('normal')}
+              disabled={loading}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="7" height="7" />
@@ -123,6 +163,7 @@ const InspectionLevel = () => {
             <TabButton 
               active={viewType === 'tree'} 
               onClick={() => setViewType('tree')}
+              disabled={loading}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 3v18M5 8h14M8 14h8" />
