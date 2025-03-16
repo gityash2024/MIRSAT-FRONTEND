@@ -170,12 +170,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     if (!user || !user.permissions) return false;
     return user.permissions.includes(permission);
   };
+  const userRole = user?.role?.toLowerCase() || 'inspector';
 
   // Define navigation items with required permissions
   const navigationItems = [
     {
       title: 'Dashboard',
-      path: '/dashboard',
+      path: userRole === 'inspector' ? '/user-dashboard' : '/dashboard',
       icon: Home,
       permission: 'view_dashboard',
       roles: ['admin', 'manager', 'inspector']
@@ -231,7 +232,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }
   ];
 
-  const userRole = user?.role?.toLowerCase() || 'inspector';
 
   // Get menu items based on role and permissions
   const getMenuItems = () => {

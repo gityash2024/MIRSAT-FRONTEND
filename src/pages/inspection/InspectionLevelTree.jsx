@@ -656,7 +656,7 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
             disabled={loading}
           >
             <Plus size={18} />
-            Add Level
+            Add Inspection Level
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -686,8 +686,8 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
               to="/inspection/create"
             >
               <Plus size={18} />
-              Add Level
-            </Button>
+            Add Inspection Level
+              </Button>
           </EmptyState>
         ) : (
           treeData.map((node, index) => (

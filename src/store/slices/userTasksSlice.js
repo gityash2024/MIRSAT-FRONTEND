@@ -62,12 +62,36 @@ export const updateUserTaskProgress = createAsyncThunk(
   }
 );
 
+export const updateTaskQuestionnaire = createAsyncThunk(
+  'userTasks/updateTaskQuestionnaire',
+  async ({ taskId, data }, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.updateTaskQuestionnaire(taskId, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 export const addUserTaskComment = createAsyncThunk(
   'userTasks/addUserTaskComment',
   async ({ taskId, content }, { rejectWithValue }) => {
     try {
       const response = await userTaskService.addTaskComment(taskId, content);
       return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
+export const exportTaskReport = createAsyncThunk(
+  'userTasks/exportTaskReport',
+  async ({ taskId, format = 'pdf' }, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.exportTaskReport(taskId, format);
+      return response;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
     }
@@ -207,6 +231,30 @@ const userTasksSlice = createSlice({
         state.error = action.payload?.message || 'Failed to update progress';
         toast.error(state.error);
       })
+      
+      .addCase(updateTaskQuestionnaire.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(updateTaskQuestionnaire.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const updatedTask = action.payload;
+        
+        if (state.currentTask && state.currentTask._id === updatedTask._id) {
+          state.currentTask = updatedTask;
+        }
+        
+        state.tasks.results = state.tasks.results.map(task => 
+          task._id === updatedTask._id ? updatedTask : task
+        );
+        
+        toast.success('Questionnaire saved successfully');
+      })
+      .addCase(updateTaskQuestionnaire.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload?.message || 'Failed to save questionnaire';
+        toast.error(state.error);
+      })
 
       .addCase(addUserTaskComment.pending, (state) => {
         state.actionLoading = true;
@@ -225,6 +273,20 @@ const userTasksSlice = createSlice({
       .addCase(addUserTaskComment.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload?.message || 'Failed to add comment';
+        toast.error(state.error);
+      })
+      
+      .addCase(exportTaskReport.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(exportTaskReport.fulfilled, (state) => {
+        state.actionLoading = false;
+        toast.success('Report exported successfully');
+      })
+      .addCase(exportTaskReport.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload?.message || 'Failed to export report';
         toast.error(state.error);
       });
   }

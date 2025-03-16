@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { 
   ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
   Send, Download, Paperclip, BarChart, TrendingUp, Users,
-  Circle, ChevronRight, Filter
+  Circle, ChevronRight, Filter, FileText, HelpCircle, CheckSquare
 } from 'lucide-react';
 import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
@@ -105,6 +105,10 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: 3fr 1fr;
   gap: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const MainContent = styled.div`
@@ -218,8 +222,6 @@ const MilestoneItem = styled.div`
   }
 `;
 
-
-
 const MilestoneContent = styled.div`
   margin-left: 8px;
 `;
@@ -273,7 +275,6 @@ const MilestoneDescription = styled.p`
 const MilestoneProgress = styled.div`
   margin-top: 12px;
 `;
-
 
 const AssigneeHeader = styled.div`
   display: flex;
@@ -382,6 +383,61 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 `;
+
+const QuestionsCard = styled(Card)`
+  margin-bottom: 24px;
+`;
+
+const QuestionsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const QuestionItem = styled.div`
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #1a237e;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const QuestionText = styled.div`
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+`;
+
+const QuestionType = styled.span`
+  background: #e3f2fd;
+  color: #1a237e;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+`;
+
+const QuestionOptions = styled.div`
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+`;
+
+const Badge = styled.span`
+  display: inline-block;
+  padding: 4px 8px;
+  margin-right: 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+`;
+
 const TaskView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -466,6 +522,19 @@ const TaskView = () => {
               getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
   })) || [];
 
+  const renderQuestionType = (type) => {
+    switch(type) {
+      case 'yesNo':
+        return 'Yes/No/NA';
+      case 'compliance':
+        return 'Compliance Levels';
+      case 'custom':
+        return 'Custom Options';
+      default:
+        return type;
+    }
+  };
+
   return (
     <PageContainer>
       <Header>
@@ -534,42 +603,72 @@ const TaskView = () => {
             </MetaGrid>
 
             <AssigneeProgress>
-            {selectedAssignee !== 'all' && task.assignedTo?.map(assignee => {
-  if (assignee._id === selectedAssignee) {
-    const progress = calculateAssigneeProgress(assignee._id);
-    return (
-      <AssigneeCard key={assignee._id}>
-        <AssigneeHeader>
-          <AssigneeName>{assignee.name}</AssigneeName>
-          <span>{progress.percentage}% Complete</span>
-        </AssigneeHeader>
-        <AssigneeStats>
-          <StatCard>
-            <div className="label">Completed</div>
-            <div className="value">{progress.completed}</div>
-          </StatCard>
-          <StatCard>
-            <div className="label">In Progress</div>
-            <div className="value">{progress.inProgress}</div>
-          </StatCard>
-          <StatCard>
-            <div className="label">Total</div>
-            <div className="value">{progress.total}</div>
-          </StatCard>
-        </AssigneeStats>
-        <ProgressBar>
-          <div 
-            className="fill" 
-            style={{ width: `${progress.percentage}%` }}
-          />
-        </ProgressBar>
-      </AssigneeCard>
-    );
-  }
-  return null;
-})}
+              {selectedAssignee !== 'all' && task.assignedTo?.map(assignee => {
+                if (assignee._id === selectedAssignee) {
+                  const progress = calculateAssigneeProgress(assignee._id);
+                  return (
+                    <AssigneeCard key={assignee._id}>
+                      <AssigneeHeader>
+                        <AssigneeName>{assignee.name}</AssigneeName>
+                        <span>{progress.percentage}% Complete</span>
+                      </AssigneeHeader>
+                      <AssigneeStats>
+                        <StatCard>
+                          <div className="label">Completed</div>
+                          <div className="value">{progress.completed}</div>
+                        </StatCard>
+                        <StatCard>
+                          <div className="label">In Progress</div>
+                          <div className="value">{progress.inProgress}</div>
+                        </StatCard>
+                        <StatCard>
+                          <div className="label">Total</div>
+                          <div className="value">{progress.total}</div>
+                        </StatCard>
+                      </AssigneeStats>
+                      <ProgressBar>
+                        <div 
+                          className="fill" 
+                          style={{ width: `${progress.percentage}%` }}
+                        />
+                      </ProgressBar>
+                    </AssigneeCard>
+                  );
+                }
+                return null;
+              })}
             </AssigneeProgress>
           </Card>
+
+          {task.questions && task.questions.length > 0 && (
+            <QuestionsCard>
+              <CardTitle>
+                <CheckSquare size={20} />
+                Inspection Questions
+              </CardTitle>
+              <QuestionsList>
+                {task.questions.map((question, index) => (
+                  <QuestionItem key={question._id || question.id || index}>
+                    <QuestionHeader>
+                      <QuestionType>{renderQuestionType(question.answerType)}</QuestionType>
+                      {question.required && <Badge>Required</Badge>}
+                    </QuestionHeader>
+                    <QuestionText>
+                      {index + 1}. {question.text}
+                    </QuestionText>
+                    {question.answerType === 'custom' && question.options && question.options.length > 0 && (
+                      <QuestionOptions>
+                        <strong>Options: </strong>
+                        {question.options.map((option, i) => (
+                          <Badge key={i}>{option}</Badge>
+                        ))}
+                      </QuestionOptions>
+                    )}
+                  </QuestionItem>
+                ))}
+              </QuestionsList>
+            </QuestionsCard>
+          )}
 
           <ChartCard>
             <CardTitle>Inspection Progress</CardTitle>
@@ -705,8 +804,6 @@ const TaskView = () => {
               <p style={{ color: '#666', fontSize: '14px' }}>No attachments</p>
             )}
           </Card>
-
-      
         </div>
       </ContentGrid>
     </PageContainer>

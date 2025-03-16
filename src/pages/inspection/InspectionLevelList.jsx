@@ -592,7 +592,7 @@ const onDeleteClick = (level) => {
             disabled={loading}
           >
             <Plus size={18} />
-            Add Level
+            Add Inspection Level
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -621,7 +621,7 @@ const onDeleteClick = (level) => {
             to="/inspection/create"
           >
             <Plus size={18} />
-            Add Level
+            Add Inspection Level
           </Button>
         </EmptyState>
       ) : (

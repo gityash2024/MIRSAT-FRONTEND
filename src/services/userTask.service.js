@@ -30,6 +30,12 @@ export const userTaskService = {
     const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, data);
     return response.data;
   },
+  
+  // Update task questionnaire responses
+  updateTaskQuestionnaire: async (taskId, data) => {
+    const response = await api.post(`/user-tasks/${taskId}/questionnaire`, data);
+    return response.data;
+  },
 
   // Add a comment to a task
   addTaskComment: async (taskId, content) => {
@@ -49,5 +55,22 @@ export const userTaskService = {
     });
     
     return response.data;
+  },
+  
+  // Export task report
+  exportTaskReport: async (taskId, format = 'pdf') => {
+    const response = await api.get(`/user-tasks/${taskId}/export?format=${format}`, {
+      responseType: 'blob'
+    });
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `task-report-${taskId}.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    return { success: true };
   }
 };
