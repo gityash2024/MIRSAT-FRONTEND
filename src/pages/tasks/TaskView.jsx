@@ -640,35 +640,7 @@ const TaskView = () => {
             </AssigneeProgress>
           </Card>
 
-          {task.questions && task.questions.length > 0 && (
-            <QuestionsCard>
-              <CardTitle>
-                <CheckSquare size={20} />
-                Inspection Questions
-              </CardTitle>
-              <QuestionsList>
-                {task.questions.map((question, index) => (
-                  <QuestionItem key={question._id || question.id || index}>
-                    <QuestionHeader>
-                      <QuestionType>{renderQuestionType(question.answerType)}</QuestionType>
-                      {question.required && <Badge>Required</Badge>}
-                    </QuestionHeader>
-                    <QuestionText>
-                      {index + 1}. {question.text}
-                    </QuestionText>
-                    {question.answerType === 'custom' && question.options && question.options.length > 0 && (
-                      <QuestionOptions>
-                        <strong>Options: </strong>
-                        {question.options.map((option, i) => (
-                          <Badge key={i}>{option}</Badge>
-                        ))}
-                      </QuestionOptions>
-                    )}
-                  </QuestionItem>
-                ))}
-              </QuestionsList>
-            </QuestionsCard>
-          )}
+        
 
           <ChartCard>
             <CardTitle>Inspection Progress</CardTitle>

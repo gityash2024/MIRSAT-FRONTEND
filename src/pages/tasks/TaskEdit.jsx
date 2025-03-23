@@ -111,7 +111,6 @@ const TaskEdit = () => {
     location: task.data.location || '',
     inspectionLevel: task.data.inspectionLevel || null,
     isActive: task.data.isActive ?? true,
-    questions: task.data.questions || [],
     attachments: task.data.attachments?.map(attachment => ({
       ...attachment,
       url: attachment.url,

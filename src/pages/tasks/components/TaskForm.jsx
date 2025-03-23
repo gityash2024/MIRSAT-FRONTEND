@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { Upload, Users, X, File, Plus, Minus,  Trash2 } from 'lucide-react';
+import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
 import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import Spinner from '../../../components/ui/Spinner';
+import PopoverMenu from '../../../components/ui/PopoverMenu';
+import Switch from '../../../components/ui/Switch';
+import DatePicker from '../../../components/ui/DatePicker';
+import { fetchUsers } from '../../../store/slices/userSlice';
+import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
 
 const Form = styled.form`
   display: grid;
@@ -146,7 +152,7 @@ const ToggleSwitch = styled.label`
   cursor: pointer;
 `;
 
-const Switch = styled.div`
+const ToggleIndicator = styled.div`
   position: relative;
   width: 40px;
   height: 20px;
@@ -284,65 +290,144 @@ const SectionTitle = styled.h3`
   justify-content: space-between;
 `;
 
-const QuestionSection = styled.div`
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
-`;
-
-const QuestionItem = styled.div`
-  background: white;
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 16px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
-  position: relative;
-  
-  &:hover {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const QuestionHeader = styled.div`
+const UserSelection = styled.div`
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
   align-items: center;
+  gap: 8px;
+  position: relative;
 `;
 
-const DragHandle = styled.div`
-  cursor: grab;
-  padding: 5px;
-  &:hover {
-    color: #1a237e;
-  }
+const UserList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
 `;
 
-const DeleteButton = styled.button`
+const UserTag = styled.span`
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+`;
+
+const RemoveButton = styled.button`
   background: none;
   border: none;
-  color: #dc2626;
+  padding: 0;
   cursor: pointer;
-  padding: 5px;
-  
+  color: #dc2626;
   &:hover {
     color: #b91c1c;
   }
 `;
 
-const CustomOptions = styled.div`
-  margin-top: 12px;
-`;
-
-const OptionItem = styled.div`
+const UserPickerButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  color: #64748b;
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+const UserDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  width: 100%;
+`;
+
+const UserOption = styled.div`
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    background: #f1f5f9;
+  }
+  
+  ${props => props.selected && `
+    background: #e0e0e0;
+  `}
+  
+  span {
+    flex: 1;
+  }
+`;
+
+const AdvancedToggle = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+const AttachmentUpload = styled.div`
+  margin-top: 16px;
+  text-align: center;
+`;
+
+const UploadButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  &:hover {
+    color: #1a237e;
+  }
+  ${props => props.disabled && `
+    opacity: 0.7;
+    cursor: not-allowed;
+  `}
+`;
+
+const AttachmentActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #64748b;
+  &:hover {
+    color: #1a237e;
+  }
 `;
 
 const TaskForm = ({ 
@@ -355,6 +440,7 @@ const TaskForm = ({
 }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
+  const userDropdownRef = useRef(null);
   const stateUsers = useSelector(state => state.users.users);
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
 
@@ -368,336 +454,262 @@ const TaskForm = ({
     assignedTo: initialData.assignedTo?.map(user => user._id) || [],
     status: initialData.status || 'pending',
     priority: initialData.priority || 'medium',
-    deadline: initialData.deadline 
-      ? new Date(initialData.deadline).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
+    deadline: initialData.deadline ? new Date(initialData.deadline) : new Date(),
     location: initialData.location || '',
     inspectionLevel: initialData.inspectionLevel?._id || '',
     isActive: initialData.isActive !== undefined ? initialData.isActive : true,
-    questions: initialData.questions || []
+    attachments: initialData.attachments || []
   });
-
-  const [attachmentFiles, setAttachmentFiles] = useState(
-    initialData.attachments 
-      ? initialData.attachments.map(attachment => ({
-          name: attachment.filename,
-          existing: true,
-          _id: attachment._id,
-          url: attachment.url,
-          progress: 100
-        })) 
-      : []
-  );
   
+  const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
   const [errors, setErrors] = useState({});
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // For questions management
-  const [questions, setQuestions] = useState(initialData.questions || []);
-
-  useEffect(() => {
-    // Initialize with existing questions if any
-    if (initialData.questions && initialData.questions.length > 0) {
-      setQuestions(initialData.questions);
-    } else {
-      // Add one empty question to start
-      addQuestion();
-    }
-  }, [initialData.questions]);
-
-  const addQuestion = () => {
-    const newQuestion = {
-      id: Date.now().toString(), // Temporary ID for UI purposes
-      text: '',
-      answerType: 'yesNo',
-      options: [],
-      required: true,
-      order: questions.length
-    };
-    
-    setQuestions([...questions, newQuestion]);
-  };
-
-  const updateQuestion = (id, field, value) => {
-    setQuestions(questions.map(q => 
-      q.id.toString() === id.toString() ? { ...q, [field]: value } : q
-    ));
-  };
-
-  const removeQuestion = (id) => {
-    setQuestions(questions.filter(q => q.id.toString() !== id.toString()));
-  };
-
-  const addOptionToQuestion = (questionId) => {
-    setQuestions(questions.map(q => {
-      if (q.id.toString() === questionId.toString()) {
-        return {
-          ...q,
-          options: [...(q.options || []), '']
-        };
-      }
-      return q;
-    }));
-  };
-
-  const updateOptionInQuestion = (questionId, index, value) => {
-    setQuestions(questions.map(q => {
-      if (q.id.toString() === questionId.toString()) {
-        const newOptions = [...(q.options || [])];
-        newOptions[index] = value;
-        return {
-          ...q,
-          options: newOptions
-        };
-      }
-      return q;
-    }));
-  };
-
-  const removeOptionFromQuestion = (questionId, index) => {
-    setQuestions(questions.map(q => {
-      if (q.id.toString() === questionId.toString()) {
-        const newOptions = [...(q.options || [])];
-        newOptions.splice(index, 1);
-        return {
-          ...q,
-          options: newOptions
-        };
-      }
-      return q;
-    }));
-  };
-
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(questions);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    // Update order property
-    const reorderedQuestions = items.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-    
-    setQuestions(reorderedQuestions);
-  };
-
-  const handleAttachmentChange = async (event) => {
-    const files = Array.from(event.target.files);
-    const newAttachments = [...attachmentFiles];
-    
-    files.forEach(file => {
-      const newAttachment = {
-        name: file.name,
-        file,
-        progress: 0,
-        uploading: true
-      };
-      
-      newAttachments.push(newAttachment);
-    });
-    
-    setAttachmentFiles(newAttachments);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleRemoveAttachment = (index) => {
-    setAttachmentFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
     
     try {
-      setIsSubmitting(true);
-      
-      // Prepare task data with questions
-      const submissionData = {
-        ...formData,
-        assignedTo: Array.isArray(formData.assignedTo) 
-          ? formData.assignedTo 
-          : [formData.assignedTo],
-        questions: questions.map((q, index) => ({
-          ...q,
-          order: index
-        }))
+      // Prepare task data
+      const taskData = {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        deadline: formData.deadline,
+        location: formData.location,
+        assignedTo: formData.assignedTo,
+        inspectionLevel: formData.inspectionLevel,
+        isActive: formData.isActive,
+        attachments: formData.attachments
       };
       
-      // Filter out already uploaded attachments
-      const existingAttachments = attachmentFiles
-        .filter(file => file.existing || file.url)
-        .map(file => ({
-          url: file.url,
-          filename: file.name,
-          _id: file._id,
-          contentType: ''
-        }));
-        
-      // Upload new files
-      const filesToUpload = attachmentFiles.filter(file => file.file && !file.url);
+      console.log('Submitting task data:', taskData);
       
-      if (initialData._id && filesToUpload.length > 0) {
-        // For existing tasks, upload files one by one
-        for (const fileData of filesToUpload) {
-          const formData = new FormData();
-          formData.append('file', fileData.file);
-          
-          await dispatch(uploadTaskAttachment({ 
-            id: initialData._id, 
-            file: fileData.file 
-          })).unwrap();
-        }
+      // Call API to create or update task
+      if (initialData._id) {
+        // For updates, ensure we're passing the correct ID and data format
+        const updateResult = await dispatch(updateTask({ 
+          id: initialData._id, 
+          data: taskData 
+        })).unwrap();
         
-        // Then update the task details
-        await dispatch(updateTask({ 
-          id: initialData._id, 
-          data: submissionData 
-        })).unwrap();
-      } else if (initialData._id) {
-        // Just update the task if no new files
-        await dispatch(updateTask({ 
-          id: initialData._id, 
-          data: {
-            ...submissionData,
-            attachments: existingAttachments
-          }
-        })).unwrap();
+        console.log('Task update result:', updateResult);
+        
+        if (updateResult) {
+          toast.success('Task updated successfully');
+          if (onCancel) onCancel(updateResult); // Pass the updated task back
+        }
       } else {
-        // For new tasks, we need to create the task first, then upload files
-        const newTask = await dispatch(createTask(submissionData)).unwrap();
-        
-        // Then upload files if any
-        for (const fileData of filesToUpload) {
-          const formData = new FormData();
-          formData.append('file', fileData.file);
-          
-          await dispatch(uploadTaskAttachment({ 
-            id: newTask.data._id, 
-            file: fileData.file 
-          })).unwrap();
-        }
+        const createResult = await dispatch(createTask(taskData)).unwrap();
+        toast.success('Task created successfully');
+        if (onCancel) onCancel(createResult); // Pass the created task back
       }
-      
-      toast.success(initialData._id ? 'Task updated successfully' : 'Task created successfully');
-      handleCancel();
     } catch (error) {
-      console.error('Task submission error:', error);
-      toast.error(error.message || 'Failed to save task');
+      console.error('Error in task form submission:', error);
+      toast.error(`Failed to ${initialData._id ? 'update' : 'create'} task: ${error.message || 'Error occurred'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.assignedTo.length === 0) newErrors.assignedTo = 'At least one assignee is required';
-    if (!formData.inspectionLevel) newErrors.inspectionLevel = 'Inspection level is required';
-    if (!formData.deadline) newErrors.deadline = 'Deadline is required';
     
-    // Validate questions
-    if (questions.length === 0) {
-      newErrors.questions = 'At least one question is required';
-    } else {
-      const invalidQuestions = questions.filter(q => !q.text.trim());
-      if (invalidQuestions.length > 0) {
-        newErrors.questions = 'All questions must have text';
-      }
-      
-      // Validate options for custom questions
-      const customQuestionsWithoutOptions = questions.filter(
-        q => q.answerType === 'custom' && (!q.options || q.options.length < 2)
-      );
-      if (customQuestionsWithoutOptions.length > 0) {
-        newErrors.questions = 'Custom questions must have at least two options';
-      }
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    }
+    
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    }
+    
+    if (!formData.deadline) {
+      newErrors.deadline = 'Deadline is required';
+    }
+    
+    if (formData.assignedTo.length === 0) {
+      newErrors.assignedTo = 'At least one user must be assigned';
+    }
+    
+    if (!formData.inspectionLevel) {
+      newErrors.inspectionLevel = 'An inspection level must be selected';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
   };
-
+  
   const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
+    if (onCancel) onCancel();
   };
-
+  
   const handleUserToggle = (userId) => {
-    setFormData(prev => ({
-      ...prev,
-      assignedTo: prev.assignedTo.includes(userId)
-        ? prev.assignedTo.filter(id => id !== userId)
-        : [...prev.assignedTo, userId]
-    }));
+    setFormData(prev => {
+      const isAlreadyAssigned = prev.assignedTo.includes(userId);
+      return {
+        ...prev,
+        assignedTo: isAlreadyAssigned 
+          ? prev.assignedTo.filter(id => id !== userId) 
+          : [...prev.assignedTo, userId]
+      };
+    });
   };
-
+  
   const handleRemoveUser = (userId) => {
     setFormData(prev => ({
       ...prev,
       assignedTo: prev.assignedTo.filter(id => id !== userId)
     }));
   };
-
+  
   const handleToggleActive = () => {
     setFormData(prev => ({
       ...prev,
       isActive: !prev.isActive
     }));
   };
+  
+  const handleAttachmentChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+      setIsUploading(true);
+      
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // If task already exists, include the task ID
+      const payload = initialData._id 
+        ? { id: initialData._id, file } 
+        : { file };
+      
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      const result = await dispatch(uploadTaskAttachment(payload)).unwrap();
+      
+      if (result && result.data) {
+        setFormData(prev => ({
+          ...prev,
+          attachments: [...prev.attachments, result.data]
+        }));
+        toast.success('File uploaded successfully');
+      } else {
+        toast.error('Failed to upload file');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      console.error('Upload error details:', error.message);
+      toast.error(`Error uploading file: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+      // Reset the file input
+      event.target.value = '';
+    }
+  };
+  
+  const handleRemoveAttachment = (index) => {
+    const newAttachments = [...formData.attachments];
+    newAttachments.splice(index, 1);
+    setFormData(prev => ({ ...prev, attachments: newAttachments }));
+  };
+  
+  useEffect(() => {
+    // Fetch users if not provided as props
+    if (usersProp.length === 0) {
+      // Add a flag to prevent multiple calls
+      const localStorageKey = 'usersFetchInitiated';
+      const fetchInitiated = sessionStorage.getItem(localStorageKey);
+      
+      if (!fetchInitiated) {
+        sessionStorage.setItem(localStorageKey, 'true');
+        dispatch(fetchUsers())
+          .unwrap()
+          .catch(error => {
+            console.error('Error fetching users:', error);
+          })
+          .finally(() => {
+            // Reset after 10 seconds to allow refetching if needed
+            setTimeout(() => {
+              sessionStorage.removeItem(localStorageKey);
+            }, 10000);
+          });
+      }
+    }
+    
+    // Fetch inspection levels if not provided as props
+    if (inspectionLevelsProp.length === 0) {
+      // Add a flag to prevent multiple calls
+      const localStorageKey = 'inspectionLevelsFetchInitiated';
+      const fetchInitiated = sessionStorage.getItem(localStorageKey);
+      
+      if (!fetchInitiated) {
+        sessionStorage.setItem(localStorageKey, 'true');
+        dispatch(fetchInspectionLevels())
+          .unwrap()
+          .catch(error => {
+            console.error('Error fetching inspection levels:', error);
+          })
+          .finally(() => {
+            // Reset after 10 seconds to allow refetching if needed
+            setTimeout(() => {
+              sessionStorage.removeItem(localStorageKey);
+            }, 10000);
+          });
+      }
+    }
+  }, [usersProp.length, inspectionLevelsProp.length, dispatch]);
+  
+  useEffect(() => {
+    // Handle clicks outside of user dropdown
+    const handleClickOutside = (event) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
 
+    if (showUserDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
+  
   return (
     <Form onSubmit={handleSubmit}>
       <FormRow>
         <FormGroup>
-          <Label>Task Title</Label>
+          <Label>Title</Label>
           <Input
+            type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Enter task title"
+            required
           />
           {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
         </FormGroup>
-
-        <FormGroup>
-          <Label>Priority</Label>
-          <Select
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-          >
-            {priorityOptions.map(option =>(
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </FormGroup>
       </FormRow>
-
+      
       <FormGroup>
         <Label>Description</Label>
         <TextArea
@@ -705,90 +717,100 @@ const TaskForm = ({
           value={formData.description}
           onChange={handleChange}
           placeholder="Enter task description"
+          rows={4}
+          required
         />
         {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
       </FormGroup>
-
-      <FormGroup>
-        <Label>Assign Users</Label>
-        <MultiSelect>
-          <MultiSelectHeader onClick={() => setShowUserDropdown(!showUserDropdown)}>
-            {formData.assignedTo.length > 0 ? (
-              formData.assignedTo.map(userId => {
-                const user = users?.find(u => u._id === userId);
-                return user ? (
-                  <SelectedItem key={userId}>
-                    {user.name}
-                    <button type="button" onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveUser(userId);
-                    }}>
-                      <X size={12} />
-                    </button>
-                  </SelectedItem>
-                ) : null;
-              })
-            ) : (
-              <span style={{ color: '#64748b' }}>Select users</span>
-            )}
-            <Users size={16} style={{ marginLeft: 'auto' }} />
-          </MultiSelectHeader>
-          {showUserDropdown && (
-            <MultiSelectDropdown>
-              {users?.map(user => (
-                <Option
-                  key={user._id}
-                  onClick={() => handleUserToggle(user._id)}
-                >
-                  {user.name}
-                </Option>
-              ))}
-            </MultiSelectDropdown>
-          )}
-        </MultiSelect>
-        {errors.assignedTo && <ErrorMessage>{errors.assignedTo}</ErrorMessage>}
-      </FormGroup>
-
+      
       <FormRow>
         <FormGroup>
-          <Label>Deadline</Label>
-          <Input
-            type="date"
-            name="deadline"
-            value={formData.deadline}
+          <Label>Priority</Label>
+          <Select
+            name="priority"
+            value={formData.priority}
             onChange={handleChange}
-            min={new Date().toISOString().split('T')[0]}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </Select>
+        </FormGroup>
+        
+        <FormGroup>
+          <Label>Deadline</Label>
+          <DatePicker
+            selected={formData.deadline}
+            onChange={date => setFormData(prev => ({ ...prev, deadline: date }))}
+            showTimeSelect
+            timeFormat="HH:mm"
+            timeIntervals={15}
+            dateFormat="MMMM d, yyyy h:mm aa"
           />
           {errors.deadline && <ErrorMessage>{errors.deadline}</ErrorMessage>}
         </FormGroup>
-
-        <FormGroup>
-          <Label>Location</Label>
-          <Input
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Enter location"
-          />
-        </FormGroup>
       </FormRow>
-
-      <FormRow>
-        <FormGroup>
-          <Label>Status</Label>
-          <Select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
+      
+      <FormGroup>
+        <Label>Location</Label>
+        <Input
+          type="text"
+          name="location"
+          value={formData.location}
+          onChange={handleChange}
+          placeholder="Enter location (optional)"
+        />
+      </FormGroup>
+      
+      <FormGroup>
+        <Label>Assigned Users</Label>
+        <UserSelection ref={userDropdownRef}>
+          <UserList>
+            {formData.assignedTo.map(userId => {
+              const user = users.find(u => u._id === userId);
+              return user ? (
+                <UserTag key={userId}>
+                  <span>{user.name}</span>
+                  <RemoveButton onClick={() => handleRemoveUser(userId)}>
+                    <X size={14} />
+                  </RemoveButton>
+                </UserTag>
+              ) : null;
+            })}
+          </UserList>
+          
+          <UserPickerButton 
+            type="button" 
+            onClick={() => setShowUserDropdown(!showUserDropdown)}
           >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </FormGroup>
-
+            <Users size={16} />
+            <span>Add Users</span>
+            {showUserDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </UserPickerButton>
+          
+          {showUserDropdown && (
+            <UserDropdown>
+              {users?.map(user => (
+                <UserOption 
+                  key={user._id}
+                  selected={formData.assignedTo.includes(user._id)}
+                  onClick={(e) => {
+                    e.stopPropagation();  // Prevent closing the dropdown
+                    handleUserToggle(user._id);
+                  }}
+                >
+                  <User size={16} />
+                  <span>{user.name}</span>
+                  {formData.assignedTo.includes(user._id) && <Check size={16} />}
+                </UserOption>
+              ))}
+            </UserDropdown>
+          )}
+        </UserSelection>
+        {errors.assignedTo && <ErrorMessage>{errors.assignedTo}</ErrorMessage>}
+      </FormGroup>
+      
+      <FormRow>
         <FormGroup>
           <Label>Inspection Level</Label>
           <Select
@@ -810,7 +832,7 @@ const TaskForm = ({
 
       <FormGroup>
         <ToggleSwitch>
-          <Switch 
+          <ToggleIndicator 
             checked={formData.isActive}
             onClick={handleToggleActive}
           />
@@ -818,167 +840,77 @@ const TaskForm = ({
         </ToggleSwitch>
       </FormGroup>
 
-      <QuestionSection>
-        <SectionTitle>
-          <span>Inspection Questions</span>
-          <Button 
-            type="button" 
-            onClick={addQuestion}
-            variant="secondary"
-          >
-            <Plus size={16} />
-            Add Question
-          </Button>
-        </SectionTitle>
-        
-        {errors.questions && <ErrorMessage>{errors.questions}</ErrorMessage>}
-        
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="questions">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-              >
-                {questions.map((question, index) => (
-                  <Draggable 
-                    key={question._id} 
-                    draggableId={question?._id?.toString()} 
-                    index={index}
-                  >
-                    {(provided) => (
-                      <QuestionItem
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
+      <AdvancedToggle 
+        type="button" 
+        onClick={(e) => {
+          e.preventDefault(); // Prevent form submission
+          setShowAdvanced(!showAdvanced);
+        }}
+      >
+        <span>Advanced Options</span>
+        {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </AdvancedToggle>
+      
+      {showAdvanced && (
+        <>
+          <FormGroup>
+            <Label>Attachments</Label>
+            <AttachmentList>
+              {formData.attachments.map((attachment, index) => (
+                <AttachmentItem key={index}>
+                  <File size={16} />
+                  <span>{attachment.filename || 'Attachment'}</span>
+                  <AttachmentActions>
+                    <IconButton 
+                      type="button" 
+                      title="Remove"
+                      onClick={() => handleRemoveAttachment(index)}
+                    >
+                      <Trash2 size={14} />
+                    </IconButton>
+                    {attachment.url && (
+                      <IconButton 
+                        type="button" 
+                        as="a" 
+                        href={attachment.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        title="Open"
                       >
-                        <QuestionHeader>
-                          <DragHandle {...provided.dragHandleProps}>
-                            <DragHandle size={16} />
-                          </DragHandle>
-                          <DeleteButton 
-                            type="button" 
-                            onClick={() => removeQuestion(question.id)}
-                          >
-                            <Trash2 size={16} />
-                          </DeleteButton>
-                        </QuestionHeader>
-                        
-                        <FormGroup>
-                          <Label>Question Text</Label>
-                          <Input
-                            type="text"
-                            value={question.text}
-                            onChange={(e) => updateQuestion(question.id, 'text', e.target.value)}
-                            placeholder="Enter question text"
-                          />
-                        </FormGroup>
-                        
-                        <FormRow>
-                          <FormGroup>
-                            <Label>Answer Type</Label>
-                            <Select
-                              value={question.answerType}
-                              onChange={(e) => updateQuestion(question.id, 'answerType', e.target.value)}
-                            >
-                              <option value="yesNo">Yes/No/NA</option>
-                              <option value="compliance">Compliance Levels</option>
-                              <option value="custom">Custom Options</option>
-                            </Select>
-                          </FormGroup>
-                          
-                          <FormGroup>
-                            <Label>Required</Label>
-                            <ToggleSwitch>
-                              <Switch 
-                                checked={question.required}
-                                onClick={() => updateQuestion(question.id, 'required', !question.required)}
-                              />
-                              <span>{question.required ? 'Required' : 'Optional'}</span>
-                            </ToggleSwitch>
-                          </FormGroup>
-                        </FormRow>
-                        
-                        {question.answerType === 'custom' && (
-                          <CustomOptions>
-                            <Label>Custom Options</Label>
-                            {(question.options || []).map((option, optionIndex) => (
-                              <OptionItem key={optionIndex}>
-                                <Input
-                                  type="text"
-                                  value={option}
-                                  onChange={(e) => updateOptionInQuestion(question.id, optionIndex, e.target.value)}
-                                  placeholder={`Option ${optionIndex + 1}`}
-                                />
-                                <DeleteButton
-                                  type="button"
-                                  onClick={() => removeOptionFromQuestion(question.id, optionIndex)}
-                                >
-                                  <Minus size={16} />
-                                </DeleteButton>
-                              </OptionItem>
-                            ))}
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => addOptionToQuestion(question.id)}
-                              style={{ marginTop: '8px' }}
-                            >
-                              <Plus size={16} />
-                              Add Option
-                            </Button>
-                          </CustomOptions>
-                        )}
-                      </QuestionItem>
+                        <ExternalLink size={14} />
+                      </IconButton>
                     )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      </QuestionSection>
-
-      <FormGroup>
-        <Label>Attachments</Label>
-        <AttachmentSection>
-          <AttachmentInput
-            ref={fileInputRef}
-            type="file"
-            id="attachments"
-            multiple
-            onChange={handleAttachmentChange}
-          />
-          <label htmlFor="attachments">
-            <Button type="button" variant="secondary">
-              <Upload size={16} />
-              Upload Files
-            </Button>
-          </label>
-          <AttachmentList>
-            {attachmentFiles.map((file, index) => (
-              <AttachmentItem key={index}>
-                <File size={16} />
-                <span>{file.name}</span>
-                {file.uploading && (
-                  <AttachmentProgress>
-                    <ProgressBar progress={file.progress} />
-                  </AttachmentProgress>
-                )}
-                <button type="button" onClick={() => handleRemoveAttachment(index)}>
-                  <X size={16} />
-                </button>
-              </AttachmentItem>
-            ))}
-          </AttachmentList>
-        </AttachmentSection>
-      </FormGroup>
-
+                  </AttachmentActions>
+                </AttachmentItem>
+              ))}
+              
+              <AttachmentUpload>
+                <input 
+                  type="file" 
+                  id="file-upload" 
+                  onChange={handleAttachmentChange} 
+                  style={{ display: 'none' }}
+                />
+                <UploadButton 
+                  type="button" 
+                  disabled={isUploading}
+                  onClick={() => document.getElementById('file-upload').click()}
+                >
+                  {isUploading ? <Spinner size={16} /> : <Plus size={16} />}
+                  <span>{isUploading ? 'Uploading...' : 'Add Attachment'}</span>
+                </UploadButton>
+              </AttachmentUpload>
+            </AttachmentList>
+          </FormGroup>
+        </>
+      )}
+      
       <ButtonGroup>
         <Button type="button" variant="secondary" onClick={handleCancel}>
           Cancel
         </Button>
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || isUploading}>
+          {isSubmitting ? <Spinner size={16} /> : null}
           {isSubmitting ? 'Saving...' : submitButtonText}
         </Button>
       </ButtonGroup>

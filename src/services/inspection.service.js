@@ -17,7 +17,7 @@ export const inspectionService = {
   },
 
   async updateInspectionLevel(id, data) {
-    const response = await api.patch(`/inspection/${id}`, data);
+    const response = await api.put(`/inspection/${id}`, data);
     return response.data;
   },
 
@@ -27,12 +27,12 @@ export const inspectionService = {
   },
 
   async updateSubLevel(inspectionId, subLevelId, data) {
-    const response = await api.patch(`/inspection/${inspectionId}/sub-levels/${subLevelId}`, data);
+    const response = await api.put(`/inspection/${inspectionId}/sublevels/${subLevelId}`, data);
     return response.data;
   },
 
   async reorderSubLevels(inspectionId, data) {
-    const response = await api.post(`/inspection/${inspectionId}/sub-levels/reorder`, data);
+    const response = await api.post(`/inspection/${inspectionId}/sublevels/reorder`, data);
     return response.data;
   },
   async exportInspectionLevels(format, params) {

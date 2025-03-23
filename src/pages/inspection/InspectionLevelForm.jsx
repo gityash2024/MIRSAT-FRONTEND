@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { 
+  ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight,
+  List, PlusCircle, X, HelpCircle, AlertTriangle, CheckCircle, BookOpen, Save
+} from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchQuestionLibrary,
+  addQuestionToLibrary,
+  deleteQuestionFromLibrary
+} from '../../store/slices/questionLibrarySlice';
+import { updateInspectionLevel } from '../../store/slices/inspectionLevelSlice';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -267,6 +277,239 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+// Add new styled components for questionnaire functionality
+const QuestionnaireSection = styled(FormSection)`
+  margin-top: 20px;
+`;
+
+const QuestionItem = styled.div`
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const QuestionTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+`;
+
+const QuestionActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const QuestionForm = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+`;
+
+const OptionsContainer = styled.div`
+  margin-top: 12px;
+`;
+
+const OptionItem = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+`;
+
+const AddButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+  
+  &:hover {
+    background: #3949ab;
+  }
+  
+  &:disabled {
+    background: #9fa8da;
+    cursor: not-allowed;
+  }
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  
+  input {
+    cursor: pointer;
+  }
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+// Add these styled components for the question library
+const QuestionLibraryButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f5ff;
+  border: 1px solid #d0e1ff;
+  color: #1a237e;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #d0e1ff;
+  }
+`;
+
+const QuestionLibraryModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const QuestionLibraryContent = styled.div`
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+`;
+
+const QuestionLibraryHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const QuestionLibraryTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0;
+`;
+
+const QuestionLibraryClose = styled.button`
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  
+  &:focus {
+    outline: none;
+    border-color: #1a237e;
+  }
+`;
+
+const QuestionLibraryList = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const QuestionLibraryItem = styled.div`
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f0f5ff;
+    border-color: #d0e1ff;
+  }
+`;
+
+const QuestionLibraryItemContent = styled.div`
+  margin-bottom: 8px;
+`;
+
+const QuestionLibraryItemFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+`;
+
+const QuestionLibraryEmpty = styled.div`
+  text-align: center;
+  padding: 32px 0;
+  color: #64748b;
+`;
+
+const SaveToLibraryButton = styled.button`
+  background: none;
+  border: none;
+  color: #1a237e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #f0f5ff;
+  }
+`;
+
 // The main SubLevel component that handles a single level item
 const SubLevelRow = ({ 
   level, 
@@ -399,14 +642,48 @@ const NestedSubLevelsList = ({
 
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!id);
   
+  // Get question library from Redux store
+  const { 
+    questions: questionLibrary, 
+    loading: libraryLoading 
+  } = useSelector(state => state.questionLibrary);
+  
   // Add this function for error handling
   const handleError = (error) => {
-    console.error('Error:', error);
-    toast.error(error.message || 'An error occurred');
+    console.error('Error details:', error);
+    
+    let errorMessage = 'An error occurred';
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const { status, data } = error.response;
+      console.error('Error status:', status);
+      console.error('Error response:', data);
+      
+      errorMessage = data?.message || `Server error (${status})`;
+      
+      // Handle 404 errors specifically
+      if (status === 404) {
+        errorMessage = `Resource not found: ${data?.message || 'The requested resource could not be found'}`;
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage = 'Network error: No response received from server';
+    } else if (typeof error === 'string') {
+      // Direct string error
+      errorMessage = error;
+    } else if (error.message) {
+      // Error message property
+      errorMessage = error.message;
+    }
+    
+    toast.error(errorMessage);
   };
   
   const [formData, setFormData] = useState({
@@ -419,12 +696,24 @@ const InspectionLevelForm = () => {
   });
   
   const [errors, setErrors] = useState({});
+  
+  // Add new state for questionnaire
+  const [questions, setQuestions] = useState([]);
+
+  // Question library management
+  const [showQuestionLibrary, setShowQuestionLibrary] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (id) {
       fetchInspectionLevel();
     }
   }, [id]);
+
+  // Add useEffect to load question library from API
+  useEffect(() => {
+    dispatch(fetchQuestionLibrary());
+  }, [dispatch]);
 
   const fetchInspectionLevel = async () => {
     try {
@@ -446,6 +735,9 @@ const InspectionLevelForm = () => {
       };
       
       setFormData(processedData);
+      
+      // Add this line to set questions state from the API response
+      setQuestions(data.questions || []);
     } catch (error) {
       console.error('Error fetching inspection level:', error);
       handleError(error);
@@ -716,8 +1008,30 @@ const InspectionLevelForm = () => {
       newErrors.subLevels = 'All sub-levels must have names and descriptions';
     }
     
+    // Add validation for questions
+    let isValid = true;
+    
+    // Check if all questions have text
+    const emptyQuestions = questions.filter(q => !q.text.trim());
+    if (emptyQuestions.length > 0) {
+      toast.error('All questions must have text');
+      isValid = false;
+    }
+    
+    // Check if all questions of type 'select' or 'multiple_choice' have at least one option
+    const invalidOptions = questions.filter(q => 
+      (q.answerType === 'select' || q.answerType === 'multiple_choice') && 
+      (!Array.isArray(q.options) || q.options.length === 0 || 
+       q.options.some(opt => !opt.trim()))
+    );
+    
+    if (invalidOptions.length > 0) {
+      toast.error('All select and multiple choice questions must have at least one option');
+      isValid = false;
+    }
+    
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   // Submit the form
@@ -731,25 +1045,174 @@ const InspectionLevelForm = () => {
       // Prepare data for API (handle any transformations needed)
       const apiData = {
         ...formData,
-        // If needed, transform the nested sublevel structure for the API
+        subLevels: formData.subLevels,
+        questions: questions
       };
       
       if (id) {
-        await inspectionService.updateInspectionLevel(id, apiData);
-        toast.success('Inspection level updated successfully');
+        console.log('Updating inspection level with ID:', id);
+        console.log('Update payload:', JSON.stringify(apiData, null, 2));
+        
+        // Use Redux action instead of direct service call
+        const resultAction = await dispatch(updateInspectionLevel({ id, data: apiData }));
+        
+        if (updateInspectionLevel.fulfilled.match(resultAction)) {
+          toast.success('Inspection level updated successfully');
+          navigate('/inspection');
+        } else {
+          // Handle rejection
+          const error = resultAction.payload || resultAction.error;
+          throw error;
+        }
       } else {
         await inspectionService.createInspectionLevel(apiData);
         toast.success('Inspection level created successfully');
+        navigate('/inspection');
       }
-      
-      navigate('/inspection');
     } catch (error) {
       console.error('Error saving inspection level:', error);
+      
+      // More detailed error reporting
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+        
+        // Show specific error message from the API if available
+        if (error.response.data && error.response.data.message) {
+          toast.error(`Error: ${error.response.data.message}`);
+        } else {
+          toast.error(`Server error (${error.response.status})`);
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error('No response received:', error.request);
+        toast.error('Network error: No response from server');
+      } else {
+        // Error setting up the request
+        toast.error(`Error: ${error.message || 'Unknown error occurred'}`);
+      }
+      
       handleError(error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Add new handlers for questionnaire functionality
+  const addQuestion = () => {
+    setQuestions([
+      ...questions,
+      {
+        id: Date.now().toString(), // Temporary ID for new questions
+        text: '',
+        answerType: 'yesno',
+        options: [],
+        required: true
+      }
+    ]);
+  };
+  
+  const removeQuestion = (index) => {
+    const newQuestions = [...questions];
+    newQuestions.splice(index, 1);
+    setQuestions(newQuestions);
+  };
+  
+  const updateQuestion = (index, field, value) => {
+    const newQuestions = [...questions];
+    newQuestions[index] = {
+      ...newQuestions[index],
+      [field]: value
+    };
+    
+    // If answer type is changed to something other than 'options', 
+    // clear the options array unless it's a "select" or "multiple_choice" type
+    if (field === 'answerType' && 
+        value !== 'select' && 
+        value !== 'multiple_choice' && 
+        newQuestions[index].options?.length) {
+      newQuestions[index].options = [];
+    }
+    
+    // If changing to a type that needs options, initialize with empty array
+    if (field === 'answerType' && 
+        (value === 'select' || value === 'multiple_choice') && 
+        !Array.isArray(newQuestions[index].options)) {
+      newQuestions[index].options = [''];
+    }
+    
+    setQuestions(newQuestions);
+  };
+  
+  const addOption = (questionIndex) => {
+    const newQuestions = [...questions];
+    if (!Array.isArray(newQuestions[questionIndex].options)) {
+      newQuestions[questionIndex].options = [];
+    }
+    newQuestions[questionIndex].options.push('');
+    setQuestions(newQuestions);
+  };
+  
+  const removeOption = (questionIndex, optionIndex) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options.splice(optionIndex, 1);
+    setQuestions(newQuestions);
+  };
+  
+  const updateOption = (questionIndex, optionIndex, value) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options[optionIndex] = value;
+    setQuestions(newQuestions);
+  };
+
+  // Save question to library
+  const saveQuestionToLibrary = (question) => {
+    // Only save if it has text
+    if (!question.text.trim()) return;
+
+    // Check if this question already exists in the library
+    const existingQuestion = questionLibrary.find(q => q.text.trim() === question.text.trim());
+    
+    if (!existingQuestion) {
+      dispatch(addQuestionToLibrary({
+        text: question.text,
+        answerType: question.answerType,
+        options: question.options || [],
+        required: question.required
+      }))
+        .unwrap()
+        .then(() => {
+          toast.success('Question saved to library');
+        })
+        .catch(error => {
+          toast.error(`Failed to save question: ${error}`);
+        });
+    } else {
+      toast.info('This question is already in your library');
+    }
+  };
+
+  // Add question from library
+  const addQuestionFromLibrary = (libraryQuestion) => {
+    setQuestions([
+      ...questions,
+      {
+        id: Date.now().toString(),
+        text: libraryQuestion.text,
+        answerType: libraryQuestion.answerType,
+        options: [...(libraryQuestion.options || [])],
+        required: libraryQuestion.required
+      }
+    ]);
+    setShowQuestionLibrary(false);
+  };
+
+  // Filter questions based on search
+  const filteredLibraryQuestions = searchQuery.trim() === '' 
+    ? questionLibrary 
+    : questionLibrary.filter(q => 
+        q.text.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   if (initialLoading) {
     return (
@@ -901,6 +1364,123 @@ const InspectionLevelForm = () => {
           {errors.subLevels && <ErrorMessage>{errors.subLevels}</ErrorMessage>}
         </FormSection>
 
+        <QuestionnaireSection>
+          <SectionTitle>
+            <List size={18} />
+            Pre-Inspection Questionnaire
+          </SectionTitle>
+          
+          <SubTitle>
+            Add questions that inspectors must answer before starting the inspection
+          </SubTitle>
+          
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <AddButton type="button" onClick={addQuestion} disabled={loading}>
+              <PlusCircle size={18} /> Add Question
+            </AddButton>
+            
+            <QuestionLibraryButton type="button" onClick={() => setShowQuestionLibrary(true)}>
+              <BookOpen size={18} /> Question Library
+            </QuestionLibraryButton>
+          </div>
+          
+          {questions.map((question, index) => (
+            <QuestionItem key={index}>
+              <QuestionHeader>
+                <QuestionTitle>Question {index + 1}</QuestionTitle>
+                <QuestionActions>
+                  <SaveToLibraryButton 
+                    type="button" 
+                    onClick={() => saveQuestionToLibrary(question)}
+                    title="Save to Question Library"
+                  >
+                    <Save size={14} /> Save
+                  </SaveToLibraryButton>
+                  <IconButton onClick={() => removeQuestion(index)} title="Remove Question">
+                    <X size={18} />
+                  </IconButton>
+                </QuestionActions>
+              </QuestionHeader>
+              
+              <QuestionForm>
+                <FormGroup>
+                  <Label>Question Text <span style={{ color: 'red' }}>*</span></Label>
+                  <Input
+                    type="text"
+                    value={question.text}
+                    onChange={(e) => updateQuestion(index, 'text', e.target.value)}
+                    placeholder="Enter question text"
+                    disabled={loading}
+                    required
+                  />
+                </FormGroup>
+                
+                <FormGroup>
+                  <Label>Answer Type</Label>
+                  <Select
+                    value={question.answerType}
+                    onChange={(e) => updateQuestion(index, 'answerType', e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="yesno">Yes/No</option>
+                    <option value="text">Text Input</option>
+                    <option value="number">Number Input</option>
+                    <option value="select">Single Select</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="compliance">Compliance Status</option>
+                  </Select>
+                </FormGroup>
+                
+                {(question.answerType === 'select' || question.answerType === 'multiple_choice') && (
+                  <OptionsContainer>
+                    <Label>Options <span style={{ color: 'red' }}>*</span></Label>
+                    
+                    {Array.isArray(question.options) && question.options.map((option, optIndex) => (
+                      <OptionItem key={optIndex}>
+                        <Input
+                          type="text"
+                          value={option}
+                          onChange={(e) => updateOption(index, optIndex, e.target.value)}
+                          placeholder={`Option ${optIndex + 1}`}
+                          disabled={loading}
+                        />
+                        <IconButton 
+                          onClick={() => removeOption(index, optIndex)} 
+                          title="Remove Option"
+                          disabled={loading || question.options.length <= 1}
+                        >
+                          <X size={16} />
+                        </IconButton>
+                      </OptionItem>
+                    ))}
+                    
+                    <Button 
+                      type="button" 
+                      onClick={() => addOption(index)}
+                      disabled={loading}
+                      style={{ marginTop: '8px' }}
+                    >
+                      <Plus size={16} /> Add Option
+                    </Button>
+                  </OptionsContainer>
+                )}
+                
+                <FormGroup style={{ marginTop: '10px' }}>
+                  <CheckboxLabel>
+                    <input
+                      type="checkbox"
+                      checked={question.required}
+                      onChange={(e) => updateQuestion(index, 'required', e.target.checked)}
+                      disabled={loading}
+                    />
+                    Required question
+                  </CheckboxLabel>
+                </FormGroup>
+              </QuestionForm>
+            </QuestionItem>
+          ))}
+        </QuestionnaireSection>
+        
         <ButtonGroup>
           <Button 
             type="button" 
@@ -918,6 +1498,57 @@ const InspectionLevelForm = () => {
           </Button>
         </ButtonGroup>
       </Form>
+
+      {/* Question Library Modal */}
+      {showQuestionLibrary && (
+        <QuestionLibraryModal>
+          <QuestionLibraryContent>
+            <QuestionLibraryHeader>
+              <QuestionLibraryTitle>Question Library</QuestionLibraryTitle>
+              <QuestionLibraryClose onClick={() => setShowQuestionLibrary(false)}>
+                <X size={24} />
+              </QuestionLibraryClose>
+            </QuestionLibraryHeader>
+            
+            <SearchInput
+              type="text"
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            
+            {libraryLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Spinner size={24} />
+                <p>Loading question library...</p>
+              </div>
+            ) : filteredLibraryQuestions.length > 0 ? (
+              <QuestionLibraryList>
+                {filteredLibraryQuestions.map((question) => (
+                  <QuestionLibraryItem
+                    key={question._id}
+                    onClick={() => addQuestionFromLibrary(question)}
+                  >
+                    <QuestionLibraryItemContent>
+                      {question.text}
+                    </QuestionLibraryItemContent>
+                    <QuestionLibraryItemFooter>
+                      <span>Type: {question.answerType}</span>
+                      <span>{question.required ? 'Required' : 'Optional'}</span>
+                    </QuestionLibraryItemFooter>
+                  </QuestionLibraryItem>
+                ))}
+              </QuestionLibraryList>
+            ) : (
+              <QuestionLibraryEmpty>
+                {searchQuery.trim() !== '' 
+                  ? 'No matching questions found' 
+                  : 'No saved questions yet. Save questions to your library for reuse.'}
+              </QuestionLibraryEmpty>
+            )}
+          </QuestionLibraryContent>
+        </QuestionLibraryModal>
+      )}
     </PageContainer>
   );
 };

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Layers, Activity, FileText, X, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { 
+  ArrowLeft, Layers, ChevronDown, ChevronRight, Edit, Trash2, 
+  Activity, FileText, AlertTriangle, X, Clipboard, CheckCircle, Info
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
 import SubLevelViewModal from './SubLevelViewModal';
@@ -453,6 +456,69 @@ const ErrorContainer = styled.div`
   }
 `;
 
+// Add new styled components for the questionnaire section
+const QuestionnaireCard = styled(Card)`
+  margin-top: 24px;
+`;
+
+const QuestionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+const QuestionItem = styled.div`
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+`;
+
+const QuestionText = styled.h4`
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  ${props => props.required && `
+    &:after {
+      content: '*';
+      color: #e11d48;
+    }
+  `}
+`;
+
+const QuestionType = styled.div`
+  font-size: 12px;
+  color: #64748b;
+  display: inline-block;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+`;
+
+const OptionsList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+`;
+
+const OptionItem = styled.li`
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:before {
+    content: '•';
+    color: #1a237e;
+  }
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -629,6 +695,19 @@ const InspectionLevelView = () => {
     });
   };
 
+  // Function to get a human-readable question type
+  const getQuestionTypeLabel = (type) => {
+    const types = {
+      'yesno': 'Yes/No Question',
+      'text': 'Text Input',
+      'number': 'Number Input',
+      'select': 'Single Select',
+      'multiple_choice': 'Multiple Choice',
+      'compliance': 'Compliance Status'
+    };
+    return types[type] || type;
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -753,6 +832,42 @@ const InspectionLevelView = () => {
               {renderHierarchy(level.subLevels || [])}
             </LevelHierarchy>
           </Card>
+
+          {/* Add Questionnaire Card */}
+          <QuestionnaireCard>
+            <CardTitle>
+              <Clipboard size={18} />
+              Pre-Inspection Questionnaire
+            </CardTitle>
+            
+            {level.questions && level.questions.length > 0 ? (
+              <QuestionList>
+                {level.questions.map((question, index) => (
+                  <QuestionItem key={question._id || question.id || index}>
+                    <QuestionText required={question.required}>
+                      {index + 1}. {question.text}
+                    </QuestionText>
+                    <QuestionType>
+                      {getQuestionTypeLabel(question.answerType)}
+                      {question.required && ' (Required)'}
+                    </QuestionType>
+                    
+                    {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
+                      question.options && question.options.length > 0 && (
+                        <OptionsList>
+                          {question.options.map((option, optIndex) => (
+                            <OptionItem key={optIndex}>{option}</OptionItem>
+                          ))}
+                        </OptionsList>
+                      )
+                    }
+                  </QuestionItem>
+                ))}
+              </QuestionList>
+            ) : (
+              <p>No pre-inspection questions defined</p>
+            )}
+          </QuestionnaireCard>
         </div>
 
         <div>

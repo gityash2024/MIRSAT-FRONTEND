@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { gsap } from 'gsap';
 import { 
   Search, Filter, PlayCircle, Clock, CheckCircle, XCircle, 
   Activity, Calendar, AlertTriangle, Loader, ChevronLeft, ChevronRight
@@ -16,12 +17,30 @@ import { useAuth } from '../../hooks/useAuth';
 
 const TasksContainer = styled.div`
   padding: 24px;
-  background-color: #f5f7fb;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e5eeff 100%);
   min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(180, 190, 255, 0.15), transparent 40%),
+                radial-gradient(circle at 20% 80%, rgba(120, 140, 255, 0.15), transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
 `;
 
 const PageHeader = styled.div`
   margin-bottom: 24px;
+  opacity: 0;
+  position: relative;
+  z-index: 1;
 `;
 
 const Title = styled.h1`
@@ -29,6 +48,7 @@ const Title = styled.h1`
   font-weight: 600;
   color: #1a237e;
   margin-bottom: 8px;
+  text-shadow: 0 1px 2px rgba(26, 35, 126, 0.1);
 `;
 
 const Description = styled.p`
@@ -41,11 +61,32 @@ const FilterBar = styled.div`
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 24px;
-  background: white;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   align-items: center;
+  opacity: 0;
+  transform: translateY(20px);
+  position: relative;
+  z-index: 1;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.2) 0%, 
+      rgba(255, 255, 255, 0.8) 50%, 
+      rgba(255, 255, 255, 0.2) 100%);
+    border-radius: 12px 12px 0 0;
+  }
 `;
 
 const SearchInput = styled.div`
@@ -56,14 +97,19 @@ const SearchInput = styled.div`
   input {
     width: 100%;
     padding: 10px 16px 10px 40px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border-radius: 8px;
     font-size: 14px;
+    transition: all 0.3s ease;
     
     &:focus {
       outline: none;
-      border-color: #1a237e;
-      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+      border-color: rgba(26, 35, 126, 0.5);
+      box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+      background: rgba(255, 255, 255, 0.8);
     }
   }
   
@@ -81,16 +127,22 @@ const FilterButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #f1f5f9;
-  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   color: #333;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
   
   &:hover {
-    background: #e2e8f0;
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 `;
 
@@ -98,33 +150,63 @@ const TasksGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 24px;
+  opacity: 0;
+  position: relative;
+  z-index: 1;
 `;
 
 const TaskCard = styled.div`
-  background: white;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+  opacity: 0;
+  transform: translateY(30px);
+  position: relative;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.2) 0%, 
+      rgba(255, 255, 255, 0.8) 50%, 
+      rgba(255, 255, 255, 0.2) 100%);
+    border-radius: 12px 12px 0 0;
+    z-index: 1;
+  }
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(26, 35, 126, 0.1);
   }
 `;
 
 const TaskHeader = styled.div`
   padding: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.5);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.3);
 `;
 
 const TaskTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
   color: #1a237e;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const StatusBadge = styled.span`
@@ -135,25 +217,32 @@ const StatusBadge = styled.span`
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   ${props => {
     switch(props.status) {
       case 'pending':
-        return 'background-color: #fff8e1; color: #f57c00;';
+        return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00;';
       case 'in_progress':
-        return 'background-color: #e1f5fe; color: #0288d1;';
+        return 'background-color: rgba(225, 245, 254, 0.8); color: #0288d1;';
       case 'completed':
-        return 'background-color: #e8f5e9; color: #388e3c;';
+        return 'background-color: rgba(232, 245, 233, 0.8); color: #388e3c;';
       case 'incomplete':
-        return 'background-color: #ffebee; color: #d32f2f;';
+        return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f;';
       default:
-        return 'background-color: #f5f5f5; color: #616161;';
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161;';
     }
   }}
 `;
 
 const TaskBody = styled.div`
   padding: 16px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.3);
 `;
 
 const TaskDescription = styled.p`
@@ -182,6 +271,7 @@ const TaskDetailRow = styled.div`
 
 const TaskProgress = styled.div`
   margin: 20px 0;
+  position: relative;
   
   .progress-header {
     display: flex;
@@ -202,24 +292,59 @@ const TaskProgress = styled.div`
   
   .progress-bar {
     height: 8px;
-    background-color: #e0e0e0;
+    background-color: rgba(224, 224, 224, 0.6);
     border-radius: 4px;
     overflow: hidden;
+    position: relative;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
   
   .progress-fill {
     height: 100%;
-    background-color: #1a237e;
+    background: linear-gradient(90deg, rgba(26, 35, 126, 0.8), rgba(63, 81, 181, 0.9));
     border-radius: 4px;
     width: ${props => props.progress}%;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.4) 50%, 
+      rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    animation: shimmer 2s infinite;
+    z-index: 1;
+  }
+  
+  .spark {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(200%); }
   }
 `;
 
 const TaskActions = styled.div`
   padding: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid rgba(241, 245, 249, 0.5);
   display: flex;
   justify-content: space-between;
+  background: rgba(255, 255, 255, 0.3);
+  position: relative;
 `;
 
 const TaskButton = styled.button`
@@ -232,37 +357,105 @@ const TaskButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 80%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.3s;
+  }
+  
+  &:active::after {
+    transform: scale(3);
+    opacity: 0;
+    transition: 0s;
+  }
   
   ${props => props.primary ? `
-    background-color: #1a237e;
+    background: rgba(26, 35, 126, 0.9);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(26, 35, 126, 0.2);
     
     &:hover {
-      background-color: #151b4f;
+      background: rgba(21, 27, 79, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 35, 126, 0.3);
+    }
+    
+    &:active {
+      transform: translateY(0);
     }
   ` : `
-    background-color: #f1f5f9;
+    background: rgba(241, 245, 249, 0.6);
     color: #333;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
     
     &:hover {
-      background-color: #e2e8f0;
+      background: rgba(226, 232, 240, 0.8);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    &:active {
+      transform: translateY(0);
     }
   `}
   
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  svg {
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover svg {
+    transform: scale(1.2);
   }
 `;
 
 const EmptyTasks = styled.div`
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   grid-column: 1 / -1;
+  opacity: 0;
+  transform: translateY(20px);
+  position: relative;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0.2) 0%, 
+      rgba(255, 255, 255, 0.8) 50%, 
+      rgba(255, 255, 255, 0.2) 100%);
+  }
   
   h3 {
     font-size: 18px;
@@ -282,6 +475,7 @@ const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 `;
 
 const Pagination = styled.div`
@@ -290,6 +484,10 @@ const Pagination = styled.div`
   align-items: center;
   gap: 8px;
   margin-top: 32px;
+  opacity: 0;
+  transform: translateY(20px);
+  position: relative;
+  z-index: 1;
   
   button {
     width: 40px;
@@ -301,25 +499,34 @@ const Pagination = styled.div`
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.3);
     
     &.active {
-      background-color: #1a237e;
+      background: rgba(26, 35, 126, 0.9);
       color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 10px rgba(26, 35, 126, 0.2);
     }
     
     &:not(.active) {
-      background-color: #f1f5f9;
       color: #333;
       
       &:hover {
-        background-color: #e2e8f0;
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
     }
     
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
   }
 `;
@@ -329,6 +536,18 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 300px;
+  position: relative;
+  z-index: 1;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const PriorityBadge = styled.span`
@@ -338,19 +557,34 @@ const PriorityBadge = styled.span`
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   
   ${props => {
     switch(props.priority) {
       case 'high':
-        return 'background-color: #ffebee; color: #d32f2f;';
+        return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f;';
       case 'medium':
-        return 'background-color: #fff8e1; color: #f57c00;';
+        return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00;';
       case 'low':
-        return 'background-color: #e8f5e9; color: #2e7d32;';
+        return 'background-color: rgba(232, 245, 233, 0.8); color: #2e7d32;';
       default:
-        return 'background-color: #f5f5f5; color: #616161;';
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161;';
     }
   }}
+`;
+
+const GlassMorphismBlur = styled.div`
+  position: absolute;
+  bottom: -50px;
+  left: -50px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26, 35, 126, 0.05) 0%, rgba(26, 35, 126, 0) 70%);
+  z-index: 0;
 `;
 
 const StatusIcon = ({ status, size = 18 }) => {
@@ -378,14 +612,19 @@ const formatDate = (dateString) => {
 };
 
 const UserTasks = () => {
-  console.log("UserTasks component mounted");
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useAuth();
   
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const headerRef = useRef(null);
+  const filterBarRef = useRef(null);
+  const tasksGridRef = useRef(null);
+  const emptyTasksRef = useRef(null);
+  const paginationRef = useRef(null);
+  const cardRefs = useRef([]);
+  const sparklesTimeouts = useRef([]);
   
   const defaultState = {
     tasks: { results: [], totalPages: 0, page: 1, limit: 10 },
@@ -408,6 +647,141 @@ const UserTasks = () => {
   useEffect(() => {
     loadTasks();
   }, [filters, pagination.page, pagination.limit]);
+  
+  useEffect(() => {
+    animateElements();
+    return () => {
+      sparklesTimeouts.current.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [tasks]);
+  
+  const animateElements = () => {
+    gsap.to(headerRef.current, {
+      opacity: 1,
+      duration: 0.6,
+      ease: "power2.out"
+    });
+    
+    gsap.to(filterBarRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 0.6,
+      delay: 0.2,
+      ease: "power2.out"
+    });
+    
+    if (tasks.results && tasks.results.length > 0) {
+      gsap.to(tasksGridRef.current, {
+        opacity: 1,
+        duration: 0.6,
+        delay: 0.3,
+        ease: "power2.out"
+      });
+      
+      cardRefs.current.forEach((card, index) => {
+        if (card) {
+          gsap.to(card, {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+            delay: 0.4 + (index * 0.05),
+            ease: "power2.out"
+          });
+        }
+      });
+    } else if (emptyTasksRef.current) {
+      gsap.to(emptyTasksRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        delay: 0.3,
+        ease: "power2.out"
+      });
+    }
+    
+    if (tasks.totalPages > 1 && paginationRef.current) {
+      gsap.to(paginationRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        delay: 0.5,
+        ease: "power2.out"
+      });
+    }
+  };
+  
+  const createSparkles = (progressBarElement, progress) => {
+    if (!progressBarElement) return;
+    
+    const existingContainer = progressBarElement.querySelector('.sparks-container');
+    
+    if (existingContainer) {
+      return;
+    }
+    
+    const sparksContainer = document.createElement('div');
+    sparksContainer.className = 'sparks-container';
+    sparksContainer.style.position = 'absolute';
+    sparksContainer.style.top = '0';
+    sparksContainer.style.left = '0';
+    sparksContainer.style.width = '100%';
+    sparksContainer.style.height = '100%';
+    sparksContainer.style.overflow = 'hidden';
+    sparksContainer.style.pointerEvents = 'none';
+    sparksContainer.style.zIndex = '2';
+    
+    progressBarElement.appendChild(sparksContainer);
+    
+    const shimmer = document.createElement('div');
+    shimmer.className = 'shimmer';
+    progressBarElement.appendChild(shimmer);
+    
+    const numSparkles = Math.max(3, Math.floor(progress / 10));
+    let sparkCount = 0;
+    
+    const createSpark = () => {
+      if (sparkCount >= 20) return;
+      
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      
+      const size = Math.random() * 3 + 2;
+      const posX = Math.random() * (progress - 10) + 5;
+      const posY = Math.random() * 6 + 1;
+      
+      spark.style.width = `${size}px`;
+      spark.style.height = `${size}px`;
+      spark.style.left = `${posX}%`;
+      spark.style.top = `${posY}px`;
+      spark.style.opacity = Math.random() * 0.5 + 0.5;
+      
+      sparksContainer.appendChild(spark);
+      sparkCount++;
+      
+      gsap.to(spark, {
+        opacity: 0,
+        scale: Math.random() * 2 + 1,
+        duration: Math.random() * 2 + 1,
+        ease: "power1.out",
+        onComplete: () => {
+          spark.remove();
+          sparkCount--;
+          
+          if (Math.random() > 0.3 && sparksContainer.isConnected) {
+            const timeout = setTimeout(createSpark, Math.random() * 1000 + 500);
+            sparklesTimeouts.current.push(timeout);
+          }
+        }
+      });
+    };
+    
+    for (let i = 0; i < numSparkles; i++) {
+      const timeout = setTimeout(() => {
+        createSpark();
+      }, i * 300);
+      sparklesTimeouts.current.push(timeout);
+    }
+  };
 
   const loadTasks = () => {
     const params = {
@@ -461,11 +835,37 @@ const UserTasks = () => {
   const isPastDue = (deadline) => {
     return new Date(deadline) < new Date() && true;
   };
+  
+  useEffect(() => {
+    cardRefs.current = cardRefs.current.slice(0, tasks.results ? tasks.results.length : 0);
+    
+    sparklesTimeouts.current.forEach(timeout => clearTimeout(timeout));
+    sparklesTimeouts.current = [];
+    
+    const timer = setTimeout(() => {
+      const progressBars = document.querySelectorAll('.progress-fill');
+      progressBars.forEach((bar) => {
+        const progress = parseFloat(bar.style.width);
+        if (!isNaN(progress) && progress > 0) {
+          createSparkles(bar, progress);
+        }
+      });
+    }, 500);
+    
+    sparklesTimeouts.current.push(timer);
+    
+    return () => {
+      sparklesTimeouts.current.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [tasks]);
 
   if (loading && (!tasks.results || tasks.results.length === 0)) {
     return (
       <TasksContainer>
-        <PageHeader>
+        <GlassMorphismBlur style={{ top: '30%', right: '10%', left: 'auto' }} />
+        <GlassMorphismBlur style={{ top: '70%', left: '20%' }} />
+        
+        <PageHeader ref={headerRef}>
           <Title>My Tasks</Title>
           <Description>View and manage all your assigned tasks</Description>
         </PageHeader>
@@ -479,12 +879,16 @@ const UserTasks = () => {
 
   return (
     <TasksContainer>
-      <PageHeader>
+      <GlassMorphismBlur style={{ top: '10%', right: '5%', left: 'auto' }} />
+      <GlassMorphismBlur style={{ top: '50%', left: '10%' }} />
+      <GlassMorphismBlur style={{ bottom: '20%', right: '20%', left: 'auto' }} />
+      
+      <PageHeader ref={headerRef}>
         <Title>My Tasks</Title>
         <Description>View and manage all your assigned tasks</Description>
       </PageHeader>
       
-      <FilterBar>
+      <FilterBar ref={filterBarRef}>
         <SearchInput>
           <Search size={18} />
           <input 
@@ -499,28 +903,44 @@ const UserTasks = () => {
         <ButtonGroup>
           <FilterButton 
             onClick={() => handleFilterClick('all')} 
-            style={{background: activeFilter === 'all' ? '#e3f2fd' : '#f1f5f9'}}
+            style={{
+              background: activeFilter === 'all' 
+                ? 'rgba(227, 242, 253, 0.7)' 
+                : 'rgba(255, 255, 255, 0.5)'
+            }}
           >
             <Filter size={16} />
             All
           </FilterButton>
           <FilterButton 
             onClick={() => handleFilterClick('pending')}
-            style={{background: activeFilter === 'pending' ? '#fff8e1' : '#f1f5f9'}}
+            style={{
+              background: activeFilter === 'pending' 
+                ? 'rgba(255, 248, 225, 0.7)' 
+                : 'rgba(255, 255, 255, 0.5)'
+            }}
           >
             <Clock size={16} />
             Pending
           </FilterButton>
           <FilterButton 
             onClick={() => handleFilterClick('in_progress')}
-            style={{background: activeFilter === 'in_progress' ? '#e1f5fe' : '#f1f5f9'}}
+            style={{
+              background: activeFilter === 'in_progress' 
+                ? 'rgba(225, 245, 254, 0.7)' 
+                : 'rgba(255, 255, 255, 0.5)'
+            }}
           >
             <Activity size={16} />
             In Progress
           </FilterButton>
           <FilterButton 
             onClick={() => handleFilterClick('completed')}
-            style={{background: activeFilter === 'completed' ? '#e8f5e9' : '#f1f5f9'}}
+            style={{
+              background: activeFilter === 'completed' 
+                ? 'rgba(232, 245, 233, 0.7)' 
+                : 'rgba(255, 255, 255, 0.5)'
+            }}
           >
             <CheckCircle size={16} />
             Completed
@@ -529,9 +949,9 @@ const UserTasks = () => {
       </FilterBar>
       
       {tasks.results && tasks.results.length > 0 ? (
-        <TasksGrid>
-          {tasks.results.map((task) => (
-            <TaskCard key={task._id}>
+        <TasksGrid ref={tasksGridRef}>
+          {tasks.results.map((task, index) => (
+            <TaskCard key={task._id} ref={el => cardRefs.current[index] = el}>
               <TaskHeader>
                 <TaskTitle>{task.title}</TaskTitle>
                 <StatusBadge status={task.status}>
@@ -572,7 +992,10 @@ const UserTasks = () => {
                     <span className="progress-percentage">{task.overallProgress || 0}%</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill"></div>
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${task.overallProgress || 0}%` }}
+                    ></div>
                   </div>
                 </TaskProgress>
               </TaskBody>
@@ -615,14 +1038,14 @@ const UserTasks = () => {
           ))}
         </TasksGrid>
       ) : (
-        <EmptyTasks>
+        <EmptyTasks ref={emptyTasksRef}>
           <h3>No tasks found</h3>
           <p>No tasks match your current filters. Try adjusting your search criteria.</p>
         </EmptyTasks>
       )}
       
       {tasks.totalPages > 1 && (
-        <Pagination>
+        <Pagination ref={paginationRef}>
           <button 
             disabled={pagination.page <= 1}
             onClick={() => handlePageChange(pagination.page - 1)}

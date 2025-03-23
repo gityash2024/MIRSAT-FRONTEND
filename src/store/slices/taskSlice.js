@@ -77,20 +77,37 @@ export const uploadTaskAttachment = createAsyncThunk(
   'tasks/uploadTaskAttachment',
   async ({ id, file }, { rejectWithValue }) => {
     try {
+      console.log('uploadTaskAttachment called with:', { id, file });
+      if (!file) {
+        throw new Error('No file provided');
+      }
+      
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await api.post(`/tasks/${id}/attachments`, formData, {
+      let url = '/upload'; // Default upload endpoint if no task ID
+      
+      // If we have a task ID, use the task-specific upload endpoint
+      if (id) {
+        url = `/tasks/${id}/attachments`;
+      }
+      
+      console.log('Uploading to:', url);
+      
+      const response = await api.post(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
+      console.log('Upload response:', response.data);
       toast.success('File uploaded successfully');
       return response.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error uploading file');
-      return rejectWithValue(error.response?.data);
+      console.error('Upload error in thunk:', error);
+      const errorMsg = error.response?.data?.message || 'Error uploading file';
+      toast.error(errorMsg);
+      return rejectWithValue({ message: errorMsg });
     }
   }
 );
