@@ -171,7 +171,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     department: '',
     address: '',
     emergencyContact: '',
-    status: 'active',
+    isActive: true,
     permissions: [],
     password: '',
     confirmPassword: '',
@@ -183,7 +183,16 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (formData.role) {
+    if (initialData._id) {
+      setFormData({
+        ...initialData,
+        status: initialData.isActive ? 'active' : 'inactive'
+      });
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (formData.role && !initialData._id) {
       let newPermissions = [];
       
       if (formData.role === ROLES.ADMIN) {
@@ -213,7 +222,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     if (!formData.phone) newErrors.phone = 'Phone number is required';
     if (!formData.role) newErrors.role = 'Role is required';
     
-    if (!initialData.id) {
+    if (!initialData._id) {
       if (!formData.password) newErrors.password = 'Password is required';
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
@@ -228,7 +237,17 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     e.preventDefault();
     if (validateForm()) {
       const submitData = { ...formData };
+      
+      // Convert status to isActive boolean
+      if (submitData.status === 'active') {
+        submitData.isActive = true;
+      } else if (submitData.status === 'inactive') {
+        submitData.isActive = false;
+      }
+      
       delete submitData.confirmPassword;
+      delete submitData.status;
+      
       onSubmit(submitData);
     }
   };
@@ -268,7 +287,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             <PermissionItem key={value}>
               <input
                 type="checkbox"
-                checked={formData.permissions.includes(value)}
+                checked={formData.permissions?.includes(value)}
                 onChange={() => handlePermissionChange(value)}
                 disabled={formData.role === ROLES.ADMIN}
               />
@@ -281,6 +300,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   };
 
   const showPermissionsSection = formData.role === ROLES.MANAGER;
+  const isEditMode = !!initialData._id;
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -290,7 +310,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="text"
             name="name"
-            value={formData.name}
+            value={formData.name || ''}
             onChange={handleChange}
             placeholder="Enter full name"
           />
@@ -302,7 +322,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="email"
             name="email"
-            value={formData.email}
+            value={formData.email || ''}
             onChange={handleChange}
             placeholder="Enter email address"
           />
@@ -316,7 +336,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="tel"
             name="phone"
-            value={formData.phone}
+            value={formData.phone || ''}
             onChange={handleChange}
             placeholder="Enter phone number"
           />
@@ -327,7 +347,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>Role</Label>
           <Select
             name="role"
-            value={formData.role}
+            value={formData.role || ''}
             onChange={handleChange}
           >
             {Object.entries(ROLES).map(([key, value]) => (
@@ -345,7 +365,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>Department</Label>
           <Select
             name="department"
-            value={formData.department}
+            value={formData.department || ''}
             onChange={handleChange}
           >
             <option value="">Select Department</option>
@@ -360,7 +380,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>Status</Label>
           <Select
             name="status"
-            value={formData.status}
+            value={formData.status || (formData.isActive ? 'active' : 'inactive')}
             onChange={handleChange}
           >
             <option value="active">Active</option>
@@ -370,7 +390,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         </FormGroup>
       </FormRow>
 
-      {!initialData.id && (
+      {!isEditMode && (
         <FormRow>
           <FormGroup>
             <Label>Password</Label>
@@ -378,7 +398,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               <PasswordInput
                 type={showPassword ? "text" : "password"}
                 name="password"
-                value={formData.password}
+                value={formData.password || ''}
                 onChange={handleChange}
                 placeholder="Enter password"
               />
@@ -395,7 +415,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               <PasswordInput
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
-                value={formData.confirmPassword}
+                value={formData.confirmPassword || ''}
                 onChange={handleChange}
                 placeholder="Confirm password"
               />
@@ -414,7 +434,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="text"
             name="address"
-            value={formData.address}
+            value={formData.address || ''}
             onChange={handleChange}
             placeholder="Enter address"
           />
@@ -425,7 +445,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="text"
             name="emergencyContact"
-            value={formData.emergencyContact}
+            value={formData.emergencyContact || ''}
             onChange={handleChange}
             placeholder="Enter emergency contact"
           />

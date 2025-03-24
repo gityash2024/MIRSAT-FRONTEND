@@ -128,15 +128,6 @@ const Button = styled.button`
   `}
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-  color: #1a237e;
-`;
-
-// Create UserEditSkeleton component
 const UserEditSkeleton = () => (
   <PageContainer>
     <Skeleton.Base width="120px" height="18px" margin="0 0 24px 0" />
@@ -147,7 +138,6 @@ const UserEditSkeleton = () => (
     </Header>
     
     <div style={{ display: 'grid', gap: '24px' }}>
-      {/* User Details Section */}
       <div style={{ display: 'grid', gap: '20px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
           <Skeleton.Form.Field>
@@ -174,7 +164,6 @@ const UserEditSkeleton = () => (
         </div>
       </div>
       
-      {/* Permissions Section */}
       <div>
         <Skeleton.Base width="200px" height="20px" margin="0 0 20px 0" />
         
@@ -194,7 +183,6 @@ const UserEditSkeleton = () => (
         ))}
       </div>
       
-      {/* Buttons */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
         <Skeleton.Button width="100px" />
         <Skeleton.Button width="120px" />
@@ -213,13 +201,13 @@ const UserEdit = () => {
   const [confirmData, setConfirmData] = useState(null);
 
   useEffect(() => {
+    if (!hasPermission(PERMISSIONS.EDIT_USER)) {
+      navigate('/users');
+      return;
+    }
+
     fetchUser();
   }, [userId]);
-
-  if (!hasPermission(PERMISSIONS.EDIT_USER)) {
-    navigate('/users');
-    return null;
-  }
 
   const fetchUser = async () => {
     try {
