@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
 import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
@@ -12,6 +12,7 @@ import Switch from '../../../components/ui/Switch';
 import DatePicker from '../../../components/ui/DatePicker';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
+import { fetchAssets } from '../../../store/slices/assetSlice';
 import Skeleton from '../../../components/ui/Skeleton';
 
 const Form = styled.form`
@@ -513,6 +514,7 @@ const TaskForm = ({
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
   const usersLoading = useSelector(state => state.users.loading);
   const inspectionLevelsLoading = useSelector(state => state.inspectionLevels?.loading);
+  const { assets = [] } = useSelector(state => state.assets || { assets: [] });
   
   const initialLoading = (usersProp.length === 0 && usersLoading) || 
                          (inspectionLevelsProp.length === 0 && inspectionLevelsLoading);
@@ -524,12 +526,13 @@ const TaskForm = ({
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     description: initialData.description || '',
-    assignedTo: initialData.assignedTo?.map(user => user._id) || [],
+    assignedTo: initialData.assignedTo?.map(user => typeof user === 'object' ? user._id : user) || [],
     status: initialData.status || 'pending',
     priority: initialData.priority || 'medium',
-    deadline: initialData.deadline ? new Date(initialData.deadline) : new Date(),
+    deadline: initialData.deadline ? new Date(initialData.deadline) : null,
     location: initialData.location || '',
-    inspectionLevel: initialData.inspectionLevel?._id || '',
+    inspectionLevel: initialData.inspectionLevel?._id || initialData.inspectionLevel || '',
+    asset: initialData.asset?._id || initialData.asset || '',
     isActive: initialData.isActive !== undefined ? initialData.isActive : true,
     attachments: initialData.attachments || []
   });
@@ -558,11 +561,13 @@ const TaskForm = ({
         location: formData.location,
         assignedTo: formData.assignedTo,
         inspectionLevel: formData.inspectionLevel,
+        asset: formData.asset || null, // Ensure we handle empty string case properly
         isActive: formData.isActive,
         attachments: formData.attachments
       };
       
       console.log('Submitting task data:', taskData);
+      console.log('Asset being submitted:', taskData.asset);
       
       // Call API to create or update task
       if (initialData._id) {
@@ -702,50 +707,28 @@ const TaskForm = ({
   };
   
   useEffect(() => {
-    // Fetch users if not provided as props
-    if (usersProp.length === 0) {
-      // Add a flag to prevent multiple calls
-      const localStorageKey = 'usersFetchInitiated';
-      const fetchInitiated = sessionStorage.getItem(localStorageKey);
-      
-      if (!fetchInitiated) {
-        sessionStorage.setItem(localStorageKey, 'true');
-        dispatch(fetchUsers())
-          .unwrap()
-          .catch(error => {
-            console.error('Error fetching users:', error);
-          })
-          .finally(() => {
-            // Reset after 10 seconds to allow refetching if needed
-            setTimeout(() => {
-              sessionStorage.removeItem(localStorageKey);
-            }, 10000);
-          });
-      }
+    if (users.length === 0 && usersProp.length === 0) {
+      dispatch(fetchUsers());
     }
-    
-    // Fetch inspection levels if not provided as props
-    if (inspectionLevelsProp.length === 0) {
-      // Add a flag to prevent multiple calls
-      const localStorageKey = 'inspectionLevelsFetchInitiated';
-      const fetchInitiated = sessionStorage.getItem(localStorageKey);
-      
-      if (!fetchInitiated) {
-        sessionStorage.setItem(localStorageKey, 'true');
-        dispatch(fetchInspectionLevels())
-          .unwrap()
-          .catch(error => {
-            console.error('Error fetching inspection levels:', error);
-          })
-          .finally(() => {
-            // Reset after 10 seconds to allow refetching if needed
-            setTimeout(() => {
-              sessionStorage.removeItem(localStorageKey);
-            }, 10000);
-          });
-      }
+    if (inspectionLevels?.length === 0 && inspectionLevelsProp.length === 0) {
+      dispatch(fetchInspectionLevels());
     }
-  }, [usersProp.length, inspectionLevelsProp.length, dispatch]);
+    // Always fetch assets to ensure we have the latest data
+    dispatch(fetchAssets());
+  }, [dispatch, users.length, inspectionLevels?.length, usersProp.length, inspectionLevelsProp.length]);
+  
+  // Debug initial values
+  useEffect(() => {
+    console.log('TaskForm initialData:', initialData);
+    console.log('Asset ID from initial data:', initialData.asset?._id || initialData.asset);
+    console.log('Current formData:', formData);
+  }, []);
+  
+  // Monitor asset field specifically
+  useEffect(() => {
+    console.log('Asset field updated in form:', formData.asset);
+    console.log('Available assets:', assets);
+  }, [formData.asset, assets]);
   
   useEffect(() => {
     // Handle clicks outside of user dropdown
@@ -775,16 +758,27 @@ const TaskForm = ({
     <Form onSubmit={handleSubmit}>
       <FormRow>
         <FormGroup>
-          <Label>Title</Label>
+          <Label>Title *</Label>
           <Input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Enter task title"
-            required
           />
           {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
+        </FormGroup>
+        <FormGroup>
+          <Label>Priority *</Label>
+          <Select
+            name="priority"
+            value={formData.priority}
+            onChange={handleChange}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </Select>
         </FormGroup>
       </FormRow>
       
@@ -802,19 +796,6 @@ const TaskForm = ({
       </FormGroup>
       
       <FormRow>
-        <FormGroup>
-          <Label>Priority</Label>
-          <Select
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </Select>
-        </FormGroup>
-        
         <FormGroup>
           <Label>Deadline</Label>
           <DatePicker
@@ -890,14 +871,13 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
-          <Label>Inspection Level</Label>
+          <Label>Inspection Level *</Label>
           <Select
             name="inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
-            required
           >
-            <option value="">Select Inspection Level</option>
+            <option value="">Select inspection level</option>
             {inspectionLevels?.map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}
@@ -905,6 +885,26 @@ const TaskForm = ({
             ))}
           </Select>
           {errors.inspectionLevel && <ErrorMessage>{errors.inspectionLevel}</ErrorMessage>}
+        </FormGroup>
+        <FormGroup>
+          <Label>Asset</Label>
+          <Select
+            name="asset"
+            value={formData.asset}
+            onChange={handleChange}
+          >
+            <option value="">Select asset (optional)</option>
+            {assets.length > 0 ? (
+              assets.map(asset => (
+                <option key={asset._id} value={asset._id}>
+                  {asset.displayName} ({asset.uniqueId} - {asset.type})
+                </option>
+              ))
+            ) : (
+              <option value="">Loading assets...</option>
+            )}
+          </Select>
+          {formData.asset && <small>Selected Asset ID: {formData.asset}</small>}
         </FormGroup>
       </FormRow>
 

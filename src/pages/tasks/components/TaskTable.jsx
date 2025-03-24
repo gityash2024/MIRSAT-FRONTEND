@@ -428,6 +428,9 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       } else if (sortConfig.key === 'deadline') {
         aValue = new Date(a.deadline || 0).getTime();
         bValue = new Date(b.deadline || 0).getTime();
+      } else if (sortConfig.key === 'asset') {
+        aValue = a.asset?.displayName || a.asset?.name || '';
+        bValue = b.asset?.displayName || b.asset?.name || '';
       }
 
       if (aValue < bValue) {
@@ -548,6 +551,20 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                   )}
                 </HeaderContent>
               </th>
+              <th onClick={() => handleSort('asset')}>
+                <HeaderContent>
+                  <HeaderText>Asset</HeaderText>
+                  {sortConfig.key === 'asset' && (
+                    <SortIcon>
+                      {sortConfig.direction === 'asc' ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </SortIcon>
+                  )}
+                </HeaderContent>
+              </th>
               <th>Sublevels</th>
               <th onClick={() => handleSort('assignedTo')}>
                 <HeaderContent>
@@ -628,6 +645,14 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                 <td>{task.title}</td>
                 <td>{task.inspectionLevel?.name || '--'}</td>
+                <td>
+                  {task.asset ? (
+                    <span title={`${task.asset.displayName || task.asset.name} - ${task.asset.type || ''}`}>
+                      {task.asset.displayName || task.asset.name || 'Unknown'} 
+                      {task.asset.uniqueId && <small style={{ color: '#666', display: 'block' }}>{task.asset.uniqueId}</small>}
+                    </span>
+                  ) : '--'}
+                </td>
                 <td>
                   {task.inspectionLevel?.subLevels?.length > 0 ? (
                     <ActionButton onClick={() => handleViewSublevels(task)}>

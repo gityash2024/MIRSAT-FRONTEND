@@ -1,8 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { X, Check } from 'lucide-react';
 import { filterOptions } from '../../../constants/taskFilterOptions';
+import { fetchAssets } from '../../../store/slices/assetSlice';
+import { useEffect } from 'react';
 
 const FilterContainer = styled.div`
   display: grid;
@@ -138,8 +140,35 @@ const Button = styled.button`
 `;
 
 const TaskFilter = React.memo(({ filters, setFilters }) => {
-  const inspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
-  const users = useSelector(state => state.users.users);
+  const dispatch = useDispatch();
+  const inspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results) || [];
+  const users = useSelector(state => state.users.users) || [];
+  const assets = useSelector(state => state.assets?.assets) || [];
+
+  // Ensure all filter properties are arrays
+  useEffect(() => {
+    const filterKeys = ['status', 'priority', 'assignedTo', 'inspectionLevel', 'asset'];
+    const updatedFilters = { ...filters };
+    let needsUpdate = false;
+
+    filterKeys.forEach(key => {
+      if (!Array.isArray(updatedFilters[key])) {
+        updatedFilters[key] = [];
+        needsUpdate = true;
+      }
+    });
+
+    if (needsUpdate) {
+      setFilters(updatedFilters);
+    }
+  }, []);
+
+  // Fetch assets if not available
+  useEffect(() => {
+    if (assets?.length === 0) {
+      dispatch(fetchAssets());
+    }
+  }, [dispatch, assets?.length]);
 
   const inspectionLevelOptions = inspectionLevels?.map(level => ({
     value: level._id,
@@ -151,20 +180,27 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
     label: user.name
   }));
 
+  const assetOptions = assets?.map(asset => ({
+    value: asset._id,
+    label: `${asset.displayName} (${asset.uniqueId})`
+  }));
+
   const handleFilterChange = (category, value) => {
+    const currentFilters = Array.isArray(filters[category]) ? filters[category] : [];
     const updatedFilters = {
       ...filters,
-      [category]: filters[category]?.includes(value)
-        ? filters[category].filter(item => item !== value)
-        : [...(filters[category] || []), value]
+      [category]: currentFilters.includes(value)
+        ? currentFilters.filter(item => item !== value)
+        : [...currentFilters, value]
     };
     setFilters(updatedFilters);
   };
 
   const removeFilter = (category, value) => {
+    const currentFilters = Array.isArray(filters[category]) ? filters[category] : [];
     const updatedFilters = {
       ...filters,
-      [category]: filters[category]?.filter(item => item !== value) || []
+      [category]: currentFilters.filter(item => item !== value)
     };
     setFilters(updatedFilters);
   };
@@ -178,15 +214,17 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
   };
 
   const getFilterLabel = (category, value) => {
-    const options = category === 'inspectionLevel' 
-      ? inspectionLevelOptions 
-      : category === 'assignedTo'
-        ? userOptions
-        : filterOptions[category];
+    const options = 
+      category === 'inspectionLevel' ? inspectionLevelOptions 
+      : category === 'assignedTo' ? userOptions
+      : category === 'asset' ? assetOptions
+      : filterOptions[category];
     return options?.find(opt => opt.value === value)?.label || value;
   };
 
-  const hasActiveFilters = Object.values(filters).some(arr => arr?.length > 0);
+  const hasActiveFilters = Object.values(filters).some(val => 
+    Array.isArray(val) && val.length > 0
+  );
 
   return (
     <div>
@@ -257,19 +295,40 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
             ))}
           </CheckboxGroup>
         </FilterGroup>
+        
+        <FilterGroup>
+          <h3>Asset</h3>
+          <CheckboxGroup>
+            {assetOptions?.map(option => (
+              <CheckboxLabel key={option.value}>
+                <input
+                  type="checkbox"
+                  checked={filters.asset?.includes(option.value) || false}
+                  onChange={() => handleFilterChange('asset', option.value)}
+                />
+                <CustomCheckbox $checked={filters.asset?.includes(option.value)}>
+                  {filters.asset?.includes(option.value) && (
+                    <Check size={12} color="white" />
+                  )}
+                </CustomCheckbox>
+                <CheckboxText>{option.label}</CheckboxText>
+              </CheckboxLabel>
+            ))}
+          </CheckboxGroup>
+        </FilterGroup>
       </FilterContainer>
 
       {hasActiveFilters && (
         <ActiveFilters>
           {Object.entries(filters)?.map(([category, values]) =>
-            values?.map(value => (
+            Array.isArray(values) ? values.map(value => (
               <FilterTag key={`${category}-${value}`}>
                 {getFilterLabel(category, value)}
                 <button onClick={() => removeFilter(category, value)}>
                   <X size={12} />
                 </button>
               </FilterTag>
-            ))
+            )) : null
           )}
         </ActiveFilters>
       )}

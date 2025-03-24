@@ -7,6 +7,7 @@ import TaskForm from './components/TaskForm';
 import { getTaskById } from '../../store/slices/taskSlice';
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
+import { fetchAssets } from '../../store/slices/assetSlice';
 import { toast } from 'react-hot-toast';
 
 const PageContainer = styled.div`
@@ -65,37 +66,50 @@ const TaskEdit = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentTask: task, loading } = useSelector((state) => state.tasks);
-  const { users, loading: usersLoading } = useSelector((state) => state.users);
-  const { levels: inspectionLevels, loading: inspectionLevelsLoading } = useSelector((state) => state.inspectionLevels);
-
+  
+  const { users } = useSelector(state => state.users);
+  const inspectionLevels = useSelector(state => state.inspectionLevels.levels);
+  const { currentTask: task, loading } = useSelector(state => state.tasks);
+  const { assets, loading: assetsLoading } = useSelector(state => state.assets);
+  
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        await Promise.all([
-          dispatch(getTaskById(taskId)).unwrap(),
-          dispatch(fetchUsers()).unwrap(),
-          dispatch(fetchInspectionLevels()).unwrap()
-        ]);
-      } catch (error) {
-        toast.error('Failed to load required data');
-        navigate('/tasks');
-      }
-    };
-
     loadInitialData();
-  }, [taskId, dispatch, navigate]);
+  }, [taskId]);
+  
+  const loadInitialData = async () => {
+    // Load all required data
+    try {
+      await Promise.all([
+        dispatch(getTaskById(taskId)).unwrap(),
+        dispatch(fetchUsers()).unwrap(),
+        dispatch(fetchInspectionLevels()).unwrap(),
+        dispatch(fetchAssets()).unwrap()
+      ]);
+    } catch (error) {
+      console.error('Error loading task data:', error);
+    }
+  };
 
+  // Debug effect
+  useEffect(() => {
+    if (task?.data) {
+      console.log('Task data in edit:', task.data);
+      console.log('Asset in task:', task.data.asset);
+    }
+    
+    if (assets?.length > 0) {
+      console.log('Available assets:', assets);
+    }
+  }, [task, assets]);
+  
   const handleCancel = () => {
     navigate(`/tasks/${taskId}`);
   };
-
-  if (loading || usersLoading || inspectionLevelsLoading || !task?.data) {
+  
+  if (loading || !task) {
     return (
       <PageContainer>
-        <LoadingContainer>
-          Loading task details...
-        </LoadingContainer>
+        <div>Loading...</div>
       </PageContainer>
     );
   }
@@ -107,9 +121,10 @@ const TaskEdit = () => {
     assignedTo: task.data.assignedTo || [],
     status: task.data.status || 'pending',
     priority: task.data.priority || 'medium',
-    deadline: task.data.deadline ? new Date(task.data.deadline).toISOString().split('T')[0] : '',
+    deadline: task.data.deadline ? new Date(task.data.deadline) : '',
     location: task.data.location || '',
-    inspectionLevel: task.data.inspectionLevel || null,
+    inspectionLevel: task.data.inspectionLevel?._id || task.data.inspectionLevel || null,
+    asset: task.data.asset?._id || task.data.asset || null,
     isActive: task.data.isActive ?? true,
     attachments: task.data.attachments?.map(attachment => ({
       ...attachment,

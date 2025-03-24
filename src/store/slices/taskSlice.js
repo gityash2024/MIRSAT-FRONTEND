@@ -12,6 +12,7 @@ const initialState = {
     priority: [],
     assignedTo: [],
     inspectionLevel: [],
+    asset: [],
     search: ''
   },
   pagination: {

@@ -757,11 +757,7 @@ const TaskView = () => {
   const hasValidTaskData = taskData && typeof taskData === 'object';
   const hasValidAssignees = Array.isArray(taskData.assignedTo);
   const hasValidAsset = taskData.asset && typeof taskData.asset === 'object';
-  const hasValidComments = Array.isArray(taskData.comments);
-  const hasValidSubLevels = Array.isArray(taskData.inspectionLevel?.subLevels);
-  const hasValidAttachments = Array.isArray(taskData.attachments);
 
-  // These helper functions need to be defined AFTER taskData is initialized
   const getSubLevelStatus = (subLevelId) => {
     if (!taskData || !taskData.progress) return 'pending';
     const progressItem = taskData.progress.find(p => p && p.subLevelId === subLevelId);
@@ -811,15 +807,18 @@ const TaskView = () => {
         return type;
     }
   };
+
+  // Ensure all required data is available before rendering
+  const hasValidTask = task && typeof task === 'object';
+  const hasValidComments = Array.isArray(task?.comments);
+  const hasValidSubLevels = Array.isArray(task?.inspectionLevel?.subLevels);
+  const hasValidAttachments = Array.isArray(task?.attachments);
   
   // Debug info
   console.log('Task validation:', { 
-    hasValidTask: hasValidTaskData, 
-    hasValidComments, 
-    hasValidSubLevels, 
-    hasValidAttachments 
+    hasValidTask, hasValidComments, hasValidSubLevels, hasValidAttachments 
   });
-
+  
   return (
     <PageContainer>
       <Header>
@@ -829,7 +828,7 @@ const TaskView = () => {
             Back to Tasks
           </BackButton>
           <HeaderContent>
-            <PageTitle>{getTaskDataOrDefault(taskData, 'title', 'Untitled Task')}</PageTitle>
+            <PageTitle>{taskData.title || 'Untitled Task'}</PageTitle>
             <SubTitle>Task Details and Progress</SubTitle>
           </HeaderContent>
           {hasPermission(PERMISSIONS.EDIT_TASKS) && (
@@ -867,7 +866,7 @@ const TaskView = () => {
               <BarChart size={20} />
               Overview
             </CardTitle>
-            <Description>{getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
+            <Description>{taskData.description || 'No description provided'}</Description>
 
             <MetaGrid>
               <MetaItem>
@@ -878,13 +877,13 @@ const TaskView = () => {
               <MetaItem>
                 <AlertTriangle size={16} className="icon" />
                 <strong>Priority:</strong>
-                <TaskPriority priority={getTaskDataOrDefault(taskData, 'priority', 'medium')} />
+                <TaskPriority priority={taskData.priority || 'medium'} />
               </MetaItem>
               <MetaItem>
                 <Clock size={16} className="icon" />
                 <strong>Status:</strong>
                 <TaskStatus 
-                  status={getTaskDataOrDefault(taskData, 'status', 'pending')}
+                  status={taskData.status || 'pending'}
                   onStatusChange={handleStatusUpdate}
                   canUpdate={hasPermission(PERMISSIONS.UPDATE_TASK_STATUS)}
                 />
@@ -1007,7 +1006,7 @@ const TaskView = () => {
               </CommentInput>
 
               <CommentList>
-                {hasValidComments && taskData.comments.length > 0 ? (
+                {Array.isArray(taskData.comments) && taskData.comments.length > 0 ? (
                   taskData.comments.map((comment, index) => (
                     <Comment key={index}>
                       <div className="header">
@@ -1031,7 +1030,8 @@ const TaskView = () => {
           <Card>
             <CardTitle>Inspection Milestones</CardTitle>
             <MilestoneTimeline>
-              {hasValidSubLevels && taskData.inspectionLevel.subLevels.map((level) => {
+              {Array.isArray(getTaskDataOrDefault(taskData, 'inspectionLevel.subLevels', [])) && 
+               taskData.inspectionLevel.subLevels.map((level) => {
                 const status = getSubLevelStatus(level._id);
                 return (
                   <MilestoneItem key={level._id}>
@@ -1092,7 +1092,7 @@ const TaskView = () => {
                 </div>
               )}
             </CardTitle>
-            {hasValidAttachments && taskData.attachments.length > 0 ? (
+            {Array.isArray(taskData.attachments) && taskData.attachments.length > 0 ? (
               taskData.attachments.map((attachment, index) => (
                 <div
                   key={index}
@@ -1123,7 +1123,7 @@ const TaskView = () => {
                     </Button>
                     {hasPermission(PERMISSIONS.UPDATE_TASKS) && (
                       <Button
-                        $variant="danger"
+                        variant="danger"
                         onClick={() => handleDeleteAttachment(attachment._id)}
                       >
                         <Trash2 size={16} />

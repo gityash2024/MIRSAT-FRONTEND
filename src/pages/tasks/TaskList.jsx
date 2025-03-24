@@ -6,6 +6,7 @@ import { Plus, Filter, Search, Download } from 'lucide-react';
 import TaskFilter from './components/TaskFilter';
 import TaskTable from './components/TaskTable';
 import { fetchTasks, setFilters, setPagination } from '../../store/slices/taskSlice';
+import { fetchAssets } from '../../store/slices/assetSlice';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 
@@ -121,6 +122,16 @@ const TaskList = () => {
   }
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (!filters?.asset) {
+      dispatch(setFilters({ ...(filters || {}), asset: [] }));
+    }
+    
+    dispatch(fetchAssets());
+    
+    loadTasks();
+  }, []);
 
   useEffect(() => {
     loadTasks();
