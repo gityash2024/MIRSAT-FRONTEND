@@ -15,6 +15,7 @@ import TaskAssignee from './components/TaskAssignee';
 import { getTaskById, addTaskComment, updateTaskStatus } from '../../store/slices/taskSlice';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -115,6 +116,15 @@ const MainContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+`;
+
+const Sidebar = styled.div`
+  width: 350px;
+  flex-shrink: 0;
+  
+  @media (max-width: 1024px) {
+    width: 100%;
+  }
 `;
 
 const Card = styled.div`
@@ -438,39 +448,171 @@ const Badge = styled.span`
   font-size: 12px;
 `;
 
+// Add TaskViewSkeleton component
+const TaskViewSkeleton = () => (
+  <PageContainer>
+    <Header>
+      <HeaderTop>
+        <BackButton disabled>
+          <Skeleton.Circle size="18px" />
+          <Skeleton.Base width="100px" height="16px" />
+        </BackButton>
+        <HeaderContent>
+          <Skeleton.Base width="70%" height="28px" margin="0 0 8px 0" />
+          <Skeleton.Base width="40%" height="16px" />
+        </HeaderContent>
+        <Skeleton.Button width="120px" height="40px" />
+      </HeaderTop>
+      
+      <HeaderFilters>
+        <Skeleton.Circle size="16px" />
+        <Skeleton.Base width="200px" height="38px" radius="6px" />
+      </HeaderFilters>
+    </Header>
+
+    <ContentGrid>
+      <MainContent>
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Skeleton.Circle size="20px" />
+            <Skeleton.Base width="120px" height="20px" />
+          </div>
+          <Skeleton.Base width="90%" height="60px" margin="0 0 24px 0" />
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {Array(3).fill().map((_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width="80%" height="24px" />
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Skeleton.Circle size="20px" />
+              <Skeleton.Base width="150px" height="20px" />
+            </div>
+            <Skeleton.Base width="100%" height="200px" radius="8px" />
+          </div>
+          
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Skeleton.Circle size="20px" />
+              <Skeleton.Base width="180px" height="20px" />
+            </div>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {Array(3).fill().map((_, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                  <Skeleton.Circle size="40px" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <Skeleton.Base width="120px" height="16px" />
+                      <Skeleton.Base width="80px" height="14px" />
+                    </div>
+                    <Skeleton.Base width="100%" height="40px" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+              <Skeleton.Base width="85%" height="42px" radius="8px" />
+              <Skeleton.Button width="15%" height="42px" />
+            </div>
+          </div>
+        </Card>
+      </MainContent>
+      
+      <Sidebar>
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Skeleton.Circle size="20px" />
+            <Skeleton.Base width="120px" height="20px" />
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            {Array(3).fill().map((_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width="70%" height="16px" />
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', marginTop: '24px' }}>
+            <Skeleton.Circle size="20px" />
+            <Skeleton.Base width="140px" height="20px" />
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            {Array(2).fill().map((_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width={`${120 + Math.random() * 60}px`} height="16px" />
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <Skeleton.Base width="100%" height="150px" radius="8px" />
+          </div>
+          
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Skeleton.Circle size="20px" />
+              <Skeleton.Base width="150px" height="20px" />
+            </div>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {Array(3).fill().map((_, i) => (
+                <Skeleton.Base key={i} width="100%" height="32px" radius="16px" />
+              ))}
+            </div>
+          </div>
+        </Card>
+      </Sidebar>
+    </ContentGrid>
+  </PageContainer>
+);
+
 const TaskView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   
-  let { currentTask: task, loading } = useSelector((state) => state.tasks);
-  task = task?.data;
-  const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentTask: task, loading } = useSelector((state) => state.tasks);
   const [selectedAssignee, setSelectedAssignee] = useState('all');
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (taskId) {
-      dispatch(getTaskById(taskId));
-    }
-  }, [taskId, dispatch]);
+    dispatch(getTaskById(taskId));
+  }, [dispatch, taskId]);
 
+  // Debug effect to check what data is received
   useEffect(() => {
-    if (task?.assignedTo?.length > 0) {
-      setSelectedAssignee(task.assignedTo[0]._id);
+    if (task) {
+      console.log('Task data received:', task);
+      console.log('Task comments:', task.comments);
+      console.log('Task inspection data:', task.inspectionLevel);
     }
-  }, [task?.assignedTo]);
+  }, [task]);
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    if (!comment.trim()) return;
     
-    setIsSubmitting(true);
     try {
-      await dispatch(addTaskComment({ id: taskId, content: newComment })).unwrap();
-      setNewComment('');
+      setIsSubmitting(true);
+      console.log('Adding comment with params:', { id: taskId, content: comment });
+      const result = await dispatch(addTaskComment({ 
+        id: taskId, 
+        content: comment 
+      })).unwrap();
+      console.log('Comment added result:', result);
+      setComment('');
       toast.success('Comment added successfully');
     } catch (error) {
+      console.error('Error adding comment:', error);
       toast.error('Failed to add comment');
     } finally {
       setIsSubmitting(false);
@@ -479,35 +621,39 @@ const TaskView = () => {
 
   const handleStatusUpdate = async (newStatus) => {
     try {
-      await dispatch(updateTaskStatus({
-        id: taskId,
-        status: newStatus,
-        comment: `Status updated to ${newStatus}`
+      console.log('Updating status with params:', { id: taskId, status: newStatus });
+      const result = await dispatch(updateTaskStatus({ 
+        id: taskId, 
+        status: newStatus 
       })).unwrap();
-      toast.success('Status updated successfully');
+      console.log('Status update result:', result);
+      toast.success('Task status updated successfully');
     } catch (error) {
-      toast.error('Failed to update status');
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
     }
   };
 
   if (loading || !task) {
-    return (
-      <PageContainer>
-        <div>{loading ? 'Loading...' : 'Task not found'}</div>
-      </PageContainer>
-    );
+    return <TaskViewSkeleton />;
   }
 
   const getSubLevelStatus = (subLevelId) => {
-    const progressItem = task.progress?.find(p => p.subLevelId === subLevelId);
+    if (!task || !task.progress) return 'pending';
+    const progressItem = task.progress.find(p => p && p.subLevelId === subLevelId);
     return progressItem?.status || 'pending';
   };
 
   const calculateAssigneeProgress = (assigneeId) => {
-    const assigneeProgress = task.progress?.filter(p => p.completedBy?._id === assigneeId);
+    if (!task || !task.progress || !task.inspectionLevel) {
+      return { completed: 0, inProgress: 0, total: 0, percentage: 0 };
+    }
+    
+    const assigneeProgress = task.progress.filter(p => p && p.completedBy && p.completedBy._id === assigneeId);
     const completed = assigneeProgress?.filter(p => p.status === 'completed').length || 0;
     const inProgress = assigneeProgress?.filter(p => p.status === 'in_progress').length || 0;
-    const total = task.inspectionLevel?.subLevels?.length || 0;
+    const total = Array.isArray(task.inspectionLevel?.subLevels) ? task.inspectionLevel.subLevels.length : 0;
+    
     return {
       completed,
       inProgress,
@@ -516,11 +662,18 @@ const TaskView = () => {
     };
   };
 
-  const inspectionData = task.inspectionLevel?.subLevels?.map(level => ({
-    name: level.name,
-    completed: getSubLevelStatus(level._id) === 'completed' ? 100 : 
-              getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
-  })) || [];
+  // Safe check for inspectionData to avoid errors
+  let inspectionData = [];
+  if (task && task.inspectionLevel && Array.isArray(task.inspectionLevel.subLevels)) {
+    inspectionData = task.inspectionLevel.subLevels.map(level => ({
+      name: level.name || 'Unnamed',
+      completed: getSubLevelStatus(level._id) === 'completed' ? 100 : 
+                getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
+    }));
+  }
+
+  // Make sure we have at least some data for the chart to avoid errors
+  const chartData = inspectionData.length > 0 ? inspectionData : [{ name: 'No Data', completed: 0 }];
 
   const renderQuestionType = (type) => {
     switch(type) {
@@ -534,6 +687,33 @@ const TaskView = () => {
         return type;
     }
   };
+
+  // Ensure all required data is available before rendering
+  const hasValidTask = task && typeof task === 'object';
+  const hasValidComments = Array.isArray(task?.comments);
+  const hasValidSubLevels = Array.isArray(task?.inspectionLevel?.subLevels);
+  const hasValidAttachments = Array.isArray(task?.attachments);
+  
+  // Debug info
+  console.log('Task validation:', { 
+    hasValidTask, hasValidComments, hasValidSubLevels, hasValidAttachments 
+  });
+  
+  // If task is fetched but somehow invalid, show an error
+  if (task && !hasValidTask) {
+    return (
+      <PageContainer>
+        <div style={{ padding: '24px', textAlign: 'center' }}>
+          <h2 style={{ color: '#1a237e', marginBottom: '16px' }}>Task Data Error</h2>
+          <p style={{ marginBottom: '24px' }}>There was an issue loading the task data. The data format is invalid.</p>
+          <Button onClick={() => navigate('/tasks')}>
+            <ArrowLeft size={18} />
+            Back to Tasks
+          </Button>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -645,7 +825,7 @@ const TaskView = () => {
           <ChartCard>
             <CardTitle>Inspection Progress</CardTitle>
             <ResponsiveContainer width="100%" height={250}>
-              <RechartsBarChart data={inspectionData}>
+              <RechartsBarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -660,12 +840,12 @@ const TaskView = () => {
               <CommentInput>
                 <textarea 
                   placeholder="Add a comment..." 
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
                 />
                 <Button 
                   onClick={handleAddComment}
-                  disabled={isSubmitting || !newComment.trim()}
+                  disabled={isSubmitting || !comment.trim()}
                 >
                   <Send size={16} />
                   Post
@@ -673,18 +853,19 @@ const TaskView = () => {
               </CommentInput>
 
               <CommentList>
-                {task.comments?.map((comment, index) => (
-                  <Comment key={index}>
-                    <div className="header">
-                      <span className="author">{comment.user?.name}</span>
-                      <span className="timestamp">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="content">{comment.content}</p>
-                  </Comment>
-                ))}
-                {(!task.comments || task.comments.length === 0) && (
+                {Array.isArray(task.comments) && task.comments.length > 0 ? (
+                  task.comments.map((comment, index) => (
+                    <Comment key={index}>
+                      <div className="header">
+                        <span className="author">{comment.user?.name || 'Anonymous'}</span>
+                        <span className="timestamp">
+                          {new Date(comment.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="content">{comment.content}</p>
+                    </Comment>
+                  ))
+                ) : (
                   <p>No comments yet</p>
                 )}
               </CommentList>

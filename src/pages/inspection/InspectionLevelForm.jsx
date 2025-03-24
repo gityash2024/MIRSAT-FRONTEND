@@ -15,6 +15,7 @@ import {
   deleteQuestionFromLibrary
 } from '../../store/slices/questionLibrarySlice';
 import { updateInspectionLevel } from '../../store/slices/inspectionLevelSlice';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -640,6 +641,112 @@ const NestedSubLevelsList = ({
   );
 };
 
+// Create InspectionLevelSkeleton component
+const InspectionLevelSkeleton = () => (
+  <PageContainer>
+    <Skeleton.Base width="150px" height="20px" margin="0 0 16px 0" />
+    
+    <Header>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+        <Skeleton.Circle size="24px" />
+        <Skeleton.Base width="300px" height="28px" />
+      </div>
+      <Skeleton.Base width="70%" height="16px" margin="0 0 24px 0" />
+    </Header>
+    
+    <Skeleton.Form.Field marginBottom="24px">
+      <Skeleton.Form.Label width="80px" />
+      <Skeleton.Form.Input height="42px" />
+    </Skeleton.Form.Field>
+    
+    <Skeleton.Form.Field marginBottom="24px">
+      <Skeleton.Form.Label width="100px" />
+      <Skeleton.Form.Input height="120px" />
+    </Skeleton.Form.Field>
+    
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '24px' }}>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="60px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="70px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="80px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+    </div>
+    
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <Skeleton.Base width="200px" height="24px" />
+      </div>
+      
+      {/* Sublevels skeleton */}
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="40%" height="20px" />
+        </Skeleton.Card.Header>
+        
+        {Array(3).fill().map((_, i) => (
+          <div key={i} style={{ padding: '12px', borderBottom: '1px solid #edf2f7', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '60%' }}>
+              <Skeleton.Circle size="24px" />
+              <Skeleton.Base width="80%" height="20px" />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Skeleton.Base width="24px" height="24px" radius="4px" />
+              <Skeleton.Base width="24px" height="24px" radius="4px" />
+              <Skeleton.Base width="24px" height="24px" radius="4px" />
+            </div>
+          </div>
+        ))}
+      </Skeleton.Card.Wrapper>
+    </div>
+    
+    {/* Questionnaire section skeleton */}
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <Skeleton.Base width="280px" height="24px" />
+      </div>
+      
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+        <Skeleton.Button width="140px" height="36px" />
+        <Skeleton.Button width="160px" height="36px" />
+      </div>
+      
+      {Array(2).fill().map((_, i) => (
+        <Skeleton.Card.Wrapper key={i} style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #edf2f7' }}>
+            <Skeleton.Base width="150px" height="20px" />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Skeleton.Base width="80px" height="30px" radius="4px" />
+              <Skeleton.Base width="30px" height="30px" radius="4px" />
+            </div>
+          </div>
+          
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="120px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+          
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="100px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+        </Skeleton.Card.Wrapper>
+      ))}
+    </div>
+    
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+      <Skeleton.Button width="90px" />
+      <Skeleton.Button width="120px" />
+    </div>
+  </PageContainer>
+);
+
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -1215,14 +1322,7 @@ const InspectionLevelForm = () => {
       );
 
   if (initialLoading) {
-    return (
-      <PageContainer>
-        <LoadingSpinner>
-          <div className="spinner"></div>
-          <p>Loading inspection level data...</p>
-        </LoadingSpinner>
-      </PageContainer>
-    );
+    return <InspectionLevelSkeleton />;
   }
 
   return (

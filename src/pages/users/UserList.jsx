@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
@@ -19,12 +19,22 @@ import {
   EyeIcon,
   Copy,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronDown,
+  FileText,
+  Database,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
-import { FileText } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers, deleteUser } from '../../store/slices/userSlice';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+import Skeleton from '../../components/ui/Skeleton';
 
 import UserFilter from './components/UserFilters';
 import api from '../../services/api';
@@ -433,6 +443,119 @@ const PageNumberButton = styled.button`
   }
 `;
 
+const UserListSkeleton = () => (
+  <PageContainer>
+    <Header>
+      <Skeleton.Base width="220px" height="28px" margin="0 0 8px 0" />
+      <Skeleton.Base width="280px" height="16px" />
+    </Header>
+
+    <ActionBar>
+      <Skeleton.Base width="300px" height="42px" radius="8px" />
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <Skeleton.Button width="100px" height="42px" />
+        <Skeleton.Button width="100px" height="42px" />
+        <Skeleton.Button width="120px" height="42px" />
+      </div>
+    </ActionBar>
+
+    <UserTable>
+      <Table>
+        <thead>
+          <tr>
+            <th style={{ width: '50px' }}>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array(8).fill().map((_, i) => (
+            <tr key={i}>
+              <td>
+                <Skeleton.Base width="20px" height="16px" />
+              </td>
+              <td>
+                <Skeleton.Base width={`${120 + Math.random() * 80}px`} height="18px" />
+              </td>
+              <td>
+                <Skeleton.Base width={`${150 + Math.random() * 100}px`} height="18px" />
+              </td>
+              <td>
+                <Skeleton.Base width="100px" height="26px" radius="13px" />
+              </td>
+              <td>
+                <Skeleton.Base width={`${80 + Math.random() * 60}px`} height="18px" />
+              </td>
+              <td>
+                <Skeleton.Base width="90px" height="18px" />
+              </td>
+              <td>
+                <Skeleton.Base width="80px" height="26px" radius="13px" />
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Skeleton.Circle size="32px" />
+                  <Skeleton.Circle size="32px" />
+                  <Skeleton.Circle size="32px" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <PaginationContainer>
+        <PaginationInfo>
+          <Skeleton.Base width="200px" height="16px" />
+        </PaginationInfo>
+        <PaginationButtons>
+          <Skeleton.Button width="40px" height="40px" />
+          <Skeleton.Button width="40px" height="40px" />
+          <Skeleton.Button width="40px" height="40px" />
+          <Skeleton.Button width="40px" height="40px" />
+          <Skeleton.Button width="40px" height="40px" />
+        </PaginationButtons>
+      </PaginationContainer>
+    </UserTable>
+  </PageContainer>
+);
+
+const UserStatus = ({ status }) => {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'Active':
+        return {
+          bg: '#e3fcef',
+          color: '#10b981'
+        };
+      case 'Inactive':
+        return {
+          bg: '#fee2e2',
+          color: '#ef4444'
+        };
+      default:
+        return {
+          bg: '#f3f4f6',
+          color: '#6b7280'
+        };
+    }
+  };
+
+  const colors = getStatusColor();
+
+  return (
+    <StatusBadge status={status}>
+      {status === 'Active' ? <CheckCircle size={14} /> : <X size={14} />}
+      {status}
+    </StatusBadge>
+  );
+};
+
 const UserList = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [users, setUsers] = useState([]);
@@ -453,7 +576,7 @@ const UserList = () => {
   const [usersPerPage] = useState(5);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsersList();
   }, []);
   
   useEffect(() => {
@@ -472,7 +595,7 @@ const UserList = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showExportDropdown]);
   
-  const fetchUsers = async () => {
+  const fetchUsersList = async () => {
     try {
       const response = await api.get('/users');
       setUsers(response.data.data);
@@ -492,7 +615,7 @@ const UserList = () => {
     try {
       await api.delete(`/users/${deleteConfirm._id}`);
       toast.success('User deleted successfully');
-      fetchUsers();
+      fetchUsersList();
       setDeleteConfirm(null);
     } catch (error) {
       toast.error('Failed to delete user');
@@ -510,7 +633,7 @@ const UserList = () => {
         isActive: !currentStatus
       });
       toast.success('User status updated successfully');
-      fetchUsers();
+      fetchUsersList();
     } catch (error) {
       toast.error('Failed to update user status');
     }
@@ -685,7 +808,7 @@ const UserList = () => {
   };
 
   if (isLoading) {
-    return <LoadingSpinner>Loading...</LoadingSpinner>;
+    return <UserListSkeleton />;
   }
 
   return (
@@ -800,9 +923,7 @@ const UserList = () => {
                   </RoleBadge>
                 </td>
                 <td>
-                  <StatusBadge status={user.isActive ? 'Active' : 'Inactive'}>
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </StatusBadge>
+                  <UserStatus status={user.isActive ? 'Active' : 'Inactive'} />
                 </td>
                 <td>{formatTimestamp(user.lastLogin)}</td>
                 <td>{user.assignedTasks || 0}</td>

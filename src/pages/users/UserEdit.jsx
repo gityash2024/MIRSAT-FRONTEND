@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import api from '../../services/api';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -135,6 +136,73 @@ const LoadingSpinner = styled.div`
   color: #1a237e;
 `;
 
+// Create UserEditSkeleton component
+const UserEditSkeleton = () => (
+  <PageContainer>
+    <Skeleton.Base width="120px" height="18px" margin="0 0 24px 0" />
+    
+    <Header>
+      <Skeleton.Base width="180px" height="28px" margin="0 0 8px 0" />
+      <Skeleton.Base width="280px" height="16px" margin="0 0 32px 0" />
+    </Header>
+    
+    <div style={{ display: 'grid', gap: '24px' }}>
+      {/* User Details Section */}
+      <div style={{ display: 'grid', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="80px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+          
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="80px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="100px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+          
+          <Skeleton.Form.Field>
+            <Skeleton.Form.Label width="120px" />
+            <Skeleton.Form.Input height="42px" />
+          </Skeleton.Form.Field>
+        </div>
+      </div>
+      
+      {/* Permissions Section */}
+      <div>
+        <Skeleton.Base width="200px" height="20px" margin="0 0 20px 0" />
+        
+        {Array(3).fill().map((_, i) => (
+          <div key={i} style={{ marginBottom: '24px' }}>
+            <Skeleton.Base width={`${180 + Math.random() * 120}px`} height="18px" margin="0 0 12px 0" />
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+              {Array(4).fill().map((_, j) => (
+                <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Skeleton.Base width="20px" height="20px" radius="4px" />
+                  <Skeleton.Base width={`${100 + Math.random() * 80}px`} height="16px" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+        <Skeleton.Button width="100px" />
+        <Skeleton.Button width="120px" />
+      </div>
+    </div>
+  </PageContainer>
+);
+
 const UserEdit = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -183,7 +251,7 @@ const UserEdit = () => {
   };
 
   if (isLoading) {
-    return <LoadingSpinner>Loading...</LoadingSpinner>;
+    return <UserEditSkeleton />;
   }
 
   if (!user) {

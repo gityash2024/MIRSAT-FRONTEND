@@ -14,6 +14,7 @@ import {
   setPagination
 } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
+import Skeleton from '../../components/ui/Skeleton';
 
 const TasksContainer = styled.div`
   padding: 24px;
@@ -611,6 +612,81 @@ const formatDate = (dateString) => {
   });
 };
 
+const UserTasksListSkeleton = () => (
+  <PageContainer>
+    <HeaderContainer>
+      <div>
+        <Skeleton.Base width="180px" height="32px" margin="0 0 8px 0" />
+        <Skeleton.Base width="280px" height="16px" />
+      </div>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <Skeleton.Button width="120px" height="40px" />
+        <Skeleton.Button width="160px" height="40px" />
+      </div>
+    </HeaderContainer>
+    
+    <FiltersContainer>
+      <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+        <Skeleton.Base width="280px" height="40px" radius="8px" />
+        <Skeleton.Base width="200px" height="40px" radius="8px" />
+      </div>
+    </FiltersContainer>
+    
+    <StatsContainer>
+      {Array(4).fill().map((_, i) => (
+        <StatCard key={i}>
+          <Skeleton.Circle size="40px" margin="0 0 8px 0" />
+          <Skeleton.Base width="100px" height="20px" margin="0 0 4px 0" />
+          <Skeleton.Base width="60px" height="16px" />
+        </StatCard>
+      ))}
+    </StatsContainer>
+    
+    <Card>
+      <TableContainer>
+        <TaskTable>
+          <thead>
+            <tr>
+              <th><Skeleton.Base width="80px" height="16px" /></th>
+              <th><Skeleton.Base width="120px" height="16px" /></th>
+              <th><Skeleton.Base width="80px" height="16px" /></th>
+              <th><Skeleton.Base width="100px" height="16px" /></th>
+              <th><Skeleton.Base width="140px" height="16px" /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array(5).fill().map((_, i) => (
+              <tr key={i}>
+                <td><Skeleton.Base width={`${100 + Math.random() * 150}px`} height="20px" /></td>
+                <td><Skeleton.Base width={`${80 + Math.random() * 80}px`} height="16px" /></td>
+                <td><Skeleton.Rectangle width="80px" height="24px" radius="12px" /></td>
+                <td><Skeleton.Base width="100px" height="16px" /></td>
+                <td>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <Skeleton.Circle size="32px" />
+                    <Skeleton.Circle size="32px" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </TaskTable>
+      </TableContainer>
+      
+      <PaginationContainer>
+        <Skeleton.Base width="150px" height="16px" />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Skeleton.Circle size="36px" />
+          <Skeleton.Circle size="36px" />
+          <Skeleton.Base width="40px" height="36px" radius="4px" />
+          <Skeleton.Circle size="36px" />
+          <Skeleton.Circle size="36px" />
+        </div>
+      </PaginationContainer>
+    </Card>
+  </PageContainer>
+);
+
 const UserTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -859,21 +935,23 @@ const UserTasks = () => {
     };
   }, [tasks]);
 
-  if (loading && (!tasks.results || tasks.results.length === 0)) {
+  if (loading) {
+    return <UserTasksListSkeleton />;
+  }
+
+  if (error) {
     return (
-      <TasksContainer>
-        <GlassMorphismBlur style={{ top: '30%', right: '10%', left: 'auto' }} />
-        <GlassMorphismBlur style={{ top: '70%', left: '20%' }} />
-        
-        <PageHeader ref={headerRef}>
-          <Title>My Tasks</Title>
-          <Description>View and manage all your assigned tasks</Description>
-        </PageHeader>
-        
-        <LoadingContainer>
-          <Loader size={30} color="#1a237e" />
-        </LoadingContainer>
-      </TasksContainer>
+      <PageContainer>
+        <Card>
+          <ErrorContainer>
+            <AlertTriangle size={40} color="#d32f2f" />
+            <div>
+              <h3>Error Loading Tasks</h3>
+              <p>{error}</p>
+            </div>
+          </ErrorContainer>
+        </Card>
+      </PageContainer>
     );
   }
 

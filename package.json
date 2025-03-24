@@ -27,6 +27,7 @@
     "@types/react-beautiful-dnd": "^13.1.8",
     "axios": "^1.7.9",
     "date-fns": "^3.6.0",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.18.2",
     "gsap": "^3.12.7",
     "jspdf": "^2.5.2",
@@ -45,7 +46,8 @@
     "react-toastify": "^11.0.2",
     "recharts": "^2.15.0",
     "socket.io-client": "^4.8.1",
-    "styled-components": "^6.1.14"
+    "styled-components": "^6.1.14",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

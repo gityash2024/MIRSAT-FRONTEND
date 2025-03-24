@@ -13,6 +13,7 @@ import { fetchTasks, createTask, updateTask, setPagination } from '../../store/s
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
 import { toast } from 'react-hot-toast';
+import Skeleton from '../../components/ui/Skeleton';
 
 const CalendarContainer = styled.div`
   padding: 24px;
@@ -142,6 +143,137 @@ const LimitSelector = styled.select`
   font-size: 14px;
   color: #333;
 `;
+
+// Create a CalendarViewSkeleton component
+const CalendarViewSkeleton = () => (
+  <CalendarContainer>
+    {/* Header skeleton */}
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start',
+        marginBottom: '16px'
+      }}>
+        <div>
+          <Skeleton.Base width="180px" height="28px" margin="0 0 8px 0" />
+          <Skeleton.Base width="280px" height="16px" />
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Skeleton.Button width="100px" height="40px" />
+          <Skeleton.Button width="100px" height="40px" />
+          <Skeleton.Button width="120px" height="40px" />
+        </div>
+      </div>
+    </div>
+
+    {/* Filters area skeleton */}
+    <div style={{ 
+      background: 'white', 
+      borderRadius: '12px', 
+      padding: '20px', 
+      marginBottom: '24px',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+    }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+        {Array(4).fill().map((_, i) => (
+          <div key={i}>
+            <Skeleton.Base width="100px" height="16px" margin="0 0 8px 0" />
+            <Skeleton.Base width="100%" height="40px" radius="8px" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Calendar skeleton */}
+    <CalendarWrapper>
+      <div style={{ padding: '16px' }}>
+        {/* Calendar toolbar skeleton */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          marginBottom: '24px',
+          padding: '8px 0'
+        }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Skeleton.Button width="80px" height="36px" />
+            <Skeleton.Button width="80px" height="36px" />
+            <Skeleton.Button width="80px" height="36px" />
+          </div>
+          <Skeleton.Base width="200px" height="36px" />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Skeleton.Button width="110px" height="36px" />
+            <Skeleton.Button width="110px" height="36px" />
+            <Skeleton.Button width="110px" height="36px" />
+          </div>
+        </div>
+
+        {/* Calendar grid skeleton */}
+        <div>
+          {/* Day header row */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(7, 1fr)', 
+            gap: '1px', 
+            marginBottom: '1px',
+            background: '#f5f7fb',
+            padding: '8px 0'
+          }}>
+            {Array(7).fill().map((_, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <Skeleton.Base width="70%" height="20px" style={{ margin: '0 auto' }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar cells */}
+          {Array(6).fill().map((_, week) => (
+            <div key={week} style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(7, 1fr)', 
+              gap: '1px',
+              borderBottom: '1px solid #e0e0e0'
+            }}>
+              {Array(7).fill().map((_, day) => (
+                <div key={day} style={{ 
+                  height: '120px', 
+                  padding: '8px',
+                  borderRight: day < 6 ? '1px solid #e0e0e0' : 'none'
+                }}>
+                  <Skeleton.Base width="24px" height="24px" margin="0 0 8px 0" />
+                  
+                  {/* Random number of events in each cell */}
+                  {Array(Math.floor(Math.random() * 3)).fill().map((_, i) => (
+                    <Skeleton.Base 
+                      key={i} 
+                      width={`${60 + Math.random() * 30}%`} 
+                      height="20px" 
+                      margin="0 0 4px 0"
+                      radius="4px"
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </CalendarWrapper>
+    
+    {/* Pagination skeleton */}
+    <PaginationContainer>
+      <Skeleton.Base width="180px" height="16px" />
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <Skeleton.Button width="70px" height="32px" />
+        <Skeleton.Button width="70px" height="32px" />
+        <Skeleton.Base width="100px" height="16px" />
+        <Skeleton.Button width="70px" height="32px" />
+        <Skeleton.Button width="70px" height="32px" />
+        <Skeleton.Base width="100px" height="32px" radius="4px" />
+      </div>
+    </PaginationContainer>
+  </CalendarContainer>
+);
 
 const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -313,7 +445,7 @@ const CalendarView = () => {
 
       <CalendarWrapper>
         {loading ? (
-          <LoadingIndicator>Loading calendar events...</LoadingIndicator>
+          <CalendarViewSkeleton />
         ) : (
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

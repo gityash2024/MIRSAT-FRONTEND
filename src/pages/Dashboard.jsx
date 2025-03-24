@@ -10,6 +10,7 @@ import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import Reports from './reports';
 import ScrollAnimation from '../components/common/ScrollAnimation';
+import Skeleton from '../components/ui/Skeleton';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -176,6 +177,82 @@ const EmptyState = styled.div`
   color: #64748b;
 `;
 
+// Create DashboardSkeleton component
+const DashboardSkeleton = () => (
+  <DashboardContainer>
+    <Skeleton.Base width="250px" height="28px" margin="0 0 32px 0" />
+    
+    {/* Stats Grid Section */}
+    <StatsGrid>
+      {Array(4).fill().map((_, i) => (
+        <div key={i}>
+          <Skeleton.Card.Wrapper>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <Skeleton.Circle size="48px" />
+              <Skeleton.Base width="80px" height="28px" margin="8px 0" />
+              <Skeleton.Base width="120px" height="14px" />
+            </div>
+          </Skeleton.Card.Wrapper>
+        </div>
+      ))}
+    </StatsGrid>
+    
+    {/* Content Grid Section */}
+    <ContentGrid>
+      {/* Task Progress Card */}
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="160px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {Array(3).fill().map((_, i) => (
+            <div key={i}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Skeleton.Base width={`${180 + Math.random() * 100}px`} height="16px" />
+                <Skeleton.Base width="40px" height="16px" />
+              </div>
+              <Skeleton.Base width="100%" height="8px" radius="4px" />
+            </div>
+          ))}
+        </div>
+      </Skeleton.Card.Wrapper>
+      
+      {/* Inspector Performance Card */}
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="160px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {Array(4).fill().map((_, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <Skeleton.Circle size="32px" />
+                <Skeleton.Base width="120px" height="16px" />
+              </div>
+              <Skeleton.Base width="80px" height="24px" radius="12px" />
+            </div>
+          ))}
+        </div>
+      </Skeleton.Card.Wrapper>
+    </ContentGrid>
+    
+    {/* Reports Section */}
+    <div style={{ marginTop: '24px' }}>
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="200px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <Skeleton.Base width="100%" height="300px" />
+        </div>
+      </Skeleton.Card.Wrapper>
+    </div>
+  </DashboardContainer>
+);
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState({
@@ -276,6 +353,10 @@ const Dashboard = () => {
       );
     });
   };
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <DashboardContainer>

@@ -10,6 +10,8 @@ import TaskAssignee from './TaskAssignee';
 import { PERMISSIONS } from '../../../utils/permissions';
 import usePermissions from '../../../hooks/usePermissions';
 import { deleteTask } from '../../../store/slices/taskSlice';
+import Skeleton from '../../../components/ui/Skeleton';
+
 const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
@@ -331,6 +333,72 @@ const TreeItemDescription = styled.div`
   color: #666;
 `;
 
+const TaskTableSkeleton = () => {
+  return (
+    <TableContainer>
+      <Table>
+        <thead>
+          <tr>
+            <th style={{ width: '50px' }}>#</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Assignees</th>
+            <th>Deadline</th>
+            <th>Progress</th>
+            <th style={{ width: '100px' }}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array(5).fill().map((_, index) => (
+            <tr key={index}>
+              <td>
+                <Skeleton.Base width="20px" height="16px" />
+              </td>
+              <td>
+                <Skeleton.Base width={`${Math.floor(Math.random() * 100) + 150}px`} height="18px" />
+              </td>
+              <td>
+                <Skeleton.Base width="80px" height="24px" radius="12px" />
+              </td>
+              <td>
+                <Skeleton.Base width="70px" height="24px" radius="12px" />
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {Array(Math.floor(Math.random() * 3) + 1).fill().map((_, i) => (
+                    <Skeleton.Circle key={i} size="28px" />
+                  ))}
+                </div>
+              </td>
+              <td>
+                <Skeleton.Base width="100px" height="16px" />
+              </td>
+              <td style={{ width: '120px' }}>
+                <Skeleton.Base width="100%" height="8px" radius="4px" />
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Skeleton.Circle size="28px" />
+                  <Skeleton.Circle size="28px" />
+                  <Skeleton.Circle size="28px" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <PaginationContainer>
+        <Skeleton.Base width="150px" height="16px" />
+        <PaginationButtons>
+          <Skeleton.Button width="35px" height="35px" />
+          <Skeleton.Button width="35px" height="35px" />
+        </PaginationButtons>
+      </PaginationContainer>
+    </TableContainer>
+  );
+};
+
 const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -434,11 +502,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   };
 
   if (loading) {
-    return (
-      <TableContainer>
-        <LoadingOverlay>Loading tasks...</LoadingOverlay>
-      </TableContainer>
-    );
+    return <TaskTableSkeleton />;
   }
 
   if (!sortedTasks.length) {

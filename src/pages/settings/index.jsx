@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   Settings as SettingsIcon, 
@@ -21,6 +21,7 @@ import APISettings from './components/APISettings';
 import EmailSettings from './components/EmailSettings';
 import UserSettings from './components/UserSettings';
 import PermissionSettings from './components/PermissionSettings';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -112,8 +113,102 @@ const menuItems = [
   { id: 'permissions', label: 'Permissions', icon: Lock },
 ];
 
+// Create a SettingsSkeleton component
+const SettingsSkeleton = () => (
+  <PageContainer>
+    <Header>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Skeleton.Circle size="24px" />
+        <Skeleton.Base width="120px" height="28px" />
+      </div>
+      <Skeleton.Base width="280px" height="16px" margin="8px 0 0 0" />
+    </Header>
+
+    <ContentGrid>
+      <Sidebar>
+        <MenuList>
+          {Array(8).fill().map((_, i) => (
+            <MenuItem key={i} as="div" style={{ cursor: 'default' }}>
+              <Skeleton.Circle size="18px" />
+              <Skeleton.Base width={`${80 + Math.random() * 40}px`} height="16px" />
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Sidebar>
+
+      <ContentSection>
+        {/* Setting section header */}
+        <div style={{ marginBottom: '24px' }}>
+          <Skeleton.Base width="200px" height="24px" margin="0 0 8px 0" />
+          <Skeleton.Base width="70%" height="16px" />
+        </div>
+
+        {/* Settings form fields */}
+        <div style={{ display: 'grid', gap: '24px' }}>
+          {/* First settings section */}
+          <div>
+            <Skeleton.Base width="180px" height="20px" margin="0 0 16px 0" />
+            <div style={{ 
+              background: 'white', 
+              padding: '20px', 
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+                {Array(4).fill().map((_, i) => (
+                  <div key={i}>
+                    <Skeleton.Base width={`${100 + Math.random() * 60}px`} height="16px" margin="0 0 8px 0" />
+                    <Skeleton.Base width="100%" height="40px" radius="8px" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Second settings section */}
+          <div>
+            <Skeleton.Base width="160px" height="20px" margin="0 0 16px 0" />
+            <div style={{ 
+              background: 'white', 
+              padding: '20px', 
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+            }}>
+              {Array(3).fill().map((_, i) => (
+                <div key={i} style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Skeleton.Base width="24px" height="24px" radius="4px" />
+                  <div>
+                    <Skeleton.Base width={`${120 + Math.random() * 80}px`} height="16px" margin="0 0 4px 0" />
+                    <Skeleton.Base width={`${200 + Math.random() * 100}px`} height="14px" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            <Skeleton.Button width="100px" />
+            <Skeleton.Button width="100px" />
+          </div>
+        </div>
+      </ContentSection>
+    </ContentGrid>
+  </PageContainer>
+);
+
 const Settings = () => {
   const [activeSection, setActiveSection] = useState('general');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading settings data
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -133,12 +228,14 @@ const Settings = () => {
         return <UserSettings />;
       case 'permissions':
         return <PermissionSettings />;
-      case 'backup':
-        return <BackupSettings />;
       default:
         return <GeneralSettings />;
     }
   };
+
+  if (loading) {
+    return <SettingsSkeleton />;
+  }
 
   return (
     <PageContainer>

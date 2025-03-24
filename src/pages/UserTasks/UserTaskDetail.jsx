@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, Activity, PaperclipIcon, Send, 
   Download, Info, CheckSquare, Camera, FileText, Loader,
   Circle, MoreHorizontal, Timer, PlayCircle, PauseCircle,
-  File
+  File, ChevronUp, ChevronDown, MessageSquare
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { 
@@ -18,6 +18,7 @@ import {
   updateTaskQuestionnaire
 } from '../../store/slices/userTasksSlice';
 import { userTaskService } from '../../services/userTask.service';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 16px;
@@ -1467,867 +1468,364 @@ const formatTime = (seconds) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Add UserTaskDetailSkeleton component
+const UserTaskDetailSkeleton = () => (
+  <PageContainer>
+    <BackButton disabled>
+      <Skeleton.Circle size="18px" />
+      <Skeleton.Base width="100px" height="16px" />
+    </BackButton>
+    
+    {/* Header skeleton */}
+    <div style={{ 
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <Skeleton.Base width="280px" height="28px" margin="0 0 8px 0" />
+          <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="18px" />
+              <Skeleton.Base width="100px" height="16px" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="18px" />
+              <Skeleton.Base width="130px" height="16px" />
+            </div>
+          </div>
+        </div>
+        <Skeleton.Base width="120px" height="32px" radius="16px" />
+      </div>
+    </div>
+    
+    {/* Tabs skeleton */}
+    <div style={{ 
+      display: 'flex', 
+      gap: '10px', 
+      marginBottom: '20px',
+      background: 'rgba(255, 255, 255, 0.7)',
+      padding: '10px',
+      borderRadius: '12px'
+    }}>
+      {Array(3).fill().map((_, i) => (
+        <Skeleton.Button key={i} width="120px" height="40px" radius="12px" />
+      ))}
+    </div>
+    
+    {/* Main content skeleton */}
+    <div style={{ 
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
+    }}>
+      <Skeleton.Base width="200px" height="24px" margin="0 0 16px 0" />
+      
+      {/* Task details */}
+      <div style={{ marginBottom: '24px' }}>
+        <Skeleton.Base width="100%" height="80px" radius="8px" margin="0 0 16px 0" />
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          {Array(4).fill().map((_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="16px" />
+              <Skeleton.Base width="80%" height="16px" />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Sublevels skeleton */}
+      <Skeleton.Base width="180px" height="24px" margin="0 0 16px 0" />
+      
+      <div style={{ display: 'grid', gap: '12px' }}>
+        {Array(5).fill().map((_, i) => (
+          <div key={i} style={{ 
+            padding: '16px', 
+            background: 'rgba(255, 255, 255, 0.5)', 
+            borderRadius: '12px',
+            marginLeft: `${Math.min(i, 2) * 20}px`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Skeleton.Circle size="18px" />
+                <Skeleton.Base width={`${150 - Math.min(i, 2) * 20}px`} height="18px" />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Skeleton.Circle size="24px" />
+                <Skeleton.Circle size="24px" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </PageContainer>
+);
+
+// Add the main component that was missing
 const UserTaskDetail = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
-  const fileInputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('details');
+  const [comments, setComments] = useState([]);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [expandedSubLevels, setExpandedSubLevels] = useState({});
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerInterval, setTimerInterval] = useState(null);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [subLevelNotes, setSubLevelNotes] = useState({});
+  const [exportingReport, setExportingReport] = useState(false);
+  const [questionnaireData, setQuestionnaireData] = useState(null);
   
-  const { currentTask, taskDetailsLoading, actionLoading, error } = useSelector(state => state.userTasks);
-  
-  const [currentStep, setCurrentStep] = useState(0);
-  const [expandedItems, setExpandedItems] = useState({});
-  const [selectedSubLevel, setSelectedSubLevel] = useState(null);
-  const [notes, setNotes] = useState('');
-  const [photos, setPhotos] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  
-  const [activeTimer, setActiveTimer] = useState(null);
-  const [timers, setTimers] = useState({});
-  const timerIntervalRef = useRef(null);
-  
-  const [currentResponses, setCurrentResponses] = useState({});
-  const [inspectionStarted, setInspectionStarted] = useState(false);
-  const [activeSubLevelId, setActiveSubLevelId] = useState(null);
-  const [questionsCompleted, setQuestionsCompleted] = useState(false);
-  const [finalSubmitDisabled, setFinalSubmitDisabled] = useState(true);
-  const [questionnaireShown, setQuestionnaireShown] = useState(false);
+  const { currentTask, taskDetailsLoading, error } = useSelector(state => state.userTasks);
+  const { user } = useSelector(state => state.auth);
 
   useEffect(() => {
     if (taskId) {
       dispatch(fetchUserTaskDetails(taskId));
     }
-    
-    return () => {
-      setExpandedItems({});
-      setSelectedSubLevel(null);
-      setNotes('');
-      setPhotos([]);
-      setNewComment('');
-      clearInterval(timerIntervalRef.current);
-    };
   }, [taskId, dispatch]);
 
-  // Check for questionnaire responses from location state
   useEffect(() => {
-    if (location.state?.questionnaireCompleted && location.state?.responses) {
-      setQuestionsCompleted(true);
-      setCurrentResponses(location.state.responses);
+    if (currentTask) {
+      setTimeSpent(currentTask.timeSpent || 0);
       
-      // Save questionnaire responses to the task
-      if (taskId) {
-        dispatch(updateTaskQuestionnaire({
-          taskId,
-          data: {
-            responses: location.state.responses,
-            completed: true
-          }
-        })).unwrap();
+      // Initialize sublevel notes
+      if (currentTask.subLevels) {
+        const initialNotes = {};
+        currentTask.subLevels.forEach(subLevel => {
+          initialNotes[subLevel._id] = subLevel.notes || '';
+        });
+        setSubLevelNotes(initialNotes);
       }
       
-      if (location.state?.subLevelId) {
-        setActiveSubLevelId(location.state.subLevelId);
-        setSelectedSubLevel(location.state.subLevelId);
-      }
-      
-      setCurrentStep(2);
-      setInspectionStarted(true);
-    }
-  }, [location.state, taskId, dispatch]);
-
-  useEffect(() => {
-    if (currentTask?.progress) {
-      const initialTimers = {};
-      currentTask.progress.forEach(progress => {
-        initialTimers[progress.subLevelId] = {
-          elapsed: progress.timeSpent || 0,
-          running: false
-        };
-      });
-      setTimers(initialTimers);
-      
-      const allCompleted = checkAllItemsCompleted(currentTask);
-      setFinalSubmitDisabled(!allCompleted);
-      setIsCompleted(currentTask.status === 'completed');
-      
-      // Check if questionnaire has been completed before
-      if (currentTask.questionnaireCompleted) {
-        setQuestionsCompleted(true);
-        setCurrentResponses(currentTask.questionnaireResponses || {});
+      // Load comments
+      if (currentTask.comments) {
+        setComments(currentTask.comments);
       }
     }
   }, [currentTask]);
-
+  
+  // Check if questionnaire data was passed from the questionnaire page
   useEffect(() => {
-    if (activeTimer) {
-      timerIntervalRef.current = setInterval(() => {
-        setTimers(prev => ({
-          ...prev,
-          [activeTimer]: {
-            ...prev[activeTimer],
-            elapsed: (prev[activeTimer]?.elapsed || 0) + 1
-          }
-        }));
-      }, 1000);
+    if (location.state?.questionnaireCompleted) {
+      setQuestionnaireData({
+        responses: location.state.responses,
+        subLevelId: location.state.subLevelId,
+        notes: location.state.notes
+      });
     }
-    
-    return () => {
-      clearInterval(timerIntervalRef.current);
-    };
-  }, [activeTimer]);
-
-  const checkAllItemsCompleted = (task) => {
-    if (!task || !task.inspectionLevel || !task.inspectionLevel.subLevels) return false;
-    
-    const getAllSubLevelIds = (subLevels) => {
-      let ids = [];
-      if (!subLevels || !Array.isArray(subLevels)) return ids;
-      
-      for (const sl of subLevels) {
-        ids.push(sl._id.toString());
-        if (sl.subLevels && Array.isArray(sl.subLevels)) {
-          ids = [...ids, ...getAllSubLevelIds(sl.subLevels)];
-        }
-      }
-      return ids;
-    };
-    
-    const allSubLevelIds = getAllSubLevelIds(task.inspectionLevel.subLevels);
-    
-    const completedProgress = task.progress.filter(p => 
-      p.status === 'completed' && allSubLevelIds.includes(p.subLevelId)
-    );
-    
-    return completedProgress.length === allSubLevelIds.length;
-  };
-
-  const toggleExpand = (itemId) => {
-    setExpandedItems(prev => ({
+  }, [location.state]);
+  
+  const toggleSubLevel = (subLevelId) => {
+    setExpandedSubLevels(prev => ({
       ...prev,
-      [itemId]: !prev[itemId]
+      [subLevelId]: !prev[subLevelId]
     }));
   };
 
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    
-    const validFiles = files.filter(file => 
-      file.type.match('image.*') && file.size <= 5 * 1024 * 1024
-    );
-    
-    if (validFiles.length !== files.length) {
-      toast.error('Some files were rejected. Images must be under 5MB.');
-    }
-    
-    const newPhotos = [...photos];
-    
-    for (const file of validFiles) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPhotos.push({
-          file,
-          preview: reader.result
-        });
-        setPhotos([...newPhotos]);
-      };
-      reader.readAsDataURL(file);
-    }
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removePhoto = (index) => {
-    const newPhotos = [...photos];
-    newPhotos.splice(index, 1);
-    setPhotos(newPhotos);
-  };
-
-  const startInspection = () => {
-    // Check if questionnaire is required and hasn't been completed
-    if (currentTask?.questions && 
-        currentTask.questions.length > 0 && 
-        !currentTask.questionnaireCompleted && 
-        !questionsCompleted &&
-        !questionnaireShown) {
-      setCurrentStep(1);
-      setQuestionnaireShown(true);
-    } else {
-      setCurrentStep(2);
-      setInspectionStarted(true);
-    }
-  };
-
-  const selectSubLevel = (subLevelId) => {
-    setActiveSubLevelId(subLevelId);
-    setSelectedSubLevel(subLevelId);
-    handleStartTimer(subLevelId);
-    
-    if (currentTask && currentTask.progress) {
-      const progressItem = currentTask.progress.find(p => p.subLevelId === subLevelId);
-      if (progressItem) {
-        setNotes(progressItem.notes || '');
-      } else {
-        setNotes('');
-      }
-    }
-    
-    setPhotos([]);
-  };
-
-  const handleStartTimer = (subLevelId) => {
-    if (activeTimer) {
-      handleStopTimer();
-    }
-    
-    setActiveTimer(subLevelId);
-    setTimers(prev => ({
-      ...prev,
-      [subLevelId]: {
-        elapsed: prev[subLevelId]?.elapsed || 0,
-        running: true
-      }
-    }));
-  };
-
-  const handleStopTimer = () => {
-    if (activeTimer) {
-      setTimers(prev => ({
-        ...prev,
-        [activeTimer]: {
-          ...prev[activeTimer],
-          running: false
-        }
-      }));
-      setActiveTimer(null);
-    }
-  };
-
-  const handleStatusChange = async (status) => {
-    if (!selectedSubLevel) return;
-    
-    setIsSubmitting(true);
-    
+  const handleStartTask = async () => {
     try {
-      handleStopTimer();
-      
-      let uploadedPhotos = [];
-      
-      if (photos.length > 0) {
-        for (const photo of photos) {
-          if (photo.file) {
-            try {
-              const uploadedData = await userTaskService.uploadTaskAttachment(taskId, photo.file);
-              if (uploadedData.success && uploadedData.data) {
-                uploadedPhotos.push(uploadedData.data.url);
-              }
-            } catch (error) {
-              console.error('Failed to upload photo:', error);
-            }
-          }
-        }
-      }
-      
-      const subLevelResponses = Object.keys(currentResponses)
-        .filter(key => key.startsWith(`${selectedSubLevel}-`))
-        .map(key => {
-          const questionId = key.split('-')[1];
-          return {
-            questionId,
-            answer: currentResponses[key],
-            timestamp: new Date()
-          };
-        });
-      
       await dispatch(updateUserTaskProgress({
         taskId,
-        subLevelId: selectedSubLevel,
-        data: {
-          status,
-          notes,
-          photos: uploadedPhotos,
-          timeSpent: timers[selectedSubLevel]?.elapsed || 0,
-          responses: subLevelResponses
-        }
+        data: { status: 'in_progress' }
       })).unwrap();
-      
-      setNotes('');
-      setPhotos([]);
-      setSelectedSubLevel(null);
-      setActiveSubLevelId(null);
-      toast.success(`Item marked as ${status.replace('_', ' ')}`);
-      
-      const updatedTask = await dispatch(fetchUserTaskDetails(taskId)).unwrap();
-      const allCompleted = checkAllItemsCompleted(updatedTask);
-      setFinalSubmitDisabled(!allCompleted);
-      
+      startTimer();
+      toast.success('Task started');
     } catch (error) {
-      toast.error('Failed to update task status: ' + (error.message || 'Unknown error'));
-    } finally {
-      setIsSubmitting(false);
+      toast.error('Failed to start task');
     }
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-    
-    setIsSubmitting(true);
+  const handleCompleteTask = async () => {
     try {
-      await dispatch(addUserTaskComment({ 
-        taskId, 
-        content: newComment 
-      })).unwrap();
-      
-      setNewComment('');
-    } catch (error) {
-      toast.error('Failed to add comment: ' + (error.message || 'Unknown error'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleQuestionResponse = (questionId, value) => {
-    setCurrentResponses(prev => ({
-      ...prev,
-      [`${activeSubLevelId || 'general'}-${questionId}`]: value
-    }));
-  };
-
-  const submitQuestionnaire = async () => {
-    const requiredQuestions = currentTask.questions.filter(q => q.required);
-    const allRequiredAnswered = requiredQuestions.every(q => 
-      currentResponses[`${activeSubLevelId || 'general'}-${q.id}`] || 
-      currentResponses[`${activeSubLevelId || 'general'}-${q._id}`]
-    );
-    
-    if (!allRequiredAnswered) {
-      toast.error('Please answer all required questions');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      await dispatch(updateTaskQuestionnaire({
+      await dispatch(updateUserTaskProgress({
         taskId,
-        data: {
-          responses: currentResponses,
-          completed: true
+        data: { status: 'completed' }
+      })).unwrap();
+      stopTimer();
+      toast.success('Task completed');
+    } catch (error) {
+      toast.error('Failed to complete task');
+    }
+  };
+
+  const handleUpdateSubLevel = async (subLevelId, status) => {
+    try {
+      await dispatch(updateUserTaskProgress({
+        taskId,
+        subLevelId,
+        data: { 
+          status,
+          notes: subLevelNotes[subLevelId] || ''
         }
       })).unwrap();
-      
-      setQuestionsCompleted(true);
-      setCurrentStep(2);
-      setInspectionStarted(true);
+      toast.success(`Sub-level ${status === 'completed' ? 'completed' : 'started'}`);
     } catch (error) {
-      toast.error('Failed to save questionnaire: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to update sub-level');
+    }
+  };
+
+  const handleCommentSubmit = async () => {
+    if (!comment.trim()) return;
+    
+    setSubmitting(true);
+    try {
+      await dispatch(addUserTaskComment({
+        taskId,
+        comment
+      })).unwrap();
+      setComment('');
+      toast.success('Comment added');
+    } catch (error) {
+      toast.error('Failed to add comment');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
+    }
+  };
+
+  const startTimer = () => {
+    if (!timerRunning) {
+      setTimerRunning(true);
+      const interval = setInterval(() => {
+        setTimeSpent(prev => prev + 1);
+      }, 1000);
+      setTimerInterval(interval);
+    }
+  };
+
+  const stopTimer = () => {
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      setTimerRunning(false);
+      setTimerInterval(null);
     }
   };
 
   const handleExportReport = async () => {
+    setExportingReport(true);
     try {
-      setIsSubmitting(true);
+      const response = await dispatch(exportTaskReport(taskId)).unwrap();
       
-      await dispatch(exportTaskReport({
-        taskId,
-        format: 'pdf'
-      })).unwrap();
+      // Create a blob from the data
+      const blob = new Blob([response], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       
-      toast.success('Report generated successfully');
+      // Create a link and click it
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `task-report-${taskId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Report exported successfully');
     } catch (error) {
-      toast.error('Failed to generate report: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to export report');
     } finally {
-      setIsSubmitting(false);
+      setExportingReport(false);
     }
   };
 
-  const handleFinalSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-      
-      await dispatch(updateUserTaskProgress({
-        taskId,
-        data: {
-          status: 'completed',
-          finalSubmit: true
-        }
-      })).unwrap();
-      
-      setIsCompleted(true);
-      toast.success('Task completed successfully');
-      
-      handleExportReport();
-      
-    } catch (error) {
-      toast.error('Failed to submit task: ' + (error.message || 'Unknown error'));
-    } finally {
-      setIsSubmitting(false);
+  const calculateProgress = () => {
+    if (!currentTask || !currentTask.subLevels || currentTask.subLevels.length === 0) {
+      return 0;
     }
+    
+    const totalSubLevels = currentTask.subLevels.length;
+    const completedSubLevels = currentTask.subLevels.filter(
+      subLevel => subLevel.status === 'completed'
+    ).length;
+    
+    return Math.round((completedSubLevels / totalSubLevels) * 100);
   };
 
-  const getSubLevelStatus = (subLevelId) => {
-    if (!currentTask || !currentTask.progress) return 'pending';
+  const renderSubLevelTree = (subLevels, parentId = null, level = 0) => {
+    if (!subLevels) return null;
     
-    const progressItem = currentTask.progress.find(p => 
-      p.subLevelId === subLevelId
+    const filteredSubLevels = subLevels.filter(
+      subLevel => subLevel.parentId === parentId
     );
     
-    return progressItem ? progressItem.status : 'pending';
-  };
-
-  const getSubLevelNotes = (subLevelId) => {
-    if (!currentTask || !currentTask.progress) return '';
-    
-    const progressItem = currentTask.progress.find(p => 
-      p.subLevelId === subLevelId
-    );
-    
-    return progressItem && progressItem.notes ? progressItem.notes : '';
-  };
-
-  const renderSubLevels = (subLevel, depth = 0) => {
-    if (!subLevel) return null;
-    
-    const subLevelId = subLevel._id;
-    const isExpanded = expandedItems[subLevelId];
-    const status = getSubLevelStatus(subLevelId);
-    const notes = getSubLevelNotes(subLevelId);
-    const isSelected = selectedSubLevel === subLevelId;
-    const timerData = timers[subLevelId] || { elapsed: 0, running: false };
-    
-    return (
-      <React.Fragment key={subLevelId}>
-        <InspectionItem indent={depth}>
+    return filteredSubLevels.map(subLevel => (
+      <React.Fragment key={subLevel._id}>
+        <InspectionItem indent={level}>
           <InspectionHeader 
-            onClick={() => toggleExpand(subLevelId)}
-            status={status}
+            onClick={() => toggleSubLevel(subLevel._id)}
+            status={subLevel.status}
           >
             <div className="inspection-title">
-  <div className="status-indicator" />
-  {subLevel.name}
-  {subLevel.subLevels && subLevel.subLevels.length > 0 && (
-    <span style={{ 
-      marginLeft: '8px', 
-      fontSize: '12px', 
-      background: 'rgba(26, 35, 126, 0.1)', 
-      padding: '2px 6px', 
-      borderRadius: '12px',
-      color: '#1a237e',
-      fontWeight: '600'
-    }}>
-      {subLevel.subLevels.length} subtask{subLevel.subLevels.length !== 1 ? 's' : ''}
-    </span>
-  )}
-</div>
-            
-            <StatusBadge status={status}>
-              <StatusIcon status={status} size={14} />
-              {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-            </StatusBadge>
+              <div className="status-indicator" />
+              {subLevel.title}
+            </div>
+            {expandedSubLevels[subLevel._id] ? 
+              <ChevronUp size={20} /> : 
+              <ChevronDown size={20} />
+            }
           </InspectionHeader>
           
-          {isExpanded && (
+          {expandedSubLevels[subLevel._id] && (
             <InspectionContent>
-              <div className="inspection-description">
-                {subLevel.description}
-              </div>
-              
-              {(status === 'in_progress' || timerData.elapsed > 0) && (
-                <TimerWidget>
-                  <Timer size={20} />
-                  <span>{formatTime(timerData.elapsed)}</span>
-                  <div className="timer-controls">
-                    {activeTimer === subLevelId ? (
-                      <button 
-                        className="timer-button pause" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStopTimer();
-                        }}
-                      >
-                        <PauseCircle size={20} />
-                      </button>
-                    ) : status !== 'completed' && (
-                      <button 
-                        className="timer-button play" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartTimer(subLevelId);
-                          setSelectedSubLevel(subLevelId);
-                        }}
-                      >
-                        <PlayCircle size={20} />
-                      </button>
-                    )}
-                  </div>
-                </TimerWidget>
-              )}
-              
-              {notes && (
-                <div style={{ marginBottom: '18px' }}>
-                  <div style={{ fontWeight: 600, marginBottom: '8px' }}>Notes:</div>
-                  <div style={{ 
-                    padding: '14px', 
-                    background: 'rgba(248, 250, 252, 0.8)', 
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    color: '#4b5563',
-                    lineHeight: '1.6',
-                    border: '1px solid rgba(255, 255, 255, 0.7)',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-                    backdropFilter: 'blur(5px)'
-                  }}>
-                    {notes}
-                  </div>
+              {subLevel.description && (
+                <div className="inspection-description">
+                  {subLevel.description}
                 </div>
               )}
               
-              {status !== 'completed' && (
-                <>
-                  <StatusButtonGroup>
-                    {status === 'pending' && !isSelected && (
-                      <StatusButton 
-                        status="in_progress"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          selectSubLevel(subLevelId);
-                        }}
-                      >
-                        <PlayCircle size={16} />
-                        Start Inspection
-                      </StatusButton>
-                    )}
-                    
-                    {isSelected && (
-                      <>
-                        <StatusButton 
-                          status="pending"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStopTimer();
-                            setSelectedSubLevel(null);
-                            setActiveSubLevelId(null);
-                          }}
-                        >
-                          Cancel
-                        </StatusButton>
-                        
-                        <StatusButton 
-                          status="in_progress"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStatusChange('in_progress');
-                          }}
-                          disabled={isSubmitting || status === 'in_progress'}
-                        >
-                          <Activity size={16} />
-                          Save Progress
-                        </StatusButton>
-                        
-                        <StatusButton 
-                          status="completed"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStatusChange('completed');
-                          }}
-                          disabled={isSubmitting}
-                        >
-                          <CheckCircle size={16} />
-                          Mark as Completed
-                        </StatusButton>
-                      </>
-                    )}
-                  </StatusButtonGroup>
-                  
-                  {isSelected && (
-                    <>
-                      <NotesSection>
-                        <div className="notes-label">Add Notes</div>
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Add details about the inspection item..."
-                        />
-                      </NotesSection>
-                      
-                      <PhotoUploadContainer>
-                        <div className="photos-label">Add Photos</div>
-                        <div 
-                          className="upload-area"
-                          onClick={() => fileInputRef.current.click()}
-                        >
-                          <Camera size={28} color="#1a237e" />
-                          <p>Click to upload photos</p>
-                        </div>
-                        <input 
-                          type="file"
-                          ref={fileInputRef}
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoUpload}
-                        />
-                        
-                        {photos.length > 0 && (
-                          <PhotoPreviewsContainer>
-                            {photos.map((photo, index) => (
-                              <PhotoPreview key={index}>
-                                <img src={photo.preview} alt="Preview" />
-                                <button 
-                                  className="remove-button"
-                                  onClick={() => removePhoto(index)}
-                                >
-                                  ×
-                                </button>
-                              </PhotoPreview>
-                            ))}
-                          </PhotoPreviewsContainer>
-                        )}
-                      </PhotoUploadContainer>
-                    </>
-                  )}
-                </>
-              )}
+              <NotesSection>
+                <div className="notes-label">Notes:</div>
+                <textarea 
+                  placeholder="Add your notes about this inspection level..."
+                  value={subLevelNotes[subLevel._id] || ''}
+                  onChange={(e) => setSubLevelNotes(prev => ({
+                    ...prev,
+                    [subLevel._id]: e.target.value
+                  }))}
+                />
+              </NotesSection>
+              
+              <StatusButtonGroup>
+                {subLevel.status !== 'in_progress' && (
+                  <StatusButton 
+                    status="in_progress"
+                    onClick={() => handleUpdateSubLevel(subLevel._id, 'in_progress')}
+                  >
+                    <Activity size={18} />
+                    Start This Section
+                  </StatusButton>
+                )}
+                
+                {subLevel.status !== 'completed' && (
+                  <StatusButton 
+                    status="completed"
+                    onClick={() => handleUpdateSubLevel(subLevel._id, 'completed')}
+                  >
+                    <CheckCircle size={18} />
+                    Mark as Completed
+                  </StatusButton>
+                )}
+              </StatusButtonGroup>
             </InspectionContent>
           )}
         </InspectionItem>
-
-        {isExpanded && subLevel.subLevels && subLevel.subLevels.length > 0 && (
-          <div style={{ marginLeft: `${depth * 28 + 28}px`, marginTop: '16px', marginBottom: '16px' }}>
-            {subLevel.subLevels.map(childSubLevel => 
-              renderSubLevels(childSubLevel, depth + 1)
-            )}
-          </div>
-        )}
+        
+        {/* Render children recursively */}
+        {renderSubLevelTree(subLevels, subLevel._id, level + 1)}
       </React.Fragment>
-    );
+    ));
   };
 
-  const renderTaskOverview = () => {
-    return (
-      <TaskStep>
-        <StepHeader>
-          <StepTitle>
-            <Info size={22} />
-            Task Overview
-          </StepTitle>
-        </StepHeader>
-        
-        <StepContent>
-          <Description>{currentTask.description}</Description>
-          
-          <MetaGrid>
-            <MetaItem>
-              <Calendar size={18} className="icon" />
-              <strong>Due Date:</strong> {formatDate(currentTask.deadline)}
-            </MetaItem>
-            
-            <MetaItem>
-              <AlertTriangle size={18} className="icon" />
-              <strong>Priority:</strong>
-              <PriorityBadge priority={currentTask.priority}>
-                {currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}
-              </PriorityBadge>
-            </MetaItem>
-            
-            {currentTask.location && (
-              <MetaItem>
-                <Map size={18} className="icon" />
-                <strong>Location:</strong> {currentTask.location}
-              </MetaItem>
-            )}
-            
-            <MetaItem>
-              <Info size={18} className="icon" />
-              <strong>Inspection Type:</strong> {currentTask.inspectionLevel?.type || 'N/A'}
-            </MetaItem>
-          </MetaGrid>
-          
-          <ProgressSection>
-            <ProgressHeader>
-              <div className="progress-label">Overall Progress</div>
-              <div className="progress-percentage">{currentTask.overallProgress || 0}%</div>
-            </ProgressHeader>
-            <ProgressBar progress={currentTask.overallProgress || 0}>
-              <div className="progress-fill" />
-            </ProgressBar>
-          </ProgressSection>
-          
-          <StepActions>
-            <Button onClick={() => startInspection()}>
-              <PlayCircle size={18} />
-              Start Inspection
-            </Button>
-          </StepActions>
-        </StepContent>
-      </TaskStep>
-    );
-  };
-
-  const renderQuestionnaire = () => {
-    return (
-      <TaskStep>
-        <StepHeader>
-          <StepTitle>
-            <CheckSquare size={22} />
-            Pre-Inspection Questionnaire
-          </StepTitle>
-        </StepHeader>
-        
-        <StepContent>
-          <QuestionsContainer>
-            {currentTask.questions && currentTask.questions.map((question, index) => (
-              <QuestionItem key={question._id || question.id || index}>
-                <QuestionText>
-                  {index + 1}. {question.text} {question.required && <span style={{ color: 'red' }}>*</span>}
-                </QuestionText>
-                
-                <QuestionOptions>
-                  {question.answerType === 'yesNo' && (
-                    <>
-                      <OptionButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'yes'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'yes')}
-                      >
-                        Yes
-                      </OptionButton>
-                      <OptionButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'no'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'no')}
-                      >
-                        No
-                      </OptionButton>
-                      <OptionButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'na'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'na')}
-                      >
-                        N/A
-                      </OptionButton>
-                    </>
-                  )}
-                  
-                  {question.answerType === 'compliance' && (
-                    <>
-                      <ComplianceButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'full_compliance'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'full_compliance')}
-                        value="full_compliance"
-                      >
-                        Full Compliance
-                      </ComplianceButton>
-                      <ComplianceButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'partial_compliance'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'partial_compliance')}
-                        value="partial_compliance"
-                      >
-                        Partial Compliance
-                      </ComplianceButton>
-                      <ComplianceButton
-                        selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === 'non_compliance'}
-                        onClick={() => handleQuestionResponse(question._id || question.id, 'non_compliance')}
-                        value="non_compliance"
-                      >
-                        Non Compliance
-                      </ComplianceButton>
-                    </>
-                  )}
-                  
-                  {question.answerType === 'custom' && question.options && question.options.length > 0 && (
-                    <>
-                      {question.options.map((option, optionIndex) => (
-                        <OptionButton
-                          key={optionIndex}
-                          selected={currentResponses[`${activeSubLevelId || 'general'}-${question._id || question.id}`] === option}
-                          onClick={() => handleQuestionResponse(question._id || question.id, option)}
-                        >
-                          {option}
-                        </OptionButton>
-                      ))}
-                    </>
-                  )}
-                </QuestionOptions>
-              </QuestionItem>
-            ))}
-          </QuestionsContainer>
-          
-          <StepActions>
-            <Button onClick={() => setCurrentStep(0)}>
-              Back
-            </Button>
-            <Button onClick={submitQuestionnaire} disabled={isSubmitting}>
-              <CheckCircle size={18} />
-              Submit & Start Inspection
-            </Button>
-          </StepActions>
-        </StepContent>
-      </TaskStep>
-    );
-  };
-
-  const renderInspection = () => {
-    return (
-      <TaskStep>
-        <StepHeader>
-          <StepTitle>
-            <CheckSquare size={22} />
-            Inspection Items
-          </StepTitle>
-        </StepHeader>
-        
-        <StepContent>
-          <InspectionList>
-            {currentTask.inspectionLevel?.subLevels?.map(item => 
-              renderSubLevels(item)
-            )}
-          </InspectionList>
-          
-          <StepActions>
-            <Button onClick={() => setCurrentStep(0)}>
-              Back to Overview
-            </Button>
-          </StepActions>
-          
-          {!isCompleted && (
-            <FinalSubmitButton 
-              onClick={handleFinalSubmit}
-              disabled={finalSubmitDisabled || isSubmitting}
-            >
-              <CheckCircle size={20} />
-              Final Submit
-            </FinalSubmitButton>
-          )}
-          
-          {isCompleted && (
-            <FinalSubmitButton 
-              onClick={handleExportReport}
-              disabled={isSubmitting}
-            >
-              <File size={20} />
-              Export Report
-            </FinalSubmitButton>
-          )}
-        </StepContent>
-      </TaskStep>
-    );
-  };
-
-  if (taskDetailsLoading && !currentTask) {
-    return (
-      <PageContainer>
-        <BackButton onClick={() => navigate('/user-tasks')}>
-          <ArrowLeft size={18} />
-          Back to Tasks
-        </BackButton>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <Loader size={32} color="#1a237e" />
-        </div>
-      </PageContainer>
-    );
+  if (taskDetailsLoading) {
+    return <UserTaskDetailSkeleton />;
   }
 
   if (error) {
@@ -2337,15 +1835,19 @@ const UserTaskDetail = () => {
           <ArrowLeft size={18} />
           Back to Tasks
         </BackButton>
+        
         <Card>
-          <CardTitle>Error</CardTitle>
-          <p>{error}</p>
-          <SubmitButton 
-            style={{ marginTop: '18px' }}
-            onClick={() => dispatch(fetchUserTaskDetails(taskId))}
-          >
-            Try Again
-          </SubmitButton>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            padding: '40px 20px',
+            gap: '16px'
+          }}>
+            <AlertTriangle size={48} color="#d32f2f" />
+            <h2 style={{ color: '#d32f2f', fontSize: '20px' }}>Error Loading Task</h2>
+            <p style={{ textAlign: 'center', color: '#666' }}>{error}</p>
+          </div>
         </Card>
       </PageContainer>
     );
@@ -2358,25 +1860,28 @@ const UserTaskDetail = () => {
           <ArrowLeft size={18} />
           Back to Tasks
         </BackButton>
+        
         <Card>
-          <CardTitle>Task Not Found</CardTitle>
-          <p>The requested task could not be found.</p>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            padding: '40px 20px',
+            gap: '16px'
+          }}>
+            <AlertTriangle size={48} color="#f57c00" />
+            <h2 style={{ color: '#f57c00', fontSize: '20px' }}>Task Not Found</h2>
+            <p style={{ textAlign: 'center', color: '#666' }}>The requested task could not be found.</p>
+          </div>
         </Card>
       </PageContainer>
     );
   }
 
+  const progress = calculateProgress();
+
   return (
     <PageContainer>
-      {actionLoading && (
-        <LoadingOverlay>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-            <Loader size={44} color="#1a237e" />
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a237e' }}>Processing...</div>
-          </div>
-        </LoadingOverlay>
-      )}
-      
       <BackButton onClick={() => navigate('/user-tasks')}>
         <ArrowLeft size={18} />
         Back to Tasks
@@ -2386,175 +1891,278 @@ const UserTaskDetail = () => {
         <HeaderContent>
           <TitleSection>
             <Title>{currentTask.title}</Title>
+            <Description>{currentTask.description}</Description>
+            
+            <MetaGrid>
+              <MetaItem>
+                <Calendar size={18} />
+                <div>Due: <strong>{formatDate(currentTask.deadline)}</strong></div>
+              </MetaItem>
+              
+              <MetaItem>
+                <Map size={18} />
+                <div>Location: <strong>{currentTask.location || 'Not specified'}</strong></div>
+              </MetaItem>
+              
+              <MetaItem>
+                <StatusIcon status={currentTask.status} />
+                <div>Status: 
+                  <StatusBadge status={currentTask.status}>
+                    {currentTask.status === 'in_progress' ? 'In Progress' : 
+                      currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1)}
+                  </StatusBadge>
+                </div>
+              </MetaItem>
+              
+              <MetaItem>
+                <Activity size={18} />
+                <div>Priority: 
+                  <PriorityBadge priority={currentTask.priority}>
+                    {currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}
+                  </PriorityBadge>
+                </div>
+              </MetaItem>
+            </MetaGrid>
           </TitleSection>
-          
-          <StatusBadge status={currentTask.status}>
-            <StatusIcon status={currentTask.status} />
-            {currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
-          </StatusBadge>
         </HeaderContent>
       </Header>
       
-      <TaskFlowContainer>
-        <StepIndicator>
-          <StepDot active={currentStep === 0} />
-          {currentTask.questions && currentTask.questions.length > 0 && (
-            <StepDot active={currentStep === 1} />
-          )}
-          <StepDot active={currentStep === 2} />
-        </StepIndicator>
-        
-        {currentStep === 0 && renderTaskOverview()}
-        {currentStep === 1 && renderQuestionnaire()}
-        {currentStep === 2 && renderInspection()}
-        
-        {currentStep === 2 && (
-          <ContentGrid>
-            <Card>
-              <CardTitle>
-                <FileText size={22} />
-                Comments
+      {timerRunning && (
+        <TimerWidget>
+          <Timer size={20} />
+          {formatTime(timeSpent)}
+          <div className="timer-controls">
+            {timerRunning ? (
+              <button className="timer-button pause" onClick={stopTimer}>
+                <PauseCircle size={24} />
+              </button>
+            ) : (
+              <button className="timer-button play" onClick={startTimer}>
+                <PlayCircle size={24} />
+              </button>
+            )}
+          </div>
+        </TimerWidget>
+      )}
+      
+      <ContentGrid>
+        <div>
+          <Card>
+            <CardTitle>
+              <CheckSquare size={22} />
+              Task Details
+            </CardTitle>
+            
+            <ProgressSection>
+              <ProgressHeader>
+                <div className="progress-label">Progress</div>
+                <div className="progress-percentage">{progress}%</div>
+              </ProgressHeader>
+              <ProgressBar progress={progress}>
+                <div className="progress-fill" />
+              </ProgressBar>
+            </ProgressSection>
+            
+            <ButtonGroup>
+              {currentTask.status === 'pending' && (
+                <Button onClick={handleStartTask}>
+                  <PlayCircle size={18} />
+                  Start Task
+                </Button>
+              )}
+              
+              {currentTask.status === 'in_progress' && (
+                <Button onClick={handleCompleteTask}>
+                  <CheckCircle size={18} />
+                  Complete Task
+                </Button>
+              )}
+              
+              {currentTask.status !== 'pending' && !timerRunning && (
+                <Button onClick={startTimer}>
+                  <PlayCircle size={18} />
+                  Resume Timer
+                </Button>
+              )}
+              
+              <Button onClick={handleExportReport} disabled={exportingReport}>
+                <FileText size={18} />
+                Export Report
+              </Button>
+            </ButtonGroup>
+            
+            <InspectionList>
+              <CardTitle style={{ marginTop: '32px' }}>
+                <Map size={22} />
+                Inspection Areas
               </CardTitle>
               
+              {currentTask.subLevels && currentTask.subLevels.length > 0 ? (
+                renderSubLevelTree(currentTask.subLevels)
+              ) : (
+                <div style={{ 
+                  padding: '20px', 
+                  textAlign: 'center', 
+                  color: '#666',
+                  background: 'rgba(248, 250, 252, 0.7)',
+                  borderRadius: '12px'
+                }}>
+                  No inspection areas defined for this task
+                </div>
+              )}
+            </InspectionList>
+          </Card>
+          
+          <Card>
+            <CardTitle>
+              <MessageSquare size={22} />
+              Comments
+            </CardTitle>
+            
+            <CommentSection>
               <CommentInput>
                 <textarea 
                   placeholder="Add a comment about this task..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
                 />
                 <div className="button-row">
-                  <SubmitButton 
-                    onClick={handleAddComment}
-                    disabled={isSubmitting || !newComment.trim()}
+                  <Button 
+                    onClick={handleCommentSubmit}
+                    disabled={submitting || !comment.trim()}
                   >
                     <Send size={16} />
                     Post Comment
-                  </SubmitButton>
+                  </Button>
                 </div>
               </CommentInput>
               
               <CommentList>
-                {currentTask.comments?.map((comment, index) => (
-                  <Comment key={index}>
-                    <div className="header">
-                      <span className="author">{comment.user?.name || 'Inspector'}</span>
-                      <span className="timestamp">{formatDateTime(comment.createdAt)}</span>
-                    </div>
-                    <p className="content">{comment.content}</p>
-                  </Comment>
-                ))}
-                
-                {(!currentTask.comments || currentTask.comments.length === 0) && (
-                  <p style={{ 
-                    color: '#6b7280', 
-                    fontSize: '14px', 
+                {comments.length > 0 ? (
+                  comments.map((comment, index) => (
+                    <Comment key={index}>
+                      <div className="header">
+                        <div className="author">{comment.createdBy?.name || 'Anonymous'}</div>
+                        <div className="timestamp">{formatDateTime(comment.createdAt)}</div>
+                      </div>
+                      <div className="content">{comment.text}</div>
+                    </Comment>
+                  ))
+                ) : (
+                  <div style={{ 
+                    padding: '20px', 
                     textAlign: 'center', 
-                    padding: '16px',
-                    background: 'rgba(255, 255, 255, 0.6)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(5px)'
+                    color: '#666',
+                    background: 'rgba(248, 250, 252, 0.7)',
+                    borderRadius: '12px'
                   }}>
                     No comments yet
-                  </p>
+                  </div>
                 )}
               </CommentList>
-            </Card>
+            </CommentSection>
+          </Card>
+        </div>
+        
+        <div>
+          <Card>
+            <CardTitle>
+              <Activity size={22} />
+              Task Progress
+            </CardTitle>
             
-            <div>
-              <Card>
-                <CardTitle>
-                  <Activity size={22} />
-                  Task Progress
-                </CardTitle>
-                
-                <ProgressWidget progress={currentTask.overallProgress || 0}>
-                  <div className="progress-circle" />
-                  <div className="progress-text">{currentTask.overallProgress || 0}%</div>
-                  <div className="progress-label">Overall Completion</div>
-                </ProgressWidget>
-                
-                <TaskMetrics>
-                  <MetricCard>
-                    <div className="metric-label">Time Spent</div>
-                    <div className="metric-value">
-                      <Clock size={18} color="#1976d2" />
-                      {currentTask.taskMetrics?.timeSpent || 0} hours
-                    </div>
-                  </MetricCard>
-                  
-                  <MetricCard>
-                    <div className="metric-label">Items Completed</div>
-                    <div className="metric-value">
-                      <CheckCircle size={18} color="#388e3c" />
-                      {currentTask.taskMetrics?.userProgress || 0} of {currentTask.taskMetrics?.totalSubTasks || 0}
-                    </div>
-                  </MetricCard>
-                  
-                  <MetricCard>
-                    <div className="metric-label">Your Completion Rate</div>
-                    <div className="metric-value">
-                      <Activity size={18} color="#f57c00" />
-                      {currentTask.taskMetrics?.completionRate || 0}%
-                    </div>
-                  </MetricCard>
-                </TaskMetrics>
-                
-                {currentTask.status === 'completed' && (
-                  <ReportButton 
-                    onClick={handleExportReport}
-                    disabled={isSubmitting}
-                  >
-                    <File size={18} />
-                    Export Inspection Report
-                  </ReportButton>
-                )}
-              </Card>
+            <ProgressWidget progress={progress}>
+              <div className="progress-circle">
+                <div className="progress-text">{progress}%</div>
+              </div>
+              <div className="progress-label">Task Completion</div>
+            </ProgressWidget>
+            
+            <TaskMetrics>
+              <CardTitle>
+                <Clock size={22} />
+                Task Metrics
+              </CardTitle>
               
-              <Card style={{ marginTop: '24px' }}>
-                <CardTitle>
+              <MetricCard>
+                <div className="metric-label">Time Spent</div>
+                <div className="metric-value">
+                  <Timer size={18} />
+                  {formatTime(timeSpent)}
+                </div>
+              </MetricCard>
+              
+              {currentTask.subLevels && currentTask.subLevels.length > 0 && (
+                <MetricCard>
+                  <div className="metric-label">Areas Progress</div>
+                  <div style={{ 
+                    marginTop: '12px',
+                    border: '1px solid rgba(237, 242, 247, 0.7)',
+                    borderRadius: '10px',
+                    overflow: 'hidden'
+                  }}>
+                    {currentTask.subLevels.map((subLevel, index) => (
+                      <SubLevelTimeItem key={index}>
+                        <div className="sublevel-name">{subLevel.title}</div>
+                        <div className="time-spent">
+                          {subLevel.status === 'completed' ? 
+                            <CheckCircle size={14} color="#2e7d32" /> : 
+                            subLevel.status === 'in_progress' ?
+                              <Activity size={14} color="#0069c0" /> :
+                              <Clock size={14} color="#757575" />
+                          }
+                        </div>
+                      </SubLevelTimeItem>
+                    ))}
+                  </div>
+                </MetricCard>
+              )}
+            </TaskMetrics>
+            
+            {currentTask.attachments && currentTask.attachments.length > 0 && (
+              <>
+                <CardTitle style={{ marginTop: '28px' }}>
                   <PaperclipIcon size={22} />
                   Attachments
                 </CardTitle>
                 
-                {currentTask.attachments?.length > 0 ? (
-                  <AttachmentList>
-                    {currentTask.attachments.map((attachment, index) => (
-                      <AttachmentItem key={index}>
-                        <div className="file-info">
-                          <PaperclipIcon size={18} color="#1a237e" />
-                          <span className="file-name">{attachment.filename}</span>
-                        </div>
-                        <a 
-                          href={attachment.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                        >
-                          <Download size={14} />
-                          Download
-                        </a>
-                      </AttachmentItem>
-                    ))}
-                  </AttachmentList>
-                ) : (
-                  <p style={{ 
-                    color: '#6b7280', 
-                    fontSize: '14px', 
-                    textAlign: 'center', 
-                    padding: '16px',
-                    background: 'rgba(255, 255, 255, 0.6)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(5px)'
-                  }}>
-                    No attachments available
-                  </p>
-                )}
-              </Card>
-            </div>
-          </ContentGrid>
-        )}
-      </TaskFlowContainer>
+                <AttachmentList>
+                  {currentTask.attachments.map((attachment, index) => (
+                    <AttachmentItem key={index}>
+                      <div className="file-info">
+                        <File size={18} />
+                        <div className="file-name">{attachment.name || 'Document'}</div>
+                      </div>
+                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                        <Download size={16} />
+                        Download
+                      </a>
+                    </AttachmentItem>
+                  ))}
+                </AttachmentList>
+              </>
+            )}
+          </Card>
+        </div>
+      </ContentGrid>
+      
+      {submitting && (
+        <LoadingOverlay>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <Loader size={40} color="#1a237e" />
+            <div style={{ color: '#1a237e', fontWeight: '600' }}>Saving changes...</div>
+          </div>
+        </LoadingOverlay>
+      )}
+      
+      {exportingReport && (
+        <LoadingOverlay>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <Loader size={40} color="#1a237e" />
+            <div style={{ color: '#1a237e', fontWeight: '600' }}>Generating report...</div>
+          </div>
+        </LoadingOverlay>
+      )}
     </PageContainer>
   );
 };

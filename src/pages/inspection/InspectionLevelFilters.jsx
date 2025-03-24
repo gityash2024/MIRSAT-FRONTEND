@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { X, Check, Tag, ToggleLeft, Flag, Filter, ArrowRight, RefreshCw } from 'lucide-react';
 
@@ -310,41 +310,77 @@ const categoryLabels = {
   priority: 'Priority'
 };
 
-const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading }) => {
-  const handleFilterChange = (category, value) => {
-    if (loading) return;
+const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) => {
+  // Use local state to track changes before applying
+  const [localFilters, setLocalFilters] = useState({ ...filters });
+  // Use ref to track if this is the first render
+  const initialRenderRef = useRef(true);
+  // Ref for the apply changes timeout
+  const applyTimeoutRef = useRef(null);
+
+  // Initialize local filters when props change, but only on first render
+  useEffect(() => {
+    if (initialRenderRef.current) {
+      setLocalFilters({ ...filters });
+      initialRenderRef.current = false;
+    }
     
-    const updatedFilters = {
-      ...filters,
-      [category]: filters[category]?.includes(value)
-        ? filters[category].filter(item => item !== value)
-        : [...(filters[category] || []), value]
+    // Cleanup function
+    return () => {
+      if (applyTimeoutRef.current) {
+        clearTimeout(applyTimeoutRef.current);
+      }
     };
-    onFilterChange(updatedFilters);
+  }, [filters]);
+
+  const handleCheckboxChange = (filterType, value) => {
+    setLocalFilters(prev => {
+      const updatedFilters = { ...prev };
+      
+      if (updatedFilters[filterType].includes(value)) {
+        updatedFilters[filterType] = updatedFilters[filterType].filter(item => item !== value);
+      } else {
+        updatedFilters[filterType] = [...updatedFilters[filterType], value];
+      }
+      
+      return updatedFilters;
+    });
   };
 
-  const removeFilter = (category, value) => {
-    if (loading) return;
+  const handleApply = () => {
+    // Clear any existing timeout
+    if (applyTimeoutRef.current) {
+      clearTimeout(applyTimeoutRef.current);
+    }
     
-    const updatedFilters = {
-      ...filters,
-      [category]: filters[category]?.filter(item => item !== value) || []
+    // Apply the changes with a slight delay to prevent rapid successive calls
+    applyTimeoutRef.current = setTimeout(() => {
+      onFilterChange(localFilters);
+      onClose();
+    }, 100);
+  };
+
+  const handleClear = () => {
+    const emptyFilters = {
+      type: [],
+      status: [],
+      priority: []
     };
-    onFilterChange(updatedFilters);
-  };
-
-  const clearAllFilters = () => {
-    if (loading) return;
+    setLocalFilters(emptyFilters);
     
-    const clearedFilters = Object.keys(filterOptions).reduce((acc, key) => ({
-      ...acc,
-      [key]: []
-    }), {});
-    onFilterChange(clearedFilters);
+    // Clear any existing timeout
+    if (applyTimeoutRef.current) {
+      clearTimeout(applyTimeoutRef.current);
+    }
+    
+    // Apply the cleared filters with a slight delay
+    applyTimeoutRef.current = setTimeout(() => {
+      onFilterChange(emptyFilters);
+    }, 100);
   };
 
-  const hasActiveFilters = Object.values(filters || {}).some(arr => arr?.length > 0);
-  const activeFilterCount = Object.values(filters || {}).flat().length;
+  const hasActiveFilters = Object.values(localFilters || {}).some(arr => arr?.length > 0);
+  const activeFilterCount = Object.values(localFilters || {}).flat().length;
 
   return (
     <FilterContainer>
@@ -369,13 +405,13 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading
             </h3>
             <CheckboxGroup>
               {options.map(option => {
-                const isChecked = filters[category]?.includes(option.value) || false;
+                const isChecked = localFilters[category]?.includes(option.value) || false;
                 return (
                   <CheckboxLabel key={option.value}>
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => handleFilterChange(category, option.value)}
+                      onChange={() => handleCheckboxChange(category, option.value)}
                       disabled={loading}
                     />
                     <CustomCheckbox $checked={isChecked}>
@@ -401,7 +437,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading
               Active Filters
             </h4>
             <button 
-              onClick={clearAllFilters}
+              onClick={handleClear}
               disabled={loading}
             >
               <RefreshCw size={12} />
@@ -409,7 +445,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading
             </button>
           </ActiveFiltersHeader>
           <ActiveFilters>
-            {Object.entries(filters).map(([category, values]) =>
+            {Object.entries(localFilters).map(([category, values]) =>
               values?.map(value => {
                 const option = filterOptions[category]?.find(opt => opt.value === value);
                 return option && (
@@ -419,7 +455,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading
                     </CategoryBadge>
                     {option.label}
                     <button 
-                      onClick={() => removeFilter(category, value)}
+                      onClick={() => handleCheckboxChange(category, value)}
                       disabled={loading}
                     >
                       <X size={10} />
@@ -441,7 +477,7 @@ const InspectionLevelFilters = ({ filters = {}, onFilterChange, onClose, loading
         </Button>
         <Button 
           $variant="primary" 
-          onClick={onClose}
+          onClick={handleApply}
           disabled={loading}
         >
           Apply Filters

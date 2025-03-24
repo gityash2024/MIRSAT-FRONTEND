@@ -12,6 +12,7 @@ import Switch from '../../../components/ui/Switch';
 import DatePicker from '../../../components/ui/DatePicker';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
+import Skeleton from '../../../components/ui/Skeleton';
 
 const Form = styled.form`
   display: grid;
@@ -430,6 +431,73 @@ const IconButton = styled.button`
   }
 `;
 
+// Create a TaskFormSkeleton component
+const TaskFormSkeleton = () => (
+  <div style={{ display: 'grid', gap: '24px' }}>
+    {/* Title field */}
+    <Skeleton.Form.Field>
+      <Skeleton.Form.Label width="80px" />
+      <Skeleton.Form.Input height="42px" />
+    </Skeleton.Form.Field>
+    
+    {/* Description field */}
+    <Skeleton.Form.Field>
+      <Skeleton.Form.Label width="100px" />
+      <Skeleton.Form.Input height="120px" />
+    </Skeleton.Form.Field>
+    
+    {/* Priority and Deadline row */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="70px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="80px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+    </div>
+    
+    {/* Location field */}
+    <Skeleton.Form.Field>
+      <Skeleton.Form.Label width="80px" />
+      <Skeleton.Form.Input height="42px" />
+    </Skeleton.Form.Field>
+    
+    {/* Assigned Users field */}
+    <Skeleton.Form.Field>
+      <Skeleton.Form.Label width="130px" />
+      <Skeleton.Form.Input height="60px" />
+    </Skeleton.Form.Field>
+    
+    {/* Inspection Level row */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+      <Skeleton.Form.Field>
+        <Skeleton.Form.Label width="150px" />
+        <Skeleton.Form.Input height="42px" />
+      </Skeleton.Form.Field>
+      <div></div>
+    </div>
+    
+    {/* Toggle switch */}
+    <Skeleton.Form.Field>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Skeleton.Base width="40px" height="20px" radius="20px" />
+        <Skeleton.Base width="50px" height="16px" />
+      </div>
+    </Skeleton.Form.Field>
+    
+    {/* Advanced Options button */}
+    <Skeleton.Base width="140px" height="24px" />
+    
+    {/* Button group */}
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+      <Skeleton.Button width="90px" />
+      <Skeleton.Button width="90px" />
+    </div>
+  </div>
+);
+
 const TaskForm = ({ 
   initialData = {}, 
   onCancel, 
@@ -443,6 +511,11 @@ const TaskForm = ({
   const userDropdownRef = useRef(null);
   const stateUsers = useSelector(state => state.users.users);
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
+  const usersLoading = useSelector(state => state.users.loading);
+  const inspectionLevelsLoading = useSelector(state => state.inspectionLevels?.loading);
+  
+  const initialLoading = (usersProp.length === 0 && usersLoading) || 
+                         (inspectionLevelsProp.length === 0 && inspectionLevelsLoading);
 
   let users = usersProp.length > 0 ? usersProp : stateUsers;
   users = users?.filter(user => user.role === 'inspector');
@@ -692,6 +765,11 @@ const TaskForm = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showUserDropdown]);
+  
+  // Show skeleton loader while data is loading
+  if (initialLoading) {
+    return <TaskFormSkeleton />;
+  }
   
   return (
     <Form onSubmit={handleSubmit}>

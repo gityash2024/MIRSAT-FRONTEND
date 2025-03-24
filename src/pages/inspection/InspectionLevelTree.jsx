@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter, X, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import InspectionLevelFilters from './InspectionLevelFilters';
 import SubLevelViewModal from './SubLevelViewModal';
 import SubLevelEditModal from './SubLevelEditModal';
+import LevelListSkeleton from './LevelListSkeleton';
 
 const TreeContainer = styled.div`
   padding: 24px;
 `;
-
+const StatusBadge2 = styled.span`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${props => props.type === 'safety' ? '#e8f5e9' : 
+    props.type === 'environmental' ? '#e3f2fd' : 
+    props.type === 'operational' ? '#fff3e0' : '#f3e5f5'};
+  color: ${props => props.type === 'safety' ? '#2e7d32' : 
+    props.type === 'environmental' ? '#1565c0' : 
+    props.type === 'operational' ? '#ed6c02' : '#9c27b0'};
+`;
 const Header = styled.div`
   margin-bottom: 24px;
 `;
@@ -265,30 +277,6 @@ const EmptyState = styled.div`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 48px 0;
-  color: #1a237e;
-  gap: 12px;
-  
-  .spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #1a237e;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -383,7 +371,6 @@ const TreeNodeComponent = ({
           </StatusBadge>
           <NodeActions>
             {level === 0 ? (
-              // Main level - navigate to view/edit pages
               <>
                 <ActionButton 
                   as={Link} 
@@ -401,7 +388,6 @@ const TreeNodeComponent = ({
                 </ActionButton>
               </>
             ) : (
-              // Sub-levels - open modals
               <>
                 <ActionButton 
                   onClick={() => onViewSubLevel(node, nodePath)}
@@ -418,12 +404,17 @@ const TreeNodeComponent = ({
               </>
             )}
             <ActionButton 
-              onClick={() => onDelete(node)}
+              onClick={() => onDelete(node, nodePath)}
               disabled={loading}
             >
               <Trash2 size={14} />
             </ActionButton>
           </NodeActions>
+          {level === 0 && node.status && (
+  <StatusBadge2 type={node.type}>
+    {node.status.charAt(0).toUpperCase() + node.status.slice(1) || 'Active'}
+  </StatusBadge2>
+)}
         </NodeContent>
       </TreeNode>
       {hasChildren && isExpanded && (
@@ -448,17 +439,20 @@ const TreeNodeComponent = ({
   );
 };
 
-const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionService }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const InspectionLevelTree = ({
+  loading,
+  setLoading,
+  handleError,
+  inspectionService,
+  data,
+  searchTerm,
+  onSearchChange,
+  filters,
+  onFilterChange,
+  fetchData
+}) => {
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    type: [],
-    status: [],
-    priority: []
-  });
-  const [treeData, setTreeData] = useState([]);
-  
-  // State for modals
+  const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [nodeToDelete, setNodeToDelete] = useState(null);
   const [selectedSubLevel, setSelectedSubLevel] = useState(null);
@@ -466,44 +460,24 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedNodePath, setSelectedNodePath] = useState('');
 
-  useEffect(() => {
-    fetchInspectionLevels();
-  }, [filters]);
-
-  const fetchInspectionLevels = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        ...filters,
-        search: searchTerm
-      };
-      const response = await inspectionService.getInspectionLevels(params);
-      setTreeData(response.results || []);
-    } catch (error) {
-      console.error('Error fetching inspection levels:', error);
-      handleError(error);
-      toast.error('Failed to load inspection levels');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  // Use local reference to the data
+  const treeData = data || [];
   
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      fetchInspectionLevels();
+  const handleSearch = (e) => {
+    if (onSearchChange) {
+      onSearchChange(e.target.value);
     }
   };
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    if (onFilterChange) {
+      onFilterChange(newFilters);
+    }
   };
 
-  const onDeleteClick = (node) => {
+  const onDeleteClick = (node, nodePath) => {
     setNodeToDelete(node);
+    setSelectedNodePath(nodePath);
     setDeleteModalVisible(true);
   };
   
@@ -512,20 +486,49 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
     
     try {
       setLoading(true);
-      if (nodeToDelete._id) { // Main level
+      
+      const isTopLevel = nodeToDelete.level === 0 || nodeToDelete.createdAt !== undefined;
+      
+      if (isTopLevel) {
         await inspectionService.deleteInspectionLevel(nodeToDelete._id);
         toast.success('Inspection level deleted successfully');
-        fetchInspectionLevels();
       } else {
-        // This would be for sub-levels if you implement deleting them
-        toast.error('Deleting sub-levels directly is not supported.');
+        const pathParts = selectedNodePath.split('.');
+        const topLevelIndex = parseInt(pathParts[0], 10);
+        
+        if (isNaN(topLevelIndex) || !treeData || !treeData[topLevelIndex]) {
+          throw new Error('Cannot find parent inspection level');
+        }
+        
+        const topLevelInspection = treeData[topLevelIndex];
+        const inspectionId = topLevelInspection._id;
+        const subLevelId = nodeToDelete._id || nodeToDelete.id;
+        
+        if (!inspectionId || !subLevelId) {
+          throw new Error('Missing inspection ID or sub-level ID');
+        }
+        
+        await inspectionService.deleteSubLevel(inspectionId, subLevelId);
+        toast.success('Sub-level deleted successfully');
       }
-    } catch (error) {
-      console.error('Error deleting node:', error);
-      toast.error(error.message || 'Failed to delete inspection level');
-    } finally {
+      
       setDeleteModalVisible(false);
       setNodeToDelete(null);
+      setSelectedNodePath('');
+      
+      // Refresh data
+      if (fetchData) {
+        await fetchData();
+      }
+      
+    } catch (error) {
+      console.error('Error deleting node:', error);
+      const errorMsg = error.message || 'Failed to delete';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setDeleteModalVisible(false);
+      setNodeToDelete(null);
+      setSelectedNodePath('');
       setLoading(false);
     }
   };
@@ -537,31 +540,87 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
   };
   
   const onEditSubLevel = (subLevel, path) => {
-    setSelectedSubLevel(subLevel);
+    if (!subLevel._id && subLevel.id) {
+      subLevel._id = subLevel.id;
+    }
+    
+    setSelectedSubLevel({...subLevel});
     setSelectedNodePath(path);
     setShowEditModal(true);
   };
-  
-  const handleUpdateSubLevel = async (updatedSubLevel) => {
+
+  const handleUpdateSubLevel = async (nodeData) => {
     try {
-      setLoading(true);
-      
-      // Find the parent inspection level
-      const pathParts = selectedNodePath.split('.');
-      const topLevelIndex = parseInt(pathParts[0], 10);
-      const parentLevel = treeData[topLevelIndex];
-      
-      if (parentLevel && parentLevel._id) {
-        await inspectionService.updateSubLevel(parentLevel._id, updatedSubLevel._id, updatedSubLevel);
-        toast.success('Sub level updated successfully');
-        setShowEditModal(false);
-        fetchInspectionLevels(); // Refresh the tree
-      } else {
-        toast.error('Could not determine parent level');
+      if (!nodeData || !selectedNodePath) {
+        setError('Missing data for update');
+        return;
       }
-    } catch (error) {
-      console.error('Error updating sub level:', error);
-      toast.error(error.message || 'Failed to update sub level');
+
+      setLoading(true);
+      setError(null);
+
+      const pathParts = selectedNodePath.split('.');
+      
+      if (pathParts.length === 0) {
+        setError('Invalid node path');
+        return;
+      }
+
+      const rootIndex = parseInt(pathParts[0]);
+      
+      if (!treeData || !treeData[rootIndex]) {
+        setError('Tree data is invalid');
+        return;
+      }
+
+      const topLevelInspection = treeData[rootIndex];
+      const inspectionId = topLevelInspection._id;
+      const subLevelId = nodeData._id;
+
+      if (!inspectionId) {
+        setError('Inspection ID not found');
+        return;
+      }
+
+      if (!subLevelId) {
+        setError('Sub-level ID not found');
+        return;
+      }
+
+      const dataToUpdate = {
+        name: nodeData.name,
+        description: nodeData.description,
+        order: nodeData.order || 0,
+        isCompleted: nodeData.isCompleted || false
+      };
+
+      if (nodeData._id) {
+        dataToUpdate._id = nodeData._id;
+      }
+
+      await inspectionService.updateSubLevel(
+        inspectionId,
+        subLevelId,
+        dataToUpdate
+      );
+
+      setShowEditModal(false);
+      toast.success('Sub-level updated successfully');
+      
+      // Refresh data
+      if (fetchData) {
+        await fetchData();
+      }
+      
+    } catch (err) {
+      console.error('Error updating sub-level:', err);
+      
+      const errorMsg = err.message || 'Failed to update sub-level';
+      const details = err.originalError?.response?.data?.message || '';
+      const fullErrorMsg = details ? `${errorMsg}: ${details}` : errorMsg;
+      
+      setError(fullErrorMsg);
+      toast.error(fullErrorMsg);
     } finally {
       setLoading(false);
     }
@@ -613,8 +672,18 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
       {showEditModal && selectedSubLevel && (
         <SubLevelEditModal 
           subLevel={selectedSubLevel} 
-          onClose={() => setShowEditModal(false)}
-          onSave={handleUpdateSubLevel}
+          onClose={() => {
+            setShowEditModal(false);
+            setError(null);
+          }}
+          onSave={(updatedSubLevel) => {
+            try {
+              handleUpdateSubLevel(updatedSubLevel);
+            } catch (err) {
+              console.error('Error in modal save handler:', err);
+              setError(err.message || 'Failed to update sub-level');
+            }
+          }}
           loading={loading}
         />
       )}
@@ -635,7 +704,6 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
             placeholder="Search inspection levels..."
             value={searchTerm}
             onChange={handleSearch}
-            onKeyPress={handleSearchKeyPress}
             disabled={loading}
           />
         </SearchBox>
@@ -661,6 +729,34 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
         </ButtonGroup>
       </ActionBar>
 
+      {error && (
+        <div style={{ 
+          padding: '12px 16px', 
+          backgroundColor: '#fee2e2', 
+          color: '#dc2626', 
+          borderRadius: '6px', 
+          marginBottom: '16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
+          <button 
+            onClick={() => setError(null)} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#dc2626',
+              cursor: 'pointer'
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {showFilters && (
         <InspectionLevelFilters
           filters={filters}
@@ -672,10 +768,7 @@ const InspectionLevelTree = ({ loading, setLoading, handleError, inspectionServi
 
       <TreeCard>
         {loading ? (
-          <LoadingSpinner>
-            <div className="spinner"></div>
-            <p>Loading inspection levels...</p>
-          </LoadingSpinner>
+          <LevelListSkeleton />
         ) : treeData.length === 0 ? (
           <EmptyState>
             <h3>No Inspection Levels Found</h3>

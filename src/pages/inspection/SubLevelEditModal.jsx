@@ -212,12 +212,33 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
       return;
     }
     
+    // Ensure we preserve all original fields, especially the _id
     const updatedSubLevel = {
       ...subLevel,
       name: formData.name,
       description: formData.description,
       order: parseInt(formData.order, 10) || 0
     };
+    
+    // Log the data being sent for debugging
+    console.log('Submitting updated sublevel:', {
+      original: subLevel,
+      updated: updatedSubLevel,
+      hasId: !!updatedSubLevel._id
+    });
+    
+    // Check if _id exists to avoid errors
+    if (!updatedSubLevel._id) {
+      console.error('Missing _id in the sub-level data');
+      // If missing, try to find it in different properties
+      if (subLevel.id) {
+        updatedSubLevel._id = subLevel.id;
+        console.log('Using id property as _id:', updatedSubLevel._id);
+      } else {
+        console.error('Cannot find any valid ID for this sub-level');
+        return;
+      }
+    }
     
     onSave(updatedSubLevel);
   };

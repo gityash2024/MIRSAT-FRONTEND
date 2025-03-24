@@ -1,18 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
-import useDeleteConfirmation from '../../components/confirmationModal';
-import {   FileText } from 'lucide-react';
-import { DownloadDone, FileDownloadRounded } from '@mui/icons-material';
+import { FileText } from 'lucide-react';
+import { DownloadDone } from '@mui/icons-material';
+import LevelListSkeleton from './LevelListSkeleton';
+
 const ExportDropdown = styled.div`
   position: relative;
   display: inline-block;
 `;
-
+const StatusBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${props => props.type === 'safety' ? '#e8f5e9' : 
+    props.type === 'environmental' ? '#e3f2fd' : 
+    props.type === 'operational' ? '#fff3e0' : '#f3e5f5'};
+  color: ${props => props.type === 'safety' ? '#2e7d32' : 
+    props.type === 'environmental' ? '#1565c0' : 
+    props.type === 'operational' ? '#ed6c02' : '#9c27b0'};
+`;
 const DropdownContent = styled.div`
   display: ${props => props.show ? 'block' : 'none'};
   position: absolute;
@@ -40,6 +52,7 @@ const DropdownItem = styled.a`
     color: #1a237e;
   }
 `;
+
 const flattenSubLevels = (subLevels, level = 0) => {
   let result = [];
   
@@ -287,30 +300,6 @@ const EmptyState = styled.div`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 48px 0;
-  color: #1a237e;
-  gap: 12px;
-  
-  .spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #1a237e;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const AccordionTrigger = styled(Accordion.Trigger)`
   width: 100%;
   border: none;
@@ -388,150 +377,133 @@ const ModalActions = styled.div`
   margin-top: 24px;
 `;
 
-
-const InspectionLevelList = ({ loading, setLoading, handleError, inspectionService }) => {
-  const {
-    showDeleteConfirmation,
-    DeleteConfirmationModal
-  } = useDeleteConfirmation();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    type: [],
-    status: [],
-    priority: []
-  });
-  const [inspectionLevels, setInspectionLevels] = useState([]);
+const InspectionLevelList = ({ 
+  loading, 
+  setLoading, 
+  handleError, 
+  inspectionService,
+  data,
+  searchTerm,
+  onSearchChange,
+  filters,
+  onFilterChange,
+  fetchData
+}) => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-
-
-  const handleExport = async (format) => {
-    try {
-      setLoading(true);
-      
-      // Build query parameters from current filters
-      const params = {
-        ...filters
-      };
-      
-      if (searchTerm) {
-        params.search = searchTerm;
-      }
-      
-      // Call the service function
-      await inspectionService.exportInspectionLevels(format, params);
-      
-      // Hide dropdown
-      setShowExportDropdown(false);
-      
-      toast.success(`Successfully exported to ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error(`Error exporting to ${format}:`, error);
-      toast.error(`Failed to export to ${format}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Use local reference to data
+  const inspectionLevels = data || [];
+  
+  const isMountedRef = useRef(true);
+  
   useEffect(() => {
-    fetchInspectionLevels();
-  }, [filters]);
-
-  const fetchInspectionLevels = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        ...filters,
-        search: searchTerm
-      };
-      const response = await inspectionService.getInspectionLevels(params);
-      setInspectionLevels(response.results || []);
-    } catch (error) {
-      handleError(error);
-      toast.error('Failed to load inspection levels');
-    } finally {
-      setLoading(false);
-    }
-  };
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-  
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      fetchInspectionLevels();
+    if (onSearchChange) {
+      onSearchChange(e.target.value);
     }
   };
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    if (onFilterChange) {
+      onFilterChange(newFilters);
+    }
   };
   
-// Replace the current onDeleteClick function with this:
-const onDeleteClick = (level) => {
-  console.log(level, 'level');
-  // Use this approach if you want to use the custom hook
-  setLevelToDelete(level);
-  setDeleteModalVisible(true);
-  
-  // Or remove the above two lines and use this if you want to use the custom hook's modal
-  // showDeleteConfirmation(level._id, handleDelete, level.name);
-};
+  const onDeleteClick = (level) => {
+    setLevelToDelete(level);
+    setDeleteModalVisible(true);
+  };
   
   const handleDelete = async (id) => {
     try {
       setLoading(true);
       await inspectionService.deleteInspectionLevel(id);
+      
+      setDeleteModalVisible(false);
+      setLevelToDelete(null);
+      
       toast.success('Inspection level deleted successfully');
-      fetchInspectionLevels();
+      
+      // Refresh data after deletion
+      if (fetchData) {
+        fetchData();
+      }
     } catch (error) {
       console.error('Error deleting inspection level:', error);
-      handleError(error);
-    } finally {
+      toast.error('Failed to delete inspection level');
       setLoading(false);
     }
   };
+
+  const handleExportDropdownToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowExportDropdown(!showExportDropdown);
+  };
+
+  const handleExport = (format) => {
+    setShowExportDropdown(false);
+    
+    const params = {
+      format,
+      ids: inspectionLevels.map(level => level._id)
+    };
+    
+    inspectionService.exportInspectionLevels(params)
+      .then(() => {
+        toast.success(`Export as ${format.toUpperCase()} successful`);
+      })
+      .catch(error => {
+        console.error('Export failed', error);
+        toast.error(`Failed to export as ${format.toUpperCase()}`);
+      });
+  };
+
   return (
     <PageContainer>
      {deleteModalVisible && levelToDelete && (
-  <ModalOverlay>
-    <ModalContent>
-      <ModalHeader>
-        <ModalTitle>Delete Inspection Level</ModalTitle>
-        <ModalCloseButton 
-          onClick={() => setDeleteModalVisible(false)}
-          disabled={loading}
-        >
-          <ChevronDown size={20} />
-        </ModalCloseButton>
-      </ModalHeader>
-      <p>Are you sure you want to delete <strong>{levelToDelete.name}</strong>?</p>
-      <p>This action cannot be undone.</p>
-      <ModalActions>
-        <Button 
-          onClick={() => setDeleteModalVisible(false)}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button 
-          variant="primary" 
-          onClick={() => handleDelete(levelToDelete._id)}
-          disabled={loading}
-          style={{ background: '#dc2626' }}
-        >
-          {loading ? 'Deleting...' : 'Delete'}
-        </Button>
-      </ModalActions>
-    </ModalContent>
-  </ModalOverlay>
-)}
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalCloseButton 
+                onClick={() => setDeleteModalVisible(false)}
+                disabled={loading}
+              >
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <p>Are you sure you want to delete <strong>{levelToDelete.name}</strong>?</p>
+            <p>This action cannot be undone.</p>
+            <ModalActions>
+              <Button 
+                onClick={() => setDeleteModalVisible(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={() => handleDelete(levelToDelete._id)}
+                disabled={loading}
+                style={{ background: '#dc2626' }}
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       <Header>
         <PageTitle>
@@ -549,7 +521,6 @@ const onDeleteClick = (level) => {
             placeholder="Search inspection levels..." 
             value={searchTerm}
             onChange={handleSearch}
-            onKeyPress={handleSearchKeyPress}
             disabled={loading}
           />
         </SearchBox>
@@ -564,27 +535,26 @@ const onDeleteClick = (level) => {
             Filters
           </Button>
          <ExportDropdown>
-  <Button 
-    variant="secondary"
-    onClick={() => setShowExportDropdown(!showExportDropdown)}
-    disabled={loading}
-  >
-    <DownloadDone size={18} />  
-    Export
-    <ChevronDownCircle size={14} />
-  </Button>
-  <DropdownContent show={showExportDropdown}>
-  <DropdownItem onClick={() => handleExport('docx')}>
-  <FileText size={16} />
-  Export as Word
-    </DropdownItem>
-    <DropdownItem onClick={() => handleExport('pdf')}>
-      <FileText size={16} />
-      Export as PDF
-    </DropdownItem>
-  
-  </DropdownContent>
-</ExportDropdown>
+            <Button 
+              variant="secondary"
+              onClick={handleExportDropdownToggle}
+              disabled={loading}
+            >
+              <DownloadDone size={18} />  
+              Export
+              <ChevronDownCircle size={14} />
+            </Button>
+            <DropdownContent show={showExportDropdown}>
+              <DropdownItem onClick={() => handleExport('docx')}>
+                <FileText size={16} />
+                Export as Word
+              </DropdownItem>
+              <DropdownItem onClick={() => handleExport('pdf')}>
+                <FileText size={16} />
+                Export as PDF
+              </DropdownItem>
+            </DropdownContent>
+          </ExportDropdown>
           <Button 
             variant="primary" 
             as={Link} 
@@ -607,10 +577,7 @@ const onDeleteClick = (level) => {
       )}
 
       {loading ? (
-        <LoadingSpinner>
-          <div className="spinner"></div>
-          <p>Loading inspection levels...</p>
-        </LoadingSpinner>
+        <LevelListSkeleton />
       ) : inspectionLevels.length === 0 ? (
         <EmptyState>
           <h3>No Inspection Levels Found</h3>
@@ -641,34 +608,41 @@ const onDeleteClick = (level) => {
                           <p>{level.description}</p>
                         </LevelDetails>
                       </LevelInfo>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  {level.status && (
+    <StatusBadge type={level.type || 'safety'}>
+      {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
+    </StatusBadge>
+  )}
                       <LevelActions>
-  <ActionButton 
-    as={Link} 
-    to={`/inspection/${level._id}`}
-    disabled={loading}
-    onClick={(e) => e.stopPropagation()} // Add this line
-  >
-    <Eye size={16} />
-  </ActionButton>
-  <ActionButton 
-    as={Link} 
-    to={`/inspection/${level._id}/edit`}
-    disabled={loading}
-    onClick={(e) => e.stopPropagation()} // Add this line
-  >
-    <Edit size={16} />
-  </ActionButton>
-  <ActionButton 
-    onClick={(e) => {
-      e.stopPropagation(); // Add this to prevent accordion toggling
-      onDeleteClick(level);
-    }}
-    disabled={loading}
-  >
-    <Trash2 size={16} />
-  </ActionButton>
-  <ChevronIcon size={16} />
-</LevelActions>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}`}
+                          disabled={loading}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Eye size={16} />
+                        </ActionButton>
+                        <ActionButton 
+                          as={Link} 
+                          to={`/inspection/${level._id}/edit`}
+                          disabled={loading}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Edit size={16} />
+                        </ActionButton>
+                        <ActionButton 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteClick(level);
+                          }}
+                          disabled={loading}
+                        >
+                          <Trash2 size={16} />
+                        </ActionButton>
+                        <ChevronIcon size={16} />
+                      </LevelActions>
+                      </div>
                     </AccordionHeader>
                   </AccordionTrigger>
                   <AccordionContent>

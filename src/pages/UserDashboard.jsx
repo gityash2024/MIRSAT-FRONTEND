@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { fetchUserDashboardStats } from '../store/slices/userTasksSlice';
 import { useAuth } from '../hooks/useAuth';
+import Skeleton from '../components/ui/Skeleton';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -242,6 +243,101 @@ const EmptyState = styled.div`
   }
 `;
 
+// Create UserDashboardSkeleton component
+const UserDashboardSkeleton = () => (
+  <DashboardContainer>
+    <Skeleton.Base width="250px" height="28px" margin="0 0 32px 0" />
+    
+    {/* Stats Grid Section */}
+    <StatsGrid>
+      {Array(4).fill().map((_, i) => (
+        <div key={i}>
+          <Skeleton.Card.Wrapper>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <Skeleton.Circle size="48px" />
+              <Skeleton.Base width="80px" height="28px" margin="8px 0" />
+              <Skeleton.Base width="120px" height="14px" />
+            </div>
+          </Skeleton.Card.Wrapper>
+        </div>
+      ))}
+    </StatsGrid>
+    
+    {/* Content Grid Section */}
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+      gap: '24px' 
+    }}>
+      {/* First card - Tasks Progress */}
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="160px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {Array(3).fill().map((_, i) => (
+            <div key={i}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Skeleton.Base width={`${180 + Math.random() * 100}px`} height="16px" />
+                <Skeleton.Base width="40px" height="16px" />
+              </div>
+              <Skeleton.Base width="100%" height="8px" radius="4px" />
+            </div>
+          ))}
+        </div>
+      </Skeleton.Card.Wrapper>
+      
+      {/* Second card - Performance */}
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="160px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {Array(3).fill().map((_, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <Skeleton.Circle size="32px" />
+                <Skeleton.Base width="120px" height="16px" />
+              </div>
+              <Skeleton.Base width="80px" height="24px" radius="12px" />
+            </div>
+          ))}
+        </div>
+      </Skeleton.Card.Wrapper>
+    </div>
+    
+    {/* Recent tasks section */}
+    <div style={{ marginTop: '24px' }}>
+      <Skeleton.Card.Wrapper>
+        <Skeleton.Card.Header>
+          <Skeleton.Base width="160px" height="24px" />
+        </Skeleton.Card.Header>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {Array(5).fill().map((_, i) => (
+            <div key={i} style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px',
+              padding: '12px',
+              borderBottom: i < 4 ? '1px solid #edf2f7' : 'none'
+            }}>
+              <Skeleton.Circle size="36px" />
+              <div style={{ flex: 1 }}>
+                <Skeleton.Base width={`${200 + Math.random() * 150}px`} height="18px" margin="0 0 8px 0" />
+                <Skeleton.Base width={`${150 + Math.random() * 100}px`} height="14px" />
+              </div>
+              <Skeleton.Base width="80px" height="26px" radius="13px" />
+            </div>
+          ))}
+        </div>
+      </Skeleton.Card.Wrapper>
+    </div>
+  </DashboardContainer>
+);
+
 const UserDashboard = () => {
   const { user } = useAuth();
   const dispatch = useDispatch();
@@ -298,16 +394,7 @@ const UserDashboard = () => {
   };
 
   if (dashboardLoading) {
-    return (
-      <DashboardContainer>
-        <WelcomeText>
-          Welcome back, {user?.name || 'Inspector'}
-        </WelcomeText>
-        <LoadingContainer>
-          <Loader size={30} color="#1a237e" />
-        </LoadingContainer>
-      </DashboardContainer>
-    );
+    return <UserDashboardSkeleton />;
   }
 
   if (error) {

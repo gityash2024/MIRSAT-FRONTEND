@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
 import InspectionLevelList from './InspectionLevelList';
 import InspectionLevelTree from './InspectionLevelTree';
 import { inspectionService } from '../../services/inspection.service';
+import LevelListSkeleton from './LevelListSkeleton';
+import InspectionLevelTreeSkeleton from './InspectionLevelTreeSkeleton';
 
 const Container = styled.div`
   width: 100%;
@@ -69,46 +71,154 @@ const TabButton = styled.button`
   }
 `;
 
-const LoadingOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  
-  .spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #1a237e;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const InspectionLevel = () => {
   const location = useLocation();
   const isListView = location.pathname === '/inspection';
   const [loading, setLoading] = useState(false);
   const [viewType, setViewType] = useState('normal');
+  const [errorCount, setErrorCount] = useState(0);
+  const [viewSwitching, setViewSwitching] = useState(false);
+  
+  // Store inspection data separately from rendering logic
+  const [inspectionData, setInspectionData] = useState([]);
+  
+  // For controlled components
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    type: [],
+    status: [],
+    priority: []
+  });
+  
+  // Prevent fetch loops
+  const isFetchingRef = useRef(false);
+  const debounceTimerRef = useRef(null);
+  const initialFetchDoneRef = useRef(false);
+  const unmountedRef = useRef(false);
 
-  const handleError = (error) => {
-    console.error('Error:', error);
-    toast.error(error?.response?.data?.message || error?.message || 'An error occurred');
+  // Clean up on unmount
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Handle rate limit detection
+  useEffect(() => {
+    if (errorCount > 3) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      setLoading(false);
+      setTimeout(() => setErrorCount(0), 5000);
+    }
+  }, [errorCount]);
+
+  const handleError = useCallback((error) => {
+    console.error('Error in Inspection module:', error);
+    
+    if (error?.response?.status === 429) {
+      setErrorCount(prev => prev + 1);
+      toast.error('Too many requests. Please wait a moment before trying again.');
+    } else {
+      toast.error(error?.response?.data?.message || error?.message || 'An error occurred');
+    }
+    
     setLoading(false);
+    isFetchingRef.current = false;
+  }, []);
+
+  // Stable fetch function that doesn't change with re-renders
+  const fetchInspectionLevels = useCallback(async () => {
+    // Prevent duplicate fetches
+    if (isFetchingRef.current || unmountedRef.current) {
+      console.log('Skipping fetch - already in progress or component unmounted');
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    setLoading(true);
+    
+    try {
+      const params = {
+        ...filters,
+        search: searchTerm,
+        _t: Date.now() // Cache buster
+      };
+      
+      console.log('Fetching inspection data with params:', params);
+      const response = await inspectionService.getInspectionLevels(params);
+      
+      if (!unmountedRef.current) {
+        setInspectionData(response?.results || []);
+        initialFetchDoneRef.current = true;
+      }
+    } catch (error) {
+      if (!unmountedRef.current) {
+        console.error('Error fetching inspection levels:', error);
+        handleError(error);
+      }
+    } finally {
+      if (!unmountedRef.current) {
+        setLoading(false);
+      }
+      isFetchingRef.current = false;
+    }
+  }, [filters, searchTerm, handleError]);
+
+  // Initial data fetch only
+  useEffect(() => {
+    if (isListView && !initialFetchDoneRef.current && !isFetchingRef.current) {
+      console.log('Initial fetch');
+      fetchInspectionLevels();
+    }
+  }, [isListView, fetchInspectionLevels]);
+
+  // When filters or search changes, debounce the fetch
+  useEffect(() => {
+    // Skip the initial render-triggered effect
+    if (!initialFetchDoneRef.current) return;
+    
+    console.log('Filter/search change detected, debouncing fetch');
+    
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      fetchInspectionLevels();
+    }, 500);
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [filters, searchTerm, fetchInspectionLevels]);
+
+  const handleViewChange = (newType) => {
+    if (newType !== viewType) {
+      setViewSwitching(true);
+      setViewType(newType);
+      
+      // Short timeout to ensure proper transition between view types
+      setTimeout(() => {
+        setViewSwitching(false);
+      }, 50);
+    }
+  };
+  
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+  };
+  
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     if (!isListView) {
       return (
         <Outlet 
@@ -122,34 +232,41 @@ const InspectionLevel = () => {
       );
     }
 
-    const props = {
+    const sharedProps = {
       loading,
       setLoading,
       handleError,
-      inspectionService
+      inspectionService,
+      data: inspectionData,
+      searchTerm,
+      onSearchChange: handleSearchChange,
+      filters,
+      onFilterChange: handleFilterChange,
+      fetchData: fetchInspectionLevels
     };
 
+    if (loading || viewSwitching) {
+      return viewType === 'normal' ? <LevelListSkeleton /> : <InspectionLevelTreeSkeleton />;
+    }
+
     return viewType === 'normal' ? (
-      <InspectionLevelList {...props} />
+      <InspectionLevelList {...sharedProps} />
     ) : (
-      <InspectionLevelTree {...props} />
+      <InspectionLevelTree {...sharedProps} />
     );
-  };
+  }, [
+    isListView, loading, viewType, handleError, viewSwitching, 
+    inspectionService, inspectionData, searchTerm, filters, fetchInspectionLevels
+  ]);
 
   return (
     <Container>
-      {loading && (
-        <LoadingOverlay>
-          <div className="spinner" />
-        </LoadingOverlay>
-      )}
-      
       {isListView && (
         <TabContainer>
           <TabGroup>
             <TabButton 
               active={viewType === 'normal'} 
-              onClick={() => setViewType('normal')}
+              onClick={() => handleViewChange('normal')}
               disabled={loading}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -162,7 +279,7 @@ const InspectionLevel = () => {
             </TabButton>
             <TabButton 
               active={viewType === 'tree'} 
-              onClick={() => setViewType('tree')}
+              onClick={() => handleViewChange('tree')}
               disabled={loading}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -4,10 +4,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { 
   ArrowLeft, CheckCircle, XCircle, AlertTriangle,
-  CheckSquare, Loader
+  CheckSquare, Loader, ChevronRight, HelpCircle, Save, Clock, Info
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { fetchUserTaskDetails, updateTaskQuestionnaire } from '../../store/slices/userTasksSlice';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 16px;
@@ -370,6 +371,65 @@ const NotesInput = styled.div`
   }
 `;
 
+// Add QuestionnaireSkeleton component
+const QuestionnaireSkeleton = () => (
+  <PageContainer>
+    <BackButton disabled>
+      <Skeleton.Circle size="18px" />
+      <Skeleton.Base width="100px" height="16px" />
+    </BackButton>
+    
+    <Card>
+      <div style={{ marginBottom: '24px' }}>
+        <Skeleton.Base width="70%" height="28px" margin="0 0 8px 0" />
+        <Skeleton.Base width="50%" height="16px" />
+      </div>
+      
+      <div style={{ display: 'grid', gap: '24px', marginBottom: '32px' }}>
+        {Array(5).fill().map((_, i) => (
+          <div key={i}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <Skeleton.Circle size="24px" />
+              <Skeleton.Base width={`${200 + Math.random() * 300}px`} height="20px" />
+            </div>
+            
+            <div style={{ paddingLeft: '36px' }}>
+              {i % 2 === 0 ? (
+                // For Yes/No questions
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Skeleton.Base width="20px" height="20px" radius="50%" />
+                    <Skeleton.Base width="40px" height="16px" />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Skeleton.Base width="20px" height="20px" radius="50%" />
+                    <Skeleton.Base width="40px" height="16px" />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Skeleton.Base width="20px" height="20px" radius="50%" />
+                    <Skeleton.Base width="40px" height="16px" />
+                  </div>
+                </div>
+              ) : (
+                // For text input questions
+                <Skeleton.Base width="100%" height="40px" radius="8px" />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Skeleton.Base width="180px" height="16px" />
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Skeleton.Button width="120px" height="40px" />
+          <Skeleton.Button width="120px" height="40px" />
+        </div>
+      </div>
+    </Card>
+  </PageContainer>
+);
+
 const PreInspectionQuestionnaire = () => {
   const { taskId, subLevelId } = useParams();
   const navigate = useNavigate();
@@ -379,6 +439,7 @@ const PreInspectionQuestionnaire = () => {
   const [responses, setResponses] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notes, setNotes] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   
   useEffect(() => {
     if (taskId) {
@@ -398,20 +459,38 @@ const PreInspectionQuestionnaire = () => {
       ...prev,
       [`${subLevelId || 'general'}-${questionId}`]: value
     }));
+    
+    // Clear validation error for this question
+    if (validationErrors[`${subLevelId || 'general'}-${questionId}`]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`${subLevelId || 'general'}-${questionId}`];
+        return newErrors;
+      });
+    }
+  };
+  
+  const validateResponses = () => {
+    const errors = {};
+    let isValid = true;
+    
+    if (currentTask?.questions) {
+      currentTask.questions.forEach(question => {
+        if (question.required && (!responses[`${subLevelId || 'general'}-${question._id || question.id}`] || responses[`${subLevelId || 'general'}-${question._id || question.id}`].trim() === '')) {
+          errors[`${subLevelId || 'general'}-${question._id || question.id}`] = 'This question requires an answer';
+          isValid = false;
+        }
+      });
+    }
+    
+    setValidationErrors(errors);
+    return isValid;
   };
   
   const handleSubmit = async () => {
-    if (currentTask?.questions) {
-      const requiredQuestions = currentTask.questions.filter(q => q.required);
-      const allRequiredAnswered = requiredQuestions.every(q => 
-        responses[`${subLevelId || 'general'}-${q.id}`] ||
-        responses[`${subLevelId || 'general'}-${q._id}`]
-      );
-      
-      if (!allRequiredAnswered) {
-        toast.error('Please answer all required questions');
-        return;
-      }
+    if (!validateResponses()) {
+      toast.error('Please answer all required questions');
+      return;
     }
     
     setIsSubmitting(true);
@@ -447,14 +526,7 @@ const PreInspectionQuestionnaire = () => {
   };
   
   if (taskDetailsLoading) {
-    return (
-      <PageContainer>
-        <LoadingContainer>
-          <Loader size={40} color="#1a237e" />
-          <div>Loading task details...</div>
-        </LoadingContainer>
-      </PageContainer>
-    );
+    return <QuestionnaireSkeleton />;
   }
   
   if (error || !currentTask) {

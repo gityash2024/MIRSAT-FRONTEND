@@ -8,6 +8,7 @@ import {
 import { PERMISSIONS } from '../../utils/permissions';
 import { usePermissions } from '../../hooks/usePermissions';
 import { userService } from '../../services/user.service';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -206,6 +207,78 @@ const ErrorState = styled.div`
   margin-bottom: 24px;
 `;
 
+// Create a UserViewSkeleton component
+const UserViewSkeleton = () => (
+  <PageContainer>
+    <BackButton disabled>
+      <Skeleton.Circle size="18px" />
+      <Skeleton.Base width="80px" height="16px" />
+    </BackButton>
+
+    <Header>
+      <UserHeader>
+        <Skeleton.Circle size="80px" />
+        <UserInfo>
+          <Skeleton.Base width="250px" height="28px" margin="0 0 8px 0" />
+          <Skeleton.Base width="120px" height="16px" margin="0 0 8px 0" />
+          <Skeleton.Base width="80px" height="22px" radius="12px" />
+        </UserInfo>
+      </UserHeader>
+
+      <Skeleton.Button width="120px" height="40px" />
+    </Header>
+
+    <ContentGrid>
+      <div>
+        <StatGrid>
+          <div>
+            <Skeleton.Base width="100%" height="70px" radius="12px" />
+          </div>
+          <div>
+            <Skeleton.Base width="100%" height="70px" radius="12px" />
+          </div>
+        </StatGrid>
+
+        <Card>
+          <Skeleton.Base width="200px" height="22px" margin="0 0 16px 0" />
+          <DetailsList>
+            {Array(4).fill().map((_, i) => (
+              <DetailItem key={i}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width={`${180 + Math.random() * 120}px`} height="16px" />
+              </DetailItem>
+            ))}
+          </DetailsList>
+        </Card>
+      </div>
+
+      <div>
+        <Card>
+          <Skeleton.Base width="180px" height="22px" margin="0 0 16px 0" />
+          <DetailsList>
+            {Array(3).fill().map((_, i) => (
+              <DetailItem key={i}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width={`${150 + Math.random() * 100}px`} height="16px" />
+              </DetailItem>
+            ))}
+          </DetailsList>
+
+          <Skeleton.Base width="140px" height="22px" margin="24px 0 16px 0" />
+          <PermissionList>
+            {Array(5).fill().map((_, i) => (
+              <PermissionItem key={i}>
+                <Skeleton.Circle size="16px" />
+                <Skeleton.Base width={`${120 + Math.random() * 80}px`} height="16px" />
+              </PermissionItem>
+            ))}
+          </PermissionList>
+        </Card>
+      </div>
+    </ContentGrid>
+  </PageContainer>
+);
+
 const UserView = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -232,7 +305,7 @@ const UserView = () => {
   };
 
   if (loading) {
-    return <LoadingState>Loading user details...</LoadingState>;
+    return <UserViewSkeleton />;
   }
 
   if (error) {

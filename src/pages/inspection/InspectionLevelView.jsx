@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
 import SubLevelViewModal from './SubLevelViewModal';
 import SubLevelEditModal from './SubLevelEditModal';
+import Skeleton from '../../components/ui/Skeleton';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -519,6 +520,142 @@ const OptionItem = styled.li`
   }
 `;
 
+// Create InspectionLevelViewSkeleton component
+const InspectionLevelViewSkeleton = () => (
+  <PageContainer>
+    <Skeleton.Base width="180px" height="20px" margin="0 0 24px 0" />
+    
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <Skeleton.Circle size="48px" />
+        <div>
+          <Skeleton.Base width="300px" height="28px" margin="0 0 8px 0" />
+          <Skeleton.Base width="200px" height="16px" />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <Skeleton.Button width="120px" />
+        <Skeleton.Button width="120px" />
+      </div>
+    </div>
+    
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+      gap: '24px' 
+    }}>
+      {/* Left Column */}
+      <div>
+        <Skeleton.Card.Wrapper style={{ marginBottom: '24px' }}>
+          <Skeleton.Card.Header>
+            <Skeleton.Base width="140px" height="24px" />
+          </Skeleton.Card.Header>
+          
+          {/* Hierarchy items */}
+          <div style={{ paddingLeft: '24px' }}>
+            {Array(3).fill().map((_, i) => (
+              <div key={i} style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <Skeleton.Circle size="18px" />
+                  <Skeleton.Base width={`${200 + Math.random() * 100}px`} height="18px" />
+                </div>
+                
+                {/* Nested items */}
+                {Math.random() > 0.5 && (
+                  <div style={{ paddingLeft: '24px' }}>
+                    {Array(Math.floor(Math.random() * 3) + 1).fill().map((_, j) => (
+                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <Skeleton.Circle size="16px" />
+                        <Skeleton.Base width={`${150 + Math.random() * 100}px`} height="16px" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Skeleton.Card.Wrapper>
+        
+        {/* Questionnaire Card */}
+        <Skeleton.Card.Wrapper>
+          <Skeleton.Card.Header>
+            <Skeleton.Base width="220px" height="24px" />
+          </Skeleton.Card.Header>
+          
+          {/* Question items */}
+          {Array(3).fill().map((_, i) => (
+            <div key={i} style={{ 
+              padding: '16px', 
+              marginBottom: '16px', 
+              background: '#f9f9f9', 
+              borderRadius: '8px' 
+            }}>
+              <Skeleton.Base width={`${250 + Math.random() * 150}px`} height="20px" margin="0 0 8px 0" />
+              <Skeleton.Base width="120px" height="16px" margin="0 0 12px 0" />
+              
+              {/* Options if applicable */}
+              {Math.random() > 0.5 && (
+                <div style={{ paddingLeft: '16px' }}>
+                  {Array(Math.floor(Math.random() * 4) + 2).fill().map((_, j) => (
+                    <Skeleton.Base 
+                      key={j} 
+                      width={`${100 + Math.random() * 150}px`} 
+                      height="14px" 
+                      margin="0 0 8px 0" 
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </Skeleton.Card.Wrapper>
+      </div>
+      
+      {/* Right Column */}
+      <div>
+        <Skeleton.Card.Wrapper style={{ marginBottom: '24px' }}>
+          <Skeleton.Card.Header>
+            <Skeleton.Base width="180px" height="24px" />
+          </Skeleton.Card.Header>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {Array(4).fill().map((_, i) => (
+              <div key={i} style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px' }}>
+                <Skeleton.Base width="120px" height="14px" margin="0 0 8px 0" />
+                <Skeleton.Base width="80px" height="20px" />
+              </div>
+            ))}
+          </div>
+        </Skeleton.Card.Wrapper>
+        
+        <Skeleton.Card.Wrapper>
+          <Skeleton.Card.Header>
+            <Skeleton.Base width="150px" height="24px" />
+          </Skeleton.Card.Header>
+          
+          {/* Task items */}
+          {Array(3).fill().map((_, i) => (
+            <div key={i} style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              padding: '12px',
+              borderBottom: '1px solid #edf2f7'
+            }}>
+              <Skeleton.Circle size="32px" />
+              <div style={{ flex: 1 }}>
+                <Skeleton.Base width={`${180 + Math.random() * 100}px`} height="18px" margin="0 0 4px 0" />
+                <Skeleton.Base width={`${250 + Math.random() * 150}px`} height="14px" />
+              </div>
+              <Skeleton.Base width="80px" height="24px" radius="12px" />
+            </div>
+          ))}
+        </Skeleton.Card.Wrapper>
+      </div>
+    </div>
+  </PageContainer>
+);
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -709,14 +846,7 @@ const InspectionLevelView = () => {
   };
 
   if (loading) {
-    return (
-      <PageContainer>
-        <LoadingSpinner>
-          <div className="spinner"></div>
-          <p>Loading inspection level...</p>
-        </LoadingSpinner>
-      </PageContainer>
-    );
+    return <InspectionLevelViewSkeleton />;
   }
 
   if (error) {
