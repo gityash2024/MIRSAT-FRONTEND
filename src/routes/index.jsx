@@ -30,6 +30,7 @@ import Calendar from '../pages/calendar';
 import Settings from '../pages/settings';
 import Reports from '../pages/reports';
 import CalendarView from '../pages/calendar/CalendarView';
+import AssetList from '../pages/assets';
 
 import UserDashboard from '../pages/UserDashboard';
 import UserTasks from '../pages/UserTasks/index';
@@ -93,6 +94,8 @@ const AppRoutes = () => {
             <Route path="inspection/:id" element={<InspectionLevelView />} />
             <Route path="inspection/:id/edit" element={<InspectionLevelForm />} />
             
+            <Route path="assets" element={<AssetList />} />
+            
             <Route path="calendar" element={<Calendar />} />
             <Route path="calendar-view" element={<CalendarView />} />
             
@@ -129,6 +132,8 @@ const AppRoutes = () => {
           <Route path="/inspection/create" element={<InspectionLevelForm />} />
           <Route path="/inspection/:id" element={<InspectionLevelView />} />
           <Route path="/inspection/:id/edit" element={<InspectionLevelForm />} />
+          
+          <Route path="/assets" element={<AssetList />} />
           
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/calendar-view" element={<CalendarView />} />

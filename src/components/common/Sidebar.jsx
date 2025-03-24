@@ -13,7 +13,8 @@ import {
   Home,
   User,
   FileBarChart,
-  ListChecks
+  ListChecks,
+  Database
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/permissions';
@@ -208,6 +209,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: ListChecks,
       permission: 'view_inspections',
       roles: ['admin', 'manager']
+    },
+    {
+      title: 'Assets',
+      path: '/assets',
+      icon: Database,
+      permission: 'view_assets',
+      roles: ['admin']
     },
     {
       title: 'Calendar',
