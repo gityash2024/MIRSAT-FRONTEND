@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { Plus, Filter, Search, Download } from 'lucide-react';
+import { Plus, Filter, Search, Download, RefreshCw } from 'lucide-react';
 import TaskFilter from './components/TaskFilter';
 import TaskTable from './components/TaskTable';
 import { fetchTasks, setFilters, setPagination } from '../../store/slices/taskSlice';
@@ -111,6 +111,29 @@ const FilterSection = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: center;
+`;
+
+const EmptyStateText = styled.p`
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 24px;
+`;
+
+const RefreshButton = styled(Button)`
+  padding: 12px 24px;
+  font-size: 16px;
+`;
+
 const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
@@ -164,6 +187,12 @@ const TaskList = () => {
     // Implement export functionality
   };
 
+  const handleRefresh = () => {
+    loadTasks();
+  };
+
+  const showEmptyState = !loading && (!tasks || tasks.length === 0);
+
   return (
     <PageContainer>
       <Header>
@@ -216,12 +245,22 @@ const TaskList = () => {
         </FilterSection>
       )}
 
-      <TaskTable 
-        tasks={tasks}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-      />
+      {showEmptyState ? (
+        <EmptyStateContainer>
+          <EmptyStateText>No tasks found</EmptyStateText>
+          <RefreshButton variant="primary" onClick={handleRefresh}>
+            <RefreshCw size={20} />
+            Refresh Tasks
+          </RefreshButton>
+        </EmptyStateContainer>
+      ) : (
+        <TaskTable 
+          tasks={tasks}
+          loading={loading}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+        />
+      )}
     </PageContainer>
   );
 };

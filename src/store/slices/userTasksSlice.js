@@ -52,9 +52,17 @@ export const startUserTask = createAsyncThunk(
 
 export const updateUserTaskProgress = createAsyncThunk(
   'userTasks/updateUserTaskProgress',
-  async ({ taskId, subLevelId, data }, { rejectWithValue }) => {
+  async ({ taskId, subLevelId, status, notes, photos, timeSpent }, { rejectWithValue }) => {
     try {
-      const response = await userTaskService.updateTaskProgress(taskId, subLevelId, data);
+      // Create a proper data object with all parameters
+      const updateData = {
+        status,
+        ...(notes !== undefined && { notes }),
+        ...(photos !== undefined && { photos }),
+        ...(timeSpent !== undefined && { timeSpent })
+      };
+      
+      const response = await userTaskService.updateTaskProgress(taskId, subLevelId, updateData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
@@ -64,9 +72,16 @@ export const updateUserTaskProgress = createAsyncThunk(
 
 export const updateTaskQuestionnaire = createAsyncThunk(
   'userTasks/updateTaskQuestionnaire',
-  async ({ taskId, data }, { rejectWithValue }) => {
+  async ({ taskId, questionnaire }, { rejectWithValue }) => {
     try {
-      const response = await userTaskService.updateTaskQuestionnaire(taskId, data);
+      // Extract the required fields for the API
+      const { responses, notes, completed } = questionnaire;
+      
+      const response = await userTaskService.updateTaskQuestionnaire(taskId, { 
+        responses, 
+        notes, 
+        completed 
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
@@ -76,9 +91,9 @@ export const updateTaskQuestionnaire = createAsyncThunk(
 
 export const addUserTaskComment = createAsyncThunk(
   'userTasks/addUserTaskComment',
-  async ({ taskId, content }, { rejectWithValue }) => {
+  async ({ taskId, comment }, { rejectWithValue }) => {
     try {
-      const response = await userTaskService.addTaskComment(taskId, content);
+      const response = await userTaskService.addTaskComment(taskId, { text: comment });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
@@ -88,12 +103,29 @@ export const addUserTaskComment = createAsyncThunk(
 
 export const exportTaskReport = createAsyncThunk(
   'userTasks/exportTaskReport',
-  async ({ taskId, format = 'pdf' }, { rejectWithValue }) => {
+  async (taskId, { rejectWithValue }) => {
     try {
-      const response = await userTaskService.exportTaskReport(taskId, format);
-      return response;
+      const response = await userTaskService.exportTaskReport(taskId);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
+export const uploadTaskAttachment = createAsyncThunk(
+  'userTasks/uploadTaskAttachment',
+  async ({ taskId, file }, { rejectWithValue }) => {
+    try {
+      if (!file) {
+        throw new Error('No file provided');
+      }
+      
+      const response = await userTaskService.uploadTaskAttachment(taskId, file);
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading attachment:', error);
+      return rejectWithValue(error.response?.data || { message: error.message || 'Failed to upload attachment' });
     }
   }
 );
@@ -287,6 +319,22 @@ const userTasksSlice = createSlice({
       .addCase(exportTaskReport.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload?.message || 'Failed to export report';
+        toast.error(state.error);
+      })
+
+      .addCase(uploadTaskAttachment.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadTaskAttachment.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        if (state.currentTask && state.currentTask._id === action.payload._id) {
+          state.currentTask = action.payload;
+        }
+      })
+      .addCase(uploadTaskAttachment.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload?.message || 'Failed to upload attachment';
         toast.error(state.error);
       });
   }

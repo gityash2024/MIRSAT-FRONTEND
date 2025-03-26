@@ -1116,7 +1116,7 @@ const TaskView = () => {
                       href={attachment.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ marginRight: '8px' }}
+                      style={{ marginRight: '8px' ,marginBottom:'5px'}}
                     >
                       <Download size={16} />
                       Download

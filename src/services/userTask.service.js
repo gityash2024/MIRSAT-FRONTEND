@@ -1,4 +1,5 @@
 import api from './api';
+import { toast } from 'react-hot-toast';
 
 export const userTaskService = {
   // Get user dashboard statistics
@@ -27,8 +28,21 @@ export const userTaskService = {
 
   // Update progress of a specific sub-level in a task
   updateTaskProgress: async (taskId, subLevelId, data) => {
-    const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, data);
-    return response.data;
+    try {
+      console.log('Updating task progress:', { taskId, subLevelId, data });
+      const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, data);
+      
+      if (response.status >= 200 && response.status < 300) {
+        toast.success('Progress updated successfully');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating task progress:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update progress';
+      toast.error(errorMessage);
+      throw error;
+    }
   },
   
   // Update task questionnaire responses

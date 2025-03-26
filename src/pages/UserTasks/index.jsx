@@ -37,6 +37,33 @@ const TasksContainer = styled.div`
   }
 `;
 
+const PageContainer = styled.div`
+  padding: 24px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e5eeff 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+`;
+
+const ErrorContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background-color: #ffebee;
+  border-radius: 8px;
+  
+  h3 {
+    color: #d32f2f;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  p {
+    color: #616161;
+  }
+`;
+
 const PageHeader = styled.div`
   margin-bottom: 24px;
   opacity: 0;
@@ -588,6 +615,86 @@ const GlassMorphismBlur = styled.div`
   z-index: 0;
 `;
 
+// Add components needed for UserTasksListSkeleton
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+`;
+
+const FiltersContainer = styled.div`
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  margin-bottom: 24px;
+`;
+
+const StatsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+const StatCard = styled.div`
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Card = styled.div`
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+`;
+
+const TableContainer = styled.div`
+  padding: 16px;
+  overflow-x: auto;
+`;
+
+const TaskTable = styled.table`
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+  }
+  
+  th {
+    font-weight: 500;
+    color: #1a237e;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+  }
+  
+  td {
+    border-bottom: 1px solid rgba(224, 224, 224, 0.3);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+`;
+
 const StatusIcon = ({ status, size = 18 }) => {
   switch (status) {
     case 'pending':
@@ -613,7 +720,7 @@ const formatDate = (dateString) => {
 };
 
 const UserTasksListSkeleton = () => (
-  <PageContainer>
+  <TasksContainer>
     <HeaderContainer>
       <div>
         <Skeleton.Base width="180px" height="32px" margin="0 0 8px 0" />
@@ -648,43 +755,32 @@ const UserTasksListSkeleton = () => (
           <thead>
             <tr>
               <th><Skeleton.Base width="80px" height="16px" /></th>
+              <th><Skeleton.Base width="240px" height="16px" /></th>
+              <th><Skeleton.Base width="100px" height="16px" /></th>
               <th><Skeleton.Base width="120px" height="16px" /></th>
               <th><Skeleton.Base width="80px" height="16px" /></th>
               <th><Skeleton.Base width="100px" height="16px" /></th>
-              <th><Skeleton.Base width="140px" height="16px" /></th>
             </tr>
           </thead>
           <tbody>
             {Array(5).fill().map((_, i) => (
               <tr key={i}>
-                <td><Skeleton.Base width={`${100 + Math.random() * 150}px`} height="20px" /></td>
-                <td><Skeleton.Base width={`${80 + Math.random() * 80}px`} height="16px" /></td>
-                <td><Skeleton.Rectangle width="80px" height="24px" radius="12px" /></td>
-                <td><Skeleton.Base width="100px" height="16px" /></td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <Skeleton.Circle size="32px" />
-                    <Skeleton.Circle size="32px" />
-                  </div>
+                <td><Skeleton.Base width="80px" height="16px" /></td>
+                <td><Skeleton.Base width="240px" height="16px" /></td>
+                <td><Skeleton.Base width="100px" height="16px" radius="12px" /></td>
+                <td><Skeleton.Base width="120px" height="16px" /></td>
+                <td><Skeleton.Base width="80px" height="16px" /></td>
+                <td style={{ display: 'flex', gap: '8px' }}>
+                  <Skeleton.Circle size="32px" />
+                  <Skeleton.Circle size="32px" />
                 </td>
               </tr>
             ))}
           </tbody>
         </TaskTable>
       </TableContainer>
-      
-      <PaginationContainer>
-        <Skeleton.Base width="150px" height="16px" />
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Skeleton.Circle size="36px" />
-          <Skeleton.Circle size="36px" />
-          <Skeleton.Base width="40px" height="36px" radius="4px" />
-          <Skeleton.Circle size="36px" />
-          <Skeleton.Circle size="36px" />
-        </div>
-      </PaginationContainer>
     </Card>
-  </PageContainer>
+  </TasksContainer>
 );
 
 const UserTasks = () => {
@@ -941,7 +1037,7 @@ const UserTasks = () => {
 
   if (error) {
     return (
-      <PageContainer>
+      <TasksContainer>
         <Card>
           <ErrorContainer>
             <AlertTriangle size={40} color="#d32f2f" />
@@ -951,7 +1047,7 @@ const UserTasks = () => {
             </div>
           </ErrorContainer>
         </Card>
-      </PageContainer>
+      </TasksContainer>
     );
   }
 

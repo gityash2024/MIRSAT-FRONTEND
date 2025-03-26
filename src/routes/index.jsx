@@ -35,6 +35,7 @@ import AssetList from '../pages/assets';
 import UserDashboard from '../pages/UserDashboard';
 import UserTasks from '../pages/UserTasks/index';
 import UserTaskDetail from '../pages/UserTasks/UserTaskDetail';
+import PreInspectionQuestionnaire from '../pages/UserTasks/PreInspectionQuestionnaire';
 import UserProfile from '../pages/profile';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/permissions';
@@ -151,6 +152,7 @@ const AppRoutes = () => {
           <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/user-tasks" element={<UserTasks />} />
           <Route path="/user-tasks/:taskId" element={<UserTaskDetail />} />
+          <Route path="/user-tasks/:taskId/questionnaire" element={<PreInspectionQuestionnaire />} />
         </Route>
       </Route>
       

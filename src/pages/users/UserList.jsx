@@ -940,13 +940,7 @@ const UserList = () => {
                         <Edit size={16} />
                       </ActionButton>
                     )}
-                    
-                    {(hasPermission(PERMISSIONS.USERS.DELETE_USERS) || 
-                      hasPermission(PERMISSIONS.USERS.MANAGE_PERMISSIONS)) && (
-                      <ActionButton onClick={() => setActiveDropdown(activeDropdown === user._id ? null : user._id)}>
-                        <MoreVertical size={16} />
-                      </ActionButton>
-                    )}
+                   
                   </ActionMenu>
                 </td>
               </tr>

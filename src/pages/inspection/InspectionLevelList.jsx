@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';

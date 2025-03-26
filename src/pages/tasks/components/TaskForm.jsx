@@ -505,7 +505,8 @@ const TaskForm = ({
   submitButtonText = 'Save',
   isSubmitting: propIsSubmitting = false,
   usersProp = [],
-  inspectionLevelsProp = []
+  inspectionLevelsProp = [],
+  isEdit = false
 }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
@@ -542,7 +543,7 @@ const TaskForm = ({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(isEdit);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -918,18 +919,20 @@ const TaskForm = ({
         </ToggleSwitch>
       </FormGroup>
 
-      <AdvancedToggle 
-        type="button" 
-        onClick={(e) => {
-          e.preventDefault(); // Prevent form submission
-          setShowAdvanced(!showAdvanced);
-        }}
-      >
-        <span>Advanced Options</span>
-        {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </AdvancedToggle>
+      {isEdit && (
+        <AdvancedToggle 
+          type="button" 
+          onClick={(e) => {
+            e.preventDefault(); // Prevent form submission
+            setShowAdvanced(!showAdvanced);
+          }}
+        >
+          <span>Advanced Options</span>
+          {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </AdvancedToggle>
+      )}
       
-      {showAdvanced && (
+      {isEdit && showAdvanced && (
         <>
           <FormGroup>
             <Label>Attachments</Label>

@@ -69,7 +69,8 @@ const TaskCreate = () => {
       <FormContainer>
         <TaskForm 
           onCancel={handleCancel} 
-          
+          isEdit={false}
+          submitButtonText="Create Task"
         />
       </FormContainer>
     </PageContainer>
