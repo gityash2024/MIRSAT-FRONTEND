@@ -5,7 +5,8 @@ import {
   ChevronDown, ChevronUp, CheckCircle, XCircle, 
   AlertTriangle, Clock, Loader, FileText,
   PaperclipIcon, MessageSquare, Timer, Image,
-  Trash2
+  Trash2, Award, BarChart2, HelpCircle, Activity,
+  Clipboard, AlertCircle, Info
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { updateUserTaskProgress, uploadTaskAttachment } from '../../../store/slices/userTasksSlice';
@@ -19,6 +20,9 @@ const Title = styled.h2`
   font-weight: 600;
   color: #1a237e;
   margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const NoSubLevelsMessage = styled.div`
@@ -125,16 +129,62 @@ const StatusBadge = styled.span`
       case 'pending':
         return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00; border: 1px solid rgba(245, 124, 0, 0.2);';
       case 'completed':
+      case 'full_compliance':
         return 'background-color: rgba(232, 245, 233, 0.8); color: #2e7d32; border: 1px solid rgba(46, 125, 50, 0.2);';
       case 'failed':
       case 'incomplete':
+      case 'non_compliance':
         return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f; border: 1px solid rgba(211, 47, 47, 0.2);';
       case 'in_progress':
+      case 'partial_compliance':
         return 'background-color: rgba(227, 242, 253, 0.8); color: #0277bd; border: 1px solid rgba(2, 119, 189, 0.2);';
+      case 'not_applicable':
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161; border: 1px solid rgba(97, 97, 97, 0.2);';
       default:
         return 'background-color: rgba(245, 245, 245, 0.8); color: #616161; border: 1px solid rgba(97, 97, 97, 0.2);';
     }
   }}
+`;
+
+const ComplianceBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-left: 8px;
+  
+  ${props => {
+    switch(props.status) {
+      case 'full_compliance':
+        return 'background-color: rgba(232, 245, 233, 0.8); color: #2e7d32; border: 1px solid rgba(46, 125, 50, 0.2);';
+      case 'partial_compliance':
+        return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00; border: 1px solid rgba(245, 124, 0, 0.2);';
+      case 'non_compliance':
+        return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f; border: 1px solid rgba(211, 47, 47, 0.2);';
+      case 'not_applicable':
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161; border: 1px solid rgba(97, 97, 97, 0.2);';
+      default:
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161; border: 1px solid rgba(97, 97, 97, 0.2);';
+    }
+  }}
+`;
+
+const MandatoryBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: ${props => props.mandatory ? 'rgba(227, 242, 253, 0.8)' : 'rgba(245, 245, 245, 0.8)'};
+  color: ${props => props.mandatory ? '#0277bd' : '#616161'};
+  border: 1px solid ${props => props.mandatory ? 'rgba(2, 119, 189, 0.2)' : 'rgba(97, 97, 97, 0.2)'};
+  margin-left: 8px;
 `;
 
 const ButtonGroup = styled.div`
@@ -175,10 +225,22 @@ const CompleteButton = styled(ActionButton)`
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
 `;
 
+const PartialButton = styled(ActionButton)`
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  color: #f57c00;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.15);
+`;
+
 const FailButton = styled(ActionButton)`
   background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
   color: #c62828;
   box-shadow: 0 2px 8px rgba(229, 57, 53, 0.15);
+`;
+
+const NAButton = styled(ActionButton)`
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  color: #616161;
+  box-shadow: 0 2px 8px rgba(97, 97, 97, 0.15);
 `;
 
 const ReportContainer = styled.div`
@@ -279,6 +341,9 @@ const StatTitle = styled.h3`
   font-weight: 600;
   color: #1a237e;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const StatGrid = styled.div`
@@ -288,15 +353,135 @@ const StatGrid = styled.div`
   margin-top: 16px;
 `;
 
+const ScoringSummary = styled.div`
+  background: rgba(237, 246, 255, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(191, 220, 255, 0.5);
+`;
+
+const ScoreGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+`;
+
+const ScoreItem = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  
+  .score-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  
+  .score-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a237e;
+  }
+  
+  .score-percent {
+    font-size: 13px;
+    color: ${props => props.percent >= 80 ? '#4caf50' : props.percent >= 50 ? '#ff9800' : '#f44336'};
+    margin-left: 4px;
+  }
+`;
+
+const AssessmentSection = styled.div`
+  margin-top: 24px;
+`;
+
+const AssessmentTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 12px;
+`;
+
+const AssessmentTable = styled.table`
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
+  
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  th {
+    background: rgba(26, 35, 126, 0.05);
+    font-weight: 600;
+    color: #1a237e;
+  }
+  
+  tr:hover td {
+    background: rgba(26, 35, 126, 0.02);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+`;
+
+const ScoringCriteria = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  
+  .criteria-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    &.full {
+      color: #2e7d32;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+    
+    &.partial {
+      color: #e65100;
+      border: 1px solid rgba(255, 152, 0, 0.2);
+    }
+    
+    &.non {
+      color: #c62828;
+      border: 1px solid rgba(244, 67, 54, 0.2);
+    }
+    
+    &.na {
+      color: #616161;
+      border: 1px solid rgba(97, 97, 97, 0.2);
+    }
+  }
+`;
+
 const StatusIcon = ({ status, size = 18 }) => {
   switch (status) {
     case 'completed':
+    case 'full_compliance':
       return <CheckCircle size={size} color="#388e3c" />;
     case 'failed':
     case 'incomplete':
+    case 'non_compliance':
       return <XCircle size={size} color="#d32f2f" />;
     case 'in_progress':
-      return <Timer size={size} color="#0277bd" />;
+    case 'partial_compliance':
+      return <AlertCircle size={size} color="#f57c00" />;
+    case 'not_applicable':
+      return <HelpCircle size={size} color="#9e9e9e" />;
     case 'pending':
     default:
       return <Clock size={size} color="#f57c00" />;
@@ -385,49 +570,12 @@ const TimeInput = styled.input`
   }
 `;
 
-const AttachmentList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-`;
-
-const AttachmentItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  position: relative;
-`;
-
-const RemoveButton = styled.button`
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(211, 47, 47, 0.3);
-  color: #d32f2f;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 6px;
-  padding: 0;
-  
-  &:hover {
-    background: #ffebee;
-  }
-`;
-
 const PhotoPreviewContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 12px;
+  position: relative;
 `;
 
 const PhotoPreview = styled.div`
@@ -513,6 +661,13 @@ const PhotoLightbox = styled.div`
   }
 `;
 
+// New fixed-position wrapper for image upload
+const ImageUploadWrapper = styled.div`
+  position: relative;
+  min-height: 120px;
+  margin-bottom: 12px;
+`;
+
 const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
   const dispatch = useDispatch();
   const [expandedSubLevels, setExpandedSubLevels] = useState({});
@@ -522,6 +677,15 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
   const [photos, setPhotos] = useState({});
   const [activeTimers, setActiveTimers] = useState({});
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [complianceStatus, setComplianceStatus] = useState({});
+  const [uploadingPhotos, setUploadingPhotos] = useState({});
+  const [scores, setScores] = useState({
+    total: 0,
+    achieved: 0,
+    percentage: 0,
+    areas: []
+  });
+  
   const fileInputRefs = useRef({});
   const timerRefs = useRef({});
   
@@ -531,6 +695,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       const notesObj = {};
       const timeObj = {};
       const photosObj = {};
+      const complianceObj = {};
       
       task.progress.forEach(p => {
         if (p && p.subLevelId) {
@@ -541,12 +706,14 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           notesObj[id] = p.notes || '';
           timeObj[id] = p.timeSpent || 0;
           photosObj[id] = p.photos || [];
+          complianceObj[id] = p.status || 'pending';
         }
       });
       
       setNotes(notesObj);
       setTimeSpent(timeObj);
       setPhotos(photosObj);
+      setComplianceStatus(complianceObj);
       
       // Auto-expand the first level
       if (task.inspectionLevel?.subLevels?.length > 0) {
@@ -558,6 +725,9 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           }));
         }
       }
+      
+      // Calculate scores
+      calculateScores();
     }
   }, [task]);
   
@@ -569,6 +739,99 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       });
     };
   }, []);
+  
+  const calculateScores = () => {
+    if (!task || !task.progress) return;
+    
+    let totalPoints = 0;
+    let achievedPoints = 0;
+    const assessmentAreas = {};
+    
+    // First, organize into assessment areas
+    if (task.inspectionLevel && task.inspectionLevel.subLevels) {
+      const processSubLevels = (subLevels, areaName = 'General') => {
+        subLevels.forEach(subLevel => {
+          if (!subLevel) return;
+          
+          // Use category/area name if available
+          const currentArea = subLevel.category || areaName;
+          
+          if (!assessmentAreas[currentArea]) {
+            assessmentAreas[currentArea] = {
+              name: currentArea,
+              totalPoints: 0,
+              achievedPoints: 0,
+              items: []
+            };
+          }
+          
+          // Find matching progress item
+          const progressItem = task.progress.find(p => 
+            p.subLevelId && p.subLevelId.toString() === subLevel._id.toString()
+          );
+          
+          if (progressItem) {
+            const isMandatory = subLevel.mandatory !== false;
+            
+            if (isMandatory) {
+              // Each mandatory item is worth 2 points
+              assessmentAreas[currentArea].totalPoints += 2;
+              
+              // Scoring based on status
+              if (progressItem.status === 'completed' || progressItem.status === 'full_compliance') {
+                assessmentAreas[currentArea].achievedPoints += 2;
+              } else if (progressItem.status === 'in_progress' || progressItem.status === 'partial_compliance') {
+                assessmentAreas[currentArea].achievedPoints += 1;
+              }
+              
+              // Add to total score counts
+              totalPoints += 2;
+              if (progressItem.status === 'completed' || progressItem.status === 'full_compliance') {
+                achievedPoints += 2;
+              } else if (progressItem.status === 'in_progress' || progressItem.status === 'partial_compliance') {
+                achievedPoints += 1;
+              }
+              
+              // Add to items list
+              assessmentAreas[currentArea].items.push({
+                id: subLevel._id,
+                name: subLevel.name,
+                status: progressItem.status,
+                points: progressItem.status === 'completed' || progressItem.status === 'full_compliance' ? 2 : 
+                        progressItem.status === 'in_progress' || progressItem.status === 'partial_compliance' ? 1 : 0,
+                maxPoints: 2
+              });
+            }
+          }
+          
+          // Process nested sub-levels
+          if (subLevel.subLevels && subLevel.subLevels.length > 0) {
+            processSubLevels(subLevel.subLevels, currentArea);
+          }
+        });
+      };
+      
+      processSubLevels(task.inspectionLevel.subLevels);
+    }
+    
+    // Convert assessment areas to array format
+    const areasList = Object.values(assessmentAreas).map(area => ({
+      name: area.name,
+      score: area.achievedPoints,
+      maxScore: area.totalPoints,
+      percentage: area.totalPoints > 0 ? (area.achievedPoints / area.totalPoints) * 100 : 0,
+      items: area.items
+    }));
+    
+    const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
+    
+    setScores({
+      total: totalPoints,
+      achieved: achievedPoints,
+      percentage,
+      areas: areasList
+    });
+  };
   
   const startTimer = (subLevelId) => {
     // Clear any existing timer for this sublevel
@@ -645,6 +908,9 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       return;
     }
     
+    // Set uploading state
+    setUploadingPhotos(prev => ({ ...prev, [subLevelId]: true }));
+    
     toast.loading('Uploading file...');
     
     try {
@@ -676,6 +942,9 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       toast.dismiss();
       console.error('File upload error:', error);
       toast.error('Failed to upload file: ' + (error.message || 'Unknown error'));
+    } finally {
+      // Remove uploading state
+      setUploadingPhotos(prev => ({ ...prev, [subLevelId]: false }));
     }
   };
   
@@ -704,9 +973,19 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
     }));
   };
   
+  const handleComplianceChange = (subLevelId, status) => {
+    setComplianceStatus(prev => ({
+      ...prev,
+      [subLevelId]: status
+    }));
+    
+    // Update the status in the backend
+    handleUpdateSubLevel(subLevelId, status);
+  };
+  
   const handleUpdateSubLevel = async (subLevelId, status) => {
     // Validate inputs if completing
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'full_compliance') {
       const subLevelNotes = notes[subLevelId] || '';
       const subLevelPhotos = photos[subLevelId] || [];
       
@@ -737,15 +1016,24 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
         timeSpent: timeSpent[subLevelId] || 0
       })).unwrap();
       
-      toast.success(`Sublevel marked as ${status}`);
+      toast.success(`Checkpoint status updated`);
       if (onUpdateProgress) onUpdateProgress(updatedTask);
+      
+      // Update local compliance status
+      setComplianceStatus(prev => ({
+        ...prev,
+        [subLevelId]: status
+      }));
+      
+      // Recalculate scores
+      calculateScores();
       
       // Stop timer if running
       if (activeTimers[subLevelId]) {
         stopTimer(subLevelId);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to update sublevel status');
+      toast.error(error.message || 'Failed to update checkpoint status');
     } finally {
       setLoading(prev => ({ ...prev, [subLevelId]: false }));
     }
@@ -753,6 +1041,12 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
   
   // Get progress status for a specific sublevel
   const getSubLevelStatus = (subLevelId) => {
+    // First check local state
+    if (complianceStatus[subLevelId]) {
+      return complianceStatus[subLevelId];
+    }
+    
+    // Then check task progress
     if (!progress || !progress.length) return 'pending';
     
     const progressItem = progress.find(p => {
@@ -811,14 +1105,17 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           const hasChildren = subLevel.subLevels && subLevel.subLevels.length > 0;
           const isExpanded = expandedSubLevels[subLevel._id];
           const status = getSubLevelStatus(subLevel._id);
-          const isCompleted = status === 'completed';
-          const isFailed = status === 'failed' || status === 'incomplete';
-          const isInProgress = status === 'in_progress';
+          const isCompleted = status === 'completed' || status === 'full_compliance';
+          const isFailed = status === 'failed' || status === 'incomplete' || status === 'non_compliance';
+          const isPartial = status === 'in_progress' || status === 'partial_compliance';
+          const isNotApplicable = status === 'not_applicable';
           const isTaskCompleted = task && task.status === 'completed';
+          const isMandatory = subLevel.mandatory !== false;
           
           const subLevelNotes = notes[subLevel._id] || '';
           const subLevelPhotos = photos[subLevel._id] || [];
           const subLevelTime = timeSpent[subLevel._id] || 0;
+          const isUploading = uploadingPhotos[subLevel._id] || false;
           
           return (
             <SubLevelItem key={subLevel._id}>
@@ -826,12 +1123,16 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                 <SubLevelTitle>
                   <StatusIcon status={status} />
                   {subLevel.name || 'Unnamed'}
+                  <MandatoryBadge mandatory={isMandatory}>
+                    {isMandatory ? 'Mandatory' : 'Recommended'}
+                  </MandatoryBadge>
                 </SubLevelTitle>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <StatusBadge status={status}>
-                    {status === 'completed' ? 'Completed' : 
-                     status === 'failed' || status === 'incomplete' ? 'Failed' : 
-                     status === 'in_progress' ? 'In Progress' : 'Pending'}
+                    {status === 'completed' || status === 'full_compliance' ? 'Full Compliance' : 
+                     status === 'failed' || status === 'incomplete' || status === 'non_compliance' ? 'Non-Compliance' : 
+                     status === 'in_progress' || status === 'partial_compliance' ? 'Partial Compliance' : 
+                     status === 'not_applicable' ? 'Not Applicable' : 'Pending'}
                   </StatusBadge>
                   {hasChildren && (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
                 </div>
@@ -843,7 +1144,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                     <SubLevelDescription>{subLevel.description}</SubLevelDescription>
                   )}
                   
-                  {!isTaskCompleted && !isCompleted && !isFailed && (
+                  {!isTaskCompleted && (
                     <>
                       <ActionInput>
                         <div>
@@ -859,35 +1160,53 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                         <div>
                           <PaperclipIcon size={16} color="#1a237e" />
                           <span style={{ marginLeft: '8px', fontSize: '14px', fontWeight: '500' }}>Photos</span>
-                          <FileInputLabel>
-                            <Image size={16} />
-                            Upload Photo
-                            <FileInput 
-                              type="file" 
-                              accept="image/*"
-                              ref={el => fileInputRefs.current[subLevel._id] = el}
-                              onChange={(e) => handleFileChange(subLevel._id, e)}
-                            />
-                          </FileInputLabel>
                           
-                          {subLevelPhotos.length > 0 && (
-                            <PhotoPreviewContainer>
-                              {subLevelPhotos.map((photo, idx) => (
-                                <PhotoPreview key={idx} onClick={() => setPhotoPreview(photo)}>
-                                  <img src={photo} alt={`Photo ${idx + 1}`} />
-                                  <button 
-                                    className="remove-button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removePhoto(subLevel._id, photo);
-                                    }}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </PhotoPreview>
-                              ))}
-                            </PhotoPreviewContainer>
-                          )}
+                          {/* Fixed size container for uploads to prevent shifting */}
+                          <ImageUploadWrapper>
+                            <FileInputLabel>
+                              <Image size={16} />
+                              Upload Photo
+                              <FileInput 
+                                type="file" 
+                                accept="image/*"
+                                ref={el => fileInputRefs.current[subLevel._id] = el}
+                                onChange={(e) => handleFileChange(subLevel._id, e)}
+                                disabled={isUploading}
+                              />
+                            </FileInputLabel>
+                            
+                            {isUploading && (
+                              <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px', 
+                                marginTop: '10px',
+                                color: '#1a237e'
+                              }}>
+                                <Loader size={16} />
+                                <span>Uploading...</span>
+                              </div>
+                            )}
+                            
+                            {subLevelPhotos.length > 0 && (
+                              <PhotoPreviewContainer>
+                                {subLevelPhotos.map((photo, idx) => (
+                                  <PhotoPreview key={idx} onClick={() => setPhotoPreview(photo)}>
+                                    <img src={photo} alt={`Photo ${idx + 1}`} />
+                                    <button 
+                                      className="remove-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removePhoto(subLevel._id, photo);
+                                      }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </PhotoPreview>
+                                ))}
+                              </PhotoPreviewContainer>
+                            )}
+                          </ImageUploadWrapper>
                         </div>
                         
                         <TimeInputContainer>
@@ -921,24 +1240,38 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                       
                       <ButtonGroup>
                         <CompleteButton 
-                          onClick={() => handleUpdateSubLevel(subLevel._id, 'completed')}
+                          onClick={() => handleComplianceChange(subLevel._id, 'full_compliance')}
                           disabled={loading[subLevel._id]}
                         >
                           {loading[subLevel._id] ? <Loader size={16} /> : <CheckCircle size={16} />}
-                          Mark as Completed
+                          Full Compliance
                         </CompleteButton>
+                        <PartialButton 
+                          onClick={() => handleComplianceChange(subLevel._id, 'partial_compliance')}
+                          disabled={loading[subLevel._id]}
+                        >
+                          {loading[subLevel._id] ? <Loader size={16} /> : <AlertCircle size={16} />}
+                          Partial Compliance
+                        </PartialButton>
                         <FailButton 
-                          onClick={() => handleUpdateSubLevel(subLevel._id, 'failed')}
+                          onClick={() => handleComplianceChange(subLevel._id, 'non_compliance')}
                           disabled={loading[subLevel._id]}
                         >
                           {loading[subLevel._id] ? <Loader size={16} /> : <XCircle size={16} />}
-                          Mark as Failed
+                          Non-Compliance
                         </FailButton>
+                        <NAButton 
+                          onClick={() => handleComplianceChange(subLevel._id, 'not_applicable')}
+                          disabled={loading[subLevel._id]}
+                        >
+                          {loading[subLevel._id] ? <Loader size={16} /> : <HelpCircle size={16} />}
+                          Not Applicable
+                        </NAButton>
                       </ButtonGroup>
                     </>
                   )}
                   
-                  {(isCompleted || isFailed || isInProgress) && (
+                  {(isCompleted || isFailed || isPartial || isNotApplicable) && (
                     <>
                       {subLevelNotes && (
                         <div style={{ marginTop: '16px' }}>
@@ -1010,7 +1343,92 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
   
   return (
     <Container>
-      <Title>Inspection Performance</Title>
+      <Title>
+        <Activity size={20} />
+        Inspection Performance
+      </Title>
+      
+      {/* Scoring summary */}
+      <ScoringSummary>
+        <StatTitle>
+          <Award size={20} />
+          Compliance Scoring Summary
+        </StatTitle>
+        
+        <ScoreGrid>
+          <ScoreItem percent={scores.percentage}>
+            <div className="score-label">Overall Compliance</div>
+            <div className="score-value">
+              {scores.achieved} / {scores.total}
+              <span className="score-percent">({scores.percentage}%)</span>
+            </div>
+          </ScoreItem>
+          
+          <ScoreItem>
+            <div className="score-label">Checkpoints</div>
+            <div className="score-value">
+              {task?.progress?.length || 0} Total
+            </div>
+          </ScoreItem>
+          
+          <ScoreItem>
+            <div className="score-label">Status</div>
+            <div className="score-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <StatusIcon status={task?.status || 'pending'} size={16} />
+              {task?.status === 'completed' ? 'Completed' : 
+               task?.status === 'in_progress' ? 'In Progress' : 'Pending'}
+            </div>
+          </ScoreItem>
+        </ScoreGrid>
+        
+        <ScoringCriteria>
+          <div className="criteria-item full">
+            <CheckCircle size={14} /> Full Compliance: 2 points
+          </div>
+          <div className="criteria-item partial">
+            <AlertCircle size={14} /> Partial Compliance: 1 point
+          </div>
+          <div className="criteria-item non">
+            <XCircle size={14} /> Non-Compliance: 0 points
+          </div>
+          <div className="criteria-item na">
+            <HelpCircle size={14} /> Not Applicable: Excluded
+          </div>
+        </ScoringCriteria>
+        
+        {/* Assessment areas section */}
+        {scores.areas.length > 0 && (
+          <AssessmentSection>
+            <AssessmentTitle>
+              <Clipboard size={18} />
+              Assessment Areas
+            </AssessmentTitle>
+            <AssessmentTable>
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>Score</th>
+                  <th>Compliance Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scores.areas.map((area, index) => (
+                  <tr key={index}>
+                    <td>{area.name}</td>
+                    <td>{area.score} / {area.maxScore}</td>
+                    <td>{Math.round(area.percentage)}%</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', background: 'rgba(26, 35, 126, 0.05)' }}>
+                  <td>Overall</td>
+                  <td>{scores.achieved} / {scores.total}</td>
+                  <td>{scores.percentage}%</td>
+                </tr>
+              </tbody>
+            </AssessmentTable>
+          </AssessmentSection>
+        )}
+      </ScoringSummary>
       
       {(!subLevels || subLevels.length === 0) ? (
         <NoSubLevelsMessage>
@@ -1035,7 +1453,10 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           
           {isTaskCompleted && (
             <StatsContainer>
-              <StatTitle>Task Completion Statistics</StatTitle>
+              <StatTitle>
+                <Activity size={20} />
+                Task Completion Statistics
+              </StatTitle>
               <StatGrid>
                 <StatCard>
                   <div className="label">Total Sub-levels</div>
@@ -1048,6 +1469,10 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                 <StatCard>
                   <div className="label">Time Spent</div>
                   <div className="value">{task.taskMetrics?.timeSpent || 0} hrs</div>
+                </StatCard>
+                <StatCard>
+                  <div className="label">Overall Score</div>
+                  <div className="value">{scores.achieved} / {scores.total}</div>
                 </StatCard>
               </StatGrid>
               

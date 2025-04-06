@@ -1,680 +1,635 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
 import styled from 'styled-components';
 import { 
-  ArrowLeft, CheckCircle, XCircle, AlertTriangle,
-  CheckSquare, Loader, ChevronRight, HelpCircle, Save, Clock, Info
+  Clock, Calendar, AlertTriangle, Activity, CheckCircle, 
+  XCircle, Database, MapPin, User, Briefcase, Award, Info, 
+  BarChart2, Clipboard, AlertCircle, HelpCircle
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { fetchUserTaskDetails, updateTaskQuestionnaire } from '../../store/slices/userTasksSlice';
-import Skeleton from '../../components/ui/Skeleton';
 
-const PageContainer = styled.div`
+const Container = styled.div`
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  min-height: 100vh;
-  
-  @media (min-width: 768px) {
-    padding: 28px;
-  }
 `;
 
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  color: #1a237e;
-  font-size: 14px;
+const Title = styled.h2`
+  font-size: 18px;
   font-weight: 600;
-  cursor: pointer;
-  padding: 10px 16px;
-  margin-bottom: 20px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.9);
-    color: #0d1186;
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const Card = styled.div`
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 28px;
-  transition: all 0.35s cubic-bezier(0.21, 0.6, 0.35, 1);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  max-width: 800px;
-  margin: 0 auto;
-  
-  &:hover {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-4px);
-  }
-  
-  @media (min-width: 768px) {
-    padding: 28px;
-  }
-`;
-
-const CardTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
   color: #1a237e;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  padding-bottom: 16px;
+  gap: 10px;
+`;
+
+const Description = styled.p`
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+`;
+
+const MetaGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-bottom: 24px;
+  
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+`;
+
+const MetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4b5563;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.7);
+  }
   
   svg {
-    color: #3f51b5;
-    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+    color: #1a237e;
+    flex-shrink: 0;
+  }
+  
+  strong {
+    font-weight: 600;
   }
 `;
 
-const TaskTitle = styled.h1`
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a237e;
-  margin-bottom: 20px;
-  letter-spacing: -0.5px;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-  text-align: center;
-`;
-
-const QuestionsContainer = styled.div`
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 14px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(10px);
-  margin-bottom: 24px;
-`;
-
-const QuestionItem = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(230, 232, 240, 0.8);
-  transition: all 0.3s ease;
+const StatusBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  
+  ${props => {
+    switch(props.status) {
+      case 'pending':
+        return `
+          background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+          color: #e65100;
+          border: 1px solid rgba(245, 124, 0, 0.2);
+        `;
+      case 'in_progress':
+        return `
+          background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+          color: #0069c0;
+          border: 1px solid rgba(2, 136, 209, 0.2);
+        `;
+      case 'completed':
+        return `
+          background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+          color: #2e7d32;
+          border: 1px solid rgba(56, 142, 60, 0.2);
+        `;
+      case 'incomplete':
+        return `
+          background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+          color: #c62828;
+          border: 1px solid rgba(211, 47, 47, 0.2);
+        `;
+      default:
+        return `
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #424242;
+          border: 1px solid rgba(97, 97, 97, 0.2);
+        `;
+    }
+  }}
   
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
   }
   
-  &:last-child {
-    margin-bottom: 0;
+  @media (min-width: 768px) {
+    margin-left: 8px;
   }
 `;
 
-const QuestionText = styled.div`
+const PriorityBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  
+  ${props => {
+    switch(props.priority) {
+      case 'high':
+        return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f; border: 1px solid rgba(211, 47, 47, 0.2);';
+      case 'medium':
+        return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00; border: 1px solid rgba(245, 124, 0, 0.2);';
+      case 'low':
+        return 'background-color: rgba(232, 245, 233, 0.8); color: #2e7d32; border: 1px solid rgba(46, 125, 50, 0.2);';
+      default:
+        return 'background-color: rgba(245, 245, 245, 0.8); color: #616161; border: 1px solid rgba(97, 97, 97, 0.2);';
+    }
+  }}
+`;
+
+const AssetInfo = styled.div`
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+`;
+
+const AssetTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-`;
-
-const QuestionOptions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
-`;
-
-const OptionButton = styled.button`
+  color: #1a237e;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border-radius: 8px;
+  gap: 8px;
+`;
+
+const AssetDetail = styled.div`
+  margin-bottom: 8px;
   font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: ${props => props.selected ? 
-    'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)' : 
-    'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'};
-  color: ${props => props.selected ? '#2e7d32' : '#333'};
-  box-shadow: ${props => props.selected ? 
-    '0 2px 8px rgba(76, 175, 80, 0.15)' : 
-    '0 1px 3px rgba(0, 0, 0, 0.05)'};
+  color: #4b5563;
   
-  &:hover {
-    background: ${props => props.selected ? 
-      'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)' : 
-      'linear-gradient(135deg, #f1f5f9 0%, #e5e7eb 100%)'};
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+  strong {
+    font-weight: 600;
+    color: #1f2937;
   }
 `;
 
-const ComplianceButton = styled(OptionButton)`
-  background: ${props => {
-    if (props.selected) {
-      switch(props.value) {
-        case 'full_compliance': return 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)';
-        case 'partial_compliance': return 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)';
-        case 'non_compliance': return 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
-        default: return 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
-      }
-    }
-    return 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
-  }};
-  
-  color: ${props => {
-    if (props.selected) {
-      switch(props.value) {
-        case 'full_compliance': return '#2e7d32';
-        case 'partial_compliance': return '#e65100';
-        case 'non_compliance': return '#c62828';
-        default: return '#333';
-      }
-    }
-    return '#333';
-  }};
-  
-  border: 1px solid ${props => {
-    if (props.selected) {
-      switch(props.value) {
-        case 'full_compliance': return 'rgba(76, 175, 80, 0.3)';
-        case 'partial_compliance': return 'rgba(255, 152, 0, 0.3)';
-        case 'non_compliance': return 'rgba(244, 67, 54, 0.3)';
-        default: return 'rgba(0, 0, 0, 0.1)';
-      }
-    }
-    return 'rgba(0, 0, 0, 0.1)';
-  }};
-  
-  box-shadow: ${props => {
-    if (props.selected) {
-      switch(props.value) {
-        case 'full_compliance': return '0 2px 8px rgba(76, 175, 80, 0.15)';
-        case 'partial_compliance': return '0 2px 8px rgba(255, 152, 0, 0.15)';
-        case 'non_compliance': return '0 2px 8px rgba(244, 67, 54, 0.15)';
-        default: return '0 1px 3px rgba(0, 0, 0, 0.05)';
-      }
-    }
-    return '0 1px 3px rgba(0, 0, 0, 0.05)';
-  }};
+const ScoringSummary = styled.div`
+  background: rgba(237, 246, 255, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(191, 220, 255, 0.5);
 `;
 
-const ButtonGroup = styled.div`
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 16px;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ScoreGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+`;
+
+const ScoreItem = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  
+  .score-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  
+  .score-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a237e;
+  }
+  
+  .score-percent {
+    font-size: 13px;
+    color: ${props => props.percent >= 80 ? '#4caf50' : props.percent >= 50 ? '#ff9800' : '#f44336'};
+    margin-left: 4px;
+  }
+`;
+
+const ScoringCriteria = styled.div`
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
+  margin-top: 12px;
+  
+  .criteria-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    &.full {
+      color: #2e7d32;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+    
+    &.partial {
+      color: #e65100;
+      border: 1px solid rgba(255, 152, 0, 0.2);
+    }
+    
+    &.non {
+      color: #c62828;
+      border: 1px solid rgba(244, 67, 54, 0.2);
+    }
+    
+    &.na {
+      color: #616161;
+      border: 1px solid rgba(97, 97, 97, 0.2);
+    }
+  }
+`;
+
+const AssessmentSection = styled.div`
   margin-top: 24px;
 `;
 
-const Button = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: ${props => props.primary ? 
-    'linear-gradient(135deg, #1a237e 0%, #3949ab 100%)' : 
-    'rgba(255, 255, 255, 0.8)'};
-  border: none;
-  color: ${props => props.primary ? 'white' : '#1a237e'};
-  font-size: 14px;
+const AssessmentTitle = styled.h4`
+  font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
-  padding: 12px 24px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  color: #1a237e;
+  margin-bottom: 12px;
+`;
+
+const AssessmentTable = styled.table`
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
   
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    background: ${props => props.primary ? 
-      'linear-gradient(135deg, #151b4f 0%, #2c3889 100%)' : 
-      'rgba(255, 255, 255, 0.9)'};
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
   }
   
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  gap: 16px;
-`;
-
-const ErrorContainer = styled.div`
-  background: rgba(255, 236, 236, 0.9);
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  border: 1px solid rgba(244, 67, 54, 0.2);
-  color: #c62828;
-  max-width: 500px;
-  margin: 40px auto;
-`;
-
-const ProgressSteps = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-`;
-
-const Step = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 120px;
-`;
-
-const StepDot = styled.div`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: ${props => props.active ? '#1a237e' : props.completed ? '#c8e6c9' : '#e0e0e0'};
-  color: ${props => props.active || props.completed ? 'white' : '#757575'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-bottom: 8px;
-  box-shadow: ${props => props.active ? '0 0 0 4px rgba(26, 35, 126, 0.2)' : 'none'};
-`;
-
-const StepLabel = styled.div`
-  font-size: 12px;
-  color: ${props => props.active ? '#1a237e' : '#757575'};
-  text-align: center;
-  font-weight: ${props => props.active ? '600' : '400'};
-`;
-
-const StepConnector = styled.div`
-  height: 2px;
-  width: 50px;
-  background: ${props => props.completed ? '#c8e6c9' : '#e0e0e0'};
-  margin-top: 15px;
-`;
-
-const NotesInput = styled.div`
-  position: relative;
-  margin-bottom: 20px;
-  
-  textarea {
-    width: 100%;
-    padding: 14px;
-    border: 1px solid rgba(229, 231, 235, 0.8);
-    border-radius: 12px;
-    font-size: 14px;
-    min-height: 110px;
-    resize: vertical;
-    background: rgba(255, 255, 255, 0.9);
-    color: #333; /* Ensure text is visible */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    
-    &:focus {
-      outline: none;
-      border-color: #1a237e;
-      box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
-    }
-  }
-  
-  label {
-    position: absolute;
-    top: -10px;
-    left: 12px;
-    background: white;
-    padding: 0 8px;
-    font-size: 14px;
+  th {
+    background: rgba(26, 35, 126, 0.05);
     font-weight: 600;
     color: #1a237e;
-    border-radius: 4px;
+  }
+  
+  tr:hover td {
+    background: rgba(26, 35, 126, 0.02);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
   }
 `;
 
-// Add QuestionnaireSkeleton component
-const QuestionnaireSkeleton = () => (
-  <PageContainer>
-    <BackButton disabled>
-      <Skeleton.Circle size="18px" />
-      <Skeleton.Base width="100px" height="16px" />
-    </BackButton>
-    
-    <Card>
-      <div style={{ marginBottom: '24px' }}>
-        <Skeleton.Base width="70%" height="28px" margin="0 0 8px 0" />
-        <Skeleton.Base width="50%" height="16px" />
-      </div>
-      
-      <div style={{ display: 'grid', gap: '24px', marginBottom: '32px' }}>
-        {Array(5).fill().map((_, i) => (
-          <div key={i}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <Skeleton.Circle size="24px" />
-              <Skeleton.Base width={`${200 + Math.random() * 300}px`} height="20px" />
-            </div>
-            
-            <div style={{ paddingLeft: '36px' }}>
-              {i % 2 === 0 ? (
-                // For Yes/No questions
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Skeleton.Base width="20px" height="20px" radius="50%" />
-                    <Skeleton.Base width="40px" height="16px" />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Skeleton.Base width="20px" height="20px" radius="50%" />
-                    <Skeleton.Base width="40px" height="16px" />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Skeleton.Base width="20px" height="20px" radius="50%" />
-                    <Skeleton.Base width="40px" height="16px" />
-                  </div>
-                </div>
-              ) : (
-                // For text input questions
-                <Skeleton.Base width="100%" height="40px" radius="8px" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Skeleton.Base width="180px" height="16px" />
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <Skeleton.Button width="120px" height="40px" />
-          <Skeleton.Button width="120px" height="40px" />
-        </div>
-      </div>
-    </Card>
-  </PageContainer>
-);
+const StatusIcon = ({ status, size = 18 }) => {
+  switch (status) {
+    case 'pending':
+      return <Clock size={size} color="#f57c00" />;
+    case 'in_progress':
+      return <Activity size={size} color="#0288d1" />;
+    case 'completed':
+      return <CheckCircle size={size} color="#388e3c" />;
+    case 'incomplete':
+      return <XCircle size={size} color="#d32f2f" />;
+    default:
+      return <Clock size={size} color="#616161" />;
+  }
+};
 
-const PreInspectionQuestionnaire = () => {
-  const { taskId, subLevelId } = useParams();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const PreInspectionStepForm = ({ task }) => {
+  if (!task) return <div>Loading task details...</div>;
   
-  const { currentTask, taskDetailsLoading, error } = useSelector(state => state.userTasks);
-  const [responses, setResponses] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [validationErrors, setValidationErrors] = useState({});
-  
-  useEffect(() => {
-    if (taskId) {
-      dispatch(fetchUserTaskDetails(taskId));
-    }
-  }, [taskId, dispatch]);
-  
-  // Check if questionnaire was already completed
-  useEffect(() => {
-    if (currentTask?.questionnaireCompleted && currentTask?.questionnaireResponses) {
-      setResponses(currentTask.questionnaireResponses);
-    }
-  }, [currentTask]);
-  
-  const handleResponse = (questionId, value) => {
-    setResponses(prev => ({
-      ...prev,
-      [`${subLevelId || 'general'}-${questionId}`]: value
-    }));
+  // Get asset information, handling both ID and populated object
+  const getAssetInfo = () => {
+    if (!task.asset) return null;
     
-    // Clear validation error for this question
-    if (validationErrors[`${subLevelId || 'general'}-${questionId}`]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[`${subLevelId || 'general'}-${questionId}`];
-        return newErrors;
-      });
+    // If asset is just an ID string
+    if (typeof task.asset === 'string') {
+      return { id: task.asset, displayName: 'Loading asset details...', type: 'N/A', uniqueId: '' };
     }
+    
+    return {
+      id: task.asset._id,
+      displayName: task.asset.displayName || task.asset.name || 'Unnamed Asset',
+      type: task.asset.type || 'N/A',
+      uniqueId: task.asset.uniqueId || '',
+      serialNumber: task.asset.serialNumber || '',
+      location: task.asset.location || '',
+      manufacturer: task.asset.manufacturer || ''
+    };
   };
   
-  const validateResponses = () => {
-    const errors = {};
-    let isValid = true;
-    
-    if (currentTask?.questions) {
-      currentTask.questions.forEach(question => {
-        if (question.required && (!responses[`${subLevelId || 'general'}-${question._id || question.id}`] || responses[`${subLevelId || 'general'}-${question._id || question.id}`].trim() === '')) {
-          errors[`${subLevelId || 'general'}-${question._id || question.id}`] = 'This question requires an answer';
-          isValid = false;
-        }
-      });
-    }
-    
-    setValidationErrors(errors);
-    return isValid;
+  const asset = getAssetInfo();
+  
+  // Check if deadline is overdue
+  const isOverdue = () => {
+    if (!task.deadline) return false;
+    return new Date(task.deadline) < new Date() && task.status !== 'completed';
   };
   
-  const handleSubmit = async () => {
-    if (!validateResponses()) {
-      toast.error('Please answer all required questions');
-      return;
+  // Calculate total score
+  const calculateTotalScore = () => {
+    if (!task) return { total: 0, achieved: 0, percentage: 0, areas: [] };
+    
+    // Get scores from task metrics if available
+    if (task.taskMetrics && task.taskMetrics.totalScore !== undefined) {
+      return {
+        total: task.taskMetrics.maximumScore || 0,
+        achieved: task.taskMetrics.totalScore || 0,
+        percentage: task.taskMetrics.maximumScore > 0 
+          ? Math.round((task.taskMetrics.totalScore / task.taskMetrics.maximumScore) * 100) 
+          : 0,
+        areas: task.assessmentAreas || []
+      };
     }
     
-    setIsSubmitting(true);
+    // Otherwise calculate from questionnaire and progress
+    let totalQuestionPoints = 0;
+    let achievedQuestionPoints = 0;
     
-    try {
-      // Save questionnaire to backend
-      await dispatch(updateTaskQuestionnaire({
-        taskId,
-        data: {
-          responses,
-          notes,
-          completed: true
-        }
-      })).unwrap();
+    // Calculate questionnaire scores
+    if (task.questions && task.questionnaireResponses) {
+      const responses = task.questionnaireResponses;
+      const questions = task.questions.filter(q => q.mandatory !== false);
       
-      // Navigate back to the task detail page with the questionnaire data
-      navigate(`/user-tasks/${taskId}`, { 
-        state: { 
-          questionnaireCompleted: true,
-          responses,
-          subLevelId,
-          notes
-        } 
+      questions.forEach(question => {
+        const questionId = question._id || question.id;
+        const responseKey = Object.keys(responses || {}).find(key => 
+          key.includes(questionId) || key.endsWith(questionId)
+        );
+        
+        if (responseKey) {
+          const response = responses[responseKey];
+          const weight = question.weight || 1;
+          
+          totalQuestionPoints += (2 * weight); // Max score is 2 per question
+          
+          if (response === 'full_compliance' || response === 'yes') {
+            achievedQuestionPoints += (2 * weight);
+          } else if (response === 'partial_compliance') {
+            achievedQuestionPoints += (1 * weight);
+          } else if (response === 'na' || response === 'not_applicable') {
+            totalQuestionPoints -= (2 * weight); // Don't count NA questions
+          }
+        }
       });
-    } catch (error) {
-      toast.error('Failed to save questionnaire: ' + (error.message || 'Unknown error'));
-      setIsSubmitting(false);
     }
+    
+    // Calculate progress scores
+    let totalProgressPoints = 0;
+    let achievedProgressPoints = 0;
+    
+    if (task.progress) {
+      task.progress.forEach(item => {
+        // Only count mandatory items
+        if (item && item.status) {
+          // Each item is worth 2 points
+          totalProgressPoints += 2;
+          
+          if (item.status === 'completed' || item.status === 'full_compliance') {
+            achievedProgressPoints += 2;
+          } else if (item.status === 'in_progress' || item.status === 'partial_compliance') {
+            achievedProgressPoints += 1;
+          }
+        }
+      });
+    }
+    
+    const totalPoints = totalQuestionPoints + totalProgressPoints;
+    const achievedPoints = achievedQuestionPoints + achievedProgressPoints;
+    const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
+    
+    return { 
+      total: totalPoints, 
+      achieved: achievedPoints, 
+      percentage,
+      areas: task.assessmentAreas || []
+    };
   };
   
-  const handleCancel = () => {
-    navigate(`/user-tasks/${taskId}`);
-  };
-  
-  if (taskDetailsLoading) {
-    return <QuestionnaireSkeleton />;
-  }
-  
-  if (error || !currentTask) {
-    return (
-      <PageContainer>
-        <ErrorContainer>
-          <AlertTriangle size={32} />
-          <h3>Error Loading Task</h3>
-          <p>{error || 'Unable to load task details'}</p>
-          <Button onClick={() => navigate('/user-tasks')}>
-            Return to Tasks
-          </Button>
-        </ErrorContainer>
-      </PageContainer>
-    );
-  }
-  
+  const scores = calculateTotalScore();
+
   return (
-    <PageContainer>
-      <BackButton onClick={handleCancel}>
-        <ArrowLeft size={18} />
-        Back to Task
-      </BackButton>
+    <Container>
+      <Title>
+        <Info size={20} />
+        Task Details
+      </Title>
+      <Description>{task.description}</Description>
       
-      <ProgressSteps>
-        <Step>
-          <StepDot completed={true}>1</StepDot>
-          <StepLabel>Task Overview</StepLabel>
-        </Step>
-        <StepConnector completed={true} />
-        <Step>
-          <StepDot active={true}>2</StepDot>
-          <StepLabel active={true}>Questionnaire</StepLabel>
-        </Step>
-        <StepConnector />
-        <Step>
-          <StepDot>3</StepDot>
-          <StepLabel>Inspection</StepLabel>
-        </Step>
-      </ProgressSteps>
+      <MetaGrid>
+        <MetaItem>
+          <Calendar size={16} />
+          <span style={{ 
+            color: isOverdue() ? '#d32f2f' : '#4b5563' 
+          }}>
+            Deadline: <strong>{formatDate(task.deadline)}</strong>
+            {isOverdue() && ' (Overdue)'}
+          </span>
+        </MetaItem>
+        
+        <MetaItem>
+          <AlertTriangle size={16} />
+          <span>Priority: 
+            <PriorityBadge priority={task.priority}>
+              {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'Medium'}
+            </PriorityBadge>
+          </span>
+        </MetaItem>
+        
+        <MetaItem>
+          <Activity size={16} />
+          <span>Status: 
+            <StatusBadge status={task.status}>
+              <StatusIcon status={task.status} size={14} />
+              {task.status?.charAt(0).toUpperCase() + task.status?.slice(1).replace('_', ' ') || 'Pending'}
+            </StatusBadge>
+          </span>
+        </MetaItem>
+        
+        {task.inspectionLevel && (
+          <MetaItem>
+            <CheckCircle size={16} />
+            <span>Template: <strong>{task.inspectionLevel.name || 'N/A'}</strong></span>
+          </MetaItem>
+        )}
+        
+        {task.location && (
+          <MetaItem>
+            <MapPin size={16} />
+            <span>Location: <strong>{task.location}</strong></span>
+          </MetaItem>
+        )}
+        
+        {task.assignedTo && task.assignedTo.length > 0 && (
+          <MetaItem>
+            <User size={16} />
+            <span>Assigned To: <strong>
+              {Array.isArray(task.assignedTo) 
+                ? task.assignedTo.map(user => 
+                    typeof user === 'object' ? user.name || 'Unknown User' : 'Unknown User'
+                  ).join(', ')
+                : 'Unknown User'}
+            </strong></span>
+          </MetaItem>
+        )}
+        
+        {task.createdBy && (
+          <MetaItem>
+            <Briefcase size={16} />
+            <span>Created By: <strong>{typeof task.createdBy === 'object' ? task.createdBy.name : 'N/A'}</strong></span>
+          </MetaItem>
+        )}
+      </MetaGrid>
       
-      <Card>
-        <TaskTitle>{currentTask.title}</TaskTitle>
-        <CardTitle>
-          <CheckSquare size={22} />
-          Inspection Questionnaire
-        </CardTitle>
-        
-        <QuestionsContainer>
-          {currentTask.questions && currentTask.questions.map((question, index) => (
-            <QuestionItem key={question._id || question.id || index}>
-              <QuestionText>
-                {index + 1}. {question.text} {question.required && <span style={{ color: 'red' }}>*</span>}
-              </QuestionText>
-              
-              <QuestionOptions>
-                {question.answerType === 'yesNo' && (
-                  <>
-                    <OptionButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'yes'}
-                      onClick={() => handleResponse(question._id || question.id, 'yes')}
-                    >
-                      Yes
-                    </OptionButton>
-                    <OptionButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'no'}
-                      onClick={() => handleResponse(question._id || question.id, 'no')}
-                    >
-                      No
-                    </OptionButton>
-                    <OptionButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'na'}
-                      onClick={() => handleResponse(question._id || question.id, 'na')}
-                    >
-                      N/A
-                    </OptionButton>
-                  </>
-                )}
-                
-                {question.answerType === 'compliance' && (
-                  <>
-                    <ComplianceButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'full_compliance'}
-                      onClick={() => handleResponse(question._id || question.id, 'full_compliance')}
-                      value="full_compliance"
-                    >
-                      Full Compliance
-                    </ComplianceButton>
-                    <ComplianceButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'partial_compliance'}
-                      onClick={() => handleResponse(question._id || question.id, 'partial_compliance')}
-                      value="partial_compliance"
-                    >
-                      Partial Compliance
-                    </ComplianceButton>
-                    <ComplianceButton
-                      selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === 'non_compliance'}
-                      onClick={() => handleResponse(question._id || question.id, 'non_compliance')}
-                      value="non_compliance"
-                    >
-                      Non Compliance
-                    </ComplianceButton>
-                  </>
-                )}
-                
-                {question.answerType === 'custom' && question.options && question.options.length > 0 && (
-                  <>
-                    {question.options.map((option, optionIndex) => (
-                      <OptionButton
-                        key={optionIndex}
-                        selected={responses[`${subLevelId || 'general'}-${question._id || question.id}`] === option}
-                        onClick={() => handleResponse(question._id || question.id, option)}
-                      >
-                        {option}
-                      </OptionButton>
-                    ))}
-                  </>
-                )}
-              </QuestionOptions>
-            </QuestionItem>
-          ))}
-        </QuestionsContainer>
-        
-        <NotesInput>
-          <label>Additional Notes</label>
-          <textarea
-            placeholder="Add any additional notes or observations here..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </NotesInput>
-        
-        <ButtonGroup>
-          <Button onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button 
-            primary 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <CheckCircle size={18} />
-            Submit & Start Inspection
-          </Button>
-        </ButtonGroup>
-      </Card>
-    </PageContainer>
+      {/* Display score summary if task is in progress or completed */}
+      {(task.status === 'in_progress' || task.status === 'completed') && (
+        <ScoringSummary>
+          <SectionTitle>
+            <Award size={18} />
+            Compliance Scoring Summary
+          </SectionTitle>
+          
+          <ScoreGrid>
+            <ScoreItem percent={scores.percentage}>
+              <div className="score-label">Overall Compliance</div>
+              <div className="score-value">
+                {scores.achieved} / {scores.total}
+                <span className="score-percent">({scores.percentage}%)</span>
+              </div>
+            </ScoreItem>
+            
+            <ScoreItem>
+              <div className="score-label">Completion Rate</div>
+              <div className="score-value">
+                {task.overallProgress || 0}%
+              </div>
+            </ScoreItem>
+            
+            <ScoreItem>
+              <div className="score-label">Total Checkpoints</div>
+              <div className="score-value">
+                {task.progress ? task.progress.length : 0}
+              </div>
+            </ScoreItem>
+          </ScoreGrid>
+          
+          <ScoringCriteria>
+            <div className="criteria-item full">
+              <CheckCircle size={14} /> Full Compliance: 2 points
+            </div>
+            <div className="criteria-item partial">
+              <AlertCircle size={14} /> Partial Compliance: 1 point
+            </div>
+            <div className="criteria-item non">
+              <XCircle size={14} /> Non-Compliance: 0 points
+            </div>
+            <div className="criteria-item na">
+              <HelpCircle size={14} /> Not Applicable: Excluded
+            </div>
+          </ScoringCriteria>
+          
+          {/* Assessment areas section */}
+          {scores.areas && scores.areas.length > 0 && (
+            <AssessmentSection>
+              <AssessmentTitle>
+                <Clipboard size={18} />
+                Assessment Areas
+              </AssessmentTitle>
+              <AssessmentTable>
+                <thead>
+                  <tr>
+                    <th>Area</th>
+                    <th>Score</th>
+                    <th>Weight</th>
+                    <th>Weighted Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scores.areas.map((area, index) => (
+                    <tr key={index}>
+                      <td>{area.name}</td>
+                      <td>{area.score} / {area.maxScore}</td>
+                      <td>{area.weight}%</td>
+                      <td>
+                        {area.maxScore > 0 
+                          ? ((area.score / area.maxScore) * area.weight).toFixed(2) 
+                          : '0.00'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </AssessmentTable>
+            </AssessmentSection>
+          )}
+        </ScoringSummary>
+      )}
+      
+      {asset && (
+        <AssetInfo>
+          <AssetTitle>
+            <Database size={18} />
+            Asset Information
+          </AssetTitle>
+          <AssetDetail><strong>Asset ID:</strong> {asset.id || 'N/A'}</AssetDetail>
+          <AssetDetail><strong>Asset Name:</strong> {asset.displayName || 'N/A'}</AssetDetail>
+          <AssetDetail><strong>Asset Type:</strong> {asset.type || 'N/A'}</AssetDetail>
+          
+          {asset.uniqueId && (
+            <AssetDetail><strong>Unique ID:</strong> {asset.uniqueId}</AssetDetail>
+          )}
+          
+          {asset.serialNumber && (
+            <AssetDetail><strong>Serial Number:</strong> {asset.serialNumber}</AssetDetail>
+          )}
+          
+          {asset.location && (
+            <AssetDetail><strong>Location:</strong> {asset.location}</AssetDetail>
+          )}
+          
+          {asset.manufacturer && (
+            <AssetDetail><strong>Manufacturer:</strong> {asset.manufacturer}</AssetDetail>
+          )}
+        </AssetInfo>
+      )}
+    </Container>
   );
 };
 
-export default PreInspectionQuestionnaire;
+export default PreInspectionStepForm;

@@ -7,7 +7,8 @@ import {
   CheckCircle, XCircle, Activity, PaperclipIcon, Send, 
   Download, Info, CheckSquare, Camera, FileText, Loader,
   Circle, MoreHorizontal, Timer, PlayCircle, PauseCircle,
-  File, ChevronUp, ChevronDown, MessageSquare, ChevronRight, ChevronLeft
+  File, ChevronUp, ChevronDown, MessageSquare, ChevronRight, ChevronLeft,
+  Award, Clipboard, AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { 
@@ -20,14 +21,15 @@ import {
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
-import Stepper from '../../components/ui/Stepper';
+
+// Component Imports
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
 import InspectionStepForm from './components/InspectionStepForm';
 
 const PageContainer = styled.div`
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  background: linear-gradient(135degcomponents/, #f8fafc 0%, #eef2ff 100%);
   min-height: 100vh;
   
   @media (min-width: 768px) {
@@ -148,22 +150,31 @@ const StatusBadge = styled.span`
           border: 1px solid rgba(245, 124, 0, 0.2);
         `;
       case 'in_progress':
+      case 'partial_compliance':
         return `
           background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
           color: #0069c0;
           border: 1px solid rgba(2, 136, 209, 0.2);
         `;
       case 'completed':
+      case 'full_compliance':
         return `
           background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
           color: #2e7d32;
           border: 1px solid rgba(56, 142, 60, 0.2);
         `;
       case 'incomplete':
+      case 'non_compliance':
         return `
           background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
           color: #c62828;
           border: 1px solid rgba(211, 47, 47, 0.2);
+        `;
+      case 'not_applicable':
+        return `
+          background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+          color: #616161;
+          border: 1px solid rgba(97, 97, 97, 0.2);
         `;
       default:
         return `
@@ -230,6 +241,61 @@ const PriorityBadge = styled.span`
   }
   
   margin-left: 6px;
+`;
+
+const ScoreCard = styled.div`
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+  border: 1px solid rgba(2, 136, 209, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .score-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0069c0;
+    margin-bottom: 12px;
+  }
+  
+  .score-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
+  }
+  
+  .score-item {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 12px;
+    border-radius: 8px;
+    min-width: 120px;
+    
+    .label {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    
+    .value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a237e;
+    }
+  }
 `;
 
 const ProgressSection = styled.div`
@@ -379,100 +445,6 @@ const TimerWidget = styled.div`
     }
   }
 `;
-
-const UserTaskDetailSkeleton = () => (
-  <PageContainer>
-    <BackButton disabled>
-      <Skeleton.Circle size="18px" />
-      <Skeleton.Base width="100px" height="16px" />
-    </BackButton>
-    
-    <div style={{ 
-      background: 'rgba(255, 255, 255, 0.85)',
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Skeleton.Base width="280px" height="28px" margin="0 0 8px 0" />
-          <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Skeleton.Circle size="18px" />
-              <Skeleton.Base width="100px" height="16px" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Skeleton.Circle size="18px" />
-              <Skeleton.Base width="130px" height="16px" />
-            </div>
-          </div>
-        </div>
-        <Skeleton.Base width="120px" height="32px" radius="16px" />
-      </div>
-    </div>
-    
-    <div style={{ 
-      display: 'flex', 
-      gap: '10px', 
-      marginBottom: '20px',
-      background: 'rgba(255, 255, 255, 0.7)',
-      padding: '10px',
-      borderRadius: '12px'
-    }}>
-      {Array(3).fill().map((_, i) => (
-        <Skeleton.Button key={i} width="120px" height="40px" radius="12px" />
-      ))}
-    </div>
-    
-    <div style={{ 
-      background: 'rgba(255, 255, 255, 0.85)',
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
-    }}>
-      <Skeleton.Base width="200px" height="24px" margin="0 0 16px 0" />
-      
-      <div style={{ marginBottom: '24px' }}>
-        <Skeleton.Base width="100%" height="80px" radius="8px" margin="0 0 16px 0" />
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-          {Array(4).fill().map((_, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Skeleton.Circle size="16px" />
-              <Skeleton.Base width="80%" height="16px" />
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <Skeleton.Base width="180px" height="24px" margin="0 0 16px 0" />
-      
-      <div style={{ display: 'grid', gap: '12px' }}>
-        {Array(5).fill().map((_, i) => (
-          <div key={i} style={{ 
-            padding: '16px', 
-            background: 'rgba(255, 255, 255, 0.5)', 
-            borderRadius: '12px',
-            marginLeft: `${Math.min(i, 2) * 20}px`
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Skeleton.Circle size="18px" />
-                <Skeleton.Base width={`${150 - Math.min(i, 2) * 20}px`} height="18px" />
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Skeleton.Circle size="24px" />
-                <Skeleton.Circle size="24px" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </PageContainer>
-);
 
 const DetailLayout = styled.div`
   @media (min-width: 1024px) {
@@ -725,6 +697,170 @@ const StepConnector = styled.div`
   }
 `;
 
+// Score display component
+const ScoreSummary = styled.div`
+  margin-top: 24px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+`;
+
+const ScoreTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ScoreGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+`;
+
+const ScoreItem = styled.div`
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .score-label {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+  
+  .score-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a237e;
+  }
+  
+  .score-percent {
+    font-size: 14px;
+    color: #4caf50;
+    margin-left: 5px;
+  }
+`;
+
+const AssessmentSection = styled.div`
+  margin-top: 24px;
+`;
+
+const AssessmentTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin-bottom: 12px;
+`;
+
+const AssessmentTable = styled.table`
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
+  
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  th {
+    background: rgba(26, 35, 126, 0.05);
+    font-weight: 600;
+    color: #1a237e;
+  }
+  
+  tr:hover td {
+    background: rgba(26, 35, 126, 0.02);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+`;
+
+// Tree view for questionnaire
+const TreeContainer = styled.div`
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+`;
+
+const TreeItem = styled.div`
+  position: relative;
+  padding: 8px 0;
+  margin-left: ${props => props.level * 20}px;
+
+  &:hover {
+    background: rgba(26, 35, 126, 0.02);
+  }
+`;
+
+const TreeItemContent = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: ${props => props.active ? 'rgba(26, 35, 126, 0.05)' : 'transparent'};
+  
+  &:hover {
+    background-color: rgba(26, 35, 126, 0.05);
+  }
+`;
+
+const TreeItemText = styled.span`
+  font-size: 14px;
+  color: ${props => props.active ? '#1a237e' : '#4b5563'};
+  font-weight: ${props => props.active ? '600' : '400'};
+`;
+
+const TreeItemIcon = styled.div`
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.active ? '#1a237e' : '#4b5563'};
+`;
+
+const QuestionnaireView = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
+  @media (min-width: 1024px) {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+  }
+`;
+
+const ImageUploadContainer = styled.div`
+  position: relative;
+  max-height: 500px;
+  overflow: auto;
+  height: fit-content;
+`;
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -755,126 +891,119 @@ const formatTime = (seconds) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-const getAssetInfo = (asset) => {
-  if (!asset) return null;
-  
-  if (typeof asset === 'string') {
-    const assetId = asset;
-    return { _id: assetId, displayName: 'Loading...', type: '', uniqueId: '' };
-  }
-  
-  return asset;
-};
-
-const renderQuestionnaireAnswers = (task) => {
-  if (!task || !task.questionnaireResponses || Object.keys(task.questionnaireResponses || {}).length === 0) {
-    return <p>No questionnaire data available</p>;
-  }
-  
-  return (
-    <div>
-      {Object.entries(task.questionnaireResponses || {}).map(([questionId, answer], index) => {
-        if (!questionId.includes('-')) return null;
-        
-        const questionIdPart = questionId.split('-')[1];
-        const question = task.questions?.find(q => 
-          q && (
-            (q._id && q._id.toString() === questionIdPart) || 
-            (q.id && q.id.toString() === questionIdPart)
-          )
-        );
-        
-        return (
-          <div key={questionId} style={{ marginBottom: '12px', padding: '8px', background: '#f8fafc', borderRadius: '8px' }}>
-            <div style={{ fontWeight: '500', marginBottom: '4px' }}>
-              {question?.text || `Question ${index + 1}`}
-            </div>
-            <div style={{ color: '#4b5563' }}>
-              {answer !== undefined && answer !== null 
-                ? (typeof answer === 'boolean' 
-                  ? (answer ? 'Yes' : 'No') 
-                  : (answer || 'No answer'))
-                : 'No answer'
-              }
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const renderAttachments = (task) => {
-  const attachments = [];
-  
-  if (task?.progress && Array.isArray(task.progress)) {
-    task.progress.forEach(item => {
-      if (item?.photos && Array.isArray(item.photos) && item.photos.length > 0) {
-        attachments.push(...item.photos.map((photo, idx) => ({
-          id: `photo-${item.subLevelId || 'unknown'}-${idx}`,
-          url: photo,
-          type: 'image',
-          name: typeof photo === 'string' && photo.includes('/') ? photo.split('/').pop() : `Photo ${idx + 1}`
-        })));
-      }
-    });
-  }
-  
-  if (task?.attachments && Array.isArray(task.attachments)) {
-    attachments.push(...task.attachments.map((att, idx) => ({
-      id: att._id || `att-${idx}`,
-      url: att.url,
-      type: 'file',
-      name: att.filename || `Attachment ${idx + 1}`
-    })));
-  }
-  
-  if (attachments.length === 0) {
-    return <p>No attachments available</p>;
-  }
-  
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {attachments.map(att => (
-        <a
-          key={att.id}
-          href={att.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px',
-            background: '#f8fafc',
-            borderRadius: '8px',
-            color: '#1a237e',
-            textDecoration: 'none',
-            fontSize: '14px'
-          }}
-        >
-          {att.type === 'image' ? <Camera size={16} /> : <File size={16} />}
-          <span>{att.name}</span>
-        </a>
-      ))}
-    </div>
-  );
-};
-
 const StatusIcon = ({ status, size = 18 }) => {
   switch (status) {
     case 'pending':
       return <Clock size={size} color="#f57c00" />;
     case 'in_progress':
+    case 'partial_compliance':
       return <Activity size={size} color="#0288d1" />;
     case 'completed':
+    case 'full_compliance':
       return <CheckCircle size={size} color="#388e3c" />;
     case 'incomplete':
+    case 'non_compliance':
       return <XCircle size={size} color="#d32f2f" />;
+    case 'not_applicable':
+      return <AlertCircle size={size} color="#9e9e9e" />;
     default:
       return <Clock size={size} color="#616161" />;
   }
 };
+
+const UserTaskDetailSkeleton = () => (
+  <PageContainer>
+    <BackButton disabled>
+      <Skeleton.Circle size="18px" />
+      <Skeleton.Base width="100px" height="16px" />
+    </BackButton>
+    
+    <div style={{ 
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <Skeleton.Base width="280px" height="28px" margin="0 0 8px 0" />
+          <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="18px" />
+              <Skeleton.Base width="100px" height="16px" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="18px" />
+              <Skeleton.Base width="130px" height="16px" />
+            </div>
+          </div>
+        </div>
+        <Skeleton.Base width="120px" height="32px" radius="16px" />
+      </div>
+    </div>
+    
+    <div style={{ 
+      display: 'flex', 
+      gap: '10px', 
+      marginBottom: '20px',
+      background: 'rgba(255, 255, 255, 0.7)',
+      padding: '10px',
+      borderRadius: '12px'
+    }}>
+      {Array(3).fill().map((_, i) => (
+        <Skeleton.Button key={i} width="120px" height="40px" radius="12px" />
+      ))}
+    </div>
+    
+    <div style={{ 
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(26, 35, 126, 0.08)'
+    }}>
+      <Skeleton.Base width="200px" height="24px" margin="0 0 16px 0" />
+      
+      <div style={{ marginBottom: '24px' }}>
+        <Skeleton.Base width="100%" height="80px" radius="8px" margin="0 0 16px 0" />
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          {Array(4).fill().map((_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton.Circle size="16px" />
+              <Skeleton.Base width="80%" height="16px" />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <Skeleton.Base width="180px" height="24px" margin="0 0 16px 0" />
+      
+      <div style={{ display: 'grid', gap: '12px' }}>
+        {Array(5).fill().map((_, i) => (
+          <div key={i} style={{ 
+            padding: '16px', 
+            background: 'rgba(255, 255, 255, 0.5)', 
+            borderRadius: '12px',
+            marginLeft: `${Math.min(i, 2) * 20}px`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Skeleton.Circle size="18px" />
+                <Skeleton.Base width={`${150 - Math.min(i, 2) * 20}px`} height="18px" />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Skeleton.Circle size="24px" />
+                <Skeleton.Circle size="24px" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </PageContainer>
+);
 
 const UserTaskDetail = () => {
   const dispatch = useDispatch();
@@ -889,6 +1018,8 @@ const UserTaskDetail = () => {
   const [timerRunning, setTimerRunning] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [userClickedStep, setUserClickedStep] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const location = useLocation();
   
   const {
@@ -902,7 +1033,7 @@ const UserTaskDetail = () => {
     dispatch(fetchUserTaskDetails(taskId));
     
     if (location.state?.questionnaireCompleted) {
-      setActiveStep(2);
+      setActiveStep(1);
       setUserClickedStep(true);
     }
   }, [dispatch, taskId, location.state]);
@@ -923,6 +1054,14 @@ const UserTaskDetail = () => {
         }
       }
     }
+    
+    // Set first category as selected by default
+    if (currentTask && currentTask.questions && currentTask.questions.length > 0) {
+      const categories = getQuestionCategories();
+      if (categories.length > 0 && !selectedCategory) {
+        setSelectedCategory(categories[0]);
+      }
+    }
   }, [currentTask, userClickedStep]);
 
   useEffect(() => {
@@ -940,6 +1079,23 @@ const UserTaskDetail = () => {
       }
     };
   }, [currentTask]);
+
+  const getQuestionCategories = () => {
+    if (!currentTask || !currentTask.questions) return [];
+    
+    const categories = new Set();
+    currentTask.questions.forEach(q => {
+      categories.add(q.category || 'General');
+    });
+    
+    return Array.from(categories);
+  };
+  
+  const getQuestionsByCategoryAndLevel = (category) => {
+    if (!currentTask || !currentTask.questions) return [];
+    
+    return currentTask.questions.filter(q => (q.category || 'General') === category);
+  };
 
   const toggleSubLevel = (subLevelId) => {
     setExpandedSubLevels(prev => ({
@@ -977,7 +1133,7 @@ const UserTaskDetail = () => {
         status
       })).unwrap();
       
-      toast.success(`Sublevel marked as ${status}`);
+      toast.success(`Sublevel status updated`);
     } catch (error) {
       toast.error(error.message || 'Failed to update sublevel');
     }
@@ -1045,10 +1201,10 @@ const UserTaskDetail = () => {
     if (currentTask.status === 'pending') return 0;
     
     if (activeStep === 0) return 0;
-    if (activeStep === 1) return 33;
+    if (activeStep === 1) return 50;
     if (activeStep === 2) {
       if (currentTask.overallProgress === 100) return 100;
-      return 66;
+      return 75;
     }
     
     return 0;
@@ -1129,6 +1285,141 @@ const UserTaskDetail = () => {
       </StepperContainer>
     );
   };
+  
+  // Function to calculate overall score and details
+  const calculateScores = () => {
+    if (!currentTask) return { total: 0, achieved: 0, percentage: 0, areas: [] };
+    
+    // Calculate questionnaire scores
+    let totalQuestionPoints = 0;
+    let achievedQuestionPoints = 0;
+    
+    if (currentTask.questions && currentTask.questionnaireResponses) {
+      const responses = currentTask.questionnaireResponses;
+      const questions = currentTask.questions.filter(q => q.mandatory !== false);
+      
+      questions.forEach(question => {
+        const questionId = question._id || question.id;
+        const responseKey = Object.keys(responses).find(key => 
+          key.includes(questionId) || key.endsWith(questionId)
+        );
+        
+        if (responseKey) {
+          const response = responses[responseKey];
+          const weight = question.weight || 1;
+          
+          totalQuestionPoints += (2 * weight); // Max score is 2 per question
+          
+          if (response === 'full_compliance' || response === 'yes') {
+            achievedQuestionPoints += (2 * weight);
+          } else if (response === 'partial_compliance') {
+            achievedQuestionPoints += (1 * weight);
+          } else if (response === 'na' || response === 'not_applicable') {
+            totalQuestionPoints -= (2 * weight); // Don't count NA questions
+          }
+        }
+      });
+    }
+    
+    // Calculate checkpoint scores
+    let totalCheckpoints = 0;
+    let completedCheckpoints = 0;
+    
+    if (currentTask.progress) {
+      totalCheckpoints = currentTask.progress.length;
+      completedCheckpoints = currentTask.progress.filter(p => p.status === 'completed' || p.status === 'full_compliance').length;
+    }
+    
+    // Calculate assessment area scores
+    const assessmentAreas = currentTask.assessmentAreas || [];
+    
+    // Calculate total score
+    const totalPoints = totalQuestionPoints + (totalCheckpoints * 2); // Each checkpoint is worth 2 points max
+    const achievedPoints = achievedQuestionPoints + (completedCheckpoints * 2);
+    const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
+    
+    return {
+      total: totalPoints,
+      achieved: achievedPoints,
+      percentage,
+      areas: assessmentAreas
+    };
+  };
+
+  const renderQuestionnaire = () => {
+    if (!currentTask) return null;
+    
+    const categories = getQuestionCategories();
+    
+    return (
+      <QuestionnaireView>
+        <TreeContainer>
+          <RightPanelTitle>
+            <Clipboard size={18} />
+            Questionnaire Categories
+          </RightPanelTitle>
+          
+          {categories.map((category, index) => (
+            <TreeItem key={index} level={0}>
+              <TreeItemContent 
+                active={selectedCategory === category}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setSelectedQuestion(null);
+                }}
+              >
+                <TreeItemIcon active={selectedCategory === category}>
+                  {selectedCategory === category ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronRight size={16} />
+                  )}
+                </TreeItemIcon>
+                <TreeItemText active={selectedCategory === category}>
+                  {category}
+                </TreeItemText>
+              </TreeItemContent>
+              
+              {selectedCategory === category && (
+                <>
+                  {getQuestionsByCategoryAndLevel(category).map((question, qIndex) => (
+                    <TreeItem key={`q-${qIndex}`} level={1}>
+                      <TreeItemContent 
+                        active={selectedQuestion === question}
+                        onClick={() => setSelectedQuestion(question)}
+                      >
+                        <TreeItemIcon active={selectedQuestion === question}>
+                          <CheckSquare size={16} />
+                        </TreeItemIcon>
+                        <TreeItemText active={selectedQuestion === question}>
+                          {question.text?.length > 30 ? 
+                            `${question.text.substring(0, 30)}...` : 
+                            question.text}
+                        </TreeItemText>
+                      </TreeItemContent>
+                    </TreeItem>
+                  ))}
+                </>
+              )}
+            </TreeItem>
+          ))}
+        </TreeContainer>
+        
+        <div>
+          {selectedCategory && (
+            <ImageUploadContainer>
+              <QuestionnaireStepForm 
+                task={currentTask} 
+                onSave={() => setActiveStep(2)}
+                filteredCategory={selectedCategory}
+                filteredQuestion={selectedQuestion}
+              />
+            </ImageUploadContainer>
+          )}
+        </div>
+      </QuestionnaireView>
+    );
+  };
 
   const renderStepContent = () => {
     if (!currentTask) return null;
@@ -1144,11 +1435,78 @@ const UserTaskDetail = () => {
                            currentTask.status === 'in_progress' && 
                            (currentTask.overallProgress === 100 || !hasSubLevels);
 
+    // Calculate scores for display
+    const scores = calculateScores();
+
     switch (activeStep) {
       case 0:
         return (
           <>
             <PreInspectionStepForm task={currentTask} />
+            
+            {/* Display scoring summary if task is in progress or completed */}
+            {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
+              <ScoreSummary>
+                <ScoreTitle>
+                  <Award size={20} color="#1a237e" />
+                  Compliance Score Summary
+                </ScoreTitle>
+                
+                <ScoreGrid>
+                  <ScoreItem>
+                    <div className="score-label">Total Score</div>
+                    <div className="score-value">
+                      {scores.achieved} / {scores.total}
+                      <span className="score-percent">({scores.percentage}%)</span>
+                    </div>
+                  </ScoreItem>
+                  
+                  <ScoreItem>
+                    <div className="score-label">Questionnaire</div>
+                    <div className="score-value">
+                      {currentTask.questionnaireCompleted ? 
+                        <CheckCircle size={18} color="#4caf50" style={{ marginRight: '5px' }} /> : 
+                        <AlertCircle size={18} color="#f57c00" style={{ marginRight: '5px' }} />}
+                      {currentTask.questionnaireCompleted ? 'Completed' : 'Pending'}
+                    </div>
+                  </ScoreItem>
+                  
+                  <ScoreItem>
+                    <div className="score-label">Checkpoints</div>
+                    <div className="score-value">
+                      {currentTask.overallProgress}%
+                    </div>
+                  </ScoreItem>
+                </ScoreGrid>
+                
+                {scores.areas.length > 0 && (
+                  <AssessmentSection>
+                    <AssessmentTitle>Assessment Areas</AssessmentTitle>
+                    <AssessmentTable>
+                      <thead>
+                        <tr>
+                          <th>Area</th>
+                          <th>Score</th>
+                          <th>Weight</th>
+                          <th>Weighted Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scores.areas.map((area, index) => (
+                          <tr key={index}>
+                            <td>{area.name}</td>
+                            <td>{area.score} / {area.maxScore}</td>
+                            <td>{area.weight}%</td>
+                            <td>{(area.score / area.maxScore * area.weight).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </AssessmentTable>
+                  </AssessmentSection>
+                )}
+              </ScoreSummary>
+            )}
+            
             <ButtonContainer>
               {currentTask.status === 'pending' && isInspector && (
                 <StartButton onClick={handleStartTask} disabled={actionLoading}>
@@ -1173,10 +1531,8 @@ const UserTaskDetail = () => {
               <PreInspectionStepForm task={currentTask} />
             </TaskDetailSection>
             
-            <QuestionnaireStepForm 
-              task={currentTask} 
-              onSave={() => setActiveStep(2)}
-            />
+            {renderQuestionnaire()}
+            
             <ButtonContainer>
               <StepBackButton onClick={() => {
                 setActiveStep(0);
@@ -1204,6 +1560,52 @@ const UserTaskDetail = () => {
               }}
               onExportReport={handleExportReport}
             />
+            
+            {/* Display scoring summary for inspection phase */}
+            {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
+              <ScoreSummary>
+                <ScoreTitle>
+                  <Award size={20} color="#1a237e" />
+                  Inspection Scoring Summary
+                </ScoreTitle>
+                
+                <ScoreGrid>
+                  <ScoreItem>
+                    <div className="score-label">Compliance Score</div>
+                    <div className="score-value">
+                      {scores.achieved} / {scores.total}
+                      <span className="score-percent">({scores.percentage}%)</span>
+                    </div>
+                  </ScoreItem>
+                  
+                  <ScoreItem>
+                    <div className="score-label">Completion Rate</div>
+                    <div className="score-value">
+                      {currentTask.overallProgress || 0}%
+                    </div>
+                  </ScoreItem>
+                  
+                  <ScoreItem>
+                    <div className="score-label">Status</div>
+                    <div className="score-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <StatusIcon status={currentTask.status} />
+                      {currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1)}
+                    </div>
+                  </ScoreItem>
+                </ScoreGrid>
+                
+                <div style={{ marginTop: '20px' }}>
+                  <p><strong>Scoring Criteria:</strong></p>
+                  <ul style={{ paddingLeft: '20px', marginTop: '8px' }}>
+                    <li>Full Compliance: 2 points</li>
+                    <li>Partial Compliance: 1 point</li>
+                    <li>Non-Compliance: 0 points</li>
+                    <li>Not Applicable: Excluded from scoring</li>
+                  </ul>
+                </div>
+              </ScoreSummary>
+            )}
+            
             <ButtonContainer>
               <StepBackButton onClick={() => {
                 setActiveStep(1);
@@ -1336,16 +1738,32 @@ const UserTaskDetail = () => {
             <div style={{ marginBottom: '8px', fontWeight: '500' }}>Asset Information</div>
             {currentTask?.asset ? (
               <div>
-                {getAssetInfo(currentTask.asset).displayName || 'Unnamed Asset'}
-                {getAssetInfo(currentTask.asset).uniqueId && (
-                  <div style={{ color: '#64748b', fontSize: '14px' }}>
-                    ID: {getAssetInfo(currentTask.asset).uniqueId}
-                  </div>
-                )}
-                {getAssetInfo(currentTask.asset).type && (
-                  <div style={{ color: '#64748b', fontSize: '14px' }}>
-                    Type: {getAssetInfo(currentTask.asset).type}
-                  </div>
+                {typeof currentTask.asset === 'object' ? (
+                  <>
+                    <div>{currentTask.asset.displayName || currentTask.asset.name || 'Unnamed Asset'}</div>
+                    {currentTask.asset.uniqueId && (
+                      <div style={{ color: '#64748b', fontSize: '14px' }}>
+                        ID: {currentTask.asset.uniqueId}
+                      </div>
+                    )}
+                    {currentTask.asset.type && (
+                      <div style={{ color: '#64748b', fontSize: '14px' }}>
+                        Type: {currentTask.asset.type}
+                      </div>
+                    )}
+                    {currentTask.asset.serialNumber && (
+                      <div style={{ color: '#64748b', fontSize: '14px' }}>
+                        S/N: {currentTask.asset.serialNumber}
+                      </div>
+                    )}
+                    {currentTask.asset.location && (
+                      <div style={{ color: '#64748b', fontSize: '14px' }}>
+                        Location: {currentTask.asset.location}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div>Asset ID: {currentTask.asset}</div>
                 )}
               </div>
             ) : (
@@ -1380,9 +1798,57 @@ const UserTaskDetail = () => {
             <RightPanelSection>
               <RightPanelTitle>
                 <CheckSquare size={16} />
-                Questionnaire Answers
+                Questionnaire Summary
               </RightPanelTitle>
-              {renderQuestionnaireAnswers(currentTask)}
+              
+              {currentTask.questionnaireResponses && Object.keys(currentTask.questionnaireResponses).length > 0 ? (
+                <div>
+                  <div style={{ marginBottom: '8px' }}>
+                    <span style={{ fontWeight: '500' }}>Status: </span>
+                    {currentTask.questionnaireCompleted ? (
+                      <span style={{ color: '#2e7d32' }}>Completed</span>
+                    ) : (
+                      <span style={{ color: '#f57c00' }}>In Progress</span>
+                    )}
+                  </div>
+                  
+                  <div style={{ marginBottom: '8px' }}>
+                    <span style={{ fontWeight: '500' }}>Questions Answered: </span>
+                    {Object.keys(currentTask.questionnaireResponses).length}
+                  </div>
+                  
+                  <div>
+                    <span style={{ fontWeight: '500' }}>Compliance Rate: </span>
+                    {(() => {
+                      const responses = Object.values(currentTask.questionnaireResponses);
+                      if (responses.length === 0) return '0%';
+                      
+                      const fullCompliance = responses.filter(r => 
+                        r === 'full_compliance' || r === 'yes'
+                      ).length;
+                      
+                      const partialCompliance = responses.filter(r => 
+                        r === 'partial_compliance'
+                      ).length;
+                      
+                      const notApplicable = responses.filter(r => 
+                        r === 'na' || r === 'not_applicable'
+                      ).length;
+                      
+                      const effectiveTotal = responses.length - notApplicable;
+                      
+                      if (effectiveTotal === 0) return '100%';
+                      
+                      const rate = ((fullCompliance * 2 + partialCompliance) / (effectiveTotal * 2)) * 100;
+                      return `${Math.round(rate)}%`;
+                    })()}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+                  No questionnaire responses available
+                </div>
+              )}
             </RightPanelSection>
           )}
           
@@ -1391,8 +1857,73 @@ const UserTaskDetail = () => {
               <PaperclipIcon size={16} />
               Attachments
             </RightPanelTitle>
-            {renderAttachments(currentTask)}
+            {currentTask.attachments && currentTask.attachments.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {currentTask.attachments.map((att, idx) => (
+                  <a
+                    key={idx}
+                    href={att.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      color: '#1a237e',
+                      textDecoration: 'none',
+                      fontSize: '14px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <File size={16} />
+                    <span>{att.filename || `Attachment ${idx + 1}`}</span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+                No attachments available
+              </div>
+            )}
           </RightPanelSection>
+          
+          {currentTask.flaggedItems && currentTask.flaggedItems.length > 0 && (
+            <RightPanelSection>
+              <RightPanelTitle>
+                <AlertTriangle size={16} />
+                Flagged Items ({currentTask.flaggedItems.length})
+              </RightPanelTitle>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {currentTask.flaggedItems.map((item, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#fff8e1',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 152, 0, 0.2)',
+                    }}
+                  >
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                      {item.title || 'Flagged Item'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      {item.category || 'General'} - {item.status || 'Issue'}
+                    </div>
+                    {item.notes && (
+                      <div style={{ fontSize: '13px', marginTop: '6px' }}>
+                        {item.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </RightPanelSection>
+          )}
         </RightPanel>
       </DetailLayout>
     </PageContainer>

@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { 
-  CheckCircle, XCircle, HelpCircle, AlertTriangle, Save, Loader
+  CheckCircle, XCircle, HelpCircle, AlertTriangle, Save, Loader,
+  Award, AlertCircle, Info, Clipboard, BarChart2, Layers
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { updateTaskQuestionnaire } from '../../../store/slices/userTasksSlice';
 
 const Container = styled.div`
   padding: 16px;
+  height: 100%;
 `;
 
 const Title = styled.h2`
@@ -16,6 +18,9 @@ const Title = styled.h2`
   font-weight: 600;
   color: #1a237e;
   margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const QuestionsContainer = styled.div`
@@ -26,6 +31,7 @@ const QuestionsContainer = styled.div`
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(10px);
   margin-bottom: 24px;
+  height: 100%;
 `;
 
 const QuestionItem = styled.div`
@@ -36,6 +42,7 @@ const QuestionItem = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(230, 232, 240, 0.8);
   transition: all 0.3s ease;
+  position: relative;
   
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -54,6 +61,22 @@ const QuestionText = styled.div`
   margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-right: ${props => props.mandatory ? '70px' : '0'};
+`;
+
+const MandatoryBadge = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: ${props => props.mandatory === false ? '#e0e0e0' : '#e3f2fd'};
+  color: ${props => props.mandatory === false ? '#757575' : '#0277bd'};
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 `;
 
 const QuestionOptions = styled.div`
@@ -105,6 +128,7 @@ const ComplianceButton = styled(OptionButton)`
         case 'full_compliance': return 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)';
         case 'partial_compliance': return 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)';
         case 'non_compliance': return 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
+        case 'not_applicable': return 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)';
         default: return 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
       }
     }
@@ -117,18 +141,33 @@ const ComplianceButton = styled(OptionButton)`
         case 'full_compliance': return '#2e7d32';
         case 'partial_compliance': return '#e65100';
         case 'non_compliance': return '#c62828';
+        case 'not_applicable': return '#616161';
         default: return '#333';
       }
     }
     return '#333';
   }};
   
+  border: 1px solid ${props => {
+    if (props.selected) {
+      switch(props.value) {
+        case 'full_compliance': return 'rgba(76, 175, 80, 0.3)';
+        case 'partial_compliance': return 'rgba(255, 152, 0, 0.3)';
+        case 'non_compliance': return 'rgba(244, 67, 54, 0.3)';
+        case 'not_applicable': return 'rgba(97, 97, 97, 0.3)';
+        default: return 'rgba(0, 0, 0, 0.1)';
+      }
+    }
+    return 'rgba(0, 0, 0, 0.1)';
+  }};
+  
   box-shadow: ${props => {
     if (props.selected) {
       switch(props.value) {
         case 'full_compliance': return '0 2px 8px rgba(76, 175, 80, 0.15)';
-        case 'partial_compliance': return '0 2px 8px rgba(255, 167, 38, 0.15)';
-        case 'non_compliance': return '0 2px 8px rgba(229, 57, 53, 0.15)';
+        case 'partial_compliance': return '0 2px 8px rgba(255, 152, 0, 0.15)';
+        case 'non_compliance': return '0 2px 8px rgba(244, 67, 54, 0.15)';
+        case 'not_applicable': return '0 2px 8px rgba(97, 97, 97, 0.15)';
         default: return '0 1px 3px rgba(0, 0, 0, 0.05)';
       }
     }
@@ -229,7 +268,105 @@ const ValidationMessage = styled.div`
   }
 `;
 
-const QuestionnaireStepForm = ({ task, onSave }) => {
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 24px 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ScoringSummary = styled.div`
+  background: rgba(237, 246, 255, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(191, 220, 255, 0.5);
+`;
+
+const ScoreGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+`;
+
+const ScoreItem = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  
+  .score-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  
+  .score-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a237e;
+  }
+  
+  .score-percent {
+    font-size: 13px;
+    color: ${props => props.percent >= 80 ? '#4caf50' : props.percent >= 50 ? '#ff9800' : '#f44336'};
+    margin-left: 4px;
+  }
+`;
+
+const ScoringCriteria = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  
+  .criteria-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    &.full {
+      color: #2e7d32;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+    
+    &.partial {
+      color: #e65100;
+      border: 1px solid rgba(255, 152, 0, 0.2);
+    }
+    
+    &.non {
+      color: #c62828;
+      border: 1px solid rgba(244, 67, 54, 0.2);
+    }
+    
+    &.na {
+      color: #616161;
+      border: 1px solid rgba(97, 97, 97, 0.2);
+    }
+  }
+`;
+
+const CategoryBadge = styled.div`
+  display: inline-block;
+  background: rgba(25, 118, 210, 0.08);
+  color: #1976d2;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+`;
+
+const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestion }) => {
   const dispatch = useDispatch();
   // Store questions separately from responses
   const [questions, setQuestions] = useState([]);
@@ -238,12 +375,20 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allAnswered, setAllAnswered] = useState(false);
   const [globalNotes, setGlobalNotes] = useState('');
+  const [scores, setScores] = useState({
+    total: 0,
+    achieved: 0,
+    percentage: 0
+  });
   
   // Load questions and existing responses
   useEffect(() => {
     if (task) {
-      // Just set the original questions without trying to modify them
-      setQuestions(task.questions || []);
+      // Filter questions if needed
+      let filteredQuestions = task.questions || [];
+      
+      // First set the original questions without trying to modify them
+      setQuestions(filteredQuestions);
       
       // Extract responses into a separate state object
       const extractedResponses = {};
@@ -272,12 +417,16 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
       setResponses(extractedResponses);
       setComments(extractedComments);
       setGlobalNotes(task.questionnaireNotes || '');
+      
+      // Calculate initial scores
+      calculateScores(extractedResponses);
     }
-  }, [task]);
+  }, [task, filteredCategory, filteredQuestion]);
   
   // Validate whenever responses change
   useEffect(() => {
     validateResponses();
+    calculateScores(responses);
   }, [responses, questions]);
   
   const handleResponse = (questionId, value) => {
@@ -306,6 +455,41 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
     setAllAnswered(valid);
     
     return valid;
+  };
+  
+  const calculateScores = (currentResponses) => {
+    let totalPoints = 0;
+    let achievedPoints = 0;
+    
+    // Filter only mandatory questions
+    const mandatoryQuestions = questions.filter(q => q.mandatory !== false);
+    
+    mandatoryQuestions.forEach(question => {
+      const questionId = question._id || question.id;
+      const response = currentResponses[questionId];
+      const weight = question.weight || 1;
+      
+      // Add to total score potential (2 points per mandatory question)
+      totalPoints += (2 * weight);
+      
+      if (response) {
+        if (response === 'full_compliance' || response === 'yes') {
+          achievedPoints += (2 * weight); // Full compliance = 2 points
+        } else if (response === 'partial_compliance') {
+          achievedPoints += (1 * weight); // Partial compliance = 1 point
+        } else if (response === 'na' || response === 'not_applicable') {
+          totalPoints -= (2 * weight); // Don't count NA questions
+        }
+      }
+    });
+    
+    const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
+    
+    setScores({
+      total: totalPoints,
+      achieved: achievedPoints,
+      percentage
+    });
   };
   
   const handleSave = async () => {
@@ -350,10 +534,53 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
     }
   };
   
+  // Group questions by category for better organization
+  const groupQuestionsByCategory = () => {
+    const groups = {};
+    
+    questions.forEach(q => {
+      const category = q.category || 'General';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(q);
+    });
+    
+    return groups;
+  };
+  
+  // Apply filtering based on props
+  const getFilteredQuestions = () => {
+    if (!questions) return [];
+    
+    let filtered = [...questions];
+    
+    // Filter by category if specified
+    if (filteredCategory) {
+      filtered = filtered.filter(q => (q.category || 'General') === filteredCategory);
+    }
+    
+    // Filter by specific question if specified
+    if (filteredQuestion) {
+      filtered = filtered.filter(q => 
+        q._id === filteredQuestion._id || 
+        q.id === filteredQuestion.id || 
+        q.text === filteredQuestion.text
+      );
+    }
+    
+    return filtered;
+  };
+  
+  const filteredQuestions = getFilteredQuestions();
+  
   if (!questions || questions.length === 0) {
     return (
       <Container>
-        <Title>Inspection Questionnaire</Title>
+        <Title>
+          <Clipboard size={20} />
+          Inspection Questionnaire
+        </Title>
         <NoQuestionsMessage>
           <HelpCircle size={48} />
           <h3>No Questions Available</h3>
@@ -363,13 +590,103 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
     );
   }
   
+  if (filteredQuestions.length === 0) {
+    return (
+      <Container>
+        <Title>
+          <Clipboard size={20} />
+          {filteredCategory ? `${filteredCategory} Questions` : 'Inspection Questionnaire'}
+        </Title>
+        <NoQuestionsMessage>
+          <HelpCircle size={48} />
+          <h3>No Questions Found</h3>
+          <p>No questions match the selected filters.</p>
+        </NoQuestionsMessage>
+      </Container>
+    );
+  }
+  
   const isQuestionnaireCompleted = task?.questionnaireCompleted;
   
   return (
     <Container>
-      <Title>Inspection Questionnaire</Title>
+      <Title>
+        <Clipboard size={20} />
+        {filteredCategory ? `${filteredCategory} Questions` : 'Inspection Questionnaire'}
+      </Title>
+      
+      {/* If not filtering, show scoring summary */}
+      {!filteredCategory && !filteredQuestion && (
+        <ScoringSummary>
+          <SectionTitle style={{ margin: '0 0 16px 0' }}>
+            <BarChart2 size={18} />
+            Compliance Scoring Summary
+          </SectionTitle>
+          
+          <ScoreGrid>
+            <ScoreItem percent={scores.percentage}>
+              <div className="score-label">Overall Compliance</div>
+              <div className="score-value">
+                {scores.achieved} / {scores.total}
+                <span className="score-percent">({scores.percentage}%)</span>
+              </div>
+            </ScoreItem>
+            
+            <ScoreItem>
+              <div className="score-label">Questions</div>
+              <div className="score-value">
+                {questions.filter(q => q.mandatory !== false).length} Mandatory 
+                {questions.filter(q => q.mandatory === false).length > 0 && (
+                  <span className="score-percent">
+                    (+{questions.filter(q => q.mandatory === false).length} Recommended)
+                  </span>
+                )}
+              </div>
+            </ScoreItem>
+            
+            <ScoreItem>
+              <div className="score-label">Status</div>
+              <div className="score-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {isQuestionnaireCompleted ? (
+                  <>
+                    <CheckCircle size={16} color="#4caf50" />
+                    <span>Completed</span>
+                  </>
+                ) : Object.keys(responses).length > 0 ? (
+                  <>
+                    <AlertCircle size={16} color="#ff9800" />
+                    <span>In Progress</span>
+                  </>
+                ) : (
+                  <>
+                    <Info size={16} color="#90a4ae" />
+                    <span>Not Started</span>
+                  </>
+                )}
+              </div>
+            </ScoreItem>
+          </ScoreGrid>
+          
+          <ScoringCriteria>
+            <div className="criteria-item full">
+              <CheckCircle size={14} /> Full Compliance: 2 points
+            </div>
+            <div className="criteria-item partial">
+              <AlertCircle size={14} /> Partial Compliance: 1 point
+            </div>
+            <div className="criteria-item non">
+              <XCircle size={14} /> Non-Compliance: 0 points
+            </div>
+            <div className="criteria-item na">
+              <HelpCircle size={14} /> Not Applicable: Excluded
+            </div>
+          </ScoringCriteria>
+        </ScoringSummary>
+      )}
+      
+      {/* Questions for selected category/filter */}
       <QuestionsContainer>
-        {questions.map((question, index) => {
+        {filteredQuestions.map((question, index) => {
           if (!question) return null;
           
           const questionId = question._id || question.id;
@@ -378,10 +695,15 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
           
           return (
             <QuestionItem key={questionId || index}>
-              <QuestionText>
-                {question.text}
+              <QuestionText mandatory={question.mandatory !== false}>
+                {index + 1}. {question.text}
                 {question.required && <span style={{ color: 'red' }}> *</span>}
               </QuestionText>
+              
+              <MandatoryBadge mandatory={question.mandatory !== false}>
+                <Info size={12} />
+                {question.mandatory === false ? 'Recommended' : 'Mandatory'}
+              </MandatoryBadge>
               
               {/* Yes/No Questions */}
               {(question.answerType === 'yes_no' || question.answerType === 'yesNo' || question.type === 'yes_no') && (
@@ -436,6 +758,14 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
                     disabled={isQuestionnaireCompleted}
                   >
                     Non-Compliance
+                  </ComplianceButton>
+                  <ComplianceButton 
+                    selected={response === 'not_applicable'}
+                    onClick={() => handleResponse(questionId, 'not_applicable')}
+                    value="not_applicable"
+                    disabled={isQuestionnaireCompleted}
+                  >
+                    Not Applicable
                   </ComplianceButton>
                 </QuestionOptions>
               )}
@@ -494,27 +824,32 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
         })}
       </QuestionsContainer>
       
-      <CommentBox 
-        placeholder="Add general notes about the questionnaire (optional)"
-        value={globalNotes}
-        onChange={(e) => setGlobalNotes(e.target.value)}
-        disabled={isQuestionnaireCompleted}
-        style={{ marginBottom: '24px' }}
-      />
-      
-      <ValidationMessage complete={allAnswered}>
-        {allAnswered ? (
-          <>
-            <CheckCircle size={20} />
-            <p>All required questions have been answered.</p>
-          </>
-        ) : (
-          <>
-            <AlertTriangle size={20} />
-            <p>Please answer all required questions before proceeding.</p>
-          </>
-        )}
-      </ValidationMessage>
+      {/* Show global notes and buttons only when viewing all questions */}
+      {!filteredCategory && !filteredQuestion && (
+        <>
+          <CommentBox 
+            placeholder="Add general notes about the questionnaire (optional)"
+            value={globalNotes}
+            onChange={(e) => setGlobalNotes(e.target.value)}
+            disabled={isQuestionnaireCompleted}
+            style={{ marginBottom: '24px' }}
+          />
+          
+          <ValidationMessage complete={allAnswered}>
+            {allAnswered ? (
+              <>
+                <CheckCircle size={20} />
+                <p>All required questions have been answered.</p>
+              </>
+            ) : (
+              <>
+                <AlertTriangle size={20} />
+                <p>Please answer all required questions before proceeding.</p>
+              </>
+            )}
+          </ValidationMessage>
+        </>
+      )}
       
       {!isQuestionnaireCompleted && (
         <ButtonContainer>
