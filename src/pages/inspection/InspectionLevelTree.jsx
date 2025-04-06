@@ -16,12 +16,12 @@ const StatusBadge2 = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.type === 'safety' ? '#e8f5e9' : 
-    props.type === 'environmental' ? '#e3f2fd' : 
-    props.type === 'operational' ? '#fff3e0' : '#f3e5f5'};
-  color: ${props => props.type === 'safety' ? '#2e7d32' : 
-    props.type === 'environmental' ? '#1565c0' : 
-    props.type === 'operational' ? '#ed6c02' : '#9c27b0'};
+  background: ${props => props.type === 'marina_operator' ? '#e8f5e9' : 
+    props.type === 'yacht_chartering' ? '#e3f2fd' : 
+    props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
+  color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
+    props.type === 'yacht_chartering' ? '#1565c0' : 
+    props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
 `;
 const Header = styled.div`
   margin-bottom: 24px;
@@ -253,12 +253,12 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.type === 'safety' ? '#e8f5e9' : 
-    props.type === 'environmental' ? '#e3f2fd' : 
-    props.type === 'operational' ? '#fff3e0' : '#f3e5f5'};
-  color: ${props => props.type === 'safety' ? '#2e7d32' : 
-    props.type === 'environmental' ? '#1565c0' : 
-    props.type === 'operational' ? '#ed6c02' : '#9c27b0'};
+  background: ${props => props.type === 'marina_operator' ? '#e8f5e9' : 
+    props.type === 'yacht_chartering' ? '#e3f2fd' : 
+    props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
+  color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
+    props.type === 'yacht_chartering' ? '#1565c0' : 
+    props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
 `;
 
 const EmptyState = styled.div`
@@ -497,7 +497,7 @@ const InspectionLevelTree = ({
         const topLevelIndex = parseInt(pathParts[0], 10);
         
         if (isNaN(topLevelIndex) || !treeData || !treeData[topLevelIndex]) {
-          throw new Error('Cannot find parent inspection level');
+          throw new Error('Cannot find parent template');
         }
         
         const topLevelInspection = treeData[topLevelIndex];
@@ -632,7 +632,7 @@ const InspectionLevelTree = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalTitle>Delete Template</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
@@ -691,9 +691,9 @@ const InspectionLevelTree = ({
       <Header>
         <PageTitle>
           <Layers size={24} />
-          Inspection Level Hierarchy
+          Template Hierarchy
         </PageTitle>
-        <SubTitle>View and manage the complete inspection level structure</SubTitle>
+        <SubTitle>View and manage the complete template structure</SubTitle>
       </Header>
 
       <ActionBar>
@@ -724,7 +724,7 @@ const InspectionLevelTree = ({
             disabled={loading}
           >
             <Plus size={18} />
-            Add Inspection Level
+            Add Template
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -771,15 +771,15 @@ const InspectionLevelTree = ({
           <LevelListSkeleton />
         ) : treeData.length === 0 ? (
           <EmptyState>
-            <h3>No Inspection Levels Found</h3>
-            <p>Create your first inspection level to get started</p>
+            <h3>No Template Found</h3>
+            <p>Create your first template to get started</p>
             <Button 
               variant="primary" 
               as={Link} 
               to="/inspection/create"
             >
               <Plus size={18} />
-            Add Inspection Level
+            Add Template
               </Button>
           </EmptyState>
         ) : (

@@ -6,6 +6,7 @@ import inspectionLevelReducer from './slices/inspectionLevelSlice';
 import userTasksReducer from './slices/userTasksSlice';
 import questionLibraryReducer from './slices/questionLibrarySlice';
 import assetReducer from './slices/assetSlice';
+import assetTypeReducer from './slices/assetTypeSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,7 +16,9 @@ export const store = configureStore({
     inspectionLevels: inspectionLevelReducer,
     userTasks: userTasksReducer,
     questionLibrary: questionLibraryReducer,
-    assets: assetReducer
+    assets: assetReducer,
+    assetTypes: assetTypeReducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

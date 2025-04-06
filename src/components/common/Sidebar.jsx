@@ -204,7 +204,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin']
     },
     {
-      title: 'Inspection Levels',
+      title: 'Template',
       path: '/inspection',
       icon: ListChecks,
       permission: 'view_inspections',

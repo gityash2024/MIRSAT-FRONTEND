@@ -1,0 +1,94 @@
+.
+├── eslint.config.js
+├── index.html
+├── package.json
+├── package-lock.json
+├── project-structure.txt
+├── public
+│   ├── fonts
+│   │   ├── thesansarab.woff
+│   │   └── thesansarab.woff2
+│   ├── logo.png
+│   └── vite.svg
+├── README.md
+├── src
+│   ├── App.css
+│   ├── App.jsx
+│   ├── assets
+│   │   ├── boat.jpeg
+│   │   ├── OCEAN.jpg
+│   │   └── react.svg
+│   ├── components
+│   │   ├── auth
+│   │   ├── common
+│   │   ├── confirmationModal.jsx
+│   │   ├── dashboard
+│   │   ├── reports
+│   │   ├── settings
+│   │   ├── tasks
+│   │   ├── ui
+│   │   └── users
+│   ├── config
+│   │   ├── navigation.js
+│   │   └── theme.js
+│   ├── constants
+│   │   ├── taskFilterOptions.js
+│   │   └── taskOptions.js
+│   ├── context
+│   │   └── LoadingContext.jsx
+│   ├── hooks
+│   │   ├── useAuth.js
+│   │   ├── useNotification.js
+│   │   ├── usePermissions.js
+│   │   └── useUpload.js
+│   ├── index.css
+│   ├── layouts
+│   │   ├── AuthLayout
+│   │   ├── MainLayout
+│   │   ├── SideBar
+│   │   └── TopBar
+│   ├── main.jsx
+│   ├── pages
+│   │   ├── assets
+│   │   ├── auth
+│   │   ├── calendar
+│   │   ├── dashboard
+│   │   ├── Dashboard.jsx
+│   │   ├── inspection
+│   │   ├── Login.jsx
+│   │   ├── notifications
+│   │   ├── profile
+│   │   ├── reports
+│   │   ├── settings
+│   │   ├── tasks
+│   │   ├── UserDashboard.jsx
+│   │   ├── users
+│   │   └── UserTasks
+│   ├── routes
+│   │   ├── index.jsx
+│   │   ├── PrivateRoute.jsx
+│   │   └── PublicRoute.jsx
+│   ├── services
+│   │   ├── api.js
+│   │   ├── asset.service.js
+│   │   ├── auth.service.js
+│   │   ├── inspection.service.js
+│   │   ├── questionLibrary.service.js
+│   │   ├── report.service.js
+│   │   ├── task.service.js
+│   │   ├── user.service.js
+│   │   └── userTask.service.js
+│   ├── store
+│   │   ├── slices
+│   │   └── store.js
+│   └── utils
+│       ├── axios.js
+│       ├── constants.js
+│       ├── errorHandling.js
+│       ├── formatters.js
+│       └── permissions.js
+├── tailwind.config.js
+├── vercel.json
+└── vite.config.js
+
+40 directories, 51 files

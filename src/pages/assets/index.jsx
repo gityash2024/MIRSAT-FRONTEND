@@ -1,3 +1,4 @@
+// pages/assets/index.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,8 +9,10 @@ import {
   Filter
 } from 'lucide-react';
 import { fetchAssets, exportAssets, setPage, deleteAsset } from '../../store/slices/assetSlice';
+import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import AssetTable from './components/AssetTable';
 import AssetModal from './components/AssetModal';
+import AssetTypeModal from './components/AssetTypeModal';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 
@@ -113,11 +116,13 @@ const AssetList = () => {
   const { assets, loading, pagination } = useSelector(state => state.assets);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
   const [filters, setFilters] = useState({});
 
   useEffect(() => {
     loadAssets();
+    dispatch(fetchAssetTypes());
   }, [pagination.page, searchTerm]);
 
   const loadAssets = () => {
@@ -152,6 +157,14 @@ const AssetList = () => {
     setCurrentAsset(null);
   };
 
+  const handleOpenTypeModal = () => {
+    setIsTypeModalOpen(true);
+  };
+
+  const handleCloseTypeModal = () => {
+    setIsTypeModalOpen(false);
+  };
+
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {
       dispatch(deleteAsset(id)).then(() => {
@@ -179,6 +192,14 @@ const AssetList = () => {
         </SearchBox>
 
         <ButtonGroup>
+          <Button 
+            variant="secondary" 
+            onClick={handleOpenTypeModal}
+          >
+            <Plus size={18} />
+            Add Asset Type
+          </Button>
+          
           <Button 
             variant="secondary" 
             onClick={handleExport}
@@ -214,8 +235,16 @@ const AssetList = () => {
           onSuccess={loadAssets}
         />
       )}
+      
+      {isTypeModalOpen && (
+        <AssetTypeModal 
+          isOpen={isTypeModalOpen} 
+          onClose={handleCloseTypeModal} 
+          onSuccess={() => dispatch(fetchAssetTypes())}
+        />
+      )}
     </PageContainer>
   );
 };
 
-export default AssetList; 
+export default AssetList;

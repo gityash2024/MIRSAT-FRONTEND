@@ -191,7 +191,7 @@ const Sidebar = ({ isOpen, width }) => {
     },
     {
       icon: FileText, 
-      label: 'Inspection Levels', 
+      label: 'Template', 
       path: '/inspection',
       permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
     },

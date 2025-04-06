@@ -27,7 +27,7 @@ const navigation = {
       icon: Users
     },
     {
-      title: 'Inspection Levels',
+      title: 'Template',
       path: '/inspection-levels',
       icon: ListChecks
     },
@@ -59,7 +59,7 @@ const navigation = {
       icon: Clipboard
     },
     {
-      title: 'Inspection Levels',
+      title: 'Template',
       path: '/inspection-levels',
       icon: ListChecks
     },

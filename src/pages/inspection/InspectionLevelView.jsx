@@ -700,9 +700,9 @@ const InspectionLevelView = () => {
       
       setExpandedNodes(expandedState);
     } catch (error) {
-      console.error('Error fetching inspection level:', error);
-      setError(error.message || 'Failed to load inspection level');
-      toast.error('Failed to load inspection level');
+      console.error('Error fetching template:', error);
+      setError(error.message || 'Failed to load template');
+      toast.error('Failed to load template');
     } finally {
       setLoading(false);
     }
@@ -715,8 +715,8 @@ const InspectionLevelView = () => {
       toast.success('Inspection level deleted successfully');
       navigate('/inspection');
     } catch (error) {
-      console.error('Error deleting inspection level:', error);
-      toast.error(error.message || 'Failed to delete inspection level');
+      console.error('Error deleting template:', error);
+      toast.error(error.message || 'Failed to delete template');
     } finally {
       setShowDeleteModal(false);
       setLoading(false);
@@ -853,11 +853,11 @@ const InspectionLevelView = () => {
     return (
       <PageContainer>
         <ErrorContainer>
-          <h3>Error Loading Inspection Level</h3>
+          <h3>Error Loading Template</h3>
           <p>{error}</p>
           <Button onClick={() => navigate('/inspection')}>
             <ArrowLeft size={18} />
-            Back to Inspection Levels
+            Back to Template
           </Button>
         </ErrorContainer>
       </PageContainer>
@@ -868,11 +868,11 @@ const InspectionLevelView = () => {
     return (
       <PageContainer>
         <ErrorContainer>
-          <h3>Inspection Level Not Found</h3>
-          <p>The inspection level you're looking for doesn't exist or has been removed</p>
+          <h3>Template Not Found</h3>
+          <p>The template you're looking for doesn't exist or has been removed</p>
           <Button onClick={() => navigate('/inspection')}>
             <ArrowLeft size={18} />
-            Back to Inspection Levels
+            Back to Template
           </Button>
         </ErrorContainer>
       </PageContainer>
@@ -885,12 +885,12 @@ const InspectionLevelView = () => {
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalTitle>Delete Template</ModalTitle>
               <ModalCloseButton onClick={() => setShowDeleteModal(false)}>
                 <X size={20} />
               </ModalCloseButton>
             </ModalHeader>
-            <p>Are you sure you want to delete this inspection level? This action cannot be undone.</p>
+            <p>Are you sure you want to delete this template? This action cannot be undone.</p>
             <ModalActions>
               <Button onClick={() => setShowDeleteModal(false)}>Cancel</Button>
               <Button variant="danger" onClick={handleDelete} disabled={loading}>Delete</Button>
@@ -917,7 +917,7 @@ const InspectionLevelView = () => {
 
       <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
         <ArrowLeft size={18} />
-        Back to Inspection Levels
+        Back to Template
       </BackButton>
 
       <Header>
@@ -967,7 +967,7 @@ const InspectionLevelView = () => {
           <QuestionnaireCard>
             <CardTitle>
               <Clipboard size={18} />
-              Pre-Inspection Questionnaire
+              Inspection Questionnaire
             </CardTitle>
             
             {level.questions && level.questions.length > 0 ? (
@@ -995,7 +995,7 @@ const InspectionLevelView = () => {
                 ))}
               </QuestionList>
             ) : (
-              <p>No pre-inspection questions defined</p>
+              <p>No inspection questions defined</p>
             )}
           </QuestionnaireCard>
         </div>

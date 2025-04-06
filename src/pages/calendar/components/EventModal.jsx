@@ -322,12 +322,12 @@ const EventModal = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <FormGroup>
-                <Label>Inspection Level</Label>
+                <Label>Template</Label>
                 <Select
                   value={formData.type}
                   onChange={e => setFormData({ ...formData, type: e.target.value })}
                 >
-                  <option value="">Select Inspection Level</option>
+                  <option value="">Select Template</option>
                   {levels?.results?.map(level => (
                     <option key={level._id} value={level._id}>
                       {level.name}

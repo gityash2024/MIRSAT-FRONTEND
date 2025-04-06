@@ -255,7 +255,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
         ))}
 
         <FilterGroup>
-          <h3>Inspection Level</h3>
+          <h3>Template</h3>
           <CheckboxGroup>
             {inspectionLevelOptions?.map(option => (
               <CheckboxLabel key={option.value}>

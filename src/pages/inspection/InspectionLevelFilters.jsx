@@ -280,10 +280,9 @@ const CategoryBadge = styled.span`
 
 const filterOptions = {
   type: [
-    { value: 'safety', label: 'Safety' },
-    { value: 'environmental', label: 'Environmental' },
-    { value: 'operational', label: 'Operational' },
-    { value: 'quality', label: 'Quality' }
+    { value: 'marina_operator', label: 'Marina Operator' },
+    { value: 'yacht_chartering', label: 'Yacht Chartering' },
+    { value: 'tourism_agent', label: 'Tourism Agent' }
   ],
   status: [
     { value: 'active', label: 'Active' },
@@ -387,7 +386,7 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
       <FilterHeader>
         <h2>
           <Filter size={18} />
-          Filter Inspection Levels
+          Filter Template
         </h2>
         {activeFilterCount > 0 && (
           <span style={{ fontSize: '13px', color: '#6b7280' }}>

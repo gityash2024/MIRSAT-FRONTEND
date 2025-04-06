@@ -111,7 +111,7 @@ export const useDeleteConfirmation = () => {
           <Content>
             <Title>Confirm Deletion</Title>
             <Description>
-              Are you sure you want to delete this inspection level? This action cannot be undone.
+              Are you sure you want to delete this template? This action cannot be undone.
             </Description>
             <ButtonContainer>
               <Button onClick={handleCancel}>

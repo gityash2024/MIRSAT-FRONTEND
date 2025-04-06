@@ -249,7 +249,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Inspection Level</h3>
+          <h3>Template</h3>
           <CheckboxGroup>
             {levels?.results?.map(level => (
               <Checkbox key={level._id}>

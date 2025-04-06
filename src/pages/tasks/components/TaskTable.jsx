@@ -539,7 +539,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('inspectionLevel')}>
                 <HeaderContent>
-                  <HeaderText>Inspection Level</HeaderText>
+                  <HeaderText>Template</HeaderText>
                   {sortConfig.key === 'inspectionLevel' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (

@@ -259,7 +259,7 @@ const PreInspectionStepForm = ({ task }) => {
         {task.inspectionLevel && (
           <MetaItem>
             <CheckCircle size={16} />
-            <span>Inspection Level: <strong>{task.inspectionLevel.name || 'N/A'}</strong></span>
+            <span>Template: <strong>{task.inspectionLevel.name || 'N/A'}</strong></span>
           </MetaItem>
         )}
         

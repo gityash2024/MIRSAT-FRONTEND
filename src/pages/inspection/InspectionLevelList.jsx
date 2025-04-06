@@ -18,12 +18,12 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.type === 'safety' ? '#e8f5e9' : 
-    props.type === 'environmental' ? '#e3f2fd' : 
-    props.type === 'operational' ? '#fff3e0' : '#f3e5f5'};
-  color: ${props => props.type === 'safety' ? '#2e7d32' : 
-    props.type === 'environmental' ? '#1565c0' : 
-    props.type === 'operational' ? '#ed6c02' : '#9c27b0'};
+  background: ${props => props.type === 'marina_operator' ? '#e8f5e9' : 
+    props.type === 'yacht_chartering' ? '#e3f2fd' : 
+    props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
+  color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
+    props.type === 'yacht_chartering' ? '#1565c0' : 
+    props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
 `;
 const DropdownContent = styled.div`
   display: ${props => props.show ? 'block' : 'none'};
@@ -439,8 +439,8 @@ const InspectionLevelList = ({
         fetchData();
       }
     } catch (error) {
-      console.error('Error deleting inspection level:', error);
-      toast.error('Failed to delete inspection level');
+      console.error('Error deleting template:', error);
+      toast.error('Failed to delete template');
       setLoading(false);
     }
   };
@@ -475,7 +475,7 @@ const InspectionLevelList = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Delete Inspection Level</ModalTitle>
+              <ModalTitle>Delete Template</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
@@ -508,7 +508,7 @@ const InspectionLevelList = ({
       <Header>
         <PageTitle>
           <Layers size={24} />
-          Inspection Levels
+          Template
         </PageTitle>
         <SubTitle>Manage inspection levels and their hierarchies</SubTitle>
       </Header>
@@ -562,7 +562,7 @@ const InspectionLevelList = ({
             disabled={loading}
           >
             <Plus size={18} />
-            Add Inspection Level
+            Add Template
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -580,15 +580,15 @@ const InspectionLevelList = ({
         <LevelListSkeleton />
       ) : inspectionLevels.length === 0 ? (
         <EmptyState>
-          <h3>No Inspection Levels Found</h3>
-          <p>Create your first inspection level to get started</p>
+          <h3>No Template Found</h3>
+          <p>Create your first template to get started</p>
           <Button 
             variant="primary" 
             as={Link} 
             to="/inspection/create"
           >
             <Plus size={18} />
-            Add Inspection Level
+            Add Template
           </Button>
         </EmptyState>
       ) : (
@@ -610,7 +610,7 @@ const InspectionLevelList = ({
                       </LevelInfo>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
   {level.status && (
-    <StatusBadge type={level.type || 'safety'}>
+    <StatusBadge type={level.type || 'marina_operator'}>
       {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
     </StatusBadge>
   )}

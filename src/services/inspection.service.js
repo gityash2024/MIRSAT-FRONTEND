@@ -3,7 +3,7 @@ import api from './api';
 // Store the loading context outside the service object
 let loadingContext = null;
 
-// Cache for inspection level results to prevent redundant calls
+// Cache for template results to prevent redundant calls
 const inspectionLevelsCache = new Map();
 const CACHE_EXPIRY = 5000; // 5 seconds
 

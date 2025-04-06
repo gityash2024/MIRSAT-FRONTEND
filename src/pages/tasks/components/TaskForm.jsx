@@ -471,7 +471,7 @@ const TaskFormSkeleton = () => (
       <Skeleton.Form.Input height="60px" />
     </Skeleton.Form.Field>
     
-    {/* Inspection Level row */}
+    {/* Template row */}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
       <Skeleton.Form.Field>
         <Skeleton.Form.Label width="150px" />
@@ -617,7 +617,7 @@ const TaskForm = ({
     }
     
     if (!formData.inspectionLevel) {
-      newErrors.inspectionLevel = 'An inspection level must be selected';
+      newErrors.inspectionLevel = 'An template must be selected';
     }
     
     setErrors(newErrors);
@@ -872,13 +872,13 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
-          <Label>Inspection Level *</Label>
+          <Label>Template *</Label>
           <Select
             name="inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
           >
-            <option value="">Select inspection level</option>
+            <option value="">Select template</option>
             {inspectionLevels?.map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}

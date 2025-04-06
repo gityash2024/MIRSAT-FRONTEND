@@ -572,7 +572,7 @@ const PreInspectionQuestionnaire = () => {
         <TaskTitle>{currentTask.title}</TaskTitle>
         <CardTitle>
           <CheckSquare size={22} />
-          Pre-Inspection Questionnaire
+          Inspection Questionnaire
         </CardTitle>
         
         <QuestionsContainer>

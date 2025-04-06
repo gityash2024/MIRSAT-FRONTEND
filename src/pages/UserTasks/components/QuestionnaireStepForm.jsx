@@ -353,11 +353,11 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
   if (!questions || questions.length === 0) {
     return (
       <Container>
-        <Title>Pre-Inspection Questionnaire</Title>
+        <Title>Inspection Questionnaire</Title>
         <NoQuestionsMessage>
           <HelpCircle size={48} />
           <h3>No Questions Available</h3>
-          <p>There are no pre-inspection questions for this task.</p>
+          <p>There are no inspection questions for this task.</p>
         </NoQuestionsMessage>
       </Container>
     );
@@ -367,7 +367,7 @@ const QuestionnaireStepForm = ({ task, onSave }) => {
   
   return (
     <Container>
-      <Title>Pre-Inspection Questionnaire</Title>
+      <Title>Inspection Questionnaire</Title>
       <QuestionsContainer>
         {questions.map((question, index) => {
           if (!question) return null;

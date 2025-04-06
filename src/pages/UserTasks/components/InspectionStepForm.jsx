@@ -710,14 +710,14 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       const subLevelNotes = notes[subLevelId] || '';
       const subLevelPhotos = photos[subLevelId] || [];
       
-      // Check if inspection level requires photos
+      // Check if template requires photos
       if (task.inspectionLevel?.completionCriteria?.requiredPhotos && 
          (!subLevelPhotos || subLevelPhotos.length === 0)) {
         toast.error('Please add at least one photo before completing this item');
         return;
       }
       
-      // Check if inspection level requires notes
+      // Check if template requires notes
       if (task.inspectionLevel?.completionCriteria?.requiredNotes && 
          (!subLevelNotes || subLevelNotes.trim() === '')) {
         toast.error('Please add notes before completing this item');
@@ -1015,7 +1015,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       {(!subLevels || subLevels.length === 0) ? (
         <NoSubLevelsMessage>
           <AlertTriangle size={48} color="#f59e0b" />
-          <h3>No Inspection Levels</h3>
+          <h3>No Template</h3>
           <p>There are no inspection levels defined for this task.</p>
         </NoSubLevelsMessage>
       ) : (

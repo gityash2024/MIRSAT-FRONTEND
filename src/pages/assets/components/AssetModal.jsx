@@ -1,8 +1,10 @@
+// pages/assets/components/AssetModal.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { X } from 'lucide-react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { createAsset, updateAsset } from '../../../store/slices/assetSlice';
+import { fetchAssetTypes } from '../../../store/slices/assetTypeSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ModalOverlay = styled(motion.div)`
@@ -92,6 +94,22 @@ const Input = styled.input`
   }
 `;
 
+const Select = styled.select`
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s;
+  background-color: white;
+  
+  &:focus {
+    outline: none;
+    border-color: #1a237e;
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+  }
+`;
+
 const ErrorText = styled.div`
   color: #dc2626;
   font-size: 12px;
@@ -136,13 +154,22 @@ const Button = styled.button`
 
 const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
   const dispatch = useDispatch();
+  const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
+  
   const [formData, setFormData] = useState({
     uniqueId: '',
     type: '',
     displayName: '',
+    city: '',
+    location: '',
   });
+  
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchAssetTypes());
+  }, [dispatch]);
 
   useEffect(() => {
     if (asset) {
@@ -150,12 +177,16 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         uniqueId: asset.uniqueId,
         type: asset.type,
         displayName: asset.displayName,
+        city: asset.city || '',
+        location: asset.location || '',
       });
     } else {
       setFormData({
         uniqueId: '',
         type: '',
         displayName: '',
+        city: '',
+        location: '',
       });
     }
   }, [asset]);
@@ -175,6 +206,14 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     
     if (!formData.displayName) {
       newErrors.displayName = 'Display name is required';
+    }
+    
+    if (!formData.city) {
+      newErrors.city = 'City is required';
+    }
+    
+    if (!formData.location) {
+      newErrors.location = 'Location is required';
     }
     
     setErrors(newErrors);
@@ -254,14 +293,19 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               
               <FormGroup>
                 <Label htmlFor="type">Type</Label>
-                <Input
-                  type="text"
+                <Select
                   id="type"
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  placeholder="Enter asset type"
-                />
+                >
+                  <option value="">Select asset type</option>
+                  {assetTypes.map(type => (
+                    <option key={type._id} value={type.name}>
+                      {type.name}
+                    </option>
+                  ))}
+                </Select>
                 {errors.type && <ErrorText>{errors.type}</ErrorText>}
               </FormGroup>
               
@@ -276,6 +320,32 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   placeholder="Enter display name"
                 />
                 {errors.displayName && <ErrorText>{errors.displayName}</ErrorText>}
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="Enter city"
+                />
+                {errors.city && <ErrorText>{errors.city}</ErrorText>}
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  type="text"
+                  id="location"
+                  name="location"
+                  onChange={handleChange}
+                  value={formData.location}
+                  placeholder="Enter location"
+                />
+                {errors.location && <ErrorText>{errors.location}</ErrorText>}
               </FormGroup>
             </ModalBody>
             
@@ -294,4 +364,4 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
   );
 };
 
-export default AssetModal; 
+export default AssetModal;

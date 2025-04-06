@@ -1,3 +1,4 @@
+// pages/assets/components/AssetTable.jsx
 import React from 'react';
 import styled from 'styled-components';
 import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
@@ -200,6 +201,16 @@ const AssetTable = ({
                 <HeaderText>Display Name</HeaderText>
               </HeaderContent>
             </th>
+            <th>
+              <HeaderContent>
+                <HeaderText>City</HeaderText>
+              </HeaderContent>
+            </th>
+            <th>
+              <HeaderContent>
+                <HeaderText>Location</HeaderText>
+              </HeaderContent>
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -211,12 +222,14 @@ const AssetTable = ({
                 <td><Skeleton.Base width={80} height={20} /></td>
                 <td><Skeleton.Base width={120} height={20} /></td>
                 <td><Skeleton.Base width={180} height={20} /></td>
+                <td><Skeleton.Base width={120} height={20} /></td>
+                <td><Skeleton.Base width={120} height={20} /></td>
                 <td><Skeleton.Base width={80} height={20} /></td>
               </tr>
             ))
           ) : assets.length === 0 ? (
             <tr>
-              <td colSpan={5}>
+              <td colSpan={7}>
                 <EmptyState>No assets found. Create a new asset to get started.</EmptyState>
               </td>
             </tr>
@@ -224,9 +237,11 @@ const AssetTable = ({
             assets.map((asset, index) => (
               <tr key={asset._id}>
                 <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
-                <td>{asset.uniqueId}</td>
-                <td>{asset.type}</td>
-                <td>{asset.displayName}</td>
+                <td>{asset.uniqueId||'--'}</td>
+                <td>{asset.type||'--'}</td>
+                <td>{asset.displayName||'--'}</td>
+                <td>{asset.city||'--'}</td>
+                <td>{asset.location||'--'}</td>
                 <ActionsCell>
                   <ActionButtonGroup>
                     <ActionButton onClick={() => onEdit(asset)}>
@@ -295,4 +310,4 @@ const AssetTable = ({
   );
 };
 
-export default AssetTable; 
+export default AssetTable;
