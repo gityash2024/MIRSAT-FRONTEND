@@ -1,9 +1,11 @@
 // src/pages/notifications/index.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Check, AlertTriangle, Info, Calendar, Clock, ArrowRight, X, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import useNotification from '../../hooks/useNotification';
 
+// Mock data for fallback
 export const mockNotifications = [
   {
     id: 1,
@@ -191,28 +193,42 @@ const ViewAllButton = styled(Link)`
 `;
 
 export const NotificationDropdown = ({ isOpen }) => {
-  const unreadCount = mockNotifications.filter(n => n.status === 'unread').length;
+  const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotification();
+  
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications(1, 3); // Fetch only the latest 3 for the dropdown
+    }
+  }, [isOpen, fetchNotifications]);
+
+  const handleNotificationClick = (notificationId) => {
+    markAsRead(notificationId);
+  };
 
   return (
     <DropdownContainer isOpen={isOpen}>
       <DropdownHeader>
         <DropdownTitle>Notifications</DropdownTitle>
-        <Badge>{unreadCount} New</Badge>
+        <Badge>{unreadCount || 0} New</Badge>
       </DropdownHeader>
 
       <NotificationList>
-        {mockNotifications.slice(0, 3).map((notification) => (
+        {notifications.slice(0, 3).map((notification) => (
           <NotificationItem 
-            key={notification.id}
-            to={notification.link}
-            isUnread={notification.status === 'unread'}
+            key={notification._id}
+            to={notification.data?.link || '/notifications'}
+            isUnread={!notification.read}
+            onClick={() => handleNotificationClick(notification._id)}
           >
             <NotificationContent>
-              <NotificationIcon type={notification.type} priority={notification.priority} />
+              <NotificationIcon 
+                type={notification.type?.toLowerCase() || 'info'} 
+                priority={notification.data?.priority || 'medium'} 
+              />
               <TextContent>
                 <NotificationTitle>{notification.title}</NotificationTitle>
                 <NotificationMessage>{notification.message}</NotificationMessage>
-                <Timestamp>{formatTimestamp(notification.timestamp)}</Timestamp>
+                <Timestamp>{formatTimestamp(notification.createdAt)}</Timestamp>
               </TextContent>
             </NotificationContent>
           </NotificationItem>
@@ -260,75 +276,73 @@ const Actions = styled.div`
   gap: 16px;
 `;
 
-const FilterSelect = styled.select`
-  padding: 8px 36px 8px 40px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #1a237e;
-  background: white;
-  appearance: none;
-  cursor: pointer;
-  outline: none;
-
-  &:focus {
-    border-color: #1a237e;
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
-  }
+const ActionButtons = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
-const ActionButton = styled.button`
+const FilterButton = styled.button`
   padding: 8px 16px;
-  border: none;
-  background: none;
-  color: #1a237e;
+  border: 1px solid ${props => props.isActive ? '#1a237e' : '#e5e7eb'};
+  background: ${props => props.isActive ? '#1a237e' : 'white'};
+  color: ${props => props.isActive ? 'white' : '#1a237e'};
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    color: #151b4f;
+    background: ${props => props.isActive ? '#151b4f' : '#f8fafc'};
+    border-color: ${props => props.isActive ? '#151b4f' : '#1a237e'};
   }
 `;
 
-const NotificationsGrid = styled.div`
+const LoadingMessage = styled.div`
+  text-align: center;
+  padding: 24px;
+  color: #64748b;
+  font-size: 14px;
+`;
+
+const NotificationGrid = styled.div`
   display: grid;
   gap: 12px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
-const NotificationCard = styled.div`
-  padding: 16px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #f8fafc;
-  }
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const CardContent = styled.div`
+const NotificationCardContent = styled.div`
   display: flex;
   gap: 16px;
   align-items: flex-start;
 `;
 
-const CardActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
+const CardIconWrapper = styled.div`
+  flex-shrink: 0;
 `;
 
-const ActionIcon = styled.button`
+const CardTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a237e;
+  margin-bottom: 4px;
+`;
+
+const CardMessage = styled.p`
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+`;
+
+const CardTimestamp = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+const ActionIconButton = styled.button`
   padding: 8px;
   border: none;
   background: none;
@@ -341,6 +355,79 @@ const ActionIcon = styled.button`
     background: #f1f5f9;
     color: #1a237e;
   }
+`;
+
+const CardLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  color: #1a237e;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border-top: 1px solid #e5e7eb;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f8fafc;
+  }
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+`;
+
+const PaginationButton = styled.button`
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #1a237e;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #1a237e;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const PageInfo = styled.span`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+`;
+
+const EmptyTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a237e;
+  margin: 16px 0 8px;
+`;
+
+const EmptyMessage = styled.p`
+  font-size: 14px;
+  color: #64748b;
 `;
 
 const NotificationIcon = ({ type, priority }) => {
@@ -391,64 +478,221 @@ const NotificationIcon = ({ type, priority }) => {
 const formatTimestamp = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
-  const diff = now - date;
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
 
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (minutes > 0) return `${minutes}m ago`;
-  return 'Just now';
+  if (diffSec < 60) {
+    return 'Just now';
+  } else if (diffMin < 60) {
+    return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+  } else if (diffHr < 24) {
+    return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`;
+  } else if (diffDays < 7) {
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  }
 };
 
+const NotificationCard = styled.div`
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const CardContent = styled.div`
+  flex: 1;
+`;
+
+const CardActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #1a237e;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #1a237e;
+  }
+`;
+
 const NotificationsPage = () => {
+  const { 
+    notifications, 
+    loading, 
+    unreadCount,
+    fetchNotifications, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification 
+  } = useNotification();
   const [filter, setFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const result = await fetchNotifications(currentPage, 10);
+        if (result?.pagination) {
+          setTotalPages(result.pagination.total);
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    };
+    
+    loadNotifications();
+  }, [fetchNotifications, currentPage]);
+
+  const handleMarkAsRead = (id) => {
+    markAsRead(id);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
+
+  const handleDeleteNotification = (id) => {
+    deleteNotification(id);
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
+
+  // Filter notifications based on selected filter
+  const filteredNotifications = filter === 'all' 
+    ? notifications 
+    : filter === 'unread' 
+      ? notifications.filter(n => !n.read) 
+      : notifications.filter(n => n.read);
 
   return (
     <NotificationContainer>
       <Header>
         <TitleSection>
           <PageTitle>Notifications</PageTitle>
-          <PageDescription>Stay updated with your latest activities</PageDescription>
+          <PageDescription>View and manage your notifications</PageDescription>
         </TitleSection>
-
-        <Actions>
-          <div style={{ position: 'relative' }}>
-            <Filter size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-            <FilterSelect value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="all">All Notifications</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-            </FilterSelect>
-          </div>
-          <ActionButton>Mark all as read</ActionButton>
-        </Actions>
+        <ActionButtons>
+          <FilterButton isActive={filter === 'all'} onClick={() => handleFilterChange('all')}>
+            All
+          </FilterButton>
+          <FilterButton isActive={filter === 'unread'} onClick={() => handleFilterChange('unread')}>
+            Unread
+          </FilterButton>
+          <FilterButton isActive={filter === 'read'} onClick={() => handleFilterChange('read')}>
+            Read
+          </FilterButton>
+          <ActionButton onClick={handleMarkAllAsRead}>
+            <Check size={16} />
+            Mark All Read
+          </ActionButton>
+        </ActionButtons>
       </Header>
 
-      <NotificationsGrid>
-        {mockNotifications.map((notification) => (
-          <NotificationCard key={notification.id}>
-            <CardContent>
-              <NotificationIcon type={notification.type} priority={notification.priority} />
-              <TextContent>
-                <NotificationTitle>{notification.title}</NotificationTitle>
-                <NotificationMessage>{notification.message}</NotificationMessage>
-                <Timestamp>{formatTimestamp(notification.timestamp)}</Timestamp>
-              </TextContent>
-              <CardActions>
-                <ActionIcon as={Link} to={notification.link}>
-                  <ArrowRight size={18} />
-                </ActionIcon>
-                <ActionIcon onClick={(e) => e.preventDefault()}>
-                  <X size={18} />
-                </ActionIcon>
-              </CardActions>
-            </CardContent>
-          </NotificationCard>
-        ))}
-      </NotificationsGrid>
+      {loading ? (
+        <LoadingMessage>Loading notifications...</LoadingMessage>
+      ) : filteredNotifications.length > 0 ? (
+        <>
+          <NotificationGrid>
+            {filteredNotifications.map((notification) => (
+              <NotificationCard key={notification._id}>
+                <NotificationCardContent>
+                  <CardIconWrapper>
+                    <NotificationIcon 
+                      type={notification.type?.toLowerCase() || 'info'} 
+                      priority={notification.data?.priority || 'medium'} 
+                    />
+                  </CardIconWrapper>
+                  <CardContent>
+                    <CardTitle>{notification.title}</CardTitle>
+                    <CardMessage>{notification.message}</CardMessage>
+                    <CardTimestamp>
+                      <Clock size={14} />
+                      {formatTimestamp(notification.createdAt)}
+                    </CardTimestamp>
+                  </CardContent>
+                  <CardActions>
+                    {!notification.read && (
+                      <ActionIconButton 
+                        onClick={() => handleMarkAsRead(notification._id)}
+                        title="Mark as read"
+                      >
+                        <Check size={16} />
+                      </ActionIconButton>
+                    )}
+                    <ActionIconButton 
+                      onClick={() => handleDeleteNotification(notification._id)}
+                      title="Delete notification"
+                    >
+                      <X size={16} />
+                    </ActionIconButton>
+                  </CardActions>
+                </NotificationCardContent>
+                {notification.data?.link && (
+                  <CardLink to={notification.data.link}>
+                    View Details <ArrowRight size={14} />
+                  </CardLink>
+                )}
+              </NotificationCard>
+            ))}
+          </NotificationGrid>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationButton 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              >
+                Previous
+              </PaginationButton>
+              <PageInfo>Page {currentPage} of {totalPages}</PageInfo>
+              <PaginationButton 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </PaginationButton>
+            </Pagination>
+          )}
+        </>
+      ) : (
+        <EmptyState>
+          <Bell size={48} color="#94a3b8" />
+          <EmptyTitle>No notifications</EmptyTitle>
+          <EmptyMessage>You don't have any notifications at the moment</EmptyMessage>
+        </EmptyState>
+      )}
     </NotificationContainer>
   );
 };

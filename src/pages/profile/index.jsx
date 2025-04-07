@@ -432,7 +432,7 @@ const UserProfile = () => {
               <div className="value">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}</div>
             </ProfileMetaItem>
             
-            <ProfileMetaItem>
+            {/* <ProfileMetaItem>
               <Calendar size={18} className="icon" />
               <div className="label">Joined</div>
               <div className="value">{formatDate(user?.createdAt)}</div>
@@ -442,7 +442,7 @@ const UserProfile = () => {
               <Clock size={18} className="icon" />
               <div className="label">Last Login</div>
               <div className="value">{formatDate(user?.lastLogin)}</div>
-            </ProfileMetaItem>
+            </ProfileMetaItem> */}
           </ProfileMetaList>
         </ProfileCard>
         
@@ -489,7 +489,7 @@ const UserProfile = () => {
               </FormGroup>
             </FormRow>
             
-            <FormGroup>
+            {/* <FormGroup>
               <Label>Department</Label>
               <Input
                 type="text"
@@ -499,7 +499,7 @@ const UserProfile = () => {
                 disabled={!isEditing}
                 placeholder="Your department"
               />
-            </FormGroup>
+            </FormGroup> */}
             
             {isEditing && (
               <>

@@ -493,10 +493,10 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
   };
   
   const handleSave = async () => {
-    if (!validateResponses()) {
-      toast.error('Please answer all required questions');
-      return;
-    }
+    // if (!validateResponses()) {
+    //   toast.error('Please answer all required questions');
+    //   return;
+    // }
     
     setIsSubmitting(true);
     
@@ -855,7 +855,8 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
         <ButtonContainer>
           <SaveButton 
             onClick={handleSave} 
-            disabled={isSubmitting || !allAnswered}
+            disabled={isSubmitting }
+            // disabled={isSubmitting || !allAnswered}
           >
             {isSubmitting ? <Loader size={16} /> : <Save size={16} />}
             Save Questionnaire

@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import Reports from './reports';
 import ScrollAnimation from '../components/common/ScrollAnimation';
 import Skeleton from '../components/ui/Skeleton';
+import axios from 'axios';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -176,6 +177,54 @@ const EmptyState = styled.div`
   text-align: center;
   color: #64748b;
 `;
+
+// Test Notification Button
+const TestButton = styled.button`
+  background-color: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #151b4f;
+  }
+`;
+
+const TestNotificationButton = () => {
+  const { user, token } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const sendTestNotification = async () => {
+    if (!user || !token) return;
+    
+    setIsLoading(true);
+    try {
+      await axios.post('/notifications/test', 
+        { userId: user._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Test notification sent successfully!');
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      alert('Failed to send test notification. Check console for details.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <></>
+    // <TestButton onClick={sendTestNotification} disabled={isLoading}>
+    //   {isLoading ? 'Sending...' : 'Send Test Notification'}
+    // </TestButton>
+  );
+};
 
 // Create DashboardSkeleton component
 const DashboardSkeleton = () => (
@@ -365,6 +414,9 @@ const Dashboard = () => {
           Welcome back, {user?.name || 'Super Admin'}
         </WelcomeText>
       </ScrollAnimation>
+
+      {/* Test Notification Button for Development */}
+      <TestNotificationButton />
 
       <StatsGrid>
         {loading && dashboardData.stats.length === 0 ? (

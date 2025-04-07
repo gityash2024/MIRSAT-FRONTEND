@@ -49,12 +49,12 @@ const UserFilter = ({ filters, setFilters }) => {
       { value: 'Active', label: 'Active' },
       { value: 'Inactive', label: 'Inactive' }
     ],
-    department: [
-      { value: 'field_operations', label: 'Field Operations' },
-      { value: 'operations_management', label: 'Operations Management' },
-      { value: 'administration', label: 'Administration' },
-      { value: 'support', label: 'Support' }
-    ]
+    // department: [
+    //   { value: 'field_operations', label: 'Field Operations' },
+    //   { value: 'operations_management', label: 'Operations Management' },
+    //   { value: 'administration', label: 'Administration' },
+    //   { value: 'support', label: 'Support' }
+    // ]
   };
 
   const handleFilterChange = (category, value) => {

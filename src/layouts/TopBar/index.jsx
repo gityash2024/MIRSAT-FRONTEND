@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Bell, User, ChevronDown, LogOut, Menu } from 'lucide-react';
 import { NotificationDropdown } from '../../pages/notifications';
 import { useNavigate } from 'react-router-dom';
+import useNotification from '../../hooks/useNotification';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -172,10 +173,16 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { unreadCount, fetchNotifications } = useNotification();
   const isMobile = window.innerWidth <= 768;
   const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 260 : 70);
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    // Fetch notifications when the component mounts
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -203,7 +210,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
         <NotificationContainer ref={notificationRef}>
           <NotificationButton onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
             <Bell size={20} />
-            <NotificationBadge>3</NotificationBadge>
+            {unreadCount > 0 && <NotificationBadge>{unreadCount}</NotificationBadge>}
           </NotificationButton>
           <NotificationDropdown isOpen={isNotificationOpen} />
         </NotificationContainer>

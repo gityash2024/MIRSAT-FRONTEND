@@ -11,7 +11,7 @@ let backoffRetryCount = 0;
 const MAX_RETRIES = 3;
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL:'http://localhost:5000/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -74,6 +74,7 @@ const retryRequestWithBackoff = async (error) => {
   return axios(config);
 };
 
+// Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -94,23 +95,23 @@ api.interceptors.request.use(
     const requestKey = getRequestKey(config);
     
     // Check if this exact request is already in progress
-    if (pendingRequests.has(requestKey)) {
-      console.log('Preventing duplicate request:', requestKey);
-      return Promise.reject({ 
-        canceled: true, 
-        message: 'Duplicate request canceled' 
-      });
-    }
+    // if (pendingRequests.has(requestKey)) {
+    //   console.log('Preventing duplicate request:', requestKey);
+    //   return Promise.reject({ 
+    //     canceled: true, 
+    //     message: 'Duplicate request canceled' 
+    //   });
+    // }
     
-    // Check if this request was made recently (within cooldown period)
-    const lastRequestTime = recentRequests.get(requestKey);
-    if (lastRequestTime && Date.now() - lastRequestTime < DEFAULT_COOLDOWN) {
-      console.log('Request rejected due to cooldown:', requestKey);
-      return Promise.reject({ 
-        canceled: true, 
-        message: 'Request is on cooldown' 
-      });
-    }
+    // // Check if this request was made recently (within cooldown period)
+    // const lastRequestTime = recentRequests.get(requestKey);
+    // if (lastRequestTime && Date.now() - lastRequestTime < DEFAULT_COOLDOWN) {
+    //   console.log('Request rejected due to cooldown:', requestKey);
+    //   return Promise.reject({ 
+    //     canceled: true, 
+    //     message: 'Request is on cooldown' 
+    //   });
+    // }
     
     // Add this request to tracking maps
     pendingRequests.set(requestKey, true);
@@ -126,6 +127,7 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
     // Remove from pending requests map
@@ -145,7 +147,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized errors
+    // Handle unauthorized access
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';

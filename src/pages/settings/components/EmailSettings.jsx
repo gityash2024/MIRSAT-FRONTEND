@@ -536,7 +536,7 @@ const EmailSettings = () => {
               placeholder="Enter test email address"
               style={{ flex: 1 }}
             />
-            <Button 
+            {/* <Button 
               variant="primary" 
               size="small" 
               onClick={handleSendTestEmail}
@@ -544,7 +544,7 @@ const EmailSettings = () => {
             >
               <Send size={14} />
               Send Test Email
-            </Button>
+            </Button> */}
           </div>
 
           {testEmailSent && (
