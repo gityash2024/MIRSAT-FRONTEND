@@ -106,12 +106,13 @@ export const exportTaskReport = createAsyncThunk(
   async (taskId, { rejectWithValue }) => {
     try {
       const response = await userTaskService.exportTaskReport(taskId);
-      return response.data;
+      return response;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
+
 
 export const uploadTaskAttachment = createAsyncThunk(
   'userTasks/uploadTaskAttachment',

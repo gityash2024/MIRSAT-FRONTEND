@@ -71,20 +71,24 @@ export const userTaskService = {
     return response.data;
   },
   
-  // Export task report
-  exportTaskReport: async (taskId, format = 'pdf') => {
-    const response = await api.get(`/user-tasks/${taskId}/export?format=${format}`, {
-      responseType: 'blob'
-    });
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `task-report-${taskId}.${format}`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    
-    return { success: true };
+  exportTaskReport: async (taskId) => {
+    try {
+      const response = await api.get(`/user-tasks/${taskId}/export`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `task_report_${taskId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
   }
+  
 };

@@ -1176,22 +1176,12 @@ const UserTaskDetail = () => {
 
   const handleExportReport = async () => {
     try {
-      const response = await dispatch(exportTaskReport(taskId)).unwrap();
-      
-      const blob = new Blob([response], { type: 'application/pdf' });
-      
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `task_report_${taskId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success('Report downloaded successfully!');
+      await userTaskService.exportTaskReport(taskId);
     } catch (error) {
       toast.error(error.message || 'Failed to download report');
     }
   };
+  
   
   const calculateStepperProgress = () => {
     if (!currentTask) return 0;
