@@ -656,6 +656,38 @@ const InspectionLevelViewSkeleton = () => (
   </PageContainer>
 );
 
+// Add these new styled components 
+const LevelNumber = styled.div`
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a237e;
+  margin-right: 10px;
+  min-width: 40px;
+`;
+
+const QuestionNumber = styled.div`
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a237e;
+  margin-right: 8px;
+  margin-bottom: 8px;
+`;
+
+const MandatoryBadge = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: ${props => props.mandatory ? '#e3f2fd' : '#f5f5f5'};
+  color: ${props => props.mandatory ? '#0277bd' : '#757575'};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -781,13 +813,18 @@ const InspectionLevelView = () => {
     }
   };
 
-  const renderHierarchy = (nodes, parentLevel = 0, parentId = '') => {
+  const renderHierarchy = (nodes, parentLevel = 0, parentId = '', parentNumber = '') => {
     if (!nodes || !Array.isArray(nodes)) return null;
     
     return nodes.map((node, index) => {
       const nodeId = parentId ? `${parentId}.${index}` : `${index}`;
       const hasChildren = node.subLevels && node.subLevels.length > 0;
       const isExpanded = expandedNodes[nodeId];
+      
+      // Calculate the level numbering for display
+      const levelNumber = parentNumber 
+        ? `${parentNumber}.${index + 1}` 
+        : String.fromCharCode(65 + index); // A, B, C, etc. for top level
       
       return (
         <React.Fragment key={node._id || index}>
@@ -801,6 +838,7 @@ const InspectionLevelView = () => {
               <NodeIcon>
                 <Layers size={16} />
               </NodeIcon>
+              <LevelNumber>{levelNumber}</LevelNumber>
               <NodeInfo>
                 <h4>{node.name}</h4>
                 <p>{node.description}</p>
@@ -824,7 +862,7 @@ const InspectionLevelView = () => {
           
           {hasChildren && isExpanded && (
             <div style={{ marginLeft: 32 }}>
-              {renderHierarchy(node.subLevels, parentLevel + 1, nodeId)}
+              {renderHierarchy(node.subLevels, parentLevel + 1, nodeId, levelNumber)}
             </div>
           )}
         </React.Fragment>
@@ -972,27 +1010,77 @@ const InspectionLevelView = () => {
             
             {level.questions && level.questions.length > 0 ? (
               <QuestionList>
-                {level.questions.map((question, index) => (
-                  <QuestionItem key={question._id || question.id || index}>
-                    <QuestionText required={question.required}>
-                      {index + 1}. {question.text}
-                    </QuestionText>
-                    <QuestionType>
-                      {getQuestionTypeLabel(question.answerType)}
-                      {question.required && ' (Required)'}
-                    </QuestionType>
+                {level.questions.map((question, index) => {
+                  // Calculate the checkpoint ID
+                  let checkpointId = `${index + 1}`;
+                  
+                  if (question.levelId) {
+                    // Find the related level info
+                    const findLevelNumbering = (levels, id, parentNumber = '') => {
+                      if (!levels) return null;
+                      
+                      for (let i = 0; i < levels.length; i++) {
+                        const level = levels[i];
+                        const currentId = level._id?.toString();
+                        
+                        // Calculate current level number
+                        const currentNumber = parentNumber 
+                          ? `${parentNumber}.${i + 1}` 
+                          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
+                        
+                        if (currentId === id) {
+                          return currentNumber;
+                        }
+                        
+                        if (level.subLevels && level.subLevels.length > 0) {
+                          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
+                          if (foundInSub) return foundInSub;
+                        }
+                      }
+                      
+                      return null;
+                    };
                     
-                    {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
-                      question.options && question.options.length > 0 && (
-                        <OptionsList>
-                          {question.options.map((option, optIndex) => (
-                            <OptionItem key={optIndex}>{option}</OptionItem>
-                          ))}
-                        </OptionsList>
-                      )
+                    // Find all questions with the same levelId to determine this question's position
+                    const positionInLevel = level.questions
+                      .filter(q => q.levelId === question.levelId)
+                      .findIndex(q => q._id === question._id) + 1;
+                    
+                    const levelNumber = findLevelNumbering(level.subLevels, question.levelId);
+                    
+                    if (levelNumber) {
+                      checkpointId = `${levelNumber}.${positionInLevel}`;
                     }
-                  </QuestionItem>
-                ))}
+                  }
+                  
+                  return (
+                    <QuestionItem key={question._id || question.id || index}>
+                      <QuestionNumber>{checkpointId}</QuestionNumber>
+                      <QuestionText required={question.required}>
+                        {question.text}
+                      </QuestionText>
+                      
+                      <MandatoryBadge mandatory={question.mandatory !== false}>
+                        {question.mandatory === false ? 'Recommended' : 'Mandatory'}
+                      </MandatoryBadge>
+                      
+                      <QuestionType>
+                        {getQuestionTypeLabel(question.answerType)}
+                        {question.required && ' (Required)'}
+                      </QuestionType>
+                      
+                      {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
+                        question.options && question.options.length > 0 && (
+                          <OptionsList>
+                            {question.options.map((option, optIndex) => (
+                              <OptionItem key={optIndex}>{option}</OptionItem>
+                            ))}
+                          </OptionsList>
+                        )
+                      }
+                    </QuestionItem>
+                  );
+                })}
               </QuestionList>
             ) : (
               <p>No inspection questions defined</p>

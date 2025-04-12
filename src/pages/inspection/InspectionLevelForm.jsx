@@ -805,10 +805,12 @@ const SubLevelTreeComponent = ({
   subLevels, 
   level = 0, 
   selectedLevelId,
-  onSelectLevel
+  onSelectLevel,
+  parentNumber = '' // Add parent number parameter for auto-numbering
 }) => {
   const [expandedLevels, setExpandedLevels] = useState({});
   
+  // Toggle level expanded/collapsed
   const toggleLevel = (levelId) => {
     setExpandedLevels(prev => ({
       ...prev,
@@ -816,53 +818,58 @@ const SubLevelTreeComponent = ({
     }));
   };
   
-  if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
-    return null;
-  }
+  if (!subLevels || !Array.isArray(subLevels)) return null;
   
   return (
     <>
-      {subLevels.map((subLevel) => {
-        const levelId = subLevel.id || subLevel._id;
-        const hasChildren = subLevel.subLevels && subLevel.subLevels.length > 0;
-        const isExpanded = expandedLevels[levelId];
+      {subLevels.map((node, index) => {
+        // Calculate level number for this node
+        const levelNumber = parentNumber 
+          ? `${parentNumber}.${index + 1}` 
+          : String.fromCharCode(65 + index); // A, B, C, etc. for top level
+          
+        const nodeId = node.id || node._id;
+        const hasChildren = node.subLevels && node.subLevels.length > 0;
+        const isExpanded = expandedLevels[nodeId];
         
         return (
-          <TreeNodeContainer key={levelId}>
-            <TreeNode 
-              selected={selectedLevelId === levelId}
-              onClick={() => onSelectLevel(levelId)}
-            >
-              {hasChildren && (
-                <ExpandCollapseButton
-                  type="button"
-                  onClick={(e) => {
+          <div key={nodeId}>
+            <TreeNodeContainer>
+              <TreeNode 
+                selected={selectedLevelId === nodeId}
+                onClick={() => onSelectLevel(nodeId)}
+              >
+                {hasChildren && (
+                  <div onClick={(e) => {
                     e.stopPropagation();
-                    toggleLevel(levelId);
-                  }}
-                >
-                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                </ExpandCollapseButton>
-              )}
-              <TreeNodeContent level={level} isParent={hasChildren}>
-                {subLevel.name || 'Unnamed Level'}
-              </TreeNodeContent>
-              <BadgeContainer>
-                <Badge color="#3949ab">{subLevel.questionCount || 0}</Badge>
-              </BadgeContainer>
-            </TreeNode>
+                    toggleLevel(nodeId);
+                  }} style={{ marginRight: '8px' }}>
+                    {isExpanded ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+                  </div>
+                )}
+                <TreeNodeContent>
+                  <LevelNumberSpan>{levelNumber}</LevelNumberSpan> {/* Display level number */}
+                  {node.name || 'Unnamed Level'}
+                </TreeNodeContent>
+              </TreeNode>
+            </TreeNodeContainer>
             
             {hasChildren && isExpanded && (
-              <TreeNodeChildren>
-                <SubLevelTreeComponent
-                  subLevels={subLevel.subLevels}
+              <div style={{ marginLeft: '20px' }}>
+                <SubLevelTreeComponent 
+                  subLevels={node.subLevels} 
                   level={level + 1}
                   selectedLevelId={selectedLevelId}
                   onSelectLevel={onSelectLevel}
+                  parentNumber={levelNumber} // Pass level number to children
                 />
-              </TreeNodeChildren>
+              </div>
             )}
-          </TreeNodeContainer>
+          </div>
         );
       })}
     </>
@@ -1523,6 +1530,7 @@ const InspectionLevelForm = () => {
       answerType: 'yesno',
       options: [],
       required: true,
+      mandatory: true, // Add mandatory field, default to true (Mandatory)
       levelId: selectedLevelId // Link to currently selected level if any
     };
     
@@ -1625,7 +1633,8 @@ const InspectionLevelForm = () => {
         text: question.text,
         answerType: question.answerType,
         options: question.options || [],
-        required: question.required
+        required: question.required,
+        mandatory: question.mandatory // Add mandatory field to saved question
       }))
         .unwrap()
         .then(() => {
@@ -1649,6 +1658,7 @@ const InspectionLevelForm = () => {
       answerType: libraryQuestion.answerType,
       options: [...(libraryQuestion.options || [])],
       required: libraryQuestion.required,
+      mandatory: libraryQuestion.mandatory !== undefined ? libraryQuestion.mandatory : true, // Add mandatory field
       levelId: selectedLevelId // Link to currently selected level if any
     };
     
@@ -1954,6 +1964,7 @@ const InspectionLevelForm = () => {
                                 onAddNestedSubLevel={addNestedSubLevel}
                                 loading={loading}
                                 dragHandleProps={provided.dragHandleProps}
+                                levelNumber={String.fromCharCode(65 + index)} // Explicitly set A, B, C, etc. based on index
                               />
                             </div>
                           )}
@@ -2137,7 +2148,27 @@ const InspectionLevelForm = () => {
                           <QuestionItem key={question.id || index}>
                             <QuestionHeader>
                               <QuestionTitle>
-                                Question {globalIndex + 1}
+                                {/* Display auto-numbered checkpoint ID based on linked level */}
+                                {question.levelId ? (
+                                  getLevelPath(question.levelId).split(' > ').map((item, i, arr) => {
+                                    // Get the full path as an array, then build numbering
+                                    if (i === 0) {
+                                      // First level - use letter (A, B, etc.)
+                                      return i === arr.length - 1 ? item : '';
+                                    } else if (i === arr.length - 1) {
+                                      // Last level (the checkpoint itself) - add .1, .2, etc. for the question index
+                                      const levelNumbers = getLevelNumbering(question.levelId);
+                                      const questionIndex = questions
+                                        .filter(q => q.levelId === question.levelId)
+                                        .findIndex(q => q.id === question.id) + 1;
+                                      return levelNumbers ? `${levelNumbers}.${questionIndex}` : `${item} ${questionIndex}`;
+                                    }
+                                    return '';
+                                  }).filter(Boolean).join(' ')
+                                ) : (
+                                  `Question ${globalIndex + 1}`
+                                )}
+
                                 {question.levelId && (
                                   <BadgeContainer>
                                     <Badge color="#3949ab">
@@ -2147,6 +2178,25 @@ const InspectionLevelForm = () => {
                                 )}
                               </QuestionTitle>
                               <QuestionActions>
+                                {/* Replace MandatoryToggle button with a dropdown */}
+                                <Select
+                                  value={question.mandatory === false ? 'recommended' : 'mandatory'}
+                                  onChange={(e) => updateQuestion(globalIndex, 'mandatory', e.target.value === 'recommended' ? false : true)}
+                                  disabled={loading}
+                                  style={{ 
+                                    fontSize: '12px', 
+                                    padding: '4px 8px', 
+                                    minWidth: '130px',
+                                    background: question.mandatory === false ? '#f5f5f5' : '#e3f2fd',
+                                    color: question.mandatory === false ? '#757575' : '#0277bd',
+                                    border: `1px solid ${question.mandatory === false ? '#e0e0e0' : '#bbdefb'}`,
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  <option value="mandatory">Mandatory</option>
+                                  <option value="recommended">Recommended</option>
+                                </Select>
+                                
                                 <SaveToLibraryButton 
                                   type="button" 
                                   onClick={() => saveQuestionToLibrary(question)}
@@ -2399,10 +2449,35 @@ const InspectionLevelForm = () => {
               <p style={{ fontWeight: '500' }}>
                 {questionToLink !== null && questions[questionToLink]?.text}
               </p>
-              <p style={{ marginTop: '16px', fontSize: '13px', fontStyle: 'italic' }}>
-                Select a level below to link this question:
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', justifyContent: 'space-between' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', marginRight: '8px' }}>Question Type:</label>
+                <Select
+                  value={questionToLink !== null && questions[questionToLink]?.mandatory === false ? 'recommended' : 'mandatory'}
+                  onChange={(e) => {
+                    if (questionToLink !== null) {
+                      updateQuestion(questionToLink, 'mandatory', e.target.value === 'recommended' ? false : true);
+                    }
+                  }}
+                  disabled={loading}
+                  style={{ 
+                    fontSize: '12px', 
+                    padding: '4px 8px', 
+                    width: '150px',
+                    background: questionToLink !== null && questions[questionToLink]?.mandatory === false ? '#f5f5f5' : '#e3f2fd',
+                    color: questionToLink !== null && questions[questionToLink]?.mandatory === false ? '#757575' : '#0277bd',
+                    border: `1px solid ${questionToLink !== null && questions[questionToLink]?.mandatory === false ? '#e0e0e0' : '#bbdefb'}`,
+                    borderRadius: '4px'
+                  }}
+                >
+                  <option value="mandatory">Mandatory</option>
+                  <option value="recommended">Recommended</option>
+                </Select>
+              </div>
             </div>
+            
+            <p style={{ marginTop: '16px', fontSize: '13px', fontStyle: 'italic' }}>
+              Select a level below to link this question:
+            </p>
             
             <div style={{ maxHeight: '400px', overflow: 'auto' }}>
               {/* Allow unlinking */}
@@ -2427,6 +2502,7 @@ const InspectionLevelForm = () => {
                   questions[questionToLink]?.levelId : null
                 }
                 onSelectLevel={(levelId) => linkQuestionToLevel(questionToLink, levelId)}
+                parentNumber=""
               />
             </div>
           </ModalContent>
@@ -2444,7 +2520,8 @@ const SubLevelRow = ({
   onRemoveSubLevel, 
   onAddNestedSubLevel, 
   loading,
-  dragHandleProps 
+  dragHandleProps,
+  levelNumber = "" // Add level number parameter for auto-numbering
 }) => {
   const [expanded, setExpanded] = useState(true);
   const hasNestedLevels = level.subLevels && level.subLevels.length > 0;
@@ -2466,6 +2543,9 @@ const SubLevelRow = ({
             {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </ExpandCollapseButton>
         )}
+        
+        {/* Display level number */}
+        <LevelNumber>{levelNumber}</LevelNumber>
         
         <SubLevelInput
           type="text"
@@ -2509,6 +2589,7 @@ const SubLevelRow = ({
             onRemoveSubLevel={onRemoveSubLevel}
             onAddNestedSubLevel={onAddNestedSubLevel}
             loading={loading}
+            parentLevelNumber={levelNumber} // Pass the parent level number down
           />
         </NestedSubLevelsContainer>
       )}
@@ -2523,7 +2604,8 @@ const NestedSubLevelsList = ({
   onSubLevelChange, 
   onRemoveSubLevel, 
   onAddNestedSubLevel, 
-  loading 
+  loading,
+  parentLevelNumber = "" // Add parent level number parameter for auto-numbering
 }) => {
   const droppableId = `nested-${parentPath || "root"}`;
   
@@ -2534,36 +2616,129 @@ const NestedSubLevelsList = ({
           ref={provided.innerRef}
           {...provided.droppableProps}
         >
-          {subLevels.map((subLevel, index) => (
-            <Draggable
-              key={`${parentPath}-${subLevel.id}`}
-              draggableId={`${parentPath}-${subLevel.id}`}
-              index={index}
-              isDragDisabled={loading}
-            >
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                >
-                  <SubLevelRow
-                    level={subLevel}
-                    parentPath={parentPath}
-                    onSubLevelChange={onSubLevelChange}
-                    onRemoveSubLevel={onRemoveSubLevel}
-                    onAddNestedSubLevel={onAddNestedSubLevel}
-                    loading={loading}
-                    dragHandleProps={provided.dragHandleProps}
-                  />
-                </div>
-              )}
-            </Draggable>
-          ))}
+          {subLevels.map((subLevel, index) => {
+            // Calculate the level number for this sub-level
+            const levelNumber = parentLevelNumber 
+              ? `${parentLevelNumber}.${index + 1}` 
+              : String.fromCharCode(65 + index); // A, B, C, etc. for top level
+            
+            return (
+              <Draggable
+                key={`${parentPath}-${subLevel.id}`}
+                draggableId={`${parentPath}-${subLevel.id}`}
+                index={index}
+                isDragDisabled={loading}
+              >
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                  >
+                    <SubLevelRow
+                      level={subLevel}
+                      parentPath={parentPath}
+                      onSubLevelChange={onSubLevelChange}
+                      onRemoveSubLevel={onRemoveSubLevel}
+                      onAddNestedSubLevel={onAddNestedSubLevel}
+                      loading={loading}
+                      dragHandleProps={provided.dragHandleProps}
+                      levelNumber={levelNumber} // Pass the calculated level number
+                    />
+                  </div>
+                )}
+              </Draggable>
+            );
+          })}
           {provided.placeholder}
         </div>
       )}
     </Droppable>
   );
 };
+
+// Add the LevelNumber styled component at the top with other styled components
+const LevelNumber = styled.div`
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a237e;
+  margin-right: 10px;
+  min-width: 40px;
+`;
+
+// Add this helper function before the return statement in the main component
+  // Helper function to get the level numbering based on the level hierarchy
+  const getLevelNumbering = (levelId) => {
+    if (!levelId) return null;
+    
+    const findLevelNumbering = (levels, id, parentNumber = '') => {
+      if (!levels) return null;
+      
+      for (let i = 0; i < levels.length; i++) {
+        const level = levels[i];
+        const currentId = level.id?.toString() || level._id?.toString();
+        
+        // Calculate current level number
+        const currentNumber = parentNumber 
+          ? `${parentNumber}.${i + 1}` 
+          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
+        
+        if (currentId === id?.toString()) {
+          return currentNumber;
+        }
+        
+        if (level.subLevels && level.subLevels.length > 0) {
+          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
+          if (foundInSub) return foundInSub;
+        }
+      }
+      
+      return null;
+    };
+    
+    return findLevelNumbering(formData.subLevels, levelId);
+  };
+
+// Add these styled components near other styled components
+const MandatoryToggle = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: ${props => props.mandatory ? '#e3f2fd' : '#f5f5f5'};
+  color: ${props => props.mandatory ? '#0277bd' : '#757575'};
+  border: 1px solid ${props => props.mandatory ? '#bbdefb' : '#e0e0e0'};
+  
+  &:hover {
+    background: ${props => props.mandatory ? '#bbdefb' : '#eeeeee'};
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const MandatoryIndicator = styled.div`
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: ${props => props.mandatory ? '#e3f2fd' : '#f5f5f5'};
+  color: ${props => props.mandatory ? '#0277bd' : '#757575'};
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const LevelNumberSpan = styled.span`
+  font-weight: 600;
+  color: #1a237e;
+  margin-right: 6px;
+`;
 
 export default InspectionLevelForm;
