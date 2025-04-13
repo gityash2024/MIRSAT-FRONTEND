@@ -806,7 +806,8 @@ const SubLevelTreeComponent = ({
   level = 0, 
   selectedLevelId,
   onSelectLevel,
-  parentNumber = '' // Add parent number parameter for auto-numbering
+  parentNumber = '', // Add parent number parameter for auto-numbering
+  searchQuery = ''
 }) => {
   const [expandedLevels, setExpandedLevels] = useState({});
   
@@ -818,11 +819,59 @@ const SubLevelTreeComponent = ({
     }));
   };
   
+  useEffect(() => {
+    // Auto-expand all when searching
+    if (searchQuery) {
+      const expandAll = {};
+      const addExpandedIds = (levels) => {
+        if (!levels || !Array.isArray(levels)) return;
+        
+        levels.forEach(node => {
+          if (node.id) expandAll[node.id] = true;
+          if (node.subLevels && node.subLevels.length > 0) {
+            addExpandedIds(node.subLevels);
+          }
+        });
+      };
+      
+      addExpandedIds(subLevels);
+      setExpandedLevels(expandAll);
+    }
+  }, [searchQuery, subLevels]);
+  
   if (!subLevels || !Array.isArray(subLevels)) return null;
+  
+  // Filter levels recursively based on search query
+  const filterLevels = (levels, query) => {
+    if (!query) return levels;
+    
+    return levels.filter(node => {
+      // Check if current node matches search
+      const nameMatch = node.name?.toLowerCase().includes(query.toLowerCase());
+      
+      // Check if any children match search
+      const hasMatchingChildren = 
+        node.subLevels && 
+        node.subLevels.length > 0 && 
+        filterLevels(node.subLevels, query).length > 0;
+      
+      return nameMatch || hasMatchingChildren;
+    }).map(node => {
+      if (node.subLevels && node.subLevels.length > 0) {
+        return {
+          ...node,
+          subLevels: filterLevels(node.subLevels, query)
+        };
+      }
+      return node;
+    });
+  };
+  
+  const filteredLevels = filterLevels(subLevels, searchQuery);
   
   return (
     <>
-      {subLevels.map((node, index) => {
+      {filteredLevels.map((node, index) => {
         // Calculate level number for this node
         const levelNumber = parentNumber 
           ? `${parentNumber}.${index + 1}` 
@@ -866,6 +915,7 @@ const SubLevelTreeComponent = ({
                   selectedLevelId={selectedLevelId}
                   onSelectLevel={onSelectLevel}
                   parentNumber={levelNumber} // Pass level number to children
+                  searchQuery={searchQuery}
                 />
               </div>
             )}
@@ -946,6 +996,9 @@ const InspectionLevelForm = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 10;
+  
+  // Level search state
+  const [levelSearch, setLevelSearch] = useState('');
   
   // Question library management
   const [showQuestionLibrary, setShowQuestionLibrary] = useState(false);
@@ -1769,6 +1822,38 @@ const InspectionLevelForm = () => {
     return path ? path.join(' > ') : 'None';
   };
   
+  // Helper function to get the level numbering based on the level hierarchy
+  const getLevelNumbering = (levelId) => {
+    if (!levelId) return null;
+    
+    const findLevelNumbering = (levels, id, parentNumber = '') => {
+      if (!levels) return null;
+      
+      for (let i = 0; i < levels.length; i++) {
+        const level = levels[i];
+        const currentId = level.id?.toString() || level._id?.toString();
+        
+        // Calculate current level number
+        const currentNumber = parentNumber 
+          ? `${parentNumber}.${i + 1}` 
+          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
+        
+        if (currentId === id?.toString()) {
+          return currentNumber;
+        }
+        
+        if (level.subLevels && level.subLevels.length > 0) {
+          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
+          if (foundInSub) return foundInSub;
+        }
+      }
+      
+      return null;
+    };
+    
+    return findLevelNumbering(formData.subLevels, levelId);
+  };
+  
   // Get total question counts for UI
   const getTotalCounts = () => {
     const total = questions.length;
@@ -1930,20 +2015,344 @@ const InspectionLevelForm = () => {
           )}
           
           {activeTab === 'levels' && (
-            <TabContent>
-              <SectionTitle>
-                Sub Levels
-                <IconButton type="button" onClick={addSubLevel} disabled={loading}>
-                  <Plus size={16} />
-                </IconButton>
-              </SectionTitle>
+            <TabContent style={{ padding: '16px' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginBottom: '20px',
+                alignItems: 'center'
+              }}>
+                <SectionTitle style={{ margin: 0 }}>
+                  Sub Levels
+                </SectionTitle>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      placeholder="Search levels..."
+                      style={{
+                        padding: '8px 8px 8px 32px',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        width: '220px'
+                      }}
+                      value={levelSearch}
+                      onChange={(e) => setLevelSearch(e.target.value)}
+                    />
+                    <Search size={16} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                  </div>
+                  <Button 
+                    type="button" 
+                    onClick={addSubLevel} 
+                    disabled={loading}
+                    style={{ 
+                      padding: '8px 16px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px',
+                      height: '38px' 
+                    }}
+                  >
+                    <Plus size={16} /> Add Level
+                  </Button>
+                </div>
+              </div>
+
+              <div style={{ 
+                display: 'flex', 
+                gap: '24px', 
+                height: 'calc(100vh - 350px)', 
+                minHeight: '500px',
+                maxHeight: '70vh',
+                margin: '0 0 24px 0'
+              }}>
+                {/* Left panel - Tree view of levels */}
+                <div style={{ 
+                  width: '30%', 
+                  background: '#f8fafc', 
+                  borderRadius: '8px', 
+                  padding: '20px',
+                  overflowY: 'auto',
+                  border: '1px solid #e0e0e0',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}>
+                  <h4 style={{ 
+                    fontSize: '15px', 
+                    fontWeight: '600', 
+                    marginBottom: '14px', 
+                    color: '#1a237e', 
+                    padding: '0 0 10px 0',
+                    borderBottom: '1px solid #e0e0e0'
+                  }}>
+                    Levels Hierarchy
+                  </h4>
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#64748b', 
+                    marginBottom: '16px',
+                    padding: '0 0 10px 0' 
+                  }}>
+                    Click on a level to edit it in the right panel.
+                  </div>
+                  <div style={{ 
+                    maxHeight: 'calc(100% - 90px)', 
+                    overflowY: 'auto',
+                    padding: '5px 0'
+                  }}>
+                    <SubLevelTreeComponent
+                      subLevels={formData.subLevels}
+                      selectedLevelId={selectedLevelId}
+                      onSelectLevel={(levelId) => {
+                        setSelectedLevelId(levelId);
+                      }}
+                      searchQuery={levelSearch}
+                    />
+                  </div>
+                </div>
+                
+                {/* Right panel - Edit form */}
+                <div style={{ 
+                  flex: 1,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: '24px',
+                  overflowY: 'auto',
+                  background: 'white',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}>
+                  <h4 style={{ 
+                    fontSize: '16px', 
+                    fontWeight: '600', 
+                    marginBottom: '20px', 
+                    color: '#1a237e',
+                    padding: '0 0 12px 0',
+                    borderBottom: '1px solid #f0f0f0'
+                  }}>
+                    {selectedLevelId ? 'Edit Level' : 'Level Details'}
+                  </h4>
+                  
+                  {selectedLevelId ? (
+                    (() => {
+                      // Find the selected level 
+                      const findLevel = (levels, id, path = []) => {
+                        if (!levels) return null;
+                        for (const level of levels) {
+                          const currentId = level.id?.toString() || level._id?.toString();
+                          const currentPath = [...path, currentId];
+                          
+                          if (currentId === id?.toString()) {
+                            return { level, path: currentPath.join('.') };
+                          }
+                          
+                          if (level.subLevels && level.subLevels.length > 0) {
+                            const found = findLevel(level.subLevels, id, currentPath);
+                            if (found) return found;
+                          }
+                        }
+                        return null;
+                      };
+                      
+                      const found = findLevel(formData.subLevels, selectedLevelId);
+                      
+                      if (!found) return (
+                        <div>Level not found. Please select another level.</div>
+                      );
+                      
+                      const { level, path } = found;
+                      const levelPath = getLevelPath(selectedLevelId);
+                      
+                      return (
+                        <div>
+                          <div style={{ 
+                            marginBottom: '20px', 
+                            padding: '14px 16px', 
+                            background: '#f8fafc', 
+                            borderRadius: '6px',
+                            border: '1px solid #e0e0e0'
+                          }}>
+                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Level Path:</div>
+                            <div style={{ fontWeight: '500', marginTop: '4px' }}>{levelPath}</div>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gap: '20px' }}>
+                            <FormGroup>
+                              <Label>Level Name <span style={{ color: 'red' }}>*</span></Label>
+                              <Input
+                                type="text"
+                                value={level.name || ""}
+                                onChange={(e) => handleSubLevelChange(path, 'name', e.target.value)}
+                                placeholder="Enter level name"
+                                disabled={loading}
+                              />
+                            </FormGroup>
+                            
+                            <FormGroup>
+                              <Label>Description <span style={{ color: 'red' }}>*</span></Label>
+                              <TextArea
+                                value={level.description || ""}
+                                onChange={(e) => handleSubLevelChange(path, 'description', e.target.value)}
+                                placeholder="Enter level description"
+                                disabled={loading}
+                                style={{ minHeight: '80px' }}
+                              />
+                            </FormGroup>
+                            
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'flex-start', 
+                              marginTop: '10px',
+                              padding: '16px 0',
+                              borderTop: '1px solid #f0f0f0',
+                              gap: '12px'
+                            }}>
+                              <Button
+                                type="button"
+                                variant="primary"
+                                onClick={() => addNestedSubLevel(path)}
+                                disabled={loading}
+                              >
+                                <Plus size={16} /> Add Sub-Level
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  removeSubLevel(path);
+                                  setSelectedLevelId(null);
+                                }}
+                                disabled={loading}
+                              >
+                                <Minus size={16} /> Remove Level
+                              </Button>
+                            </div>
+                            
+                            {level.subLevels && level.subLevels.length > 0 && (
+                              <div style={{ marginTop: '10px' }}>
+                                <h5 style={{ 
+                                  fontSize: '15px', 
+                                  fontWeight: '500', 
+                                  marginBottom: '14px',
+                                  paddingBottom: '10px',
+                                  borderBottom: '1px solid #f0f0f0'
+                                }}>
+                                  Sub-Levels ({level.subLevels.length})
+                                </h5>
+                                <div style={{ 
+                                  maxHeight: '300px', 
+                                  overflowY: 'auto',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: '6px'
+                                }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e0e0e0' }}>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Number</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Name</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Sub-levels</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {level.subLevels.map((subLevel, index) => {
+                                        const subLevelNumber = getLevelNumbering(subLevel.id);
+                                        return (
+                                          <tr 
+                                            key={subLevel.id} 
+                                            style={{ 
+                                              borderBottom: '1px solid #e0e0e0',
+                                              cursor: 'pointer',
+                                              background: selectedLevelId === subLevel.id ? '#e8f5e9' : 'white'
+                                            }}
+                                            onClick={() => setSelectedLevelId(subLevel.id)}
+                                          >
+                                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '500' }}>{subLevelNumber}</td>
+                                            <td style={{ padding: '12px 16px', fontSize: '13px' }}>{subLevel.name || 'Unnamed Level'}</td>
+                                            <td style={{ padding: '12px 16px', fontSize: '13px' }}>
+                                              {subLevel.subLevels?.length || 0} sub-level(s)
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                  <DragDropContext onDragEnd={handleDragEnd}>
+                                    <Droppable droppableId={`nested-${path}`} type={`nested-${path}`}>
+                                      {(provided) => (
+                                        <div ref={provided.innerRef} style={{ display: 'none' }}>
+                                          {level.subLevels.map((subLevel, index) => (
+                                            <Draggable
+                                              key={`${path}-${subLevel.id}`}
+                                              draggableId={`${path}-${subLevel.id}`}
+                                              index={index}
+                                              isDragDisabled={loading}
+                                            >
+                                              {(provided) => (
+                                                <div
+                                                  ref={provided.innerRef}
+                                                  {...provided.draggableProps}
+                                                  {...provided.dragHandleProps}
+                                                />
+                                              )}
+                                            </Draggable>
+                                          ))}
+                                          {provided.placeholder}
+                                        </div>
+                                      )}
+                                    </Droppable>
+                                  </DragDropContext>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '40px 20px',
+                      background: '#fafafa',
+                      borderRadius: '8px',
+                      border: '1px dashed #e0e0e0'
+                    }}>
+                      <Layers size={48} style={{ color: '#e0e0e0', margin: '0 auto 20px' }} />
+                      <h4 style={{ 
+                        fontSize: '16px', 
+                        fontWeight: '500', 
+                        marginBottom: '12px', 
+                        color: '#333' 
+                      }}>
+                        No Level Selected
+                      </h4>
+                      <p style={{ 
+                        color: '#64748b', 
+                        marginBottom: '28px', 
+                        fontSize: '14px',
+                        maxWidth: '400px',
+                        margin: '0 auto 28px'
+                      }}>
+                        Select a level from the left panel to edit, or create a new top-level item.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={addSubLevel}
+                        disabled={loading}
+                        style={{ padding: '10px 20px' }}
+                      >
+                        <Plus size={16} /> Add Top Level
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="subLevels" type="subLevels">
                   {(provided) => (
-                    <SubLevelsContainer
+                    <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
+                      style={{ display: 'none' }}
                     >
                       {formData.subLevels.map((level, index) => (
                         <Draggable
@@ -1956,25 +2365,17 @@ const InspectionLevelForm = () => {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                            >
-                              <SubLevelRow
-                                level={level}
-                                onSubLevelChange={handleSubLevelChange}
-                                onRemoveSubLevel={removeSubLevel}
-                                onAddNestedSubLevel={addNestedSubLevel}
-                                loading={loading}
-                                dragHandleProps={provided.dragHandleProps}
-                                levelNumber={String.fromCharCode(65 + index)} // Explicitly set A, B, C, etc. based on index
-                              />
-                            </div>
+                              {...provided.dragHandleProps}
+                            />
                           )}
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                    </SubLevelsContainer>
+                    </div>
                   )}
                 </Droppable>
               </DragDropContext>
+
               {errors.subLevels && <ErrorMessage>{errors.subLevels}</ErrorMessage>}
 
               <TabNavigationButtons>
@@ -2053,6 +2454,7 @@ const InspectionLevelForm = () => {
                         setQuestionFilter('level');
                         setCurrentPage(1);
                       }}
+                      searchQuery={questionSearch}
                     />
                   </div>
                   
@@ -2503,6 +2905,7 @@ const InspectionLevelForm = () => {
                 }
                 onSelectLevel={(levelId) => linkQuestionToLevel(questionToLink, levelId)}
                 parentNumber=""
+                searchQuery={questionSearch}
               />
             </div>
           </ModalContent>
@@ -2664,39 +3067,6 @@ const LevelNumber = styled.div`
   margin-right: 10px;
   min-width: 40px;
 `;
-
-// Add this helper function before the return statement in the main component
-  // Helper function to get the level numbering based on the level hierarchy
-  const getLevelNumbering = (levelId) => {
-    if (!levelId) return null;
-    
-    const findLevelNumbering = (levels, id, parentNumber = '') => {
-      if (!levels) return null;
-      
-      for (let i = 0; i < levels.length; i++) {
-        const level = levels[i];
-        const currentId = level.id?.toString() || level._id?.toString();
-        
-        // Calculate current level number
-        const currentNumber = parentNumber 
-          ? `${parentNumber}.${i + 1}` 
-          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
-        
-        if (currentId === id?.toString()) {
-          return currentNumber;
-        }
-        
-        if (level.subLevels && level.subLevels.length > 0) {
-          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
-          if (foundInSub) return foundInSub;
-        }
-      }
-      
-      return null;
-    };
-    
-    return findLevelNumbering(formData.subLevels, levelId);
-  };
 
 // Add these styled components near other styled components
 const MandatoryToggle = styled.button`
