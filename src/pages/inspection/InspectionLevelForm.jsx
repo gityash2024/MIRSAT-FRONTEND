@@ -2,10 +2,44 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight,
-  List, PlusCircle, X, HelpCircle, AlertTriangle, CheckCircle, BookOpen, Save,
-  Link2, Filter, Search, Clock, RefreshCw, Clipboard, FileText, ChevronLeft,
-  ListChecks, Trash2, Database, Edit, Trash, ChevronUp, Settings
+  Plus, 
+  Trash2, 
+  AlertCircle, 
+  Save, 
+  ArrowLeft, 
+  Folder, 
+  ChevronRight, 
+  ChevronDown,
+  ChevronLeft,
+  Check,
+  X,
+  Edit,
+  User,
+  Eye,
+  Search,
+  Copy,
+  CheckCircle,
+  Clock,
+  List,
+  Grid,
+  HelpCircle,
+  ListChecks,
+  Database,
+  BookOpen,
+  PlusCircle,
+  Move,
+  Layers,
+  Link2,
+  FileText,
+  Filter,
+  RefreshCw,
+  Clipboard,
+  Trash,
+  ChevronUp,
+  Settings,
+  AlertTriangle,
+  Minus,
+  Loader
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
@@ -1458,7 +1492,7 @@ const QuestionItemComponent = ({
             {/* Question list */}
             {libraryLoading ? (
               <div style={{ textAlign: 'center', padding: '30px 0' }}>
-                <Spinner size="30px" />
+                <Loader size={30} />
                 <p style={{ color: '#64748b', marginTop: '8px' }}>Loading question library...</p>
               </div>
             ) : (libraryItems && libraryItems.length > 0) ? (
@@ -1608,7 +1642,8 @@ const SubLevelTreeComponent = ({
         if (!levels || !Array.isArray(levels)) return;
         
         levels.forEach(node => {
-          if (node.id) expandAll[node.id] = true;
+          const nodeId = node.id || node._id;
+          if (nodeId) expandAll[nodeId] = true;
           if (node.subLevels && node.subLevels.length > 0) {
             addExpandedIds(node.subLevels);
           }
@@ -1652,62 +1687,64 @@ const SubLevelTreeComponent = ({
   
   return (
     <>
-      {subLevels.map((subLevel, index) => {
+      {filteredLevels.map((subLevel, index) => {
+        if (!subLevel) return null;
+        
         const levelId = subLevel.id || subLevel._id;
-        const hasChildren = subLevel.subLevels && subLevel.subLevels.length > 0;
-        const isExpanded = expandedLevels[levelId];
+        const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
+        const isExpanded = levelId ? expandedLevels[levelId] : false;
         
         return (
-          <div key={nodeId}>
+          <div key={levelId || `sublevel-${index}`}>
             <TreeNodeContainer>
               <TreeNode 
-                selected={selectedLevelId === nodeId}
-                onClick={() => onSelectLevel(nodeId)}
+                selected={selectedLevelId === levelId}
+                onClick={() => levelId && onSelectLevel(levelId)}
               >
                 {hasChildren && (
                   <div onClick={(e) => {
                     e.stopPropagation();
-                    toggleLevel(levelId);
-                  }}
-                >
-                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                </ExpandCollapseButton>
+                    levelId && toggleLevel(levelId);
+                  }}>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </div>
+                )}
+                <TreeNodeContent level={level} isParent={hasChildren}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '24px',
+                    height: '24px',
+                    backgroundColor: '#e2e8f0',
+                    color: '#475569',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    marginRight: '8px'
+                  }}>
+                    {level > 0 ? `${level}.${index + 1}` : index + 1}
+                  </span>
+                  {subLevel.name || 'Unnamed Level'}
+                </TreeNodeContent>
+                <BadgeContainer>
+                  <Badge color="#3949ab">{subLevel.questionCount || 0}</Badge>
+                </BadgeContainer>
+              </TreeNode>
+              
+              {hasChildren && isExpanded && (
+                <div style={{ marginLeft: '20px' }}>
+                  <SubLevelTreeComponent 
+                    subLevels={subLevel.subLevels} 
+                    level={level + 1}
+                    selectedLevelId={selectedLevelId}
+                    onSelectLevel={onSelectLevel}
+                    parentNumber={level > 0 ? `${parentNumber}${index + 1}.` : `${index + 1}.`} 
+                    searchQuery={searchQuery}
+                  />
+                </div>
               )}
-              <TreeNodeContent level={level} isParent={hasChildren}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: '24px',
-                  height: '24px',
-                  backgroundColor: '#e2e8f0',
-                  color: '#475569',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginRight: '8px'
-                }}>
-                  {level > 0 ? `${level}.${index + 1}` : index + 1}
-                </span>
-                {subLevel.name || 'Unnamed Level'}
-              </TreeNodeContent>
-              <BadgeContainer>
-                <Badge color="#3949ab">{subLevel.questionCount || 0}</Badge>
-              </BadgeContainer>
-            </TreeNode>
-            
-            {hasChildren && isExpanded && (
-              <div style={{ marginLeft: '20px' }}>
-                <SubLevelTreeComponent 
-                  subLevels={node.subLevels} 
-                  level={level + 1}
-                  selectedLevelId={selectedLevelId}
-                  onSelectLevel={onSelectLevel}
-                  parentNumber={levelNumber} // Pass level number to children
-                  searchQuery={searchQuery}
-                />
-              </div>
-            )}
+            </TreeNodeContainer>
           </div>
         );
       })}

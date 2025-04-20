@@ -470,24 +470,46 @@ const QuestionList = styled.div`
 `;
 
 const QuestionItem = styled.div`
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  margin-bottom: 20px;
   padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #3949ab;
+`;
+
+const QuestionNumber = styled.div`
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3949ab;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 8px;
+`;
+
+const MandatoryBadge = styled.span`
+  display: inline-block;
+  background: ${props => props.mandatory ? '#dcfce7' : '#fff1f2'};
+  color: ${props => props.mandatory ? '#166534' : '#be123c'};
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
 `;
 
 const QuestionText = styled.h4`
-  font-size: 15px;
+  font-size: 16px;
+  color: #334155;
+  margin: 0 0 8px 0;
   font-weight: 500;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   
   ${props => props.required && `
-    &:after {
+    &::after {
       content: '*';
-      color: #e11d48;
+      color: #ef4444;
+      margin-left: 4px;
     }
   `}
 `;
