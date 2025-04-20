@@ -642,6 +642,12 @@ const BreadcrumbSeparator = styled.span`
   color: #94a3b8;
 `;
 
+const LevelNumber = styled.span`
+  font-weight: 600;
+  color: #1a237e;
+  margin-right: 6px;
+`;
+
 const StatusIcon2 = ({ status, size = 18 }) => {
   switch (status) {
     case 'completed':
@@ -1114,39 +1120,68 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
     return task?.overallProgress || 0;
   };
   
-  // Flatten the hierarchical structure for easier display
-  const flattenSubLevels = (subLevels, parentName = '', level = 0) => {
-    if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) return [];
+  // Add this helper function to calculate node numbering
+  const getLevelNumber = (node, index, parentNumber = '') => {
+    if (!node) return '';
     
+    // If the node already has a levelNumber property, use it
+    if (node.levelNumber) return node.levelNumber;
+    
+    // Calculate based on hierarchy
+    if (parentNumber) {
+      // Sub-level under a parent - use numeric (e.g., A.1, A.2, etc.)
+      return `${parentNumber}.${index + 1}`;
+    } else {
+      // Top-level - use letters (A, B, C, etc.)
+      return String.fromCharCode(65 + index);
+    }
+  };
+  
+  // Update the flattenSubLevels function to include level numbers and status
+  const flattenSubLevels = (subLevels, parentName = '', level = 0, parentNumber = '') => {
     let result = [];
     
-    for (const subLevel of subLevels) {
-      if (!subLevel) continue;
+    if (!subLevels || !Array.isArray(subLevels)) return result;
+    
+    subLevels.forEach((subLevel, index) => {
+      // Calculate the level number for this node
+      const levelNumber = getLevelNumber(subLevel, index, parentNumber);
       
-      const path = parentName ? `${parentName} > ${subLevel.name || 'Unnamed'}` : (subLevel.name || 'Unnamed');
+      // Create the path name
+      const fullName = parentName ? `${parentName} > ${subLevel.name || 'Unnamed'}` : (subLevel.name || 'Unnamed');
       
+      // Add this node to the result
       result.push({
         ...subLevel,
+        path: fullName,
         level,
-        path,
-        status: getSubLevelStatus(subLevel._id)
+        levelNumber, // Add level number to the node
+        status: getSubLevelStatus(subLevel._id) // Keep the status property for search functionality
       });
       
+      // Recursively add child nodes
       if (subLevel.subLevels && subLevel.subLevels.length > 0) {
-        result = [...result, ...flattenSubLevels(subLevel.subLevels, path, level + 1)];
+        result = [
+          ...result,
+          ...flattenSubLevels(subLevel.subLevels, fullName, level + 1, levelNumber)
+        ];
       }
-    }
+    });
     
     return result;
   };
   
-  const renderTreeNode = (node, level = 0) => {
+  // Update the renderTreeNode function to display level numbers
+  const renderTreeNode = (node, level = 0, index = 0, parentNumber = '') => {
     if (!node) return null;
     
     const hasChildren = node.subLevels && node.subLevels.length > 0;
     const isExpanded = expandedNodes[node._id];
     const isSelected = selectedSubLevel && selectedSubLevel._id === node._id;
     const status = getSubLevelStatus(node._id);
+    
+    // Calculate the level number for this node
+    const levelNumber = node.levelNumber || getLevelNumber(node, index, parentNumber);
     
     return (
       <TreeNode key={node._id}>
@@ -1170,13 +1205,15 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
             <StatusIcon2 status={status} size={16} />
           </StatusIcon>
           <NodeLabel isSelected={isSelected}>
-            {node.name || 'Unnamed'}
+            <LevelNumber>{levelNumber}</LevelNumber> {node.name || 'Unnamed'}
           </NodeLabel>
         </NodeHeader>
         
         {hasChildren && isExpanded && (
           <ChildNodes level={level + 1}>
-            {node.subLevels.map(child => renderTreeNode(child, level + 1))}
+            {node.subLevels.map((child, idx) => 
+              renderTreeNode(child, level + 1, idx, levelNumber)
+            )}
           </ChildNodes>
         )}
       </TreeNode>
@@ -1201,11 +1238,12 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
             onClick={() => setSelectedSubLevel(result)}
             style={{ marginBottom: '2px' }}
           >
-            <StatusIcon status={getSubLevelStatus(result._id)}>
-              <StatusIcon2 status={getSubLevelStatus(result._id)} size={16} />
+            <StatusIcon status={result.status || getSubLevelStatus(result._id)}>
+              <StatusIcon2 status={result.status || getSubLevelStatus(result._id)} size={16} />
             </StatusIcon>
             <div style={{ flexGrow: 1 }}>
               <NodeLabel isSelected={selectedSubLevel && selectedSubLevel._id === result._id}>
+                <LevelNumber>{result.levelNumber || ''}</LevelNumber>
                 {result.name || 'Unnamed'}
               </NodeLabel>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
@@ -1268,6 +1306,9 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           
           <ContentTitle>
             <StatusIcon2 status={status} />
+            {selectedSubLevel.levelNumber && (
+              <LevelNumber>{selectedSubLevel.levelNumber}</LevelNumber>
+            )}
             {selectedSubLevel.name || 'Unnamed'}
             <MandatoryBadge mandatory={isMandatory}>
               {isMandatory ? 'Mandatory' : 'Recommended'}
@@ -1548,24 +1589,29 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
       <InspectionLayout>
         <Sidebar>
           <SidebarHeader>
-            <div style={{ fontWeight: '600', color: '#1a237e', fontSize: '16px' }}>
+            <Title style={{ margin: 0, fontSize: '16px' }}>
               Inspection Items
-            </div>
+            </Title>
             <SearchBox>
               <Search size={16} />
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchBox>
           </SidebarHeader>
+          
           <SidebarContent>
-            {searchTerm ? (
-              renderSearchResults()
-            ) : (
-              subLevels.map(node => renderTreeNode(node))
+            {searchTerm ? renderSearchResults() : (
+              <>
+                {task && task.inspectionLevel && task.inspectionLevel.subLevels && 
+                  task.inspectionLevel.subLevels.map((node, index) => 
+                    renderTreeNode(node, 0, index)
+                  )
+                }
+              </>
             )}
           </SidebarContent>
         </Sidebar>

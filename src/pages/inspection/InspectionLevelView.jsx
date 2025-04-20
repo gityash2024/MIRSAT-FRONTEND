@@ -1310,27 +1310,77 @@ const InspectionLevelView = () => {
             
             {level.questions && level.questions.length > 0 ? (
               <QuestionList>
-                {level.questions.map((question, index) => (
-                  <QuestionItem key={question._id || question.id || index}>
-                    <QuestionText required={question.required}>
-                      {index + 1}. {question.text}
-                    </QuestionText>
-                    <QuestionType>
-                      {getQuestionTypeLabel(question.answerType)}
-                      {question.required && ' (Required)'}
-                    </QuestionType>
+                {level.questions.map((question, index) => {
+                  // Calculate the checkpoint ID
+                  let checkpointId = `${index + 1}`;
+                  
+                  if (question.levelId) {
+                    // Find the related level info
+                    const findLevelNumbering = (levels, id, parentNumber = '') => {
+                      if (!levels) return null;
+                      
+                      for (let i = 0; i < levels.length; i++) {
+                        const level = levels[i];
+                        const currentId = level._id?.toString();
+                        
+                        // Calculate current level number
+                        const currentNumber = parentNumber 
+                          ? `${parentNumber}.${i + 1}` 
+                          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
+                        
+                        if (currentId === id) {
+                          return currentNumber;
+                        }
+                        
+                        if (level.subLevels && level.subLevels.length > 0) {
+                          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
+                          if (foundInSub) return foundInSub;
+                        }
+                      }
+                      
+                      return null;
+                    };
                     
-                    {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
-                      question.options && question.options.length > 0 && (
-                        <OptionsList>
-                          {question.options.map((option, optIndex) => (
-                            <OptionItem key={optIndex}>{option}</OptionItem>
-                          ))}
-                        </OptionsList>
-                      )
+                    // Find all questions with the same levelId to determine this question's position
+                    const positionInLevel = level.questions
+                      .filter(q => q.levelId === question.levelId)
+                      .findIndex(q => q._id === question._id) + 1;
+                    
+                    const levelNumber = findLevelNumbering(level.subLevels, question.levelId);
+                    
+                    if (levelNumber) {
+                      checkpointId = `${levelNumber}.${positionInLevel}`;
                     }
-                  </QuestionItem>
-                ))}
+                  }
+                  
+                  return (
+                    <QuestionItem key={question._id || question.id || index}>
+                      <QuestionNumber>{checkpointId}</QuestionNumber>
+                      <QuestionText required={question.required}>
+                        {question.text}
+                      </QuestionText>
+                      
+                      <MandatoryBadge mandatory={question.mandatory !== false}>
+                        {question.mandatory === false ? 'Recommended' : 'Mandatory'}
+                      </MandatoryBadge>
+                      
+                      <QuestionType>
+                        {getQuestionTypeLabel(question.answerType)}
+                        {question.required && ' (Required)'}
+                      </QuestionType>
+                      
+                      {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
+                        question.options && question.options.length > 0 && (
+                          <OptionsList>
+                            {question.options.map((option, optIndex) => (
+                              <OptionItem key={optIndex}>{option}</OptionItem>
+                            ))}
+                          </OptionsList>
+                        )
+                      }
+                    </QuestionItem>
+                  );
+                })}
               </QuestionList>
             ) : (
               <p>No inspection questions defined</p>

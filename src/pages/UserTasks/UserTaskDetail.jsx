@@ -1601,8 +1601,39 @@ const UserTaskDetail = () => {
     }
   };
 
-  if (loading) {
-    return <UserTaskDetailSkeleton />;
+  if (loading || (!error && !currentTask)) {
+    return (
+      <PageContainer>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '80vh',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            border: '5px solid #f3f3f3',
+            borderTop: '5px solid #1a237e', 
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <div style={{ fontSize: '16px', color: '#1a237e', fontWeight: '500' }}>
+            Loading task details...
+          </div>
+        </div>
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+      </PageContainer>
+    );
   }
 
   if (error) {
@@ -1618,7 +1649,7 @@ const UserTaskDetail = () => {
             <div>
               <h3>Error Loading Task</h3>
               <p>{error}</p>
-          </div>
+            </div>
           </ErrorContainer>
         </Header>
       </PageContainer>
@@ -1638,7 +1669,7 @@ const UserTaskDetail = () => {
             <div>
               <h3>Task Not Found</h3>
               <p>The task you are looking for does not exist.</p>
-          </div>
+            </div>
           </ErrorContainer>
         </Header>
       </PageContainer>

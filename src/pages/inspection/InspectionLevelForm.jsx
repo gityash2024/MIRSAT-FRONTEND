@@ -1586,10 +1586,13 @@ const SubLevelTreeComponent = ({
   subLevels, 
   level = 0, 
   selectedLevelId,
-  onSelectLevel
+  onSelectLevel,
+  parentNumber = '', // Add parent number parameter for auto-numbering
+  searchQuery = ''
 }) => {
   const [expandedLevels, setExpandedLevels] = useState({});
   
+  // Toggle level expanded/collapsed
   const toggleLevel = (levelId) => {
     setExpandedLevels(prev => ({
       ...prev,
@@ -1597,9 +1600,55 @@ const SubLevelTreeComponent = ({
     }));
   };
   
-  if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
-    return null;
-  }
+  useEffect(() => {
+    // Auto-expand all when searching
+    if (searchQuery) {
+      const expandAll = {};
+      const addExpandedIds = (levels) => {
+        if (!levels || !Array.isArray(levels)) return;
+        
+        levels.forEach(node => {
+          if (node.id) expandAll[node.id] = true;
+          if (node.subLevels && node.subLevels.length > 0) {
+            addExpandedIds(node.subLevels);
+          }
+        });
+      };
+      
+      addExpandedIds(subLevels);
+      setExpandedLevels(expandAll);
+    }
+  }, [searchQuery, subLevels]);
+  
+  if (!subLevels || !Array.isArray(subLevels)) return null;
+  
+  // Filter levels recursively based on search query
+  const filterLevels = (levels, query) => {
+    if (!query) return levels;
+    
+    return levels.filter(node => {
+      // Check if current node matches search
+      const nameMatch = node.name?.toLowerCase().includes(query.toLowerCase());
+      
+      // Check if any children match search
+      const hasMatchingChildren = 
+        node.subLevels && 
+        node.subLevels.length > 0 && 
+        filterLevels(node.subLevels, query).length > 0;
+      
+      return nameMatch || hasMatchingChildren;
+    }).map(node => {
+      if (node.subLevels && node.subLevels.length > 0) {
+        return {
+          ...node,
+          subLevels: filterLevels(node.subLevels, query)
+        };
+      }
+      return node;
+    });
+  };
+  
+  const filteredLevels = filterLevels(subLevels, searchQuery);
   
   return (
     <>
@@ -1609,15 +1658,14 @@ const SubLevelTreeComponent = ({
         const isExpanded = expandedLevels[levelId];
         
         return (
-          <TreeNodeContainer key={levelId}>
-            <TreeNode 
-              selected={selectedLevelId === levelId}
-              onClick={() => onSelectLevel(levelId)}
-            >
-              {hasChildren && (
-                <ExpandCollapseButton
-                  type="button"
-                  onClick={(e) => {
+          <div key={nodeId}>
+            <TreeNodeContainer>
+              <TreeNode 
+                selected={selectedLevelId === nodeId}
+                onClick={() => onSelectLevel(nodeId)}
+              >
+                {hasChildren && (
+                  <div onClick={(e) => {
                     e.stopPropagation();
                     toggleLevel(levelId);
                   }}
@@ -1649,16 +1697,18 @@ const SubLevelTreeComponent = ({
             </TreeNode>
             
             {hasChildren && isExpanded && (
-              <TreeNodeChildren>
-                <SubLevelTreeComponent
-                  subLevels={subLevel.subLevels}
+              <div style={{ marginLeft: '20px' }}>
+                <SubLevelTreeComponent 
+                  subLevels={node.subLevels} 
                   level={level + 1}
                   selectedLevelId={selectedLevelId}
                   onSelectLevel={onSelectLevel}
+                  parentNumber={levelNumber} // Pass level number to children
+                  searchQuery={searchQuery}
                 />
-              </TreeNodeChildren>
+              </div>
             )}
-          </TreeNodeContainer>
+          </div>
         );
       })}
     </>

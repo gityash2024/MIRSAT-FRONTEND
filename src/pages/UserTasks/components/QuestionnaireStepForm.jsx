@@ -366,6 +366,73 @@ const CategoryBadge = styled.div`
   margin-bottom: 8px;
 `;
 
+const getQuestionNumber = (question, allQuestions, index) => {
+  // If question has levelId, try to calculate proper numbering
+  if (question.levelId) {
+    // First, try to use hierarchyPath if available
+    if (question.hierarchyPath) {
+      const parts = question.hierarchyPath.split('.');
+      // Find all questions with the same levelId to determine this question's position
+      const positionInLevel = allQuestions
+        .filter(q => q.levelId === question.levelId)
+        .findIndex(q => q._id === question._id) + 1;
+      
+      // Format the level path with proper numbering
+      // If it starts with a letter, it's a top-level (A, B, C, etc.)
+      const levelNumber = parts[0];
+      let formattedPath = levelNumber;
+      
+      // Add sub-levels (1, 2, 3, etc.)
+      for (let i = 1; i < parts.length; i++) {
+        formattedPath += `.${parts[i]}`;
+      }
+      
+      // Add the question number
+      return `${formattedPath}.${positionInLevel}`;
+    }
+    
+    // If no hierarchyPath but we have levelPath
+    if (question.levelPath) {
+      // Use the level path to generate numbering
+      const levelIdentifier = question.levelPath.charAt(0); // Get the first character which should be A, B, C, etc.
+      
+      // Extract sub-levels from the path
+      const subLevels = question.levelPath.substring(1).split('.').filter(Boolean);
+      
+      // Find all questions with the same levelId to determine this question's position
+      const positionInLevel = allQuestions
+        .filter(q => q.levelId === question.levelId)
+        .findIndex(q => q._id === question._id) + 1;
+      
+      // Build the formatted path
+      let formattedPath = levelIdentifier;
+      
+      // Add sub-levels if any
+      if (subLevels.length > 0) {
+        formattedPath += `.${subLevels.join('.')}`;
+      }
+      
+      // Add the question number
+      return `${formattedPath}.${positionInLevel}`;
+    }
+    
+    // Fallback to simpler level-based numbering
+    // Find all questions with the same levelId to determine this question's position
+    const levelQuestions = allQuestions.filter(q => q.levelId === question.levelId);
+    const positionInLevel = levelQuestions.findIndex(q => q._id === question._id) + 1;
+    
+    // Determine top-level indicator (A, B, C...)
+    // This is a simple approximation - in a real implementation you'd want to map levelIds to their correct hierarchy
+    const levelIndex = index % 26; // Cycle through alphabet
+    const levelLetter = String.fromCharCode(65 + levelIndex);
+    
+    return `${levelLetter}.${positionInLevel}`;
+  }
+  
+  // Fallback to simple indexing if no level information
+  return `${index + 1}`;
+};
+
 const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestion }) => {
   const dispatch = useDispatch();
   // Store questions separately from responses
@@ -693,10 +760,13 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
           const response = responses[questionId];
           const comment = comments[questionId];
           
+          // Get question number based on hierarchy
+          const questionNumber = getQuestionNumber(question, questions, index);
+          
           return (
             <QuestionItem key={questionId || index}>
               <QuestionText mandatory={question.mandatory !== false}>
-                {index + 1}. {question.text}
+                {questionNumber}. {question.text}
                 {question.required && <span style={{ color: 'red' }}> *</span>}
               </QuestionText>
               
