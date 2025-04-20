@@ -10,26 +10,105 @@ const CACHE_EXPIRY = 5000; // 5 seconds
 // Improve the cache management to prevent duplicate calls
 let pendingRequests = {};
 
+// Utility function to convert backend data to frontend format
+const convertToFrontendFormat = (data) => {
+  // If data already has sets, don't overwrite them
+  if (data.sets && Array.isArray(data.sets) && data.sets.length > 0) {
+    // Ensure sets have proper ID format
+    return {
+      ...data,
+      sets: data.sets.map(set => ({
+        ...set,
+        id: set.id || set._id || Date.now(),
+        subLevels: set.subLevels || [],
+        questions: set.questions || [],
+        generalQuestions: set.generalQuestions || []
+      }))
+    };
+  }
+
+  // Create a new sets structure from top-level data
+  return {
+    ...data,
+    sets: [{
+      id: data.id || data._id || Date.now(),
+      name: data.name ? `${data.name} Set` : 'Main Set',
+      description: data.description || 'Main inspection set',
+      subLevels: data.subLevels || [],
+      questions: data.questions || [],
+      generalQuestions: []
+    }]
+  };
+};
+
+// Utility function to convert frontend data to backend format
+const convertToBackendFormat = (data) => {
+  // Create a proper copy to avoid modifying the original data
+  const backendData = { ...data };
+  
+  // Check if data has sets
+  if (data.sets && Array.isArray(data.sets) && data.sets.length > 0) {
+    // Keep the sets data (backend model supports sets now)
+    backendData.sets = data.sets.map(set => ({
+      ...set,
+      // Ensure MongoDB can process the IDs properly
+      _id: set._id || set.id,
+      id: undefined
+    }));
+    
+    // Also include the main subLevels and questions for backward compatibility
+    // Use the first set as the main data
+    const mainSet = data.sets[0];
+    backendData.subLevels = mainSet.subLevels || [];
+    backendData.questions = [...(mainSet.questions || []), ...(mainSet.generalQuestions || [])];
+  } else {
+    // No sets, just ensure subLevels and questions are defined
+    backendData.subLevels = backendData.subLevels || [];
+    backendData.questions = backendData.questions || [];
+  }
+  
+  return backendData;
+};
+
 export const inspectionService = {
   setLoadingContext(context) {
     loadingContext = context;
   },
 
-  startLoading(message = '') {
-    if (loadingContext) {
-      loadingContext.startLoading(message);
+  startLoading(message = 'Loading...') {
+    if (loadingContext && loadingContext.setLoading) {
+      loadingContext.setLoading(true, message);
     }
   },
 
   stopLoading() {
-    if (loadingContext) {
-      loadingContext.stopLoading();
+    if (loadingContext && loadingContext.setLoading) {
+      loadingContext.setLoading(false);
     }
   },
   
   async createInspectionLevel(data) {
-    const response = await api.post('/inspection', data);
-    return response.data;
+    try {
+      this.startLoading('Creating inspection template...');
+      
+      // Convert data to backend format
+      const backendData = convertToBackendFormat(data);
+      console.log('Creating inspection with data:', backendData);
+      
+      const response = await api.post('/inspection', backendData);
+      
+      // Clear cache after creation
+      Array.from(inspectionLevelsCache.keys()).forEach(key => 
+        inspectionLevelsCache.delete(key)
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error creating inspection level:', error);
+      throw error;
+    } finally {
+      this.stopLoading();
+    }
   },
 
   async getInspectionLevels(params) {
@@ -53,6 +132,8 @@ export const inspectionService = {
       // Create a promise for this request that can be reused by concurrent calls
       pendingRequests[cacheKey] = new Promise(async (resolve, reject) => {
         try {
+          this.startLoading('Loading inspection templates...');
+          
           // Make the API call
           console.log('Making API call for inspection levels with params:', params);
           const response = await api.get('/inspection', { params });
@@ -72,6 +153,7 @@ export const inspectionService = {
         } finally {
           // Remove from pending requests
           delete pendingRequests[cacheKey];
+          this.stopLoading();
         }
       });
       
@@ -85,18 +167,64 @@ export const inspectionService = {
   },
 
   async getInspectionLevel(id) {
-    const response = await api.get(`/inspection/${id}`);
-    return response.data;
+    try {
+      this.startLoading('Loading inspection template...');
+      
+      const response = await api.get(`/inspection/${id}`);
+      console.log('Fetched inspection level:', response.data);
+      
+      // No need to convert here - we'll do it in the component
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inspection level:', error);
+      throw error;
+    } finally {
+      this.stopLoading();
+    }
   },
 
   async updateInspectionLevel(id, data) {
-    const response = await api.put(`/inspection/${id}`, data);
-    return response.data;
+    try {
+      this.startLoading('Updating inspection template...');
+      
+      // Convert frontend data to backend format
+      const backendData = convertToBackendFormat(data);
+      console.log('Updating inspection with data:', backendData);
+      
+      const response = await api.put(`/inspection/${id}`, backendData);
+      
+      // Clear cache after update
+      Array.from(inspectionLevelsCache.keys()).forEach(key => 
+        inspectionLevelsCache.delete(key)
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating inspection level:', error);
+      throw error;
+    } finally {
+      this.stopLoading();
+    }
   },
 
   async deleteInspectionLevel(id) {
-    const response = await api.delete(`/inspection/${id}`);
-    return response.data;
+    try {
+      this.startLoading('Deleting inspection template...');
+      
+      const response = await api.delete(`/inspection/${id}`);
+      
+      // Clear cache after deletion
+      Array.from(inspectionLevelsCache.keys()).forEach(key => 
+        inspectionLevelsCache.delete(key)
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting inspection level:', error);
+      throw error;
+    } finally {
+      this.stopLoading();
+    }
   },
 
   async updateSubLevel(inspectionId, subLevelId, data) {
@@ -125,7 +253,8 @@ export const inspectionService = {
         name: data.name,
         description: data.description, 
         order: data.order || 0,
-        isCompleted: data.isCompleted || false
+        isCompleted: data.isCompleted || false,
+        questions: data.questions || []
       };
       
       // Ensure _id is included

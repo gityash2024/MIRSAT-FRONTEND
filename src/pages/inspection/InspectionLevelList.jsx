@@ -8,6 +8,7 @@ import InspectionLevelFilters from './InspectionLevelFilters';
 import { FileText } from 'lucide-react';
 import { DownloadDone } from '@mui/icons-material';
 import LevelListSkeleton from './LevelListSkeleton';
+import { ListChecks, Calendar } from 'lucide-react';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -377,6 +378,41 @@ const ModalActions = styled.div`
   margin-top: 24px;
 `;
 
+const LevelStats = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const StatItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: #666;
+  }
+
+  div {
+    text-align: center;
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a237e;
+  }
+
+  span {
+    font-size: 12px;
+    color: #666;
+  }
+`;
+
 const InspectionLevelList = ({ 
   loading, 
   setLoading, 
@@ -389,23 +425,41 @@ const InspectionLevelList = ({
   onFilterChange,
   fetchData
 }) => {
+  const [inspectionLevels, setInspectionLevels] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Use local reference to data
-  const inspectionLevels = data || [];
-  
-  const isMountedRef = useRef(true);
-  
+  const exportDropdownRef = useRef(null);
+
   useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+    // Preprocess data to ensure consistent format
+    if (data && Array.isArray(data)) {
+      const processedData = data.map(item => {
+        if (!item) return null;
+        
+        // Ensure the item has a sets property if missing
+        const itemWithSets = { ...item };
+        
+        if (!itemWithSets.sets || !Array.isArray(itemWithSets.sets) || itemWithSets.sets.length === 0) {
+          itemWithSets.sets = [{
+            id: item._id || Date.now(),
+            name: item.name ? `${item.name} Set` : 'Main Set',
+            description: item.description || 'Main inspection set',
+            subLevels: item.subLevels || [],
+            questions: item.questions || [],
+            generalQuestions: []
+          }];
+        }
+        
+        return itemWithSets;
+      }).filter(Boolean); // Remove any null items
+      
+      setInspectionLevels(processedData);
+    } else {
+      setInspectionLevels([]);
+    }
+  }, [data]);
 
   const handleSearch = (e) => {
     if (onSearchChange) {
@@ -468,6 +522,71 @@ const InspectionLevelList = ({
         toast.error(`Failed to export as ${format.toUpperCase()}`);
       });
   };
+
+  // Helper function to count subLevels recursively
+  const countSubLevels = (subLevels) => {
+    if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
+      return 0;
+    }
+    
+    let count = subLevels.length;
+    
+    // Count nested subLevels
+    for (const subLevel of subLevels) {
+      if (subLevel.subLevels && Array.isArray(subLevel.subLevels)) {
+        count += countSubLevels(subLevel.subLevels);
+      }
+    }
+    
+    return count;
+  };
+
+  // Helper function to count items
+  const countItems = (level) => {
+    // Initialize counts
+    let subLevelCount = 0;
+    let questionCount = 0;
+    
+    // Count direct sublevels and questions (legacy structure)
+    if (level.subLevels && Array.isArray(level.subLevels)) {
+      subLevelCount += countSubLevels(level.subLevels);
+    }
+    
+    if (level.questions && Array.isArray(level.questions)) {
+      questionCount += level.questions.length;
+    }
+    
+    // Count from sets structure
+    if (level.sets && Array.isArray(level.sets)) {
+      level.sets.forEach(set => {
+        if (set.subLevels && Array.isArray(set.subLevels)) {
+          subLevelCount += countSubLevels(set.subLevels);
+        }
+        if (set.questions && Array.isArray(set.questions)) {
+          questionCount += set.questions.length;
+        }
+        if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
+          questionCount += set.generalQuestions.length;
+        }
+      });
+    }
+    
+    return { subLevelCount, questionCount };
+  };
+
+  // Add click outside handler for export dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setShowExportDropdown(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <PageContainer>
@@ -544,7 +663,7 @@ const InspectionLevelList = ({
               Export
               <ChevronDownCircle size={14} />
             </Button>
-            <DropdownContent show={showExportDropdown}>
+            <DropdownContent ref={exportDropdownRef} show={showExportDropdown}>
               <DropdownItem onClick={() => handleExport('docx')}>
                 <FileText size={16} />
                 Export as Word
@@ -593,77 +712,86 @@ const InspectionLevelList = ({
         </EmptyState>
       ) : (
         <LevelGrid>
-          {inspectionLevels.map(level => (
-            <LevelCard key={level._id}>
-              <AccordionRoot type="single" collapsible>
-                <Accordion.Item value={level._id}>
-                  <AccordionTrigger>
-                    <AccordionHeader>
-                      <LevelInfo>
-                        <LevelIcon>
-                          <Layers size={20} />
-                        </LevelIcon>
-                        <LevelDetails>
-                          <h3>{level.name}</h3>
-                          <p>{level.description}</p>
-                        </LevelDetails>
-                      </LevelInfo>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-  {level.status && (
-    <StatusBadge type={level.type || 'marina_operator'}>
-      {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
-    </StatusBadge>
-  )}
+          {inspectionLevels.map(level => {
+            // Count items in the level
+            const { subLevelCount, questionCount } = countItems(level);
+            
+            return (
+              <LevelCard key={level._id || level.id}>
+                <AccordionRoot type="single" collapsible>
+                  <Accordion.Item value={level._id || level.id}>
+                    <AccordionTrigger>
+                      <AccordionHeader>
+                        <LevelInfo>
+                          <LevelIcon>
+                            <Layers size={20} />
+                          </LevelIcon>
+                          <LevelDetails>
+                            <h3>{level.name}</h3>
+                            <p>{level.description}</p>
+                          </LevelDetails>
+                        </LevelInfo>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {level.status && (
+                            <StatusBadge type={level.type || 'marina_operator'}>
+                              {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
+                            </StatusBadge>
+                          )}
+                          <ChevronDown size={20} className="accordion-chevron" />
+                        </div>
+                      </AccordionHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <LevelStats>
+                        <StatItem>
+                          <Layers size={16} />
+                          <div>
+                            <strong>{subLevelCount}</strong>
+                            <span>Levels</span>
+                          </div>
+                        </StatItem>
+                        <StatItem>
+                          <ListChecks size={16} />
+                          <div>
+                            <strong>{questionCount}</strong>
+                            <span>Questions</span>
+                          </div>
+                        </StatItem>
+                        <StatItem>
+                          <Calendar size={16} />
+                          <div>
+                            <strong>{new Date(level.createdAt).toLocaleDateString()}</strong>
+                            <span>Created</span>
+                          </div>
+                        </StatItem>
+                      </LevelStats>
                       <LevelActions>
-                        <ActionButton 
-                          as={Link} 
-                          to={`/inspection/${level._id}`}
-                          disabled={loading}
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <Button as={Link} to={`/inspection/${level._id || level.id}`} variant="secondary">
                           <Eye size={16} />
-                        </ActionButton>
-                        <ActionButton 
-                          as={Link} 
-                          to={`/inspection/${level._id}/edit`}
-                          disabled={loading}
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                          View
+                        </Button>
+                        <Button as={Link} to={`/inspection/${level._id || level.id}/edit`} variant="secondary">
                           <Edit size={16} />
-                        </ActionButton>
-                        <ActionButton 
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="danger"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             onDeleteClick(level);
                           }}
-                          disabled={loading}
                         >
                           <Trash2 size={16} />
-                        </ActionButton>
-                        <ChevronIcon size={16} />
+                          Delete
+                        </Button>
                       </LevelActions>
-                      </div>
-                    </AccordionHeader>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <SubLevelsList>
-                      {flattenSubLevels(level.subLevels).map(subLevel => (
-                        <SubLevel 
-                          key={subLevel._id || subLevel.id} 
-                          style={{ marginLeft: `${subLevel.nestLevel * 20}px` }}
-                        >
-                          <SubLevelIcon>
-                            <ChevronRight size={16} />
-                          </SubLevelIcon>
-                          <span>{subLevel.name}</span>
-                        </SubLevel>
-                      ))}
-                    </SubLevelsList>
-                  </AccordionContent>
-                </Accordion.Item>
-              </AccordionRoot>
-            </LevelCard>
-          ))}
+                    </AccordionContent>
+                  </Accordion.Item>
+                </AccordionRoot>
+              </LevelCard>
+            );
+          })}
         </LevelGrid>
       )}
     </PageContainer>

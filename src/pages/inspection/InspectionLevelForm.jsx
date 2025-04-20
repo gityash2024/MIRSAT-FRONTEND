@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, Minus, Move, Layers, ChevronDown, ChevronRight,
   List, PlusCircle, X, HelpCircle, AlertTriangle, CheckCircle, BookOpen, Save,
-  Link2, Filter, Search, Clock, RefreshCw, Clipboard, FileText, ChevronLeft
+  Link2, Filter, Search, Clock, RefreshCw, Clipboard, FileText, ChevronLeft,
+  ListChecks, Trash2, Database, Edit, Trash, ChevronUp, Settings
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
@@ -18,6 +19,81 @@ import {
 import { updateInspectionLevel } from '../../store/slices/inspectionLevelSlice';
 import Skeleton from '../../components/ui/Skeleton';
 import debounce from 'lodash/debounce';
+import { v4 as uuidv4 } from 'uuid';
+
+// Modal component for confirmations
+const ConfirmationModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = "Confirm", 
+  cancelText = "Cancel" 
+}) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '400px',
+        maxWidth: '90%',
+        padding: '24px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>{title}</h3>
+        <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>{message}</p>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              backgroundColor: 'white',
+              color: '#4b5563',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {cancelText}
+          </button>
+          <button 
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -41,7 +117,17 @@ const BackButton = styled.button`
 `;
 
 const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
+  
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -95,22 +181,20 @@ const TabsContainer = styled.div`
 
 const Tab = styled.button`
   padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
   background: none;
   border: none;
-  border-bottom: 2px solid ${props => props.active ? '#1a237e' : 'transparent'};
-  color: ${props => props.active ? '#1a237e' : '#666'};
+  border-bottom: 2px solid ${props => props.$active ? '#1a237e' : 'transparent'};
+  color: ${props => props.$active ? '#1a237e' : '#64748b'};
+  font-weight: ${props => props.$active ? '600' : '500'};
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   
   &:hover {
-    color: #1a237e;
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    color: ${props => props.$active ? '#1a237e' : '#334155'};
   }
 `;
 
@@ -118,12 +202,13 @@ const TabCount = styled.span`
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: ${props => props.$active ? '#1a237e' : '#e2e8f0'};
+  color: ${props => props.$active ? 'white' : '#64748b'};
+  border-radius: 12px;
   font-size: 12px;
-  background: ${props => props.active ? '#1a237e' : '#e0e0e0'};
-  color: ${props => props.active ? 'white' : '#666'};
-  border-radius: 10px;
-  padding: 2px 8px;
-  margin-left: 8px;
+  font-weight: 600;
 `;
 
 const TabContent = styled.div`
@@ -801,6 +886,702 @@ const QuestionPagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+const QuestionItemComponent = ({ 
+  question, 
+  questionIndex, 
+  loading, 
+  updateQuestion, 
+  removeQuestion,
+  allLevels = []
+}) => {
+  const [expanded, setExpanded] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
+  const [questionFilter, setQuestionFilter] = useState('all');
+  
+  // Get dispatch and library items from Redux
+  const dispatch = useDispatch();
+  const { questions: libraryItems, loading: libraryLoading } = useSelector(state => state.questionLibrary);
+  
+  // Load library with proper debugging
+  const loadLibrary = async () => {
+    console.log("QuestionItem: Loading question library...");
+    try {
+      const result = await dispatch(fetchQuestionLibrary()).unwrap();
+      console.log("QuestionItem: Library loaded successfully");
+      console.log("QuestionItem: Found", result?.results?.length || 0, "questions");
+      
+      if (result?.results?.length === 0) {
+        console.log("QuestionItem: Empty library result - might be an API issue");
+      }
+    } catch (error) {
+      console.error("QuestionItem: Error loading library:", error);
+    }
+  };
+  
+  // Load library when modal opens
+  useEffect(() => {
+    if (showLibraryModal) {
+      loadLibrary();
+    }
+  }, [showLibraryModal]);
+  
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    let updatedQuestion = { 
+      ...question, 
+      answerType: newType
+    };
+    
+    // If switching to multiple choice, add default compliance options
+    if (newType === 'multiple' && (!question.options || question.options.length === 0)) {
+      updatedQuestion.options = [
+        'Fully compliance',
+        'Partially compliance',
+        'Not applicable'
+      ];
+    } else if (newType !== 'multiple') {
+      // Reset options if changing to a type that doesn't need them
+      updatedQuestion.options = [];
+    }
+    
+    updateQuestion(updatedQuestion);
+  };
+  
+  const addOption = () => {
+    const options = [...(question.options || []), ''];
+    updateQuestion({ ...question, options });
+  };
+  
+  const updateOption = (index, value) => {
+    const options = [...(question.options || [])];
+    options[index] = value;
+    updateQuestion({ ...question, options });
+  };
+  
+  const removeOption = (index) => {
+    const options = (question.options || []).filter((_, i) => i !== index);
+    updateQuestion({ ...question, options });
+  };
+  
+  // New function to save question to library
+  const saveToLibrary = async () => {
+    if (!question.text) {
+      toast.error('Please add question text before saving to library');
+      return;
+    }
+    
+    try {
+      // Prepare question for library
+      const libraryQuestion = {
+        text: question.text,
+        answerType: question.answerType || 'yesno',
+        options: question.options || [],
+        required: !!question.required
+      };
+      
+      // Use the addQuestionToLibrary action from the Redux store
+      await dispatch(addQuestionToLibrary(libraryQuestion));
+      toast.success('Question saved to library');
+      
+      // Refresh the library to show the new question
+      loadLibrary();
+    } catch (error) {
+      console.error('Error saving to library:', error);
+      toast.error('Failed to save question to library');
+    }
+  };
+
+  // Function to handle selecting a question from the library
+  const handleSelectFromLibrary = (libraryQuestion) => {
+    // Map field names from database to component fields
+    const updatedQuestion = {
+      ...question,
+      text: libraryQuestion.text || '',
+      // Map different answer types to the component's expected format
+      answerType: libraryQuestion.answerType === 'compliance' ? 'multiple' : 
+                 (libraryQuestion.answerType || 'yesno'),
+      options: libraryQuestion.options || [],
+      required: !!libraryQuestion.required
+    };
+    
+    console.log("Selected library question:", libraryQuestion);
+    console.log("Updated question:", updatedQuestion);
+    
+    updateQuestion(updatedQuestion);
+    setShowLibraryModal(false);
+  };
+  
+  return (
+    <>
+      <div style={{ 
+        border: '1px solid #e2e8f0', 
+        borderRadius: '8px',
+        background: '#ffffff',
+        marginBottom: '12px',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          padding: '12px 16px',
+          borderBottom: expanded ? '1px solid #e2e8f0' : 'none',
+          background: '#f8fafc'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            cursor: 'pointer',
+            flex: 1
+          }} onClick={() => setExpanded(!expanded)}>
+            {expanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
+            <div style={{ fontWeight: 500, fontSize: '14px' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '24px',
+                height: '24px',
+                backgroundColor: '#e0f2fe',
+                color: '#0369a1',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '600',
+                marginRight: '8px'
+              }}>
+                Q{questionIndex + 1}
+              </span>
+              {question.text || `Question ${questionIndex + 1}`}
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <select
+              value={question.answerType || 'yesno'}
+              onChange={handleTypeChange}
+              onClick={e => e.stopPropagation()}
+              disabled={loading}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1',
+                fontSize: '14px'
+              }}
+            >
+              <option value="yesno">Yes/No</option>
+              <option value="text">Text</option>
+              <option value="multiple">Multiple Choice</option>
+            </select>
+            
+            <button
+              type="button"
+              className="icon-button"
+              disabled={loading}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteModal(true);
+              }}
+              style={{
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                color: '#64748b'
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+        
+        {expanded && (
+          <div style={{ padding: '16px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#334155'
+              }}>
+                Question Text
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={question.text || ''}
+                  onChange={(e) => updateQuestion({ ...question, text: e.target.value })}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '14px'
+                  }}
+                  placeholder="Enter question text..."
+                />
+                <div style={{ 
+                  position: 'absolute', 
+                  right: '8px', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)',
+                  display: 'flex',
+                  gap: '8px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowLibraryModal(true);
+                    }}
+                    style={{
+                      border: 'none',
+                      background: '#e0f2fe',
+                      color: '#0369a1',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Database size={12} /> From Library
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveToLibrary}
+                    style={{
+                      border: 'none',
+                      background: '#f0fdf4',
+                      color: '#166534',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <BookOpen size={12} /> Save to Library
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Show options for multiple choice type */}
+            {question.answerType === 'multiple' && (
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px'
+                }}>
+                  <label style={{ 
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#334155'
+                  }}>
+                    Answer Options
+                  </label>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={addOption}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 10px',
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={12} /> Add Option
+                  </button>
+                </div>
+                
+                {(question.options || []).map((option, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    <input
+                      type="text"
+                      value={option}
+                      onChange={(e) => updateOption(index, e.target.value)}
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '8px 10px',
+                        borderRadius: '4px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '14px'
+                      }}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => removeOption(index)}
+                      style={{
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        color: '#64748b'
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                
+                {(question.options || []).length === 0 && (
+                  <div style={{
+                    padding: '12px',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    borderRadius: '4px',
+                    color: '#64748b',
+                    fontSize: '13px'
+                  }}>
+                    No options added yet. Click "Add Option" to add answer choices.
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id={`required-${question.id || questionIndex}`}
+                checked={question.required}
+                onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
+                disabled={loading}
+                style={{ margin: 0 }}
+              />
+              <label 
+                htmlFor={`required-${question.id || questionIndex}`}
+                style={{ 
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#334155',
+                  userSelect: 'none'
+                }}
+              >
+                Required
+              </label>
+            </div>
+            
+            {/* Link to Level section removed as requested */}
+          </div>
+        )}
+      </div>
+      
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={removeQuestion}
+        title="Remove Question"
+        message="Are you sure you want to remove this question? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+      />
+      
+      {/* Question Library Modal */}
+      {showLibraryModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            width: '700px',
+            maxWidth: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Question Library</h2>
+              <button
+                onClick={() => setShowLibraryModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            {/* Search and filters */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={librarySearchQuery || ''}
+                  onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Prevent form submission on Enter key
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 36px',
+                    borderRadius: '6px',
+                    border: '1px solid #e0e0e0',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '8px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', marginRight: '8px' }}>
+                  Filter by:
+                </div>
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    background: questionFilter === 'all' ? '#1a237e' : '#f8fafc',
+                    color: questionFilter === 'all' ? 'white' : '#64748b',
+                    border: '1px solid ' + (questionFilter === 'all' ? '#1a237e' : '#e0e0e0'),
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent form submission
+                    setQuestionFilter('all');
+                  }}
+                >
+                  All
+                </button>
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    background: questionFilter === 'yesno' ? '#1a237e' : '#f8fafc',
+                    color: questionFilter === 'yesno' ? 'white' : '#64748b',
+                    border: '1px solid ' + (questionFilter === 'yesno' ? '#1a237e' : '#e0e0e0'),
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent form submission
+                    setQuestionFilter('yesno');
+                  }}
+                >
+                  Yes/No
+                </button>
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    background: questionFilter === 'text' ? '#1a237e' : '#f8fafc',
+                    color: questionFilter === 'text' ? 'white' : '#64748b',
+                    border: '1px solid ' + (questionFilter === 'text' ? '#1a237e' : '#e0e0e0'),
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent form submission
+                    setQuestionFilter('text');
+                  }}
+                >
+                  Text
+                </button>
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    background: questionFilter === 'multiple' ? '#1a237e' : '#f8fafc',
+                    color: questionFilter === 'multiple' ? 'white' : '#64748b',
+                    border: '1px solid ' + (questionFilter === 'multiple' ? '#1a237e' : '#e0e0e0'),
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent form submission
+                    setQuestionFilter('multiple');
+                  }}
+                >
+                  Multiple Choice
+                </button>
+              </div>
+            </div>
+            
+            {/* Question list */}
+            {libraryLoading ? (
+              <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                <Spinner size="30px" />
+                <p style={{ color: '#64748b', marginTop: '8px' }}>Loading question library...</p>
+              </div>
+            ) : (libraryItems && libraryItems.length > 0) ? (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {(() => {
+                  // Create a filtered version of the items first for debugging
+                  const filteredItems = libraryItems.filter(q => {
+                    // Log the item to check its structure
+                    if (libraryItems.length > 0 && libraryItems.indexOf(q) === 0) {
+                      console.log("Library item structure:", q);
+                    }
+                    
+                    // Apply search filter to text field
+                    if (librarySearchQuery && q.text && 
+                        !q.text.toLowerCase().includes(librarySearchQuery.toLowerCase())) {
+                      return false;
+                    }
+                    
+                    // Apply type filter - handle different answerType formats
+                    if (questionFilter !== 'all') {
+                      // Handle different possible formats for answerType
+                      const qType = q.answerType || '';
+                      
+                      // Map database values to UI filter values
+                      if (questionFilter === 'yesno' && 
+                          (qType === 'yesno' || qType === 'yes/no' || qType === 'yes-no')) {
+                        return true;
+                      }
+                      
+                      if (questionFilter === 'text' && 
+                          (qType === 'text' || qType === 'textarea')) {
+                        return true;
+                      }
+                      
+                      if (questionFilter === 'multiple' && 
+                          (qType === 'multiple' || qType === 'compliance' || qType === 'choice')) {
+                        return true;
+                      }
+                      
+                      return false;
+                    }
+                    
+                    return true;
+                  });
+                  
+                  // Log filtered results for debugging
+                  console.log(`Found ${filteredItems.length} out of ${libraryItems.length} items matching filter: ${questionFilter}`);
+                  
+                  if (filteredItems.length === 0) {
+                    return (
+                      <div style={{ 
+                        padding: '30px', 
+                        textAlign: 'center', 
+                        color: '#64748b',
+                        background: '#f8fafc',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontSize: '16px', marginBottom: '8px' }}>No questions found</div>
+                        <p style={{ margin: '0 0 16px 0' }}>
+                          {librarySearchQuery || questionFilter !== 'all' ? 
+                            'Try adjusting your search criteria or filters' : 
+                            'Add questions to your library for reuse across templates'}
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  return filteredItems.map((item, index) => (
+                    <div 
+                      key={item.id || item._id || index}
+                      style={{
+                        padding: '16px',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '6px',
+                        background: '#f8fafc',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleSelectFromLibrary(item)}
+                    >
+                      <div style={{ fontSize: '15px', marginBottom: '8px' }}>{item.text}</div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        fontSize: '13px',
+                        color: '#64748b'
+                      }}>
+                        <div>
+                          Type: {item.answerType === 'yesno' || item.answerType === 'yes/no' ? 'Yes/No' : 
+                                item.answerType === 'text' ? 'Text' : 
+                                item.answerType === 'compliance' ? 'Compliance' :
+                                'Multiple Choice'}
+                        </div>
+                        <div>
+                          {item.required ? 'Required' : 'Optional'}
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : (
+              <div style={{ 
+                padding: '30px', 
+                textAlign: 'center', 
+                color: '#64748b',
+                background: '#f8fafc',
+                borderRadius: '8px'
+              }}>
+                <div style={{ fontSize: '16px', marginBottom: '8px' }}>No questions found</div>
+                <p style={{ margin: '0 0 16px 0' }}>
+                  {librarySearchQuery || questionFilter !== 'all' ? 
+                    'Try adjusting your search criteria or filters' : 
+                    'Add questions to your library for reuse across templates'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const SubLevelTreeComponent = ({ 
   subLevels, 
   level = 0, 
@@ -822,7 +1603,7 @@ const SubLevelTreeComponent = ({
   
   return (
     <>
-      {subLevels.map((subLevel) => {
+      {subLevels.map((subLevel, index) => {
         const levelId = subLevel.id || subLevel._id;
         const hasChildren = subLevel.subLevels && subLevel.subLevels.length > 0;
         const isExpanded = expandedLevels[levelId];
@@ -845,6 +1626,21 @@ const SubLevelTreeComponent = ({
                 </ExpandCollapseButton>
               )}
               <TreeNodeContent level={level} isParent={hasChildren}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '24px',
+                  height: '24px',
+                  backgroundColor: '#e2e8f0',
+                  color: '#475569',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '8px'
+                }}>
+                  {level > 0 ? `${level}.${index + 1}` : index + 1}
+                </span>
                 {subLevel.name || 'Unnamed Level'}
               </TreeNodeContent>
               <BadgeContainer>
@@ -869,1700 +1665,1538 @@ const SubLevelTreeComponent = ({
   );
 };
 
+// Component to display activity history
+const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '500px',
+        maxWidth: '90%',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        padding: '24px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Template Activity</h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px'
+            }}
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div style={{ 
+          marginBottom: '24px',
+          padding: '16px',
+          background: '#f8fafc',
+          borderRadius: '8px',
+          fontSize: '14px'
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '16px' }}>Current Template</div>
+          <div style={{ fontSize: '14px', color: '#64748b' }}>
+            <div style={{ marginBottom: '8px' }}><strong>Name:</strong> {formData.name || 'Untitled'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Type:</strong> {formData.type || '-'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Sets:</strong> {formData.sets?.length || 0}</div>
+            <div><strong>Description:</strong> {formData.description || 'No description'}</div>
+          </div>
+        </div>
+        
+        <h3 style={{ 
+          fontSize: '16px',
+          fontWeight: '600',
+          margin: '0 0 16px 0',
+          color: '#334155'
+        }}>
+          Activity Log
+        </h3>
+        
+        {activities.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {activities.map((activity, index) => (
+              <div 
+                key={index}
+                style={{
+                  padding: '12px',
+                  borderLeft: '3px solid #cbd5e1',
+                  background: index % 2 === 0 ? '#f8fafc' : 'white',
+                  borderRadius: '4px'
+                }}
+              >
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  marginBottom: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '22px',
+                    height: '22px',
+                    backgroundColor: '#1a237e',
+                    color: 'white',
+                    borderRadius: '11px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {activities.length - index}
+                  </span>
+                  {activity.title}
+                </div>
+                <div style={{ 
+                  fontSize: '12px',
+                  color: '#64748b'
+                }}>
+                  {activity.timestamp}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ 
+            padding: '16px',
+            textAlign: 'center', 
+            color: '#64748b',
+            fontSize: '14px',
+            background: '#f1f5f9',
+            borderRadius: '6px'
+          }}>
+            No activity recorded yet.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Custom loading skeleton component
+const SkeletonLoader = () => {
+  return (
+    <LoadingSpinner>
+      <div className="spinner"></div>
+      <p>Loading template data...</p>
+    </LoadingSpinner>
+  );
+};
+
 const InspectionLevelForm = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { id } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(!!id);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
-  const [activeTab, setActiveTab] = useState('basic');
-  const [userHasEdited, setUserHasEdited] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Refs for the form and auto-save
+  const dispatch = useDispatch();
   const formRef = useRef(null);
   const saveTimerRef = useRef(null);
-  const lastSavedDataRef = useRef({});
   
-  // Get question library from Redux store
-  const { 
-    questions: questionLibrary, 
-    loading: libraryLoading 
-  } = useSelector(state => state.questionLibrary);
-  
-  // Add this function for error handling
-  const handleError = (error) => {
-    console.error('Error details:', error);
-    
-    let errorMessage = 'An error occurred';
-    
-    if (error.response) {
-      const { status, data } = error.response;
-      console.error('Error status:', status);
-      console.error('Error response:', data);
-      
-      errorMessage = data?.message || `Server error (${status})`;
-      
-      if (status === 404) {
-        errorMessage = `Resource not found: ${data?.message || 'The requested resource could not be found'}`;
-      }
-    } else if (error.request) {
-      errorMessage = 'Network error: No response received from server';
-    } else if (typeof error === 'string') {
-      errorMessage = error;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    toast.error(errorMessage);
-  };
-  
+  // State for form data
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     type: 'marina_operator',
-    status: 'active',
     priority: 'medium',
-    subLevels: [{ id: Date.now(), name: '', description: '', order: 0, subLevels: [] }]
+    status: 'active',
+    sets: []  // Store inspection sets here instead of direct subLevels
   });
   
+  // UI state
+  const [activeTab, setActiveTab] = useState('basic');
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [errors, setErrors] = useState({});
-  
-  // Enhanced state for questions
-  const [questions, setQuestions] = useState([]);
-  const [questionsByLevel, setQuestionsByLevel] = useState({});
-  const [selectedLevelId, setSelectedLevelId] = useState(null);
-  const [questionFilter, setQuestionFilter] = useState('all');
-  const [questionSearch, setQuestionSearch] = useState('');
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 10;
-  
-  // Question library management
-  const [showQuestionLibrary, setShowQuestionLibrary] = useState(false);
   const [showLinkQuestionModal, setShowLinkQuestionModal] = useState(false);
-  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
   const [questionToLink, setQuestionToLink] = useState(null);
+  const [showQuestionLibrary, setShowQuestionLibrary] = useState(false);
+  const [userHasEdited, setUserHasEdited] = useState(false);
+  
+  // Active set management
+  const [activeSetIndex, setActiveSetIndex] = useState(0);
+  const [showAddSetModal, setShowAddSetModal] = useState(false);
+  
+  // Calculate current set for use in the component
+  const currentSet = formData.sets[activeSetIndex] || {
+    name: '',
+    description: '',
+    subLevels: [],
+    questions: [],
+    generalQuestions: []
+  };
 
-  // Auto save state
-  const debouncedSave = useRef(
-    debounce(async (data) => {
-      if (!id || initialLoading || isSaving) return; // Only auto-save for existing templates
+  // Activity history
+  const [activities, setActivities] = useState([]);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  
+  // Questions state
+  const [questions, setQuestions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [questionsPerPage] = useState(5);
+  const [questionFilter, setQuestionFilter] = useState('all');
+  const [questionSearchTerm, setQuestionSearchTerm] = useState('');
+  const [selectedLevelId, setSelectedLevelId] = useState(null);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [questionsByLevel, setQuestionsByLevel] = useState({});
+  
+  // Question library state
+  const { questions: libraryItems, loading: libraryLoading } = useSelector(state => state.questionLibrary);
+  
+  // Track last saved data to detect changes
+  const lastSavedDataRef = useRef(null);
+  
+  // Add a new activity to the activity history, but only for significant events
+  const addActivity = (title) => {
+    // Filter out trivial updates
+    if (title.includes('added') || 
+        title.includes('removed') || 
+        title.includes('created') || 
+        title.includes('template updated')) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setActivities(prev => [{ title, timestamp }, ...prev.slice(0, 19)]);  // Keep last 20 activities
+    }
+  };
+
+  const handleError = (error) => {
+    if (error.response?.data?.errors) {
+      // Process backend validation errors
+      const backendErrors = error.response.data.errors;
+      const formattedErrors = {};
       
-      try {
-        setAutoSaveStatus('saving');
-        await inspectionService.updateInspectionLevel(id, data);
-        setAutoSaveStatus('saved');
-        
-        // Reset to idle after 3 seconds
-        setTimeout(() => {
-          setAutoSaveStatus('idle');
-        }, 3000);
-        
-        // Update last saved data
-        lastSavedDataRef.current = JSON.parse(JSON.stringify(data));
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-        setAutoSaveStatus('error');
-      }
-    }, 2000)
-  ).current;
-
+      // Format errors for display
+      Object.keys(backendErrors).forEach(field => {
+        if (field.startsWith('sets.')) {
+          // Handle set-specific errors
+          const parts = field.split('.');
+          if (parts.length === 3) {
+            // Format: sets.0.name
+            const setIndex = parseInt(parts[1]);
+            const fieldName = parts[2];
+            formattedErrors[`set_${setIndex}_${fieldName}`] = backendErrors[field];
+          }
+        } else {
+          // Handle top-level form errors
+          formattedErrors[field] = backendErrors[field];
+        }
+      });
+      
+      setErrors(formattedErrors);
+    } else {
+      // Show a generic error for non-validation errors
+      toast.error(error.response?.data?.message || 'An error occurred');
+    }
+  };
+  
+  // Effect to load data and set up listeners
   useEffect(() => {
     if (id) {
       fetchInspectionLevel();
+    } else {
+      // For new template, initialize with one empty set
+      setFormData(prev => ({
+        ...prev,
+        sets: [{
+          id: Date.now(),
+          name: '',
+          description: '',
+          subLevels: [],
+          questions: [],
+          generalQuestions: []
+        }]
+      }));
+      setInitialLoading(false);
     }
     
+    // Load question library
+    loadQuestionLibrary();
+    
     return () => {
+      // Clear any pending save timers
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
-      debouncedSave.cancel();
     };
-  }, [id]);
-
-  // Add useEffect to load question library from API
-  useEffect(() => {
-    dispatch(fetchQuestionLibrary());
-  }, [dispatch]);
-
-  // Effect to trigger auto-save
-  useEffect(() => {
-    if (!id || initialLoading || loading || isSaving || !userHasEdited) return;
-    
-    const currentData = {
-      ...formData,
-      questions: questions
-    };
-    
-    // Check if data has changed since last save
-    const lastSaved = lastSavedDataRef.current;
-    const isChanged = JSON.stringify(currentData) !== JSON.stringify(lastSaved);
-    
-    if (isChanged) {
-      debouncedSave(currentData);
+  }, [id, dispatch]);
+  
+  // Function to load library with proper debugging
+  const loadQuestionLibrary = async () => {
+    console.log("Loading question library...");
+    try {
+      const result = await dispatch(fetchQuestionLibrary()).unwrap();
+      console.log("Question library loaded:", result);
+      console.log("Question count:", result?.results?.length || 0);
+    } catch (error) {
+      console.error("Error loading question library:", error);
+      toast.error("Failed to load question library");
     }
-  }, [formData, questions, id, initialLoading, loading, userHasEdited, isSaving]);
+  };
 
-  // Update questions by level when questions change
+  // Update question counts when needed
   useEffect(() => {
-    const newQuestionsByLevel = {};
-    
-    questions.forEach(question => {
-      if (question.levelId) {
-        if (!newQuestionsByLevel[question.levelId]) {
-          newQuestionsByLevel[question.levelId] = [];
-        }
-        newQuestionsByLevel[question.levelId].push(question);
-      }
-    });
-    
-    setQuestionsByLevel(newQuestionsByLevel);
-    
-    // Update question counts for the tree view
     updateQuestionCounts();
-  }, [questions]);
+  }, [questions, formData.sets]);
 
   const updateQuestionCounts = () => {
-    // Create a map of question counts by level ID
-    const countMap = {};
+    const newCounts = {};
     
-    questions.forEach(question => {
-      if (question.levelId) {
-        countMap[question.levelId] = (countMap[question.levelId] || 0) + 1;
-      }
-    });
+    // No need to update on every keystroke - this is just for UI display
+    // We'll calculate when needed but not trigger API calls
     
-    // Function to update counts recursively
-    const updateLevelCounts = (levels) => {
-      if (!levels) return [];
-      
-      return levels.map(level => {
-        const levelId = level.id || level._id;
-        const questionCount = countMap[levelId] || 0;
-        const updatedSubLevels = updateLevelCounts(level.subLevels);
-        
-        // Count questions in sub-levels as well
-        const totalCount = questionCount + updatedSubLevels.reduce(
-          (sum, sl) => sum + (sl.questionCount || 0), 0
-        );
-        
-        return {
-          ...level,
-          questionCount: totalCount,
-          subLevels: updatedSubLevels
-        };
-      });
-    };
-    
-    // Only update if we have sublevels to avoid unnecessary renders
-    if (formData.subLevels && formData.subLevels.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        subLevels: updateLevelCounts(prev.subLevels)
-      }));
-    }
+    setQuestionsByLevel(newCounts);
   };
 
   const fetchInspectionLevel = async () => {
     try {
       setInitialLoading(true);
       const data = await inspectionService.getInspectionLevel(id);
+      console.log("Backend data:", data);
       
-      // Process sublevel data - ensure each has an id and subLevels array
-      const processSubLevels = (subLevels) => {
-        return (subLevels || []).map(sl => ({
-          ...sl,
-          id: sl.id || sl._id || Date.now(),
-          subLevels: processSubLevels(sl.subLevels)
+      // Initialize processed data with top-level fields
+      let processedData = {
+        name: data.name || '',
+        description: data.description || '',
+        type: data.type || 'marina_operator',
+        priority: data.priority || 'medium',
+        status: data.status || 'active'
+      };
+      
+      // Handle sets properly - use existing sets if available
+      if (data.sets && Array.isArray(data.sets) && data.sets.length > 0) {
+        // Ensure each set has proper ID and arrays
+        processedData.sets = data.sets.map(set => ({
+          ...set,
+          id: set.id || set._id || Date.now(),
+          name: set.name || 'Unnamed Set',
+          description: set.description || '',
+          subLevels: set.subLevels || [],
+          questions: set.questions || [],
+          generalQuestions: set.generalQuestions || []
         }));
-      };
+      } else {
+        // Create a new set structure from top-level data
+        processedData.sets = [{
+          id: Date.now(),
+          name: data.name ? `${data.name} Set` : 'Main Set',
+          description: data.description || 'Main inspection set',
+          subLevels: data.subLevels || [],
+          questions: data.questions || [],
+          generalQuestions: []
+        }];
+      }
       
-      const processedData = {
-        ...data,
-        subLevels: processSubLevels(data.subLevels)
-      };
-      
+      console.log("Converted data for frontend:", processedData);
       setFormData(processedData);
       
-      // Process questions and associate with levels if applicable
-      const processedQuestions = (data.questions || []).map(q => ({
-        ...q,
-        id: q.id || q._id || Date.now().toString(),
-        levelId: q.levelId || null
-      }));
-      
-      setQuestions(processedQuestions);
-      
-      // Update last saved data ref
-      lastSavedDataRef.current = {
-        ...processedData,
-        questions: processedQuestions
-      };
-      
-      // Set selected level ID to the first sublevel if exists
-      if (processedData.subLevels && processedData.subLevels.length > 0) {
-        setSelectedLevelId(processedData.subLevels[0].id);
+      // Set selected level ID to the first sublevel if it exists
+      // First find the set that has subLevels
+      let foundSubLevel = false;
+      for (const set of processedData.sets) {
+        if (set.subLevels && set.subLevels.length > 0) {
+          setSelectedLevelId(set.subLevels[0].id);
+          foundSubLevel = true;
+          break;
+        }
       }
+      
+      // If no subLevels were found, set activeSetIndex to 0
+      if (!foundSubLevel) {
+        setActiveSetIndex(0);
+      }
+      
+      // Update last saved data ref for detecting changes
+      lastSavedDataRef.current = JSON.parse(JSON.stringify(processedData));
+      addActivity("Template loaded");
     } catch (error) {
       console.error('Error fetching template:', error);
       handleError(error);
+      toast.error("Failed to load inspection template");
       navigate('/inspection');
     } finally {
       setInitialLoading(false);
     }
   };
 
-  const handleTabChange = (newTab) => {
-    // Don't trigger autosave when changing tabs
-    const wasEdited = userHasEdited;
-    setUserHasEdited(false);
+  // Add a new inspection set - significant event, track it
+  const addInspectionSet = () => {
+    setUserHasEdited(true);
     
-    setActiveTab(newTab);
+    const newSet = {
+      id: Date.now(),
+      name: '',
+      description: '',
+      subLevels: [],
+      questions: [],
+      generalQuestions: []
+    };
     
-    // Wait a bit before re-enabling auto-save
-    setTimeout(() => {
-      setUserHasEdited(wasEdited);
-    }, 500);
+    setFormData(prev => ({
+      ...prev,
+      sets: [...prev.sets, newSet]
+    }));
+    
+    // Set the active set to the newly added one
+    setActiveSetIndex(formData.sets.length);
+    
+    // Track this activity
+    addActivity('New inspection set added');
+  };
+  
+  // Remove an inspection set - significant event, track it
+  const removeInspectionSet = (index) => {
+    if (formData.sets.length <= 1) {
+      toast.error('At least one inspection set is required');
+      return;
+    }
+    
+    setUserHasEdited(true);
+    
+    setFormData(prev => {
+      const newSets = prev.sets.filter((_, i) => i !== index);
+      
+      // If we're removing the active set, select a new one
+      if (activeSetIndex >= newSets.length) {
+        setActiveSetIndex(Math.max(0, newSets.length - 1));
+      } else if (activeSetIndex === index) {
+        setActiveSetIndex(Math.max(0, index - 1));
+      }
+      
+      return {
+        ...prev,
+        sets: newSets
+      };
+    });
+    
+    // Track this activity
+    addActivity(`Inspection set ${formData.sets[index]?.name || `#${index + 1}`} removed`);
   };
 
+  // Update a field in a set - filter trivial updates from activity tracking
+  const updateSet = (index, field, value) => {
+    setUserHasEdited(true);
+    
+    setFormData(prev => {
+      const newFormData = { ...prev };
+      if (!newFormData.sets[index]) {
+        newFormData.sets[index] = {};
+      }
+      
+      // Track only significant activities, not every keystroke
+      if (field === 'name' && 
+          value && 
+          value.trim() !== '' && 
+          value !== newFormData.sets[index]?.name) {
+        addActivity(`Set ${index + 1} name updated`);
+      } else if (field === 'subLevels' && 
+                JSON.stringify(value) !== JSON.stringify(newFormData.sets[index]?.subLevels)) {
+        if (!newFormData.sets[index].subLevels || 
+            value.length > (newFormData.sets[index].subLevels?.length || 0)) {
+          addActivity(`Level added to Set ${index + 1}`);
+        } else if (value.length < (newFormData.sets[index].subLevels?.length || 0)) {
+          addActivity(`Level removed from Set ${index + 1}`);
+        }
+      } else if (field === 'generalQuestions' && 
+                JSON.stringify(value) !== JSON.stringify(newFormData.sets[index]?.generalQuestions)) {
+        if (!newFormData.sets[index].generalQuestions || 
+            value.length > (newFormData.sets[index].generalQuestions?.length || 0)) {
+          addActivity(`Question added to Set ${index + 1}`);
+        } else if (value.length < (newFormData.sets[index].generalQuestions?.length || 0)) {
+          addActivity(`Question removed from Set ${index + 1}`);
+        }
+      }
+      
+      newFormData.sets[index][field] = value;
+      return newFormData;
+    });
+  };
+
+  // Tab change - no need to trigger API calls or activity logs
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+  };
+
+  // Basic form field change - no need to trigger API calls for every keystroke
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
     setUserHasEdited(true);
-    
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
   };
 
-  // Handle change in sublevel fields
-  const handleSubLevelChange = (path, field, value) => {
-    setUserHasEdited(true);
-    
-    setFormData(prev => {
-      // Handle top-level sublevels
-      if (!path.includes('.')) {
-        return {
-          ...prev,
-          subLevels: prev.subLevels.map(level => 
-            level.id.toString() === path ? { ...level, [field]: value } : level
-          )
-        };
-      }
-      
-      // Handle nested sublevels
-      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
-      const parts = path.split('.');
-      
-      // Traverse to the target sublevel
-      let current = newFormData.subLevels;
-      let target = null;
-      
-      for (const part of parts) {
-        // Find the sublevel with matching id in the current level
-        const sublevel = current.find(sl => sl.id.toString() === part);
-        if (!sublevel) return prev; // Path not found
-        
-        if (part === parts[parts.length - 1]) {
-          // This is the target sublevel
-          target = sublevel;
-        } else {
-          // Move to the next level
-          current = sublevel.subLevels || [];
-        }
-      }
-      
-      if (target) {
-        target[field] = value;
-      }
-      
-      return newFormData;
-    });
-  };
-
-  // Add a new top-level sublevel
-  const addSubLevel = () => {
-    setUserHasEdited(true);
-    
-    setFormData(prev => ({
-      ...prev,
-      subLevels: [
-        ...prev.subLevels,
-        { 
-          id: Date.now(), 
-          name: '', 
-          description: '', 
-          order: prev.subLevels.length,
-          subLevels: []
-        }
-      ]
-    }));
-  };
-
-  // Add a nested sublevel to a parent
-  const addNestedSubLevel = (parentPath) => {
-    setUserHasEdited(true);
-    
-    setFormData(prev => {
-      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
-      
-      if (!parentPath) {
-        // Add to top level if no parent path
-        newFormData.subLevels.push({
-          id: Date.now(),
-          name: '',
-          description: '',
-          order: newFormData.subLevels.length,
-          subLevels: []
-        });
-        return newFormData;
-      }
-      
-      const parts = parentPath.split('.');
-      let current = newFormData.subLevels;
-      
-      // Traverse to the parent sublevel
-      for (const part of parts) {
-        const sublevel = current.find(sl => sl.id.toString() === part);
-        if (!sublevel) return prev; // Path not found
-        
-        // Initialize subLevels array if it doesn't exist
-        if (!sublevel.subLevels) {
-          sublevel.subLevels = [];
-        }
-        
-        if (part === parts[parts.length - 1]) {
-          // This is the parent sublevel, add a new child
-          sublevel.subLevels.push({
-            id: Date.now(),
-            name: '',
-            description: '',
-            order: sublevel.subLevels.length,
-            subLevels: []
-          });
-        } else {
-          // Move to the next level
-          current = sublevel.subLevels;
-        }
-      }
-      
-      return newFormData;
-    });
-  };
-
-  // Remove a sublevel
-  const removeSubLevel = (path) => {
-    if (!path) return;
-    
-    setUserHasEdited(true);
-    
-    setFormData(prev => {
-      // Don't remove if it's the last remaining top-level sublevel
-      if (!path.includes('.') && prev.subLevels.length <= 1) {
-        return prev;
-      }
-      
-      const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
-      const parts = path.split('.');
-      
-      if (parts.length === 1) {
-        // Remove from top level
-        newFormData.subLevels = newFormData.subLevels.filter(
-          sl => sl.id.toString() !== parts[0]
-        );
-        return newFormData;
-      }
-      
-      // For nested levels, we need to find the parent
-      const parentPath = parts.slice(0, -1);
-      let current = newFormData.subLevels;
-      let parent = null;
-      
-      // Traverse to the parent sublevel
-      for (let i = 0; i < parentPath.length; i++) {
-        const part = parentPath[i];
-        const sublevel = current.find(sl => sl.id.toString() === part);
-        if (!sublevel) return prev; // Path not found
-        
-        if (i === parentPath.length - 1) {
-          // This is the parent sublevel
-          parent = sublevel;
-        } else {
-          // Move to the next level
-          current = sublevel.subLevels || [];
-        }
-      }
-      
-      if (parent && parent.subLevels) {
-        // Remove the target sublevel from the parent's subLevels
-        parent.subLevels = parent.subLevels.filter(
-          sl => sl.id.toString() !== parts[parts.length - 1]
-        );
-      }
-      
-      return newFormData;
-    });
-    
-    // Also update any questions linked to this level
-    const levelId = path.includes('.') ? path.split('.').pop() : path;
-    updateQuestionsAfterLevelRemoval(levelId);
-  };
-
-  // Update questions after a level is removed
-  const updateQuestionsAfterLevelRemoval = (levelId) => {
-    // Find any questions linked to this level and unlink them
-    setQuestions(prev => prev.map(q => 
-      q.levelId?.toString() === levelId.toString() 
-        ? { ...q, levelId: null }
-        : q
-    ));
-  };
-
-  // Handle drag and drop within the same list
-  const handleDragEnd = (result) => {
-    const { source, destination, type } = result;
-    
-    // Dropped outside a droppable area
-    if (!destination) return;
-    
-    setUserHasEdited(true);
-    
-    // Handle reordering within the same droppable
-    if (source.droppableId === destination.droppableId) {
-      // Root level drag
-      if (type === 'subLevels' || source.droppableId === 'subLevels') {
-        setFormData(prev => {
-          const newSubLevels = [...prev.subLevels];
-          const [reorderedItem] = newSubLevels.splice(source.index, 1);
-          newSubLevels.splice(destination.index, 0, reorderedItem);
-          
-          return {
-            ...prev,
-            subLevels: newSubLevels.map((item, index) => ({ ...item, order: index }))
-          };
-        });
-      } 
-      // Nested level drag - more complex
-      else {
-        // Extract the parent path from the droppableId
-        const parentPath = source.droppableId.replace('nested-', '');
-        
-        setFormData(prev => {
-          const newFormData = JSON.parse(JSON.stringify(prev)); // Deep clone
-          
-          // Find the parent's subLevels array
-          const parts = parentPath.split('.');
-          let current = newFormData.subLevels;
-          let target = null;
-          
-          for (const part of parts) {
-            const sublevel = current.find(sl => sl.id.toString() === part);
-            if (!sublevel) return prev; // Path not found
-            
-            target = sublevel;
-            current = sublevel.subLevels || [];
-          }
-          
-          if (target && target.subLevels) {
-            // Reorder the items
-            const [reorderedItem] = target.subLevels.splice(source.index, 1);
-            target.subLevels.splice(destination.index, 0, reorderedItem);
-            
-            // Update order properties
-            target.subLevels = target.subLevels.map((item, index) => ({
-              ...item,
-              order: index
-            }));
-          }
-          
-          return newFormData;
-        });
-      }
-    }
-  };
-
-  // Validate the form
+  // Form validation - only used when explicitly submitting the form
   const validateForm = () => {
     const newErrors = {};
-    let hasErrors = false;
+    let isValid = true;
     
-    // Check basic fields
-    if (!formData.name) {
-      newErrors.name = 'Name is required';
-      toast.error('Level name is required');
-      hasErrors = true;
-    }
-    if (!formData.description) {
-      newErrors.description = 'Description is required';
-      toast.error('Description is required');
-      hasErrors = true;
+    // Validate top-level fields
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Template name is required';
+      isValid = false;
     }
     
-    // Check all sublevel fields recursively
-    const validateSubLevels = (subLevels) => {
-      for (const level of subLevels) {
-        if (!level.name || !level.description) {
-          return false;
-        }
-        if (level.subLevels && level.subLevels.length > 0) {
-          if (!validateSubLevels(level.subLevels)) {
-            return false;
-          }
-        }
+    if (!formData.description?.trim()) {
+      newErrors.description = 'Template description is required';
+      isValid = false;
+    }
+    
+    // Validate each set
+    formData.sets.forEach((set, index) => {
+      if (!set.name || !set.name.trim()) {
+        newErrors[`set_${index}_name`] = 'Set name is required';
+        isValid = false;
       }
-      return true;
-    };
+      
+      // Check for at least one level or question in the set
+      if ((!set.subLevels || set.subLevels.length === 0) && 
+          (!set.generalQuestions || set.generalQuestions.length === 0)) {
+        newErrors[`set_${index}_content`] = 'Set must have at least one level or question';
+        isValid = false;
+      }
+    });
     
-    if (!validateSubLevels(formData.subLevels)) {
-      newErrors.subLevels = 'All sub-levels must have names and descriptions';
-      toast.error('All sub-levels must have names and descriptions');
-      hasErrors = true;
-    }
-    
-    // Check if all questions have text
-    const emptyQuestions = questions.filter(q => !q.text?.trim());
-    if (emptyQuestions.length > 0) {
-      toast.error('All questions must have text');
-      hasErrors = true;
-    }
-    
-    // Check select/multiple choice questions for options
-    const invalidOptions = questions.filter(q => 
-      (q.answerType === 'select' || q.answerType === 'multiple_choice') && 
-      (!Array.isArray(q.options) || q.options.length === 0 || 
-       q.options.some(opt => !opt.trim()))
-    );
-    
-    if (invalidOptions.length > 0) {
-      toast.error('All select and multiple choice questions must have at least one option');
-      hasErrors = true;
+    // Check if there are no sets
+    if (formData.sets.length === 0) {
+      newErrors.sets = 'At least one inspection set is required';
+      isValid = false;
     }
     
     setErrors(newErrors);
-    return !hasErrors;
+    return { isValid, newErrors };
   };
-
-  // Submit the form
+  
+  // Form submission - the ONLY place where API calls should happen
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm() || loading) return;
-
+    const { isValid, newErrors } = validateForm();
+    if (!isValid) {
+      // Use the validation results immediately instead of waiting for state
+      const firstErrorField = Object.keys(newErrors)[0];
+      if (firstErrorField) {
+        // Switch to the tab with errors first
+        if (firstErrorField === 'name' || firstErrorField === 'description') {
+          handleTabChange('basic');
+          
+          // After switching tab, focus the field
+          setTimeout(() => {
+            const element = document.querySelector(`[name="${firstErrorField}"]`);
+            if (element) element.focus();
+          }, 100);
+        } else if (firstErrorField.startsWith('set_') || firstErrorField === 'sets') {
+          handleTabChange('sets');
+          
+          // After switching tab, focus the field
+          setTimeout(() => {
+            const element = document.querySelector(`[name="${firstErrorField}"]`);
+            if (element) element.focus();
+          }, 100);
+        }
+        
+        // Show specific error message in toast
+        toast.error(`Validation error: ${newErrors[firstErrorField]}`);
+      } else {
+        toast.error('Please fix the validation errors');
+      }
+      return;
+    }
+    
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      setIsSaving(true);
-      
-      // Prepare data for API (handle any transformations needed)
-      const apiData = {
-        ...formData,
-        subLevels: formData.subLevels,
-        questions: questions
+      // Process subLevels recursively to ensure they have order field
+      // and handle ID fields properly for MongoDB
+      const processSubLevels = (subLevels, startOrder = 0) => {
+        if (!Array.isArray(subLevels)) return [];
+        
+        return subLevels.map((subLevel, index) => {
+          // Create a new object to avoid mutation
+          const processedSubLevel = {
+            ...subLevel,
+            // Always include order field (required by backend)
+            order: subLevel.order || (startOrder + index)
+          };
+          
+          // Handle MongoDB ID correctly - if it's a MongoDB ObjectId format, keep it
+          // Otherwise, remove it so MongoDB can generate a proper one
+          if (processedSubLevel._id) {
+            // If _id is not a valid MongoDB ObjectId format (24-char hex string), remove it
+            if (typeof processedSubLevel._id === 'number' || 
+                !processedSubLevel._id.match(/^[0-9a-fA-F]{24}$/)) {
+              delete processedSubLevel._id;
+            }
+          }
+          
+          // If id exists but not a valid MongoDB format, remove it
+          if (processedSubLevel.id) {
+            delete processedSubLevel.id;
+          }
+          
+          // Process nested subLevels recursively
+          if (processedSubLevel.subLevels && Array.isArray(processedSubLevel.subLevels)) {
+            processedSubLevel.subLevels = processSubLevels(processedSubLevel.subLevels);
+          }
+          
+          // Process questions to ensure proper format
+          if (processedSubLevel.questions && Array.isArray(processedSubLevel.questions)) {
+            processedSubLevel.questions = processedSubLevel.questions.map(q => {
+              const processedQ = { ...q };
+              // Remove client-side IDs that aren't valid ObjectIds
+              if (processedQ.id) delete processedQ.id;
+              if (processedQ._id && (typeof processedQ._id === 'number' || 
+                  !processedQ._id.match(/^[0-9a-fA-F]{24}$/))) {
+                delete processedQ._id;
+              }
+              return processedQ;
+            });
+          }
+          
+          return processedSubLevel;
+        });
       };
       
-      if (id) {
-        // Use Redux action instead of direct service call
-        const resultAction = await dispatch(updateInspectionLevel({ id, data: apiData }));
+      // Process questions to ensure proper format
+      const processQuestions = (questions) => {
+        if (!Array.isArray(questions)) return [];
         
-        if (updateInspectionLevel.fulfilled.match(resultAction)) {
-          toast.success('Inspection level updated successfully');
-          navigate('/inspection');
-        } else {
-          // Handle rejection
-          const error = resultAction.payload || resultAction.error;
-          throw error;
+        return questions.map(q => {
+          const processedQ = { ...q };
+          // Remove client-side IDs that aren't valid ObjectIds
+          if (processedQ.id) delete processedQ.id;
+          if (processedQ._id && (typeof processedQ._id === 'number' || 
+              !processedQ._id.match(/^[0-9a-fA-F]{24}$/))) {
+            delete processedQ._id;
+          }
+          return processedQ;
+        });
+      };
+      
+      // Process all sets to ensure proper data structure
+      const processedSets = formData.sets.map((set, index) => {
+        const processedSet = { ...set };
+        
+        // Remove numeric or invalid _id values
+        if (processedSet._id && (typeof processedSet._id === 'number' || 
+            !processedSet._id.match(/^[0-9a-fA-F]{24}$/))) {
+          delete processedSet._id;
         }
+        
+        // Remove client-side id
+        if (processedSet.id) delete processedSet.id;
+        
+        // Process subLevels
+        processedSet.subLevels = processSubLevels(set.subLevels);
+        
+        // Process questions
+        processedSet.questions = processQuestions(set.questions);
+        processedSet.generalQuestions = processQuestions(set.generalQuestions);
+        
+        return processedSet;
+      });
+      
+      // Prepare the complete payload
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        priority: formData.priority,
+        status: formData.status,
+        // Use processed sets
+        sets: processedSets,
+        // For backward compatibility, include subLevels and questions from first set
+        subLevels: processedSets[0]?.subLevels || [],
+        questions: [...(processedSets[0]?.questions || []), ...(processedSets[0]?.generalQuestions || [])]
+      };
+      
+      console.log("Submitting to backend:", payload);
+      
+      let response;
+      
+      if (id) {
+        // Update existing template
+        response = await inspectionService.updateInspectionLevel(id, payload);
+        addActivity('Template updated successfully');
       } else {
-        await inspectionService.createInspectionLevel(apiData);
-        toast.success('Inspection level created successfully');
-        navigate('/inspection');
+        // Create new template
+        response = await inspectionService.createInspectionLevel(payload);
+        addActivity('Template created successfully');
       }
+      
+      toast.success(id ? 'Template updated successfully' : 'Template created successfully');
+      navigate('/inspection');
     } catch (error) {
       console.error('Error saving template:', error);
-      
-      // More detailed error reporting
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-        
-        // Show specific error message from the API if available
-        if (error.response.data && error.response.data.message) {
-          toast.error(`Error: ${error.response.data.message}`);
-        } else {
-          toast.error(`Server error (${error.response.status})`);
-        }
-      } else if (error.request) {
-        // Request was made but no response received
-        console.error('No response received:', error.request);
-        toast.error('Network error: No response from server');
-      } else {
-        // Error setting up the request
-        toast.error(`Error: ${error.message || 'Unknown error occurred'}`);
-      }
-      
       handleError(error);
-    } finally {
       setLoading(false);
-      setIsSaving(false);
     }
   };
 
-  // Add new handlers for questionnaire functionality
-  const addQuestion = () => {
-    setUserHasEdited(true);
-    
-    const newQuestion = {
-      id: Date.now().toString(), // Temporary ID for new questions
-      text: '',
-      answerType: 'yesno',
-      options: [],
-      required: true,
-      levelId: selectedLevelId // Link to currently selected level if any
-    };
-    
-    setQuestions(prev => [...prev, newQuestion]);
-    
-    // Set currentPage to last page to show the new question
-    const newQuestionIndex = questions.length;
-    const newPage = Math.floor(newQuestionIndex / questionsPerPage) + 1;
-    setCurrentPage(newPage);
-  };
-  
-  const removeQuestion = (index) => {
-    setUserHasEdited(true);
-    
-    const newQuestions = [...questions];
-    newQuestions.splice(index, 1);
-    setQuestions(newQuestions);
-    
-    // Adjust current page if needed
-    if (newQuestions.length > 0 && filteredQuestions.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  const updateQuestion = (index, field, value) => {
-    setUserHasEdited(true);
-    
-    const newQuestions = [...questions];
-    newQuestions[index] = {
-      ...newQuestions[index],
-      [field]: value
-    };
-    
-    // If answer type is changed to something other than 'options', 
-    // clear the options array unless it's a "select" or "multiple_choice" type
-    if (field === 'answerType' && 
-        value !== 'select' && 
-        value !== 'multiple_choice' && 
-        newQuestions[index].options?.length) {
-      newQuestions[index].options = [];
-    }
-    
-    // If changing to a type that needs options, initialize with empty array
-    if (field === 'answerType' && 
-        (value === 'select' || value === 'multiple_choice') && 
-        !Array.isArray(newQuestions[index].options)) {
-      newQuestions[index].options = [''];
-    }
-    
-    setQuestions(newQuestions);
-  };
-  
-  const linkQuestionToLevel = (questionIndex, levelId) => {
-    setUserHasEdited(true);
-    
-    setQuestions(prev => prev.map((q, idx) => 
-      idx === questionIndex ? { ...q, levelId } : q
-    ));
-    setShowLinkQuestionModal(false);
-    setQuestionToLink(null);
-  };
-  
-  const addOption = (questionIndex) => {
-    setUserHasEdited(true);
-    
-    const newQuestions = [...questions];
-    if (!Array.isArray(newQuestions[questionIndex].options)) {
-      newQuestions[questionIndex].options = [];
-    }
-    newQuestions[questionIndex].options.push('');
-    setQuestions(newQuestions);
-  };
-  
-  const removeOption = (questionIndex, optionIndex) => {
-    setUserHasEdited(true);
-    
-    const newQuestions = [...questions];
-    newQuestions[questionIndex].options.splice(optionIndex, 1);
-    setQuestions(newQuestions);
-  };
-  
-  const updateOption = (questionIndex, optionIndex, value) => {
-    setUserHasEdited(true);
-    
-    const newQuestions = [...questions];
-    newQuestions[questionIndex].options[optionIndex] = value;
-    setQuestions(newQuestions);
-  };
-
-  // Save question to library
-  const saveQuestionToLibrary = (question) => {
-    // Only save if it has text
-    if (!question.text.trim()) return;
-
-    // Check if this question already exists in the library
-    const existingQuestion = questionLibrary.find(q => q.text.trim() === question.text.trim());
-    
-    if (!existingQuestion) {
-      dispatch(addQuestionToLibrary({
-        text: question.text,
-        answerType: question.answerType,
-        options: question.options || [],
-        required: question.required
-      }))
-        .unwrap()
-        .then(() => {
-          toast.success('Question saved to library');
-        })
-        .catch(error => {
-          toast.error(`Failed to save question: ${error}`);
-        });
-    } else {
-      toast.info('This question is already in your library');
-    }
-  };
-
-  // Add question from library
-  const addQuestionFromLibrary = (libraryQuestion) => {
-    setUserHasEdited(true);
-    
-    const newQuestion = {
-      id: Date.now().toString(),
-      text: libraryQuestion.text,
-      answerType: libraryQuestion.answerType,
-      options: [...(libraryQuestion.options || [])],
-      required: libraryQuestion.required,
-      levelId: selectedLevelId // Link to currently selected level if any
-    };
-    
-    setQuestions(prev => [...prev, newQuestion]);
-    setShowQuestionLibrary(false);
-    
-    // Set currentPage to last page to show the new question
-    const newQuestionIndex = questions.length;
-    const newPage = Math.floor(newQuestionIndex / questionsPerPage) + 1;
-    setCurrentPage(newPage);
-  };
-
-  // Filter questions based on search and selected level
-  const getFilteredQuestions = () => {
-    let filtered = [...questions];
-    
-    // Filter by question text search
-    if (questionSearch.trim() !== '') {
-      const searchTerm = questionSearch.toLowerCase();
-      filtered = filtered.filter(q => 
-        q.text?.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    // Filter by selected level if not showing all questions
-    if (questionFilter === 'level' && selectedLevelId) {
-      filtered = filtered.filter(q => q.levelId === selectedLevelId);
-    } else if (questionFilter === 'unlinked') {
-      filtered = filtered.filter(q => !q.levelId);
-    }
-    
-    return filtered;
-  };
-  
-  // Get the questions for the current page
-  const filteredQuestions = getFilteredQuestions();
-  const totalFilteredQuestions = filteredQuestions.length;
-  const totalPages = Math.max(1, Math.ceil(totalFilteredQuestions / questionsPerPage));
-  
-  // Adjust currentPage if it's out of bounds
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-  
-  const paginatedQuestions = filteredQuestions.slice(
-    (currentPage - 1) * questionsPerPage,
-    currentPage * questionsPerPage
-  );
-
-  // Filter questions based on search in the library
-  const filteredLibraryQuestions = librarySearchQuery.trim() === '' 
-    ? questionLibrary 
-    : questionLibrary.filter(q => 
-        q.text.toLowerCase().includes(librarySearchQuery.toLowerCase())
-      );
-  
-  // Helper to find sub-level info
-  const getLevelInfoById = (levelId) => {
-    const findLevelById = (levels, id) => {
-      if (!levels) return null;
-      
-      for (const level of levels) {
-        if (level.id?.toString() === id?.toString() || level._id?.toString() === id?.toString()) {
-          return level;
-        }
-        
-        if (level.subLevels && level.subLevels.length > 0) {
-          const foundInSub = findLevelById(level.subLevels, id);
-          if (foundInSub) return foundInSub;
-        }
-      }
-      
-      return null;
-    };
-    
-    return findLevelById(formData.subLevels, levelId);
-  };
-  
-  // Get level path for display
-  const getLevelPath = (levelId) => {
-    const findPath = (levels, id, path = []) => {
-      if (!levels) return null;
-      
-      for (const level of levels) {
-        const currentId = level.id?.toString() || level._id?.toString();
-        
-        if (currentId === id?.toString()) {
-          return [...path, level.name || 'Unnamed'];
-        }
-        
-        if (level.subLevels && level.subLevels.length > 0) {
-          const foundPath = findPath(
-            level.subLevels, 
-            id, 
-            [...path, level.name || 'Unnamed']
-          );
-          
-          if (foundPath) return foundPath;
-        }
-      }
-      
-      return null;
-    };
-    
-    const path = findPath(formData.subLevels, levelId);
-    return path ? path.join(' > ') : 'None';
-  };
-  
-  // Get total question counts for UI
-  const getTotalCounts = () => {
-    const total = questions.length;
-    const linked = questions.filter(q => q.levelId).length;
-    const unlinked = total - linked;
-    
-    return { total, linked, unlinked };
-  };
-  
-  const counts = getTotalCounts();
-
-  if (initialLoading) {
-    return (
-      <PageContainer>
-        <BackButton disabled={true}>
-          <ArrowLeft size={18} />
-          Back to Template
-        </BackButton>
-        
-        <Header>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Spinner size="24px" />
-            <PageTitle>Loading Template...</PageTitle>
-          </div>
-        </Header>
-        
-        <LoadingSpinner>
-          <div className="spinner"></div>
-          <p>Loading inspection level data...</p>
-        </LoadingSpinner>
-      </PageContainer>
-    );
-  }
+  // Use existing methods for the rest of the component
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
-        <ArrowLeft size={18} />
-        Back to Template
+      <BackButton onClick={() => navigate('/inspection')}>
+        <ChevronLeft size={16} /> Back to Inspection Templates
       </BackButton>
-
+      
       <Header>
-        <PageTitle>
-          <Layers size={24} />
-          {id ? 'Edit Template' : 'Create Template'}
-          {autoSaveStatus !== 'idle' && id && (
-            <AutoSaveIndicator status={autoSaveStatus}>
-              {autoSaveStatus === 'saving' ? (
-                <>
-                  <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                  Saving changes...
-                </>
-              ) : autoSaveStatus === 'saved' ? (
-                <>
-                  <CheckCircle size={14} />
-                  Changes saved
-                </>
-              ) : (
-                <>
-                  <AlertTriangle size={14} />
-                  Save failed
-                </>
-              )}
-            </AutoSaveIndicator>
-          )}
-        </PageTitle>
-        <SubTitle>
-          {id ? 'Modify existing template details' : 'Add a new template to the system'}
-        </SubTitle>
+        <h1>{id ? 'Edit Inspection Template' : 'Create Inspection Template'}</h1>
+        <button
+          onClick={() => setShowActivityModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '6px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          <Clock size={16} /> View Activity Log
+        </button>
       </Header>
+      
+      {initialLoading ? (
+        <SkeletonLoader />
+      ) : (
+        <Form ref={formRef} onSubmit={handleSubmit}>
+          <FormSectionWithTabs>
+            <TabsContainer>
+              <Tab 
+                key="basic" 
+                onClick={() => handleTabChange('basic')} 
+                $active={activeTab === 'basic'}
+              >
+                Basic Info
+              </Tab>
+              <Tab 
+                key="sets" 
+                onClick={() => handleTabChange('sets')}
+                $active={activeTab === 'sets'}
+              >
+                Inspection Sets
+                <TabCount $active={activeTab === 'sets'}>
+                  {formData.sets.length}
+                </TabCount>
+              </Tab>
+            </TabsContainer>
+            
+            {activeTab === 'basic' && (
+              <TabContent>
+                <FormGrid>
+                  <FormGroup>
+                    <Label>Template Name</Label>
+                    <Input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter template name"
+                      disabled={loading}
+                    />
+                    {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+                  </FormGroup>
 
-      <Form onSubmit={handleSubmit} ref={formRef}>
-        <FormSectionWithTabs>
-          <TabsContainer>
-            <Tab
-              active={activeTab === 'basic'}
-              onClick={() => handleTabChange('basic')}
-              disabled={loading}
-              type="button"
-            >
-              Basic Information
-            </Tab>
-            <Tab
-              active={activeTab === 'levels'}
-              onClick={() => handleTabChange('levels')}
-              disabled={loading}
-              type="button"
-            >
-              Inspection Levels
-            </Tab>
-            <Tab
-              active={activeTab === 'questions'}
-              onClick={() => handleTabChange('questions')}
-              disabled={loading}
-              type="button"
-            >
-              Questions
-              <TabCount active={activeTab === 'questions'}>
-                {questions.length}
-              </TabCount>
-            </Tab>
-          </TabsContainer>
-          
-          {activeTab === 'basic' && (
-            <TabContent>
-              <FormGrid>
-                <FormGroup>
-                  <Label>Level Name</Label>
-                  <Input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter level name"
-                    disabled={loading}
-                  />
-                  {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-                </FormGroup>
-
-                <FormGroup>
-                  <Label>Type</Label>
-                  <Select 
-                    name="type" 
-                    value={formData.type} 
-                    onChange={handleChange}
-                    disabled={loading}
-                  >
-                    <option value="marina_operator">Marina Operator</option>
-                    <option value="yacht_chartering">Yacht Chartering</option>
-                    <option value="tourism_agent">Tourism Agent</option>
-                  </Select>
-                </FormGroup>
-
-                <FormGroup style={{ gridColumn: '1 / -1' }}>
-                  <Label>Description</Label>
-                  <TextArea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Enter level description"
-                    disabled={loading}
-                  />
-                  {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
-                </FormGroup>
-              </FormGrid>
-
-              <TabNavigationButtons>
-                <div></div>
-                <Button 
-                  type="button"
-                  variant="primary"
-                  onClick={() => handleTabChange('levels')}
-                  disabled={loading}
-                >
-                  Next: Inspection Levels <ChevronRight size={16} />
-                </Button>
-              </TabNavigationButtons>
-            </TabContent>
-          )}
-          
-          {activeTab === 'levels' && (
-            <TabContent>
-              <SectionTitle>
-                Sub Levels
-                <IconButton type="button" onClick={addSubLevel} disabled={loading}>
-                  <Plus size={16} />
-                </IconButton>
-              </SectionTitle>
-
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="subLevels" type="subLevels">
-                  {(provided) => (
-                    <SubLevelsContainer
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
+                  <FormGroup>
+                    <Label>Type</Label>
+                    <Select 
+                      name="type" 
+                      value={formData.type} 
+                      onChange={handleChange}
+                      disabled={loading}
                     >
-                      {formData.subLevels.map((level, index) => (
-                        <Draggable
-                          key={level.id.toString()}
-                          draggableId={level.id.toString()}
-                          index={index}
-                          isDragDisabled={loading}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                            >
-                              <SubLevelRow
-                                level={level}
-                                onSubLevelChange={handleSubLevelChange}
-                                onRemoveSubLevel={removeSubLevel}
-                                onAddNestedSubLevel={addNestedSubLevel}
-                                loading={loading}
-                                dragHandleProps={provided.dragHandleProps}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </SubLevelsContainer>
-                  )}
-                </Droppable>
-              </DragDropContext>
-              {errors.subLevels && <ErrorMessage>{errors.subLevels}</ErrorMessage>}
+                      <option value="marina_operator">Marina Operator</option>
+                      <option value="yacht_chartering">Yacht Chartering</option>
+                      <option value="tourism_agent">Tourism Agent</option>
+                    </Select>
+                  </FormGroup>
 
-              <TabNavigationButtons>
-                <Button 
-                  type="button"
-                  onClick={() => handleTabChange('basic')}
-                  disabled={loading}
-                >
-                  <ChevronLeft size={16} /> Previous: Basic Info
-                </Button>
-                <Button 
-                  type="button"
-                  variant="primary"
-                  onClick={() => handleTabChange('questions')}
-                  disabled={loading}
-                >
-                  Next: Questions <ChevronRight size={16} />
-                </Button>
-              </TabNavigationButtons>
-            </TabContent>
-          )}
-          
-          {activeTab === 'questions' && (
-            <TabContent>
-              <TabMenu>
-                <div>
-                  <SectionTitle>
-                    <List size={18} />
-                    Inspection Questions
-                  </SectionTitle>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <AddButton type="button" onClick={addQuestion} disabled={loading} mt="0">
-                    <PlusCircle size={18} /> Add Question
-                  </AddButton>
-                  
-                  <QuestionLibraryButton 
-                    type="button" 
-                    onClick={() => setShowQuestionLibrary(true)}
+                  <FormGroup style={{ gridColumn: '1 / -1' }}>
+                    <Label>Description</Label>
+                    <TextArea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Enter template description"
+                      disabled={loading}
+                    />
+                    {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
+                  </FormGroup>
+                </FormGrid>
+
+                <TabNavigationButtons>
+                  <div></div>
+                  <Button 
+                    type="button"
+                    variant="primary"
+                    onClick={() => handleTabChange('sets')}
                     disabled={loading}
                   >
-                    <BookOpen size={18} /> Question Library
-                  </QuestionLibraryButton>
-                </div>
-              </TabMenu>
-              
-              <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-                {/* Left side - Levels tree */}
-                <div style={{ width: '30%', minWidth: '250px' }}>
+                    Next: Inspection Sets <ChevronRight size={16} />
+                  </Button>
+                </TabNavigationButtons>
+              </TabContent>
+            )}
+            
+            {activeTab === 'sets' && (
+              <TabContent>
+                {/* Display set-related errors at the top of the tab */}
+                {errors.sets && (
                   <div style={{ 
-                    padding: '12px',
+                    padding: '10px 16px', 
+                    marginBottom: '16px', 
+                    background: '#fee2e2', 
+                    color: '#b91c1c', 
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}>
+                    {errors.sets}
+                  </div>
+                )}
+                
+                {/* Sets selector tabs - Add this if you have multiple sets */}
+                {formData.sets.length > 1 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '8px', 
+                    marginBottom: '20px', 
+                    overflowX: 'auto',
+                    padding: '0 0 10px 0'
+                  }}>
+                    {formData.sets.map((set, index) => (
+                      <button
+                        key={set.id || index}
+                        onClick={() => setActiveSetIndex(index)}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          background: activeSetIndex === index ? '#1a237e' : '#f8fafc',
+                          color: activeSetIndex === index ? 'white' : '#64748b',
+                          border: '1px solid ' + (activeSetIndex === index ? '#1a237e' : '#e2e8f0'),
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {set.name || `Set ${index + 1}`}
+                        {errors[`set_${index}_name`] || errors[`set_${index}_content`] ? (
+                          <span style={{ 
+                            display: 'inline-block',
+                            marginLeft: '6px',
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#ef4444'
+                          }}></span>
+                        ) : null}
+                      </button>
+                    ))}
+                    <button
+                      onClick={addInspectionSet}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        background: '#f0f9ff',
+                        color: '#0284c7',
+                        border: '1px solid #bae6fd',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <Plus size={14} /> Add Set
+                    </button>
+                  </div>
+                )}
+                
+                <div style={{ marginBottom: '20px' }}>
+                  {/* Set name and description */}
+                  <div style={{ 
+                    padding: '16px',
                     background: '#f8fafc',
                     borderRadius: '8px',
-                    marginBottom: '16px'
+                    marginBottom: '20px'
                   }}>
-                    <h4 style={{ 
-                      fontSize: '14px', 
-                      fontWeight: '500',
-                      color: '#1a237e',
-                      marginBottom: '8px'
-                    }}>
-                      Levels Structure
-                    </h4>
-                    <p style={{ fontSize: '12px', color: '#666' }}>
-                      Click on a level to filter questions or assign questions to that level.
-                    </p>
-                  </div>
-                  
-                  <div style={{ maxHeight: '500px', overflow: 'auto' }}>
-                    <SubLevelTreeComponent
-                      subLevels={formData.subLevels}
-                      selectedLevelId={selectedLevelId}
-                      onSelectLevel={(levelId) => {
-                        setSelectedLevelId(levelId);
-                        setQuestionFilter('level');
-                        setCurrentPage(1);
-                      }}
-                    />
-                  </div>
-                  
-                  <QuestionsSummary>
-                    <h4>Questions Summary</h4>
-                    <ul>
-                      <li><strong>Total:</strong> {counts.total}</li>
-                      <li><strong>Linked to levels:</strong> {counts.linked}</li>
-                      <li><strong>Unlinked:</strong> {counts.unlinked}</li>
-                    </ul>
-                  </QuestionsSummary>
-                </div>
-                
-                {/* Right side - Question management */}
-                <div style={{ flex: 1 }}>
-                  <QuestionFilter>
-                    <FilterButton 
-                      active={questionFilter === 'all'} 
-                      onClick={() => {
-                        setQuestionFilter('all');
-                        setCurrentPage(1);
-                      }}
-                      type="button"
-                    >
-                      <FileText size={14} /> All Questions
-                    </FilterButton>
-                    
-                    <FilterButton 
-                      active={questionFilter === 'level'} 
-                      onClick={() => {
-                        setQuestionFilter('level');
-                        setCurrentPage(1);
-                      }}
-                      disabled={!selectedLevelId}
-                      type="button"
-                    >
-                      <Clipboard size={14} /> Level Questions
-                    </FilterButton>
-                    
-                    <FilterButton 
-                      active={questionFilter === 'unlinked'} 
-                      onClick={() => {
-                        setQuestionFilter('unlinked');
-                        setCurrentPage(1);
-                      }}
-                      type="button"
-                    >
-                      <HelpCircle size={14} /> Unlinked
-                    </FilterButton>
-                    
-                    <div style={{ flex: 1 }}></div>
-                    
-                    <SearchInput>
-                      <Search size={16} />
-                      <input
+                    <FormGroup style={{ marginBottom: '16px' }}>
+                      <Label>Set Name</Label>
+                      <Input
                         type="text"
-                        placeholder="Search questions..."
-                        value={questionSearch}
-                        onChange={(e) => {
-                          setQuestionSearch(e.target.value);
-                          setCurrentPage(1);
+                        name={`set_${activeSetIndex}_name`}
+                        value={formData.sets[activeSetIndex]?.name || ''}
+                        onChange={(e) => updateSet(activeSetIndex, 'name', e.target.value)}
+                        placeholder="Enter set name"
+                        disabled={loading}
+                      />
+                      {errors[`set_${activeSetIndex}_name`] && <ErrorMessage>{errors[`set_${activeSetIndex}_name`]}</ErrorMessage>}
+                    </FormGroup>
+                    
+                    <FormGroup>
+                      <Label>Set Description</Label>
+                      <TextArea
+                        name={`set_${activeSetIndex}_description`}
+                        value={formData.sets[activeSetIndex]?.description || ''}
+                        onChange={(e) => updateSet(activeSetIndex, 'description', e.target.value)}
+                        placeholder="Enter set description"
+                        disabled={loading}
+                        style={{ minHeight: '80px' }}
+                      />
+                    </FormGroup>
+                  </div>
+                  
+                  {/* Display set content error if exists */}
+                  {errors[`set_${activeSetIndex}_content`] && (
+                    <div style={{ 
+                      padding: '10px 16px', 
+                      marginBottom: '16px', 
+                      background: '#fee2e2', 
+                      color: '#b91c1c', 
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}>
+                      {errors[`set_${activeSetIndex}_content`]}
+                    </div>
+                  )}
+                  
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '28px',
+                      height: '28px',
+                      backgroundColor: '#1a237e',
+                      color: 'white',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      S{activeSetIndex + 1}
+                    </span>
+                    Level Structure
+                  </h3>
+                  
+                  {formData.sets[activeSetIndex]?.subLevels && formData.sets[activeSetIndex].subLevels.length > 0 ? (
+                    <div style={{ 
+                      padding: '16px', 
+                      background: '#f8fafc', 
+                      borderRadius: '8px', 
+                      marginBottom: '16px' 
+                    }}>
+                      <SubLevelTreeComponent
+                        subLevels={formData.sets[activeSetIndex].subLevels}
+                        selectedLevelId={selectedLevelId}
+                        onSelectLevel={(levelId) => {
+                          setSelectedLevelId(levelId);
                         }}
                       />
-                    </SearchInput>
-                  </QuestionFilter>
-                  
-                  {paginatedQuestions.length === 0 ? (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      padding: '40px 0',
-                      color: '#64748b',
-                      background: '#f8fafc',
-                      borderRadius: '8px'
-                    }}>
-                      <HelpCircle size={32} style={{ margin: '0 auto 12px' }} />
-                      <p>No questions found matching your criteria.</p>
-                      <AddButton 
-                        type="button" 
-                        onClick={addQuestion} 
-                        style={{ margin: '16px auto 0', display: 'inline-flex' }}
-                      >
-                        <PlusCircle size={18} /> Add New Question
-                      </AddButton>
                     </div>
                   ) : (
-                    <>
-                      {paginatedQuestions.map((question, index) => {
-                        const globalIndex = questions.findIndex(q => q.id === question.id);
-                        const levelInfo = getLevelInfoById(question.levelId);
-                        const levelPath = getLevelPath(question.levelId);
-                        
-                        return (
-                          <QuestionItem key={question.id || index}>
-                            <QuestionHeader>
-                              <QuestionTitle>
-                                Question {globalIndex + 1}
-                                {question.levelId && (
-                                  <BadgeContainer>
-                                    <Badge color="#3949ab">
-                                      {levelInfo?.name || 'Unknown Level'}
-                                    </Badge>
-                                  </BadgeContainer>
-                                )}
-                              </QuestionTitle>
-                              <QuestionActions>
-                                <SaveToLibraryButton 
-                                  type="button" 
-                                  onClick={() => saveQuestionToLibrary(question)}
-                                  title="Save to Question Library"
-                                  disabled={loading}
-                                >
-                                  <Save size={14} /> Save
-                                </SaveToLibraryButton>
-                                
-                                <IconButton 
-                                  onClick={() => {
-                                    setQuestionToLink(globalIndex);
-                                    setShowLinkQuestionModal(true);
-                                  }} 
-                                  title="Link to Level"
-                                  disabled={loading}
-                                  type="button"
-                                >
-                                  <Link2 size={18} />
-                                </IconButton>
-                                
-                                <IconButton 
-                                  onClick={() => removeQuestion(globalIndex)} 
-                                  title="Remove Question"
-                                  disabled={loading}
-                                  type="button"
-                                >
-                                  <X size={18} />
-                                </IconButton>
-                              </QuestionActions>
-                            </QuestionHeader>
-                            
-                            <QuestionForm>
-                              <FormGroup>
-                                <Label>Question Text <span style={{ color: 'red' }}>*</span></Label>
-                                <Input
-                                  type="text"
-                                  value={question.text || ''}
-                                  onChange={(e) => updateQuestion(globalIndex, 'text', e.target.value)}
-                                  placeholder="Enter question text"
-                                  disabled={loading}
-                                  required
-                                />
-                              </FormGroup>
-                              
-                              {question.levelId && (
-                                <FormGroup>
-                                  <Label>Linked to Level</Label>
-                                  <Input
-                                    type="text"
-                                    value={levelPath}
-                                    readOnly
-                                    style={{ background: '#f8fafc' }}
-                                  />
-                                </FormGroup>
-                              )}
-                              
-                              <FormGroup>
-                                <Label>Answer Type</Label>
-                                <Select
-                                  value={question.answerType || 'yesno'}
-                                  onChange={(e) => updateQuestion(globalIndex, 'answerType', e.target.value)}
-                                  disabled={loading}
-                                >
-                                  <option value="yesno">Yes/No</option>
-                                  <option value="text">Text Input</option>
-                                  <option value="number">Number Input</option>
-                                  <option value="select">Single Select</option>
-                                  <option value="multiple_choice">Multiple Choice</option>
-                                  <option value="compliance">Compliance Status</option>
-                                </Select>
-                              </FormGroup>
-                              
-                              {(question.answerType === 'select' || question.answerType === 'multiple_choice') && (
-                                <OptionsContainer>
-                                  <Label>Options <span style={{ color: 'red' }}>*</span></Label>
-                                  
-                                  {Array.isArray(question.options) && question.options.map((option, optIndex) => (
-                                    <OptionItem key={optIndex}>
-                                      <Input
-                                        type="text"
-                                        value={option}
-                                        onChange={(e) => updateOption(globalIndex, optIndex, e.target.value)}
-                                        placeholder={`Option ${optIndex + 1}`}
-                                        disabled={loading}
-                                      />
-                                      <IconButton 
-                                        onClick={() => removeOption(globalIndex, optIndex)} 
-                                        title="Remove Option"
-                                        disabled={loading || question.options.length <= 1}
-                                        type="button"
-                                      >
-                                        <X size={16} />
-                                      </IconButton>
-                                    </OptionItem>
-                                  ))}
-                                  
-                                  <Button 
-                                    type="button" 
-                                    onClick={() => addOption(globalIndex)}
-                                    disabled={loading}
-                                    style={{ marginTop: '8px' }}
-                                  >
-                                    <Plus size={16} /> Add Option
-                                  </Button>
-                                </OptionsContainer>
-                              )}
-                              
-                              <FormGroup style={{ marginTop: '10px' }}>
-                                <CheckboxLabel>
-                                  <input
-                                    type="checkbox"
-                                    checked={question.required}
-                                    onChange={(e) => updateQuestion(globalIndex, 'required', e.target.checked)}
-                                    disabled={loading}
-                                  />
-                                  Required question
-                                </CheckboxLabel>
-                              </FormGroup>
-                            </QuestionForm>
-                          </QuestionItem>
-                        );
-                      })}
-                      
-                      {totalFilteredQuestions > questionsPerPage && (
-                        <QuestionPagination
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                        />
-                      )}
-                    </>
+                    <div style={{ 
+                      padding: '20px', 
+                      textAlign: 'center', 
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      marginBottom: '16px',
+                      color: '#64748b' 
+                    }}>
+                      No levels added yet. Add your first level to get started.
+                    </div>
                   )}
-                </div>
-              </div>
-
-              <TabNavigationButtons>
-                <Button 
-                  type="button"
-                  onClick={() => handleTabChange('levels')}
-                  disabled={loading}
-                >
-                  <ChevronLeft size={16} /> Previous: Levels
-                </Button>
-              </TabNavigationButtons>
-            </TabContent>
-          )}
-        </FormSectionWithTabs>
-        
-        <ButtonGroup>
-          <Button 
-            type="button" 
-            onClick={() => navigate('/inspection')}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            variant="primary"
-            disabled={loading}
-          >
-            {loading ? 'Saving...' : (id ? 'Save Changes' : 'Create Level')}
-          </Button>
-        </ButtonGroup>
-      </Form>
-
-      {/* Question Library Modal */}
-      {showQuestionLibrary && (
-        <Modal>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Question Library</ModalTitle>
-              <ModalClose onClick={() => setShowQuestionLibrary(false)}>
-                <X size={24} />
-              </ModalClose>
-            </ModalHeader>
-            
-            <SearchInput>
-              <Search size={16} />
-              <input
-                type="text"
-                placeholder="Search questions..."
-                value={librarySearchQuery}
-                onChange={(e) => setLibrarySearchQuery(e.target.value)}
-              />
-            </SearchInput>
-            
-            {libraryLoading ? (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <Spinner size="24px" />
-                <p>Loading question library...</p>
-              </div>
-            ) : filteredLibraryQuestions.length > 0 ? (
-              <QuestionLibraryList>
-                {filteredLibraryQuestions.map((question) => (
-                  <QuestionLibraryItem
-                    key={question._id}
-                    onClick={() => addQuestionFromLibrary(question)}
+                  
+                  <Button 
+                    type="button"
+                    onClick={() => {
+                      // Add a new top-level
+                      const newLevel = {
+                        id: Date.now(),
+                        name: `New Level ${(formData.sets[activeSetIndex]?.subLevels?.length || 0) + 1}`,
+                        description: 'New level description',
+                        // Add order field here - required by backend
+                        order: formData.sets[activeSetIndex]?.subLevels?.length || 0,
+                        subLevels: [],
+                        questions: []
+                      };
+                      
+                      const updatedSubLevels = [
+                        ...(formData.sets[activeSetIndex]?.subLevels || []),
+                        newLevel
+                      ];
+                      
+                      updateSet(activeSetIndex, 'subLevels', updatedSubLevels);
+                      
+                      // Select the new level
+                      setSelectedLevelId(newLevel.id);
+                    }}
+                    style={{ marginBottom: '24px' }}
                   >
-                    <QuestionLibraryItemContent>
-                      {question.text}
-                    </QuestionLibraryItemContent>
-                    <QuestionLibraryItemFooter>
-                      <span>Type: {question.answerType}</span>
-                      <span>{question.required ? 'Required' : 'Optional'}</span>
-                    </QuestionLibraryItemFooter>
-                  </QuestionLibraryItem>
-                ))}
-              </QuestionLibraryList>
-            ) : (
-              <QuestionLibraryEmpty>
-                {librarySearchQuery.trim() !== '' 
-                  ? 'No matching questions found' 
-                  : 'No saved questions yet. Save questions to your library for reuse.'}
-              </QuestionLibraryEmpty>
-            )}
-          </ModalContent>
-        </Modal>
-      )}
-      
-      {/* Link Question Modal */}
-      {showLinkQuestionModal && (
-        <Modal>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Link Question to Level</ModalTitle>
-              <ModalClose onClick={() => {
-                setShowLinkQuestionModal(false);
-                setQuestionToLink(null);
-              }}>
-                <X size={24} />
-              </ModalClose>
-            </ModalHeader>
-            
-            <div style={{ 
-              padding: '12px',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              marginBottom: '16px'
-            }}>
-              <h4 style={{ 
-                fontSize: '14px', 
-                fontWeight: '500',
-                color: '#1a237e',
-                marginBottom: '8px'
-              }}>
-                Question:
-              </h4>
-              <p style={{ fontWeight: '500' }}>
-                {questionToLink !== null && questions[questionToLink]?.text}
-              </p>
-              <p style={{ marginTop: '16px', fontSize: '13px', fontStyle: 'italic' }}>
-                Select a level below to link this question:
-              </p>
-            </div>
-            
-            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-              {/* Allow unlinking */}
-              <TreeNodeContainer>
-                <TreeNode 
-                  selected={
-                    questionToLink !== null &&
-                    questions[questionToLink]?.levelId === null
-                  }
-                  onClick={() => linkQuestionToLevel(questionToLink, null)}
-                >
-                  <TreeNodeContent>
-                    No Level (Unlinked)
-                  </TreeNodeContent>
-                </TreeNode>
-              </TreeNodeContainer>
-              
-              <SubLevelTreeComponent
-                subLevels={formData.subLevels}
-                selectedLevelId={
-                  questionToLink !== null ? 
-                  questions[questionToLink]?.levelId : null
-                }
-                onSelectLevel={(levelId) => linkQuestionToLevel(questionToLink, levelId)}
-              />
-            </div>
-          </ModalContent>
-        </Modal>
-      )}
-    </PageContainer>
-  );
-};
-
-// The main SubLevel component that handles a single level item
-const SubLevelRow = ({ 
-  level, 
-  parentPath = "",
-  onSubLevelChange, 
-  onRemoveSubLevel, 
-  onAddNestedSubLevel, 
-  loading,
-  dragHandleProps 
-}) => {
-  const [expanded, setExpanded] = useState(true);
-  const hasNestedLevels = level.subLevels && level.subLevels.length > 0;
-  const path = parentPath ? `${parentPath}.${level.id}` : `${level.id}`;
-  
-  return (
-    <>
-      <SubLevelItem isDragging={false}>
-        <DragHandle {...dragHandleProps}>
-          <Move size={16} />
-        </DragHandle>
-        
-        {hasNestedLevels && (
-          <ExpandCollapseButton 
-            onClick={() => setExpanded(!expanded)} 
-            type="button"
-            disabled={loading}
-          >
-            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </ExpandCollapseButton>
-        )}
-        
-        <SubLevelInput
-          type="text"
-          value={level.name || ""}
-          onChange={(e) => onSubLevelChange(path, 'name', e.target.value)}
-          placeholder="Enter sub-level name"
-          disabled={loading}
-        />
-        
-        <SubLevelInput
-          type="text"
-          value={level.description || ""}
-          onChange={(e) => onSubLevelChange(path, 'description', e.target.value)}
-          placeholder="Enter sub-level description"
-          disabled={loading}
-        />
-        
-        <IconButton
-          type="button"
-          onClick={() => onAddNestedSubLevel(path)}
-          disabled={loading}
-        >
-          <Plus size={16} />
-        </IconButton>
-        
-        <IconButton
-          type="button"
-          onClick={() => onRemoveSubLevel(path)}
-          disabled={loading}
-        >
-          <Minus size={16} />
-        </IconButton>
-      </SubLevelItem>
-      
-      {expanded && hasNestedLevels && (
-        <NestedSubLevelsContainer>
-          <NestedSubLevelsList
-            subLevels={level.subLevels}
-            parentPath={path}
-            onSubLevelChange={onSubLevelChange}
-            onRemoveSubLevel={onRemoveSubLevel}
-            onAddNestedSubLevel={onAddNestedSubLevel}
-            loading={loading}
-          />
-        </NestedSubLevelsContainer>
-      )}
-    </>
-  );
-};
-
-// Component to render a nested droppable list of sub-levels
-const NestedSubLevelsList = ({ 
-  subLevels, 
-  parentPath, 
-  onSubLevelChange, 
-  onRemoveSubLevel, 
-  onAddNestedSubLevel, 
-  loading 
-}) => {
-  const droppableId = `nested-${parentPath || "root"}`;
-  
-  return (
-    <Droppable droppableId={droppableId} type={droppableId}>
-      {(provided) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-        >
-          {subLevels.map((subLevel, index) => (
-            <Draggable
-              key={`${parentPath}-${subLevel.id}`}
-              draggableId={`${parentPath}-${subLevel.id}`}
-              index={index}
-              isDragDisabled={loading}
-            >
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                >
-                  <SubLevelRow
-                    level={subLevel}
-                    parentPath={parentPath}
-                    onSubLevelChange={onSubLevelChange}
-                    onRemoveSubLevel={onRemoveSubLevel}
-                    onAddNestedSubLevel={onAddNestedSubLevel}
-                    loading={loading}
-                    dragHandleProps={provided.dragHandleProps}
-                  />
+                    <Plus size={16} /> Add New Level
+                  </Button>
                 </div>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-        </div>
+                
+                {selectedLevelId && (
+                  <div style={{ 
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    marginBottom: '24px'
+                  }}>
+                    <h3 style={{ 
+                      fontSize: '16px', 
+                      fontWeight: '600', 
+                      marginTop: 0,
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '28px',
+                          height: '28px',
+                          backgroundColor: '#0891b2',
+                          color: 'white',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '600'
+                        }}>
+                          L
+                        </span>
+                        Selected Level Details
+                      </span>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          // Find the level and its parent
+                          let levelToRemove = null;
+                          let parentLevel = null;
+                          
+                          // Helper function to find level and parent
+                          const findLevel = (levels, parent = null) => {
+                            for (const level of levels) {
+                              if (level.id === selectedLevelId) {
+                                levelToRemove = level;
+                                parentLevel = parent;
+                                return true;
+                              }
+                              
+                              if (level.subLevels && level.subLevels.length > 0) {
+                                if (findLevel(level.subLevels, level)) {
+                                  return true;
+                                }
+                              }
+                            }
+                            return false;
+                          };
+                          
+                          findLevel(formData.sets[activeSetIndex].subLevels);
+                          
+                          if (levelToRemove) {
+                            if (parentLevel) {
+                              // Remove from parent's subLevels
+                              parentLevel.subLevels = parentLevel.subLevels.filter(
+                                l => l.id !== selectedLevelId
+                              );
+                              
+                              // Update the set with the modified structure
+                              updateSet(
+                                activeSetIndex, 
+                                'subLevels', 
+                                [...formData.sets[activeSetIndex].subLevels]
+                              );
+                            } else {
+                              // Top level - remove directly from the set
+                              updateSet(
+                                activeSetIndex,
+                                'subLevels',
+                                formData.sets[activeSetIndex].subLevels.filter(
+                                  l => l.id !== selectedLevelId
+                                )
+                              );
+                            }
+                            
+                            // Clear selected level
+                            setSelectedLevelId(null);
+                          }
+                        }}
+                        style={{
+                          padding: '6px 10px',
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: 'none'
+                        }}
+                      >
+                        <Trash2 size={16} /> Remove Level
+                      </Button>
+                    </h3>
+                    
+                    {/* Find the selected level */}
+                    {(() => {
+                      // Helper function to find a level by ID
+                      const findLevelById = (levels, id) => {
+                        for (const level of levels) {
+                          if (level.id === id) {
+                            return level;
+                          }
+                          
+                          if (level.subLevels && level.subLevels.length > 0) {
+                            const found = findLevelById(level.subLevels, id);
+                            if (found) return found;
+                          }
+                        }
+                        return null;
+                      };
+                      
+                      const selectedLevel = findLevelById(
+                        formData.sets[activeSetIndex]?.subLevels || [],
+                        selectedLevelId
+                      );
+                      
+                      if (!selectedLevel) {
+                        return (
+                          <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
+                            Selected level not found. Please select another level.
+                          </div>
+                        );
+                      }
+                      
+                      // Helper function to update level properties
+                      const updateSelectedLevel = (field, value) => {
+                        // Deep clone the levels array
+                        const updateLevels = (levels) => {
+                          return levels.map(level => {
+                            if (level.id === selectedLevelId) {
+                              return { ...level, [field]: value };
+                            }
+                            
+                            if (level.subLevels && level.subLevels.length > 0) {
+                              return {
+                                ...level,
+                                subLevels: updateLevels(level.subLevels)
+                              };
+                            }
+                            
+                            return level;
+                          });
+                        };
+                        
+                        updateSet(
+                          activeSetIndex,
+                          'subLevels',
+                          updateLevels(formData.sets[activeSetIndex].subLevels)
+                        );
+                      };
+                      
+                      return (
+                        <>
+                          <FormGroup style={{ marginBottom: '16px' }}>
+                            <Label>Level Name</Label>
+                            <Input
+                              type="text"
+                              value={selectedLevel.name || ''}
+                              onChange={(e) => updateSelectedLevel('name', e.target.value)}
+                              placeholder="Enter level name"
+                              disabled={loading}
+                            />
+                          </FormGroup>
+                          
+                          <FormGroup style={{ marginBottom: '24px' }}>
+                            <Label>Level Description</Label>
+                            <TextArea
+                              value={selectedLevel.description || ''}
+                              onChange={(e) => updateSelectedLevel('description', e.target.value)}
+                              placeholder="Enter level description"
+                              disabled={loading}
+                              style={{ minHeight: '80px' }}
+                            />
+                          </FormGroup>
+                          
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '12px', 
+                            marginBottom: '24px',
+                            flexWrap: 'wrap'
+                          }}>
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                // Add a sublevel to this level
+                                const newSubLevel = {
+                                  id: Date.now(),
+                                  name: `New Sub-level`,
+                                  description: 'New sub-level description',
+                                  // Add required order field
+                                  order: findLevelById(formData.sets[activeSetIndex].subLevels, selectedLevelId)?.subLevels?.length || 0,
+                                  subLevels: [],
+                                  questions: []
+                                };
+                                
+                                // Add to the selected level's subLevels
+                                const updateLevels = (levels) => {
+                                  return levels.map(level => {
+                                    if (level.id === selectedLevelId) {
+                                      return {
+                                        ...level,
+                                        subLevels: [...(level.subLevels || []), newSubLevel]
+                                      };
+                                    }
+                                    
+                                    if (level.subLevels && level.subLevels.length > 0) {
+                                      return {
+                                        ...level,
+                                        subLevels: updateLevels(level.subLevels)
+                                      };
+                                    }
+                                    
+                                    return level;
+                                  });
+                                };
+                                
+                                updateSet(
+                                  activeSetIndex,
+                                  'subLevels',
+                                  updateLevels(formData.sets[activeSetIndex].subLevels)
+                                );
+                              }}
+                              disabled={loading}
+                            >
+                              <Plus size={16} /> Add Sub-Level
+                            </Button>
+                            
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                // Add a question to this level
+                                const newQuestion = {
+                                  id: Date.now(),
+                                  text: '',
+                                  answerType: 'multiple',
+                                  required: true,
+                                  options: [
+                                    'Fully compliance',
+                                    'Partially compliance',
+                                    'Not applicable'
+                                  ]
+                                };
+                                
+                                // Add to the selected level's questions
+                                const updateLevels = (levels) => {
+                                  return levels.map(level => {
+                                    if (level.id === selectedLevelId) {
+                                      return {
+                                        ...level,
+                                        questions: [...(level.questions || []), newQuestion]
+                                      };
+                                    }
+                                    
+                                    if (level.subLevels && level.subLevels.length > 0) {
+                                      return {
+                                        ...level,
+                                        subLevels: updateLevels(level.subLevels)
+                                      };
+                                    }
+                                    
+                                    return level;
+                                  });
+                                };
+                                
+                                updateSet(
+                                  activeSetIndex,
+                                  'subLevels',
+                                  updateLevels(formData.sets[activeSetIndex].subLevels)
+                                );
+                              }}
+                              disabled={loading}
+                            >
+                              <Plus size={16} /> Add Question
+                            </Button>
+                            
+                            {/* Removed standalone library button */}
+                          </div>
+                          
+                          {/* Level questions section */}
+                          {selectedLevel.questions && selectedLevel.questions.length > 0 ? (
+                            <div style={{ marginBottom: '24px' }}>
+                              <h4 style={{ 
+                                fontSize: '15px', 
+                                marginBottom: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                              }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  minWidth: '24px',
+                                  height: '24px',
+                                  backgroundColor: '#f0f9ff',
+                                  color: '#0284c7',
+                                  border: '1px solid #bae6fd',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: '600'
+                                }}>
+                                  LQ
+                                </span>
+                                <ListChecks size={16} /> Level Questions
+                              </h4>
+                              
+                              {selectedLevel.questions.map((question, index) => (
+                                <QuestionItemComponent
+                                  key={question.id || index}
+                                  question={question}
+                                  questionIndex={index}
+                                  loading={loading}
+                                  updateQuestion={(updatedQuestion) => {
+                                    // Update the question in the selected level
+                                    const updateLevels = (levels) => {
+                                      return levels.map(level => {
+                                        if (level.id === selectedLevelId) {
+                                          const updatedQuestions = [...level.questions];
+                                          updatedQuestions[index] = updatedQuestion;
+                                          
+                                          return {
+                                            ...level,
+                                            questions: updatedQuestions
+                                          };
+                                        }
+                                        
+                                        if (level.subLevels && level.subLevels.length > 0) {
+                                          return {
+                                            ...level,
+                                            subLevels: updateLevels(level.subLevels)
+                                          };
+                                        }
+                                        
+                                        return level;
+                                      });
+                                    };
+                                    
+                                    updateSet(
+                                      activeSetIndex,
+                                      'subLevels',
+                                      updateLevels(formData.sets[activeSetIndex].subLevels)
+                                    );
+                                  }}
+                                  removeQuestion={() => {
+                                    // Remove the question from the selected level
+                                    const updateLevels = (levels) => {
+                                      return levels.map(level => {
+                                        if (level.id === selectedLevelId) {
+                                          return {
+                                            ...level,
+                                            questions: level.questions.filter((_, i) => i !== index)
+                                          };
+                                        }
+                                        
+                                        if (level.subLevels && level.subLevels.length > 0) {
+                                          return {
+                                            ...level,
+                                            subLevels: updateLevels(level.subLevels)
+                                          };
+                                        }
+                                        
+                                        return level;
+                                      });
+                                    };
+                                    
+                                    updateSet(
+                                      activeSetIndex,
+                                      'subLevels',
+                                      updateLevels(formData.sets[activeSetIndex].subLevels)
+                                    );
+                                  }}
+                                  allLevels={formData.sets.flatMap(set => set.subLevels || [])}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ 
+                              padding: '16px', 
+                              background: '#f8fafc', 
+                              borderRadius: '8px', 
+                              marginBottom: '24px',
+                              textAlign: 'center',
+                              color: '#64748b'
+                            }}>
+                              No questions added to this level yet.
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+                
+                {/* General Questions Section */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '28px',
+                      height: '28px',
+                      backgroundColor: '#047857',
+                      color: 'white',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      G
+                    </span>
+                    General Template Questions
+                  </h3>
+                  
+                  {formData.sets[activeSetIndex]?.generalQuestions && 
+                  formData.sets[activeSetIndex].generalQuestions.length > 0 ? (
+                    <div style={{ marginBottom: '16px' }}>
+                      {formData.sets[activeSetIndex].generalQuestions.map((question, index) => (
+                        <QuestionItemComponent
+                          key={question.id || index}
+                          question={question}
+                          questionIndex={index}
+                          loading={loading}
+                          updateQuestion={(updatedQuestion) => {
+                            const updatedQuestions = [...formData.sets[activeSetIndex].generalQuestions];
+                            updatedQuestions[index] = updatedQuestion;
+                            updateSet(activeSetIndex, 'generalQuestions', updatedQuestions);
+                          }}
+                          removeQuestion={() => {
+                            updateSet(
+                              activeSetIndex,
+                              'generalQuestions',
+                              formData.sets[activeSetIndex].generalQuestions.filter((_, i) => i !== index)
+                            );
+                          }}
+                          allLevels={formData.sets.flatMap(set => set.subLevels || [])}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      padding: '16px', 
+                      background: '#f8fafc', 
+                      borderRadius: '8px', 
+                      marginBottom: '16px',
+                      textAlign: 'center',
+                      color: '#64748b'
+                    }}>
+                      No general questions added to this template yet.
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        // Add a general question
+                        const newQuestion = {
+                          id: Date.now(),
+                          text: '',
+                          answerType: 'multiple',
+                          required: true,
+                          options: [
+                            'Fully compliance',
+                            'Partially compliance',
+                            'Not applicable'
+                          ]
+                        };
+                        
+                        updateSet(activeSetIndex, 'generalQuestions', [
+                          ...(formData.sets[activeSetIndex].generalQuestions || []),
+                          newQuestion
+                        ]);
+                      }}
+                      disabled={loading}
+                    >
+                      <Plus size={16} /> Add General Question
+                    </Button>
+                    
+                    {/* Remove standalone library button */}
+                  </div>
+                </div>
+                
+                <TabNavigationButtons>
+                  <Button 
+                    type="button"
+                    onClick={() => handleTabChange('basic')}
+                    disabled={loading}
+                  >
+                    <ChevronLeft size={16} /> Back to Basic Info
+                  </Button>
+                  <div></div>
+                </TabNavigationButtons>
+              </TabContent>
+            )}
+          </FormSectionWithTabs>
+          
+          <ButtonGroup>
+            <Button 
+              type="button" 
+              onClick={() => navigate('/inspection')}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : (id ? 'Save Changes' : 'Create Template')}
+            </Button>
+          </ButtonGroup>
+        </Form>
       )}
-    </Droppable>
+      
+      {/* Activity History Modal */}
+      <ActivityHistoryCard 
+        formData={formData} 
+        activities={activities}
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+      />
+      
+      {/* Existing modals */}
+    </PageContainer>
   );
 };
 

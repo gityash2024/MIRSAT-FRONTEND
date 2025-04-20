@@ -13,6 +13,7 @@ import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import AssetTable from './components/AssetTable';
 import AssetModal from './components/AssetModal';
 import AssetTypeModal from './components/AssetTypeModal';
+import AssetTasksModal from './components/AssetTasksModal';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 
@@ -117,7 +118,9 @@ const AssetList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [currentAsset, setCurrentAsset] = useState(null);
+  const [selectedAsset, setSelectedAsset] = useState(null);
   const [filters, setFilters] = useState({});
 
   useEffect(() => {
@@ -173,6 +176,11 @@ const AssetList = () => {
     }
   };
 
+  const handleViewTasks = (asset) => {
+    setSelectedAsset(asset);
+    setIsTasksModalOpen(true);
+  };
+
   return (
     <PageContainer>
       <Header>
@@ -225,6 +233,7 @@ const AssetList = () => {
         onPageChange={handlePageChange}
         onEdit={handleOpenModal}
         onDelete={handleDelete}
+        onViewTasks={handleViewTasks}
       />
       
       {isModalOpen && (
@@ -241,6 +250,14 @@ const AssetList = () => {
           isOpen={isTypeModalOpen} 
           onClose={handleCloseTypeModal} 
           onSuccess={() => dispatch(fetchAssetTypes())}
+        />
+      )}
+
+      {isTasksModalOpen && selectedAsset && (
+        <AssetTasksModal
+          isOpen={isTasksModalOpen}
+          onClose={() => setIsTasksModalOpen(false)}
+          asset={selectedAsset}
         />
       )}
     </PageContainer>

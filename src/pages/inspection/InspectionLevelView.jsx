@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, Layers, ChevronDown, ChevronRight, Edit, Trash2, 
-  Activity, FileText, AlertTriangle, X, Clipboard, CheckCircle, Info
+  Activity, FileText, AlertTriangle, X, Clipboard, CheckCircle, Info, Eye, ListChecks
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
@@ -656,6 +656,163 @@ const InspectionLevelViewSkeleton = () => (
   </PageContainer>
 );
 
+const EmptyState = styled.div`
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 8px;
+  
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+`;
+
+const TreeContainer = styled.div`
+  padding: 8px 0;
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+`;
+
+const TreeNode = styled.div`
+  margin-bottom: 8px;
+`;
+
+const TreeNodeHeader = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  
+  span {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+`;
+
+const TreeNodeChildren = styled.div`
+  margin-left: 24px;
+  margin-top: 8px;
+`;
+
+const ExpandButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin-right: 8px;
+  color: #64748b;
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+const TreeNodeActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  
+  &:hover {
+    color: #1a237e;
+  }
+`;
+
+const SetHeader = styled.div`
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a237e;
+    margin: 0 0 4px 0;
+  }
+  
+  p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+  }
+`;
+
+const QuestionsContainer = styled.div`
+  margin-top: 24px;
+  
+  h4 {
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    &:before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #1a237e;
+      border-radius: 2px;
+    }
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+`;
+
+const SetQuestionItem = styled.li`
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+`;
+
+const SetQuestionBadge = styled.span`
+  padding: 4px 8px;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+`;
+
+const SetStat = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -679,7 +836,42 @@ const InspectionLevelView = () => {
       setLoading(true);
       setError(null);
       const data = await inspectionService.getInspectionLevel(id);
-      setLevel(data);
+      console.log("Fetched inspection level data:", data);
+      
+      // Convert old backend structure to new sets-based structure for frontend if needed
+      let processedData = data;
+      
+      // If data doesn't have sets but has subLevels, convert to new format
+      if (!data.sets || !Array.isArray(data.sets) || data.sets.length === 0) {
+        processedData = {
+          ...data,
+          sets: [{
+            id: Date.now(),
+            name: data.name ? `${data.name} Set` : 'Main Set',
+            description: data.description || 'Main inspection set',
+            subLevels: data.subLevels || [],
+            questions: data.questions || [],
+            generalQuestions: []
+          }]
+        };
+      } else {
+        // Ensure all sets have the required properties
+        processedData = {
+          ...data,
+          sets: data.sets.map(set => ({
+            ...set,
+            id: set.id || set._id || Date.now(),
+            name: set.name || 'Unnamed Set',
+            description: set.description || '',
+            subLevels: set.subLevels || [],
+            questions: set.questions || [],
+            generalQuestions: set.generalQuestions || []
+          }))
+        };
+      }
+      
+      setLevel(processedData);
+      console.log("Processed level data:", processedData);
 
       const expandedState = {};
       const initExpandedState = (subLevels, prefix = '') => {
@@ -694,8 +886,13 @@ const InspectionLevelView = () => {
         });
       };
       
-      if (data.subLevels) {
-        initExpandedState(data.subLevels);
+      // Initialize expanded state for all sets
+      if (processedData.sets && processedData.sets.length > 0) {
+        processedData.sets.forEach((set, setIndex) => {
+          if (set.subLevels && set.subLevels.length > 0) {
+            initExpandedState(set.subLevels, `set${setIndex}_`);
+          }
+        });
       }
       
       setExpandedNodes(expandedState);
@@ -730,21 +927,53 @@ const InspectionLevelView = () => {
     }));
   };
   
-  // Find a sublevel by path (e.g., "0.1.2")
+  // Find a sublevel by path (e.g., "set0_0.1.2" or "0.1.2")
   const findSubLevelByPath = (path) => {
-    if (!level || !level.subLevels) return null;
+    if (!level) return null;
     
-    const indices = path.split('.');
-    let currentLevel = level.subLevels;
-    let currentNode = null;
-    
-    for (const index of indices) {
-      if (!currentLevel[index]) return null;
-      currentNode = currentLevel[index];
-      currentLevel = currentNode.subLevels || [];
+    // If path contains 'set', it references a specific set
+    if (path.startsWith('set')) {
+      // Extract set index and path within set (e.g., "set0_0.1.2" -> setIndex=0, pathInSet="0.1.2")
+      const [setPrefix, ...pathParts] = path.split('_');
+      const setIndex = parseInt(setPrefix.replace('set', ''), 10);
+      const pathInSet = pathParts.join('_');
+      
+      if (!level.sets || !level.sets[setIndex]) return null;
+      
+      const set = level.sets[setIndex];
+      
+      // Handle case where pathInSet is empty (the set itself is selected)
+      if (!pathInSet) return set;
+      
+      // Navigate through the sublevel path
+      const indices = pathInSet.split('.');
+      let currentLevel = set.subLevels;
+      let currentNode = null;
+      
+      for (const index of indices) {
+        if (!currentLevel || !currentLevel[index]) return null;
+        currentNode = currentLevel[index];
+        currentLevel = currentNode.subLevels || [];
+      }
+      
+      return currentNode;
+    } else {
+      // Legacy path format without set prefix - assume first set or direct subLevels
+      const subLevels = level.sets?.[0]?.subLevels || level.subLevels;
+      if (!subLevels) return null;
+      
+      const indices = path.split('.');
+      let currentLevel = subLevels;
+      let currentNode = null;
+      
+      for (const index of indices) {
+        if (!currentLevel[index]) return null;
+        currentNode = currentLevel[index];
+        currentLevel = currentNode.subLevels || [];
+      }
+      
+      return currentNode;
     }
-    
-    return currentNode;
   };
   
   // Handle sublevel view action
@@ -781,55 +1010,88 @@ const InspectionLevelView = () => {
     }
   };
 
-  const renderHierarchy = (nodes, parentLevel = 0, parentId = '') => {
-    if (!nodes || !Array.isArray(nodes)) return null;
-    
-    return nodes.map((node, index) => {
-      const nodeId = parentId ? `${parentId}.${index}` : `${index}`;
-      const hasChildren = node.subLevels && node.subLevels.length > 0;
-      const isExpanded = expandedNodes[nodeId];
-      
+  // Helper function to render sublevels
+  const renderSubLevels = (subLevels, prefix = '', setIndex = null) => {
+    if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
       return (
-        <React.Fragment key={node._id || index}>
-          <NestedHierarchyNode level={parentLevel} isLast={index === nodes.length - 1}>
-            <NodeContent>
-              {hasChildren && (
-                <ExpandCollapseButton onClick={() => toggleNodeExpanded(nodeId)}>
-                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                </ExpandCollapseButton>
-              )}
-              <NodeIcon>
-                <Layers size={16} />
-              </NodeIcon>
-              <NodeInfo>
-                <h4>{node.name}</h4>
-                <p>{node.description}</p>
-              </NodeInfo>
-              <NodeActions>
-                <ActionButton 
-                  onClick={() => handleViewSubLevel(nodeId)}
-                  disabled={loading}
-                >
-                  <Info size={14} />
-                </ActionButton>
-                <ActionButton 
-                  onClick={() => handleEditSubLevel(nodeId)}
-                  disabled={loading}
-                >
-                  <Edit size={14} />
-                </ActionButton>
-              </NodeActions>
-            </NodeContent>
-          </NestedHierarchyNode>
-          
-          {hasChildren && isExpanded && (
-            <div style={{ marginLeft: 32 }}>
-              {renderHierarchy(node.subLevels, parentLevel + 1, nodeId)}
-            </div>
-          )}
-        </React.Fragment>
+        <EmptyState>
+          <p>No levels found</p>
+        </EmptyState>
       );
-    });
+    }
+
+    return (
+      <ul>
+        {subLevels.map((subLevel, index) => {
+          // Ensure we have a valid subLevel object
+          if (!subLevel || typeof subLevel !== 'object') return null;
+          
+          const currentPrefix = prefix ? `${prefix}.${index}` : `${index}`;
+          const nodeId = setIndex !== null ? `set${setIndex}_${currentPrefix}` : currentPrefix;
+          const isExpanded = expandedNodes[nodeId];
+          const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
+          
+          // Extract ID - support both MongoDB _id and client-side id
+          const subLevelId = subLevel._id || subLevel.id || `sl-${index}`;
+          
+          return (
+            <li key={subLevelId}>
+              <TreeNode>
+                <TreeNodeHeader>
+                  {hasChildren ? (
+                    <ExpandButton onClick={() => toggleNodeExpanded(nodeId)}>
+                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </ExpandButton>
+                  ) : (
+                    <span style={{ width: '20px', display: 'inline-block' }}></span>
+                  )}
+                  <span>{subLevel.name || 'Unnamed Level'}</span>
+                  <TreeNodeActions>
+                    <IconButton 
+                      title="View Level Details" 
+                      onClick={() => handleViewSubLevel(nodeId)}
+                    >
+                      <Eye size={14} />
+                    </IconButton>
+                    <IconButton 
+                      title="Edit Level" 
+                      onClick={() => handleEditSubLevel(nodeId)}
+                    >
+                      <Edit size={14} />
+                    </IconButton>
+                  </TreeNodeActions>
+                </TreeNodeHeader>
+                
+                {hasChildren && isExpanded && (
+                  <TreeNodeChildren>
+                    {renderSubLevels(subLevel.subLevels, currentPrefix, setIndex)}
+                  </TreeNodeChildren>
+                )}
+              </TreeNode>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+  
+  // Helper function to count questions for a set
+  const countSetQuestions = (set) => {
+    if (!set) return 0;
+    
+    let count = 0;
+    
+    // Count general questions
+    if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
+      count += set.generalQuestions.length;
+    }
+    
+    // Count set-level questions
+    if (set.questions && Array.isArray(set.questions)) {
+      count += set.questions.length;
+    }
+    
+    return count;
   };
 
   // Function to get a human-readable question type
@@ -959,7 +1221,83 @@ const InspectionLevelView = () => {
               Level Hierarchy
             </CardTitle>
             <LevelHierarchy>
-              {renderHierarchy(level.subLevels || [])}
+              {level.sets && Array.isArray(level.sets) && level.sets.length > 0 ? (
+                level.sets.map((set, setIndex) => {
+                  // Count sublevels for this set, including nested ones
+                  const subLevelCount = set.subLevels?.length || 0;
+                  const questionCount = countSetQuestions(set);
+                  
+                  return (
+                    <div key={set.id || set._id || `set-${setIndex}`}>
+                      <SetHeader>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <h3>{set.name || `Set ${setIndex + 1}`}</h3>
+                          <div style={{ display: 'flex', gap: '16px' }}>
+                            <SetStat>
+                              <Layers size={16} />
+                              <span>{subLevelCount} Level{subLevelCount !== 1 ? 's' : ''}</span>
+                            </SetStat>
+                            <SetStat>
+                              <ListChecks size={16} />
+                              <span>{questionCount} Question{questionCount !== 1 ? 's' : ''}</span>
+                            </SetStat>
+                          </div>
+                        </div>
+                        {set.description && <p>{set.description}</p>}
+                      </SetHeader>
+                      
+                      <TreeContainer>
+                        {renderSubLevels(set.subLevels, '', setIndex)}
+                      </TreeContainer>
+                      
+                      {set.generalQuestions && Array.isArray(set.generalQuestions) && set.generalQuestions.length > 0 && (
+                        <QuestionsContainer>
+                          <h4>General Questions</h4>
+                          <ul>
+                            {set.generalQuestions.map((question, qIndex) => (
+                              <SetQuestionItem key={question.id || question._id || `q-${qIndex}`}>
+                                <span>
+                                  {qIndex + 1}. {question.text}
+                                </span>
+                                <SetQuestionBadge>
+                                  {getQuestionTypeLabel(question.answerType)}
+                                </SetQuestionBadge>
+                              </SetQuestionItem>
+                            ))}
+                          </ul>
+                        </QuestionsContainer>
+                      )}
+                      
+                      {set.questions && Array.isArray(set.questions) && set.questions.length > 0 && (
+                        <QuestionsContainer>
+                          <h4>Set Questions</h4>
+                          <ul>
+                            {set.questions.map((question, qIndex) => (
+                              <SetQuestionItem key={question.id || question._id || `q-${qIndex}`}>
+                                <span>
+                                  {qIndex + 1}. {question.text}
+                                </span>
+                                <SetQuestionBadge>
+                                  {getQuestionTypeLabel(question.answerType)}
+                                </SetQuestionBadge>
+                              </SetQuestionItem>
+                            ))}
+                          </ul>
+                        </QuestionsContainer>
+                      )}
+                    </div>
+                  );
+                })
+              ) : level.subLevels && Array.isArray(level.subLevels) && level.subLevels.length > 0 ? (
+                // Backward compatibility with old structure
+                <TreeContainer>
+                  {renderSubLevels(level.subLevels)}
+                </TreeContainer>
+              ) : (
+                <EmptyState>
+                  <p>No level structure defined</p>
+                </EmptyState>
+              )}
             </LevelHierarchy>
           </Card>
 

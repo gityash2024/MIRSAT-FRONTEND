@@ -158,7 +158,8 @@ const AssetTable = ({
   pagination, 
   onPageChange, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onViewTasks
 }) => {
   // Generate array of page numbers to show
   const getPageNumbers = () => {
@@ -244,6 +245,9 @@ const AssetTable = ({
                 <td>{asset.location||'--'}</td>
                 <ActionsCell>
                   <ActionButtonGroup>
+                    <ActionButton onClick={() => onViewTasks(asset)}>
+                      <Eye size={16} />
+                    </ActionButton>
                     <ActionButton onClick={() => onEdit(asset)}>
                       <Edit size={16} />
                     </ActionButton>

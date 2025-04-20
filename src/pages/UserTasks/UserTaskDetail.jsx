@@ -1185,36 +1185,38 @@ const UserTaskDetail = () => {
   
   const calculateStepperProgress = () => {
     if (!currentTask) return 0;
-    
-    if (currentTask.status === 'completed') return 100;
-    
-    if (currentTask.status === 'pending') return 0;
-    
-    if (activeStep === 0) return 0;
-    if (activeStep === 1) return 50;
-    if (activeStep === 2) {
-      if (currentTask.overallProgress === 100) return 100;
-      return 75;
+
+    // We now have 2 steps instead of 3
+    if (currentTask.status === 'completed') {
+      return 100; // All steps completed
     }
-    
-    return 0;
+
+    let progress = 0;
+    if (currentTask.status === 'in_progress') {
+      progress = 50; // Task started
+
+      if (currentTask.questionnaireCompleted) {
+        progress = 75; // Questionnaire completed
+      }
+
+      if (currentTask.overallProgress > 0) {
+        progress = 50 + (currentTask.overallProgress / 2);
+      }
+    }
+
+    return progress;
   };
   
   const canNavigateToStep = (stepIndex) => {
     if (!currentTask) return false;
-    
-    if (stepIndex === 0) return true;
-    
+
+    if (stepIndex === 0) return true; // Can always go to task details
+
     if (stepIndex === 1) {
-      return currentTask.status !== 'pending';
+      // Can go to inspection if task is started or completed
+      return currentTask.status === 'in_progress' || currentTask.status === 'completed';
     }
-    
-    if (stepIndex === 2) {
-      return currentTask.status !== 'pending' && 
-             (currentTask.questionnaireCompleted || 
-              Object.keys(currentTask.questionnaireResponses || {}).length > 0);
-    }
-    
+
     return false;
   };
   
@@ -1226,11 +1228,6 @@ const UserTaskDetail = () => {
     }
     
     if (stepIndex === 1) {
-      return currentTask.questionnaireCompleted || 
-             Object.keys(currentTask.questionnaireResponses || {}).length > 0;
-    }
-    
-    if (stepIndex === 2) {
       return currentTask.status === 'completed';
     }
     
@@ -1240,7 +1237,6 @@ const UserTaskDetail = () => {
   const renderStepper = () => {
     const steps = [
       { label: 'Task Details', icon: <Info size={14} /> },
-      { label: 'Questionnaire', icon: <CheckSquare size={14} /> },
       { label: 'Inspection', icon: <Activity size={14} /> }
     ];
     
@@ -1469,48 +1465,33 @@ const UserTaskDetail = () => {
                   </ScoreItem>
                 </ScoreGrid>
                 
-                {scores.areas.length > 0 && (
-                  <AssessmentSection>
-                    <AssessmentTitle>Assessment Areas</AssessmentTitle>
-                    <AssessmentTable>
-                      <thead>
-                        <tr>
-                          <th>Area</th>
-                          <th>Score</th>
-                          <th>Weight</th>
-                          <th>Weighted Score</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scores.areas.map((area, index) => (
-                          <tr key={index}>
-                            <td>{area.name}</td>
-                            <td>{area.score} / {area.maxScore}</td>
-                            <td>{area.weight}%</td>
-                            <td>{(area.score / area.maxScore * area.weight).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </AssessmentTable>
-                  </AssessmentSection>
+                {canCompleteTask && !taskCompleted && (
+                  <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <Button onClick={handleCompleteTask} disabled={actionLoading}>
+                      <CheckCircle size={18} /> Mark Task as Complete
+                    </Button>
+                  </div>
                 )}
               </ScoreSummary>
             )}
             
-            <ButtonContainer>
-              {currentTask.status === 'pending' && isInspector && (
-                <StartButton onClick={handleStartTask} disabled={actionLoading}>
-                  {actionLoading ? <Loader size={16} /> : <PlayCircle size={16} />}
-                  Start Task
-                </StartButton>
-              )}
-              {currentTask.status === 'in_progress' && (
-                <NextButton onClick={() => setActiveStep(1)}>
-                  Proceed to Questionnaire
+            {(currentTask.status === 'pending' || !currentTask.status) && (
+              <ButtonContainer>
+                <NextButton onClick={handleStartTask} disabled={actionLoading}>
+                  Start Inspection
                   <ChevronRight size={16} />
                 </NextButton>
-              )}
-            </ButtonContainer>
+              </ButtonContainer>
+            )}
+            
+            {currentTask.status === 'in_progress' && (
+              <ButtonContainer>
+                <NextButton onClick={() => setActiveStep(1)} disabled={actionLoading}>
+                  Continue Inspection
+                  <ChevronRight size={16} />
+                </NextButton>
+              </ButtonContainer>
+            )}
           </>
         );
       case 1:
@@ -1521,35 +1502,45 @@ const UserTaskDetail = () => {
               <PreInspectionStepForm task={currentTask} />
             </TaskDetailSection>
             
-            {renderQuestionnaire()}
-            
-            <ButtonContainer>
-              <StepBackButton onClick={() => {
-                setActiveStep(0);
-                setUserClickedStep(true);
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ 
+                fontSize: '18px', 
+                fontWeight: '600', 
+                marginBottom: '16px',
+                color: '#1a237e',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px' 
               }}>
-                <ChevronLeft size={16} />
-                Back to Task Details
-              </StepBackButton>
-              {currentTask.questionnaireCompleted || Object.keys(currentTask.questionnaireResponses || {}).length > 0 ? (
-                <NextButton onClick={() => setActiveStep(2)}>
-                  Proceed to Inspection
-                  <ChevronRight size={16} />
-                </NextButton>
-              ) : null}
-            </ButtonContainer>
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <InspectionStepForm 
-              task={currentTask} 
-              onUpdateProgress={(updatedTask) => {
-                dispatch(fetchUserTaskDetails(taskId));
-              }}
-              onExportReport={handleExportReport}
-            />
+                <CheckSquare size={20} />
+                Questionnaire
+              </h3>
+              
+              {renderQuestionnaire()}
+            </div>
+            
+            <div style={{ marginTop: '24px' }}>
+              <h3 style={{ 
+                fontSize: '18px', 
+                fontWeight: '600', 
+                marginBottom: '16px',
+                color: '#1a237e',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px' 
+              }}>
+                <Activity size={20} />
+                Inspection Items
+              </h3>
+              
+              <InspectionStepForm 
+                task={currentTask} 
+                onUpdateProgress={(updatedTask) => {
+                  dispatch(fetchUserTaskDetails(taskId));
+                }}
+                onExportReport={handleExportReport}
+              />
+            </div>
             
             {/* Display scoring summary for inspection phase */}
             {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
@@ -1584,38 +1575,24 @@ const UserTaskDetail = () => {
                   </ScoreItem>
                 </ScoreGrid>
                 
-                <div style={{ marginTop: '20px' }}>
-                  <p><strong>Scoring Criteria:</strong></p>
-                  <ul style={{ paddingLeft: '20px', marginTop: '8px' }}>
-                    <li>Full Compliance: 2 points</li>
-                    <li>Partial Compliance: 1 point</li>
-                    <li>Non-Compliance: 0 points</li>
-                    <li>Not Applicable: Excluded from scoring</li>
-                  </ul>
-                </div>
+                {canCompleteTask && !taskCompleted && (
+                  <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                    <Button onClick={handleCompleteTask} disabled={actionLoading}>
+                      <CheckCircle size={18} /> Mark Task as Complete
+                    </Button>
+                  </div>
+                )}
               </ScoreSummary>
             )}
             
             <ButtonContainer>
               <StepBackButton onClick={() => {
-                setActiveStep(1);
+                setActiveStep(0);
                 setUserClickedStep(true);
               }}>
                 <ChevronLeft size={16} />
-                Back to Questionnaire
+                Back to Task Details
               </StepBackButton>
-              {!taskCompleted && canCompleteTask && (
-                <CompleteButton onClick={handleCompleteTask} disabled={actionLoading}>
-                  {actionLoading ? <Loader size={16} /> : <CheckCircle size={16} />}
-                  Complete Task
-                </CompleteButton>
-              )}
-              {taskCompleted && (
-                <ExportButton onClick={handleExportReport}>
-                  <FileText size={16} />
-                  Export Report
-                </ExportButton>
-              )}
             </ButtonContainer>
           </>
         );

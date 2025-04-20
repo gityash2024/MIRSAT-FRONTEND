@@ -1,27 +1,38 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { questionLibraryService } from '../../services/questionLibrary.service';
+import questionLibraryService from '../../services/questionLibrary.service';
 import { extractErrorMessage } from '../../utils/errorHandling';
 
-// Fetch question library
+// Async thunk for fetching questions
 export const fetchQuestionLibrary = createAsyncThunk(
-  'questionLibrary/fetchQuestionLibrary',
+  'questionLibrary/fetchQuestions',
   async (params = {}, { rejectWithValue }) => {
     try {
-      const data = await questionLibraryService.getQuestionLibrary(params);
-      return data;
+      const response = await questionLibraryService.getQuestionLibrary(params);
+      console.log("API Response:", response);
+      return response;
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error));
     }
   }
 );
 
-// Add question to library
+// Async thunk for adding a question
 export const addQuestionToLibrary = createAsyncThunk(
-  'questionLibrary/addQuestionToLibrary',
-  async (questionData, { rejectWithValue }) => {
+  'questionLibrary/addQuestion',
+  async (questionData, { getState, rejectWithValue }) => {
     try {
-      const data = await questionLibraryService.addQuestionToLibrary(questionData);
-      return data;
+      // Check if question already exists to prevent duplicates
+      const { questionLibrary } = getState();
+      const isDuplicate = questionLibrary.questions.some(
+        q => q.text === questionData.text && q.answerType === questionData.answerType
+      );
+      
+      if (isDuplicate) {
+        return rejectWithValue('This question already exists in the library');
+      }
+      
+      const response = await questionLibraryService.addQuestionToLibrary(questionData);
+      return response;
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error));
     }
@@ -41,68 +52,70 @@ export const deleteQuestionFromLibrary = createAsyncThunk(
   }
 );
 
+// Initial state
 const initialState = {
   questions: [],
   loading: false,
   error: null,
   totalResults: 0,
   page: 1,
-  limit: 100
+  limit: 10
 };
 
 const questionLibrarySlice = createSlice({
   name: 'questionLibrary',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
+    resetLibrary: (state) => {
+      return initialState;
     }
   },
   extraReducers: (builder) => {
     builder
-      // Fetch question library
+      // Fetch questions
       .addCase(fetchQuestionLibrary.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchQuestionLibrary.fulfilled, (state, action) => {
+        console.log("Fulfilling library fetch with data:", action.payload);
         state.loading = false;
-        state.questions = action.payload.results;
-        state.totalResults = action.payload.totalResults;
-        state.page = action.payload.page;
-        state.limit = action.payload.limit;
+        state.questions = action.payload?.results || [];
+        state.totalResults = action.payload?.total || 0;
+        state.page = action.payload?.page || 1;
+        state.limit = action.payload?.limit || 10;
       })
       .addCase(fetchQuestionLibrary.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        console.error("Error fetching library:", action.payload);
       })
       
-      // Add question to library
+      // Add question
       .addCase(addQuestionToLibrary.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(addQuestionToLibrary.fulfilled, (state, action) => {
         state.loading = false;
-        // Add the new question only if it's not already in the list
-        if (!state.questions.find(q => q._id === action.payload.data._id)) {
-          state.questions.unshift(action.payload.data);
-          state.totalResults += 1;
-        }
+        // Add the new question to the existing questions array
+        state.questions.push(action.payload.question);
+        state.totalResults += 1;
       })
       .addCase(addQuestionToLibrary.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       
-      // Delete question from library
+      // Delete question
       .addCase(deleteQuestionFromLibrary.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(deleteQuestionFromLibrary.fulfilled, (state, action) => {
         state.loading = false;
-        state.questions = state.questions.filter(q => q._id !== action.payload);
+        // Remove the deleted question from the array
+        state.questions = state.questions.filter(question => question._id !== action.payload.id);
         state.totalResults -= 1;
       })
       .addCase(deleteQuestionFromLibrary.rejected, (state, action) => {
@@ -112,5 +125,5 @@ const questionLibrarySlice = createSlice({
   }
 });
 
-export const { clearError } = questionLibrarySlice.actions;
+export const { resetLibrary } = questionLibrarySlice.actions;
 export default questionLibrarySlice.reducer; 
