@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Plus, 
   Trash2, 
@@ -39,12 +40,12 @@ import {
   Settings,
   AlertTriangle,
   Minus,
-  Loader
+  Loader,
+  Info
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchQuestionLibrary,
   addQuestionToLibrary,
@@ -54,6 +55,7 @@ import { updateInspectionLevel } from '../../store/slices/inspectionLevelSlice';
 import Skeleton from '../../components/ui/Skeleton';
 import debounce from 'lodash/debounce';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 
 // Modal component for confirmations
 const ConfirmationModal = ({ 
@@ -1302,26 +1304,84 @@ const QuestionItemComponent = ({
               </div>
             )}
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id={`required-${question.id || questionIndex}`}
-                checked={question.required}
-                onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
-                disabled={loading}
-                style={{ margin: 0 }}
-              />
-              <label 
-                htmlFor={`required-${question.id || questionIndex}`}
-                style={{ 
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#334155',
-                  userSelect: 'none'
-                }}
-              >
-                Required
-              </label>
+            {/* Add the Mandatory/Recommended dropdown */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '16px', 
+              marginBottom: '16px',
+              alignItems: 'center' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id={`required-${questionIndex}`}
+                  checked={question.required || false}
+                  onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
+                  disabled={loading}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label 
+                  htmlFor={`required-${questionIndex}`}
+                  style={{ 
+                    fontSize: '14px',
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Required
+                </label>
+              </div>
+              
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                position: 'relative'
+              }}>
+                <label 
+                  style={{ 
+                    fontSize: '14px',
+                  }}
+                >
+                  Importance:
+                </label>
+                <div style={{
+                  position: 'relative',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <select
+                    value={question.mandatory === false ? 'recommended' : 'mandatory'}
+                    onChange={(e) => updateQuestion({ 
+                      ...question, 
+                      mandatory: e.target.value === 'mandatory' ? true : false 
+                    })}
+                    disabled={loading}
+                    style={{
+                      padding: '6px 30px 6px 10px',
+                      fontSize: '14px',
+                      border: 'none',
+                      outline: 'none',
+                      background: question.mandatory === false ? '#fff1f2' : '#dcfce7',
+                      color: question.mandatory === false ? '#be123c' : '#166534',
+                      appearance: 'none',
+                      width: '130px'
+                    }}
+                  >
+                    <option value="mandatory">Mandatory</option>
+                    <option value="recommended">Recommended</option>
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none'
+                  }}>
+                    <ChevronDown size={14} />
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Link to Level section removed as requested */}
@@ -1723,7 +1783,13 @@ const SubLevelTreeComponent = ({
                     fontWeight: '600',
                     marginRight: '8px'
                   }}>
-                    {level > 0 ? `${level}.${index + 1}` : index + 1}
+                    {/* Replace existing numbering with A-style format */}
+                    {level === 0 
+                      ? String.fromCharCode(65 + index) // A, B, C, etc. for top level
+                      : parentNumber 
+                        ? `${parentNumber}${index + 1}` 
+                        : `${index + 1}`
+                    }
                   </span>
                   {subLevel.name || 'Unnamed Level'}
                 </TreeNodeContent>
@@ -1739,7 +1805,10 @@ const SubLevelTreeComponent = ({
                     level={level + 1}
                     selectedLevelId={selectedLevelId}
                     onSelectLevel={onSelectLevel}
-                    parentNumber={level > 0 ? `${parentNumber}${index + 1}.` : `${index + 1}.`} 
+                    parentNumber={level === 0 
+                      ? `${String.fromCharCode(65 + index)}.` 
+                      : `${parentNumber}${index + 1}.`
+                    } 
                     searchQuery={searchQuery}
                   />
                 </div>
@@ -1903,6 +1972,43 @@ const InspectionLevelForm = () => {
   const formRef = useRef(null);
   const saveTimerRef = useRef(null);
   
+  // Get asset types from Redux store
+  const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
+  
+  // State persistence functions
+  const getStorageKey = () => id ? `inspection_form_${id}` : 'inspection_form_new';
+  
+  const saveFormToStorage = (formData) => {
+    try {
+      localStorage.setItem(getStorageKey(), JSON.stringify({
+        ...formData,
+        _lastSaved: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error saving form state to localStorage:', error);
+    }
+  };
+  
+  const loadFormFromStorage = () => {
+    try {
+      const savedData = localStorage.getItem(getStorageKey());
+      if (savedData) {
+        return JSON.parse(savedData);
+      }
+    } catch (error) {
+      console.error('Error loading form state from localStorage:', error);
+    }
+    return null;
+  };
+  
+  const clearFormStorage = () => {
+    try {
+      localStorage.removeItem(getStorageKey());
+    } catch (error) {
+      console.error('Error clearing form state from localStorage:', error);
+    }
+  };
+  
   // State for form data
   const [formData, setFormData] = useState({
     name: '',
@@ -1922,6 +2028,7 @@ const InspectionLevelForm = () => {
   const [questionToLink, setQuestionToLink] = useState(null);
   const [showQuestionLibrary, setShowQuestionLibrary] = useState(false);
   const [userHasEdited, setUserHasEdited] = useState(false);
+  const [hasRecoveredData, setHasRecoveredData] = useState(false);
   
   // Active set management
   const [activeSetIndex, setActiveSetIndex] = useState(0);
@@ -1956,7 +2063,7 @@ const InspectionLevelForm = () => {
   
   // Track last saved data to detect changes
   const lastSavedDataRef = useRef(null);
-  
+
   // Add a new activity to the activity history, but only for significant events
   const addActivity = (title) => {
     // Filter out trivial updates
@@ -2000,31 +2107,80 @@ const InspectionLevelForm = () => {
     }
   };
   
+  // Save form data to localStorage when it changes
+  useEffect(() => {
+    if (!initialLoading && userHasEdited) {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+      
+      saveTimerRef.current = setTimeout(() => {
+        saveFormToStorage(formData);
+      }, 1000); // Debounce saves to localStorage for better performance
+    }
+    
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [formData, initialLoading, userHasEdited]);
+  
   // Effect to load data and set up listeners
   useEffect(() => {
+    // Fetch asset types
+    dispatch(fetchAssetTypes());
+    
     if (id) {
       fetchInspectionLevel();
     } else {
-      // For new template, initialize with one empty set
-      setFormData(prev => ({
-        ...prev,
-        sets: [{
-          id: Date.now(),
-          name: '',
-          description: '',
-          subLevels: [],
-          questions: [],
-          generalQuestions: []
-        }]
-      }));
+      // For new template, check for persisted data first
+      const persistedForm = loadFormFromStorage();
+      
+      if (persistedForm) {
+        // Remove metadata fields
+        const { _lastSaved, ...cleanForm } = persistedForm;
+        setFormData(cleanForm);
+        
+        // Show notification
+        toast.success('Recovered your draft template');
+        addActivity('Loaded draft from local storage');
+        setHasRecoveredData(true);
+      } else {
+        // Initialize with one empty set
+        setFormData(prev => ({
+          ...prev,
+          sets: [{
+            id: Date.now(),
+            name: '',
+            description: '',
+            subLevels: [],
+            questions: [],
+            generalQuestions: []
+          }]
+        }));
+      }
       setInitialLoading(false);
     }
     
     // Load question library
     loadQuestionLibrary();
     
+    // Add beforeunload event listener to warn about unsaved changes
+    const handleBeforeUnload = (e) => {
+      if (userHasEdited) {
+        const message = "You have unsaved changes. Are you sure you want to leave?";
+        e.returnValue = message;
+        return message;
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
     return () => {
-      // Clear any pending save timers
+      // Clean up
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
@@ -2061,8 +2217,32 @@ const InspectionLevelForm = () => {
   const fetchInspectionLevel = async () => {
     try {
       setInitialLoading(true);
+      
+      // Check for persisted state first
+      const persistedForm = loadFormFromStorage();
+      
+      // Load data from API
       const data = await inspectionService.getInspectionLevel(id);
       console.log("Backend data:", data);
+      
+      // If we have persisted data, compare timestamps
+      if (persistedForm && persistedForm._lastSaved) {
+        const serverTimestamp = new Date(data.updatedAt || data.createdAt).getTime();
+        const localTimestamp = new Date(persistedForm._lastSaved).getTime();
+        
+        // Use persisted form if it's newer than server data
+        if (localTimestamp > serverTimestamp) {
+          // Remove metadata fields
+          const { _lastSaved, ...cleanForm } = persistedForm;
+          setFormData(cleanForm);
+          
+          toast.success('Recovered unsaved changes');
+          addActivity('Loaded unsaved changes from local storage');
+          setHasRecoveredData(true);
+          setInitialLoading(false);
+          return;
+        }
+      }
       
       // Initialize processed data with top-level fields
       let processedData = {
@@ -2097,38 +2277,15 @@ const InspectionLevelForm = () => {
         }];
       }
       
-      console.log("Converted data for frontend:", processedData);
       setFormData(processedData);
-      
-      // Set selected level ID to the first sublevel if it exists
-      // First find the set that has subLevels
-      let foundSubLevel = false;
-      for (const set of processedData.sets) {
-        if (set.subLevels && set.subLevels.length > 0) {
-          setSelectedLevelId(set.subLevels[0].id);
-          foundSubLevel = true;
-          break;
-        }
-      }
-      
-      // If no subLevels were found, set activeSetIndex to 0
-      if (!foundSubLevel) {
-        setActiveSetIndex(0);
-      }
-      
-      // Update last saved data ref for detecting changes
-      lastSavedDataRef.current = JSON.parse(JSON.stringify(processedData));
-      addActivity("Template loaded");
+      setInitialLoading(false);
     } catch (error) {
-      console.error('Error fetching template:', error);
+      console.error('Error fetching inspection level:', error);
       handleError(error);
-      toast.error("Failed to load inspection template");
-      navigate('/inspection');
-    } finally {
       setInitialLoading(false);
     }
   };
-
+  
   // Add a new inspection set - significant event, track it
   const addInspectionSet = () => {
     setUserHasEdited(true);
@@ -2224,6 +2381,12 @@ const InspectionLevelForm = () => {
 
   // Tab change - no need to trigger API calls or activity logs
   const handleTabChange = (newTab) => {
+    // Only change tabs via navigation buttons
+    setActiveTab(newTab);
+  };
+
+  // New function for navigation buttons only
+  const handleNavigationButtonClick = (newTab) => {
     setActiveTab(newTab);
   };
 
@@ -2289,7 +2452,7 @@ const InspectionLevelForm = () => {
       if (firstErrorField) {
         // Switch to the tab with errors first
         if (firstErrorField === 'name' || firstErrorField === 'description') {
-          handleTabChange('basic');
+          handleNavigationButtonClick('basic');
           
           // After switching tab, focus the field
           setTimeout(() => {
@@ -2297,7 +2460,7 @@ const InspectionLevelForm = () => {
             if (element) element.focus();
           }, 100);
         } else if (firstErrorField.startsWith('set_') || firstErrorField === 'sets') {
-          handleTabChange('sets');
+          handleNavigationButtonClick('sets');
           
           // After switching tab, focus the field
           setTimeout(() => {
@@ -2360,6 +2523,13 @@ const InspectionLevelForm = () => {
                   !processedQ._id.match(/^[0-9a-fA-F]{24}$/))) {
                 delete processedQ._id;
               }
+              
+              // Ensure mandatory field is properly set
+              // If not explicitly set to false, default to true (mandatory)
+              if (processedQ.mandatory !== false) {
+                processedQ.mandatory = true;
+              }
+              
               return processedQ;
             });
           }
@@ -2380,6 +2550,13 @@ const InspectionLevelForm = () => {
               !processedQ._id.match(/^[0-9a-fA-F]{24}$/))) {
             delete processedQ._id;
           }
+          
+          // Ensure mandatory field is properly set
+          // If not explicitly set to false, default to true (mandatory)
+          if (processedQ.mandatory !== false) {
+            processedQ.mandatory = true;
+          }
+          
           return processedQ;
         });
       };
@@ -2435,6 +2612,9 @@ const InspectionLevelForm = () => {
         addActivity('Template created successfully');
       }
       
+      // Clear persisted form data after successful submission
+      clearFormStorage();
+      
       toast.success(id ? 'Template updated successfully' : 'Template created successfully');
       navigate('/inspection');
     } catch (error) {
@@ -2472,6 +2652,44 @@ const InspectionLevelForm = () => {
         </button>
       </Header>
       
+      {hasRecoveredData && (
+        <div style={{
+          marginBottom: '16px',
+          padding: '12px 16px',
+          backgroundColor: '#dcfce7',
+          color: '#166534',
+          borderRadius: '6px',
+          fontSize: '14px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Info size={16} />
+            <span>Working with recovered data. Your changes are automatically saved.</span>
+          </div>
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to discard the recovered data and start fresh?')) {
+                clearFormStorage();
+                window.location.reload();
+              }
+            }}
+            style={{
+              backgroundColor: '#166534',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            Discard Recovery
+          </button>
+        </div>
+      )}
+      
       {initialLoading ? (
         <SkeletonLoader />
       ) : (
@@ -2480,21 +2698,41 @@ const InspectionLevelForm = () => {
             <TabsContainer>
               <Tab 
                 key="basic" 
-                onClick={() => handleTabChange('basic')} 
                 $active={activeTab === 'basic'}
+                style={{ 
+                  cursor: 'default',
+                  opacity: activeTab === 'basic' ? 1 : 0.6,
+                  pointerEvents: 'none' // Completely disable interactions
+                }}
               >
                 Basic Info
               </Tab>
               <Tab 
                 key="sets" 
-                onClick={() => handleTabChange('sets')}
                 $active={activeTab === 'sets'}
+                style={{ 
+                  cursor: 'default',
+                  opacity: activeTab === 'sets' ? 1 : 0.6,
+                  pointerEvents: 'none' // Completely disable interactions
+                }}
               >
                 Inspection Sets
                 <TabCount $active={activeTab === 'sets'}>
                   {formData.sets.length}
                 </TabCount>
               </Tab>
+              
+              <div style={{
+                marginLeft: 'auto',
+                fontSize: '12px',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <Info size={14} />
+                Use navigation buttons below to switch between sections
+              </div>
             </TabsContainer>
             
             {activeTab === 'basic' && (
@@ -2521,10 +2759,23 @@ const InspectionLevelForm = () => {
                       onChange={handleChange}
                       disabled={loading}
                     >
-                      <option value="marina_operator">Marina Operator</option>
-                      <option value="yacht_chartering">Yacht Chartering</option>
-                      <option value="tourism_agent">Tourism Agent</option>
+                      <option value="">Select type</option>
+                      {assetTypes && assetTypes.length > 0 ? (
+                        assetTypes.map(type => (
+                          <option key={type._id} value={type.name.toLowerCase().replace(/\s+/g, '_')}>
+                            {type.name}
+                          </option>
+                        ))
+                      ) : (
+                        // Fallback to original options if no asset types are available
+                        <>
+                          <option value="marina_operator">Marina Operator</option>
+                          <option value="yacht_chartering">Yacht Chartering</option>
+                          <option value="tourism_agent">Tourism Agent</option>
+                        </>
+                      )}
                     </Select>
+                    {errors.type && <ErrorMessage>{errors.type}</ErrorMessage>}
                   </FormGroup>
 
                   <FormGroup style={{ gridColumn: '1 / -1' }}>
@@ -2545,7 +2796,7 @@ const InspectionLevelForm = () => {
                   <Button 
                     type="button"
                     variant="primary"
-                    onClick={() => handleTabChange('sets')}
+                    onClick={() => handleNavigationButtonClick('sets')}
                     disabled={loading}
                   >
                     Next: Inspection Sets <ChevronRight size={16} />
@@ -3242,14 +3493,20 @@ const InspectionLevelForm = () => {
                 </div>
                 
                 <TabNavigationButtons>
-                  <Button 
+                  <Button
                     type="button"
-                    onClick={() => handleTabChange('basic')}
+                    onClick={() => handleNavigationButtonClick('basic')}
                     disabled={loading}
                   >
                     <ChevronLeft size={16} /> Back to Basic Info
                   </Button>
-                  <div></div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={loading}
+                  >
+                    Save Template
+                  </Button>
                 </TabNavigationButtons>
               </TabContent>
             )}

@@ -180,12 +180,12 @@ const LevelGrid = styled.div`
 const LevelCard = styled.div`
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
 
   &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -194,6 +194,7 @@ const AccordionHeader = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  padding: 20px;
 `;
 
 const LevelInfo = styled.div`
@@ -232,6 +233,7 @@ const LevelDetails = styled.div`
 const LevelActions = styled.div`
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 `;
 
 const ActionButton = styled.button`
@@ -311,10 +313,23 @@ const AccordionTrigger = styled(Accordion.Trigger)`
 
 const AccordionContent = styled(Accordion.Content)`
   overflow: hidden;
+  animation: slideDown 300ms ease-out;
+  
+  @keyframes slideDown {
+    from {
+      height: 0;
+      opacity: 0.5;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+      opacity: 1;
+    }
+  }
 `;
 
 const ChevronIcon = styled(ChevronDown)`
-  transition: transform 300ms;
+  transition: transform 300ms ease;
+  
   [data-state=open] & {
     transform: rotate(180deg);
   }
@@ -378,23 +393,35 @@ const ModalActions = styled.div`
   margin-top: 24px;
 `;
 
+const AccordionItemContent = styled.div`
+  padding: 0 20px 20px;
+  background: #f9fafc;
+  border-top: 1px solid #edf2f7;
+`;
+
 const LevelStats = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  padding: 16px 0;
 `;
 
 const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 100px;
 
   svg {
-    width: 16px;
-    height: 16px;
-    color: #666;
+    width: 18px;
+    height: 18px;
+    color: #4a5568;
   }
 
   div {
@@ -402,14 +429,15 @@ const StatItem = styled.div`
   }
 
   strong {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: #1a237e;
+    display: block;
   }
 
   span {
     font-size: 12px;
-    color: #666;
+    color: #718096;
   }
 `;
 
@@ -742,50 +770,52 @@ const InspectionLevelList = ({
                       </AccordionHeader>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <LevelStats>
-                        <StatItem>
-                          <Layers size={16} />
-                          <div>
-                            <strong>{subLevelCount}</strong>
-                            <span>Levels</span>
-                          </div>
-                        </StatItem>
-                        <StatItem>
-                          <ListChecks size={16} />
-                          <div>
-                            <strong>{questionCount}</strong>
-                            <span>Questions</span>
-                          </div>
-                        </StatItem>
-                        <StatItem>
-                          <Calendar size={16} />
-                          <div>
-                            <strong>{new Date(level.createdAt).toLocaleDateString()}</strong>
-                            <span>Created</span>
-                          </div>
-                        </StatItem>
-                      </LevelStats>
-                      <LevelActions>
-                        <Button as={Link} to={`/inspection/${level._id || level.id}`} variant="secondary">
-                          <Eye size={16} />
-                          View
-                        </Button>
-                        <Button as={Link} to={`/inspection/${level._id || level.id}/edit`} variant="secondary">
-                          <Edit size={16} />
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="danger"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onDeleteClick(level);
-                          }}
-                        >
-                          <Trash2 size={16} />
-                          Delete
-                        </Button>
-                      </LevelActions>
+                      <AccordionItemContent>
+                        <LevelStats>
+                          <StatItem>
+                            <Layers size={18} />
+                            <div>
+                              <strong>{subLevelCount}</strong>
+                              <span>Levels</span>
+                            </div>
+                          </StatItem>
+                          <StatItem>
+                            <ListChecks size={18} />
+                            <div>
+                              <strong>{questionCount}</strong>
+                              <span>Questions</span>
+                            </div>
+                          </StatItem>
+                          <StatItem>
+                            <Calendar size={18} />
+                            <div>
+                              <strong>{new Date(level.createdAt).toLocaleDateString()}</strong>
+                              <span>Created</span>
+                            </div>
+                          </StatItem>
+                        </LevelStats>
+                        <LevelActions>
+                          <Button as={Link} to={`/inspection/${level._id || level.id}`} variant="secondary">
+                            <Eye size={16} />
+                            View
+                          </Button>
+                          <Button as={Link} to={`/inspection/${level._id || level.id}/edit`} variant="secondary">
+                            <Edit size={16} />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="danger"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onDeleteClick(level);
+                            }}
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </Button>
+                        </LevelActions>
+                      </AccordionItemContent>
                     </AccordionContent>
                   </Accordion.Item>
                 </AccordionRoot>

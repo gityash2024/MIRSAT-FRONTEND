@@ -184,10 +184,10 @@ const Button = styled.button`
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 24px;
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -215,7 +215,7 @@ const LevelHierarchy = styled.div`
 
 const HierarchyNode = styled.div`
   margin-left: ${props => props.level * 32}px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   position: relative;
 
   &:before {
@@ -247,16 +247,22 @@ const NodeContent = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 14px;
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   position: relative;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f1f5f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
 `;
 
 const NodeIcon = styled.div`
-  width: 32px;
-  height: 32px;
+  min-width: 36px;
+  height: 36px;
   border-radius: 6px;
   background: ${props => props.background || '#e3f2fd'};
   color: ${props => props.color || '#1a237e'};
@@ -269,15 +275,57 @@ const NodeInfo = styled.div`
   flex: 1;
 
   h4 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     color: #1a237e;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   p {
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #64748b;
+  }
+`;
+
+const LevelNumber = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background-color: #e2e8f0;
+  color: #475569;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+`;
+
+const NodeMetadata = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+`;
+
+const MetadataItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  
+  svg {
+    width: 12px;
+    height: 12px;
   }
 `;
 
@@ -460,6 +508,18 @@ const ErrorContainer = styled.div`
 // Add new styled components for the questionnaire section
 const QuestionnaireCard = styled(Card)`
   margin-top: 24px;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #3949ab, #1a237e);
+  }
 `;
 
 const QuestionList = styled.div`
@@ -470,11 +530,17 @@ const QuestionList = styled.div`
 `;
 
 const QuestionItem = styled.div`
-  margin-bottom: 20px;
-  padding: 16px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #3949ab;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+  }
 `;
 
 const QuestionNumber = styled.div`
@@ -482,46 +548,77 @@ const QuestionNumber = styled.div`
   background: #e0e7ff;
   color: #3949ab;
   font-weight: 600;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
   font-size: 12px;
-  margin-bottom: 8px;
+  margin-right: 10px;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
 `;
 
 const MandatoryBadge = styled.span`
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: ${props => props.mandatory ? '#dcfce7' : '#fff1f2'};
   color: ${props => props.mandatory ? '#166534' : '#be123c'};
   font-size: 12px;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-left: 10px;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 const QuestionText = styled.h4`
   font-size: 16px;
   color: #334155;
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
   font-weight: 500;
   
   ${props => props.required && `
+    position: relative;
+    
     &::after {
       content: '*';
       color: #ef4444;
       margin-left: 4px;
+      font-size: 14px;
     }
   `}
+`;
+
+const QuestionDetails = styled.div`
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  border: 1px solid #f1f5f9;
 `;
 
 const QuestionType = styled.div`
   font-size: 12px;
   color: #64748b;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #f1f5f9;
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
   margin-bottom: 8px;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 const OptionsList = styled.ul`
@@ -835,6 +932,60 @@ const SetStat = styled.div`
   gap: 8px;
 `;
 
+// Create a new styled component for the summary section
+const SummarySection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+const SummaryCard = styled.div`
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: ${props => props.color || '#1a237e'};
+  }
+`;
+
+const SummaryLabel = styled.div`
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    color: ${props => props.color || '#1a237e'};
+  }
+`;
+
+const SummaryValue = styled.div`
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+`;
+
+const SummaryDescription = styled.div`
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+`;
+
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -1032,68 +1183,90 @@ const InspectionLevelView = () => {
     }
   };
 
-  // Helper function to render sublevels
+  // Helper function to count questions for a specific level
+  const countLevelQuestions = (level, questions) => {
+    if (!questions || !Array.isArray(questions)) return 0;
+    
+    return questions.filter(q => q.levelId === level._id).length;
+  };
+
+  // Modify the renderSubLevels function in the component
   const renderSubLevels = (subLevels, prefix = '', setIndex = null) => {
     if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
-      return (
-        <EmptyState>
-          <p>No levels found</p>
-        </EmptyState>
-      );
+      return null;
     }
 
     return (
-      <ul>
+      <div>
         {subLevels.map((subLevel, index) => {
-          // Ensure we have a valid subLevel object
-          if (!subLevel || typeof subLevel !== 'object') return null;
+          const nodeId = setIndex !== null 
+            ? `set${setIndex}_${prefix}${prefix ? '.' : ''}${index}`
+            : `${prefix}${prefix ? '.' : ''}${index}`;
           
-          const currentPrefix = prefix ? `${prefix}.${index}` : `${index}`;
-          const nodeId = setIndex !== null ? `set${setIndex}_${currentPrefix}` : currentPrefix;
-          const isExpanded = expandedNodes[nodeId];
+          const isExpanded = nodeId in expandedNodes ? expandedNodes[nodeId] : true;
           const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
+          const questionsCount = level?.questions ? countLevelQuestions(subLevel, level.questions) : 0;
           
-          // Extract ID - support both MongoDB _id and client-side id
-          const subLevelId = subLevel._id || subLevel.id || `sl-${index}`;
+          // Generate the level number for display
+          const levelNumber = prefix 
+            ? `${prefix}${index + 1}` 
+            : setIndex !== null 
+              ? `${String.fromCharCode(65 + setIndex)}.${index + 1}` // A.1, A.2, B.1, B.2, etc.
+              : String.fromCharCode(65 + index); // A, B, C for top level without set index
           
           return (
-            <li key={subLevelId}>
-              <TreeNode>
-                <TreeNodeHeader>
-                  {hasChildren ? (
-                    <ExpandButton onClick={() => toggleNodeExpanded(nodeId)}>
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </ExpandButton>
-                  ) : (
-                    <span style={{ width: '20px', display: 'inline-block' }}></span>
-                  )}
-                  <span>{subLevel.name || 'Unnamed Level'}</span>
-                  <TreeNodeActions>
-                    <IconButton 
-                      title="View Level Details" 
-                      onClick={() => handleViewSubLevel(nodeId)}
-                    >
-                      <Eye size={14} />
-                    </IconButton>
-                    <IconButton 
-                      title="Edit Level" 
-                      onClick={() => handleEditSubLevel(nodeId)}
-                    >
-                      <Edit size={14} />
-                    </IconButton>
-                  </TreeNodeActions>
-                </TreeNodeHeader>
-                
-                {hasChildren && isExpanded && (
-                  <TreeNodeChildren>
-                    {renderSubLevels(subLevel.subLevels, currentPrefix, setIndex)}
-                  </TreeNodeChildren>
+            <HierarchyNode 
+              key={subLevel._id || `node-${nodeId}`} 
+              level={prefix.split('.').length + (prefix ? 0 : 1)}
+              isLast={index === subLevels.length - 1}
+            >
+              <NodeContent>
+                {hasChildren && (
+                  <ExpandCollapseButton onClick={() => toggleNodeExpanded(nodeId)}>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </ExpandCollapseButton>
                 )}
-              </TreeNode>
-            </li>
+                <NodeIcon>
+                  <Layers size={18} />
+                </NodeIcon>
+                <NodeInfo>
+                  <h4>
+                    <LevelNumber>{levelNumber}</LevelNumber>
+                    {subLevel.name || 'Unnamed Level'}
+                  </h4>
+                  <p>{subLevel.description || 'No description provided'}</p>
+                  <NodeMetadata>
+                    {questionsCount > 0 && (
+                      <MetadataItem>
+                        <ListChecks size={12} />
+                        {questionsCount} Question{questionsCount !== 1 ? 's' : ''}
+                      </MetadataItem>
+                    )}
+                    {hasChildren && (
+                      <MetadataItem>
+                        <Layers size={12} />
+                        {subLevel.subLevels.length} Sub-level{subLevel.subLevels.length !== 1 ? 's' : ''}
+                      </MetadataItem>
+                    )}
+                  </NodeMetadata>
+                </NodeInfo>
+                <NodeActions>
+                  <ActionButton onClick={() => handleViewSubLevel(nodeId)}>
+                    <Eye size={16} />
+                  </ActionButton>
+                  <ActionButton onClick={() => handleEditSubLevel(nodeId)}>
+                    <Edit size={16} />
+                  </ActionButton>
+                </NodeActions>
+              </NodeContent>
+              
+              {hasChildren && isExpanded && (
+                renderSubLevels(subLevel.subLevels, `${prefix}${prefix ? '.' : ''}${index}`, setIndex)
+              )}
+            </HierarchyNode>
           );
         })}
-      </ul>
+      </div>
     );
   };
   
@@ -1128,6 +1301,51 @@ const InspectionLevelView = () => {
     };
     return types[type] || type;
   };
+
+  // Count total questions and levels across all sets and sublevels
+  function countTotalItems(level) {
+    if (!level) return { questionCount: 0, levelCount: 0 };
+    
+    let questionCount = level.questions?.length || 0;
+    let levelCount = 0;
+    
+    // Function to count sublevels recursively
+    const countSubLevels = (subLevels) => {
+      if (!subLevels || !Array.isArray(subLevels)) return 0;
+      
+      let count = subLevels.length;
+      
+      for (const subLevel of subLevels) {
+        if (subLevel.subLevels && Array.isArray(subLevel.subLevels)) {
+          count += countSubLevels(subLevel.subLevels);
+        }
+      }
+      
+      return count;
+    };
+    
+    // Count from direct subLevels (legacy structure)
+    if (level.subLevels && Array.isArray(level.subLevels)) {
+      levelCount += countSubLevels(level.subLevels);
+    }
+    
+    // Count from sets structure
+    if (level.sets && Array.isArray(level.sets)) {
+      level.sets.forEach(set => {
+        if (set.subLevels && Array.isArray(set.subLevels)) {
+          levelCount += countSubLevels(set.subLevels);
+        }
+        if (set.questions && Array.isArray(set.questions)) {
+          questionCount += set.questions.length;
+        }
+        if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
+          questionCount += set.generalQuestions.length;
+        }
+      });
+    }
+    
+    return { questionCount, levelCount };
+  }
 
   if (loading) {
     return <InspectionLevelViewSkeleton />;
@@ -1235,6 +1453,64 @@ const InspectionLevelView = () => {
         </ButtonGroup>
       </Header>
 
+      {level && (
+        <SummarySection>
+          <SummaryCard color="#1a237e">
+            <SummaryLabel color="#1a237e">
+              <Layers size={16} />
+              Template Type
+            </SummaryLabel>
+            <SummaryValue>
+              {level.type ? level.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown Type'}
+            </SummaryValue>
+            <SummaryDescription>
+              {level.status ? level.status.charAt(0).toUpperCase() + level.status.slice(1) : 'Active'} • 
+              {level.priority ? ` ${level.priority.charAt(0).toUpperCase() + level.priority.slice(1)} Priority` : ''}
+            </SummaryDescription>
+          </SummaryCard>
+          
+          <SummaryCard color="#0891b2">
+            <SummaryLabel color="#0891b2">
+              <ListChecks size={16} />
+              Questions
+            </SummaryLabel>
+            <SummaryValue>
+              {countTotalItems(level).questionCount} Questions
+            </SummaryValue>
+            <SummaryDescription>
+              {level.questions?.filter(q => q.mandatory !== false).length || 0} Mandatory • 
+              {level.questions?.filter(q => q.mandatory === false).length || 0} Recommended
+            </SummaryDescription>
+          </SummaryCard>
+          
+          <SummaryCard color="#059669">
+            <SummaryLabel color="#059669">
+              <Layers size={16} />
+              Levels
+            </SummaryLabel>
+            <SummaryValue>
+              {countTotalItems(level).levelCount} Levels
+            </SummaryValue>
+            <SummaryDescription>
+              Created on {new Date(level.createdAt).toLocaleDateString()}
+            </SummaryDescription>
+          </SummaryCard>
+          
+          <SummaryCard color="#d97706">
+            <SummaryLabel color="#d97706">
+              <Activity size={16} />
+              Compliance Rate
+            </SummaryLabel>
+            <SummaryValue>
+              {level.metrics?.complianceRate || '0%'}
+            </SummaryValue>
+            <SummaryDescription>
+              {level.metrics?.completedTasks || 0} completed tasks
+            </SummaryDescription>
+          </SummaryCard>
+        </SummarySection>
+      )}
+
       <ContentGrid>
         <div>
           <Card>
@@ -1327,7 +1603,7 @@ const InspectionLevelView = () => {
           <QuestionnaireCard>
             <CardTitle>
               <Clipboard size={18} />
-              Inspection Questionnaire
+              Inspection Questions
             </CardTitle>
             
             {level.questions && level.questions.length > 0 ? (
@@ -1377,27 +1653,35 @@ const InspectionLevelView = () => {
                   
                   return (
                     <QuestionItem key={question._id || question.id || index}>
-                      <QuestionNumber>{checkpointId}</QuestionNumber>
+                      <QuestionHeader>
+                        <QuestionNumber>{checkpointId}</QuestionNumber>
+                        <QuestionType>
+                          {question.answerType === 'yesno' ? <CheckCircle size={14} /> : 
+                           question.answerType === 'multiple_choice' ? <ListChecks size={14} /> : 
+                           <Info size={14} />}
+                          {getQuestionTypeLabel(question.answerType)}
+                        </QuestionType>
+                        <MandatoryBadge mandatory={question.mandatory !== false}>
+                          {question.mandatory === false ? 
+                            <><AlertTriangle size={14} />Recommended</> : 
+                            <><CheckCircle size={14} />Mandatory</>}
+                        </MandatoryBadge>
+                      </QuestionHeader>
+                      
                       <QuestionText required={question.required}>
                         {question.text}
                       </QuestionText>
                       
-                      <MandatoryBadge mandatory={question.mandatory !== false}>
-                        {question.mandatory === false ? 'Recommended' : 'Mandatory'}
-                      </MandatoryBadge>
-                      
-                      <QuestionType>
-                        {getQuestionTypeLabel(question.answerType)}
-                        {question.required && ' (Required)'}
-                      </QuestionType>
-                      
                       {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
                         question.options && question.options.length > 0 && (
-                          <OptionsList>
-                            {question.options.map((option, optIndex) => (
-                              <OptionItem key={optIndex}>{option}</OptionItem>
-                            ))}
-                          </OptionsList>
+                          <QuestionDetails>
+                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Response Options:</div>
+                            <OptionsList>
+                              {question.options.map((option, optIndex) => (
+                                <OptionItem key={optIndex}>{option}</OptionItem>
+                              ))}
+                            </OptionsList>
+                          </QuestionDetails>
                         )
                       }
                     </QuestionItem>
@@ -1405,7 +1689,16 @@ const InspectionLevelView = () => {
                 })}
               </QuestionList>
             ) : (
-              <p>No inspection questions defined</p>
+              <div style={{ 
+                padding: '16px', 
+                background: '#f8fafc', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                color: '#64748b'
+              }}>
+                <AlertTriangle size={18} style={{ marginBottom: '8px' }} />
+                <p>No inspection questions defined for this template</p>
+              </div>
             )}
           </QuestionnaireCard>
         </div>
