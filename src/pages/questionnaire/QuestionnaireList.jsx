@@ -5,6 +5,8 @@ import axios from 'axios';
 import { Filter, Search, FileText, Plus, MoreHorizontal, Trash2, Edit, Copy } from 'react-feather';
 import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from '../../config/constants';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchQuestionLibrary, addQuestionToLibrary, deleteQuestionFromLibrary } from '../../store/slices/questionLibrarySlice';
 
 // Styled Components
 const PageContainer = styled.div`
@@ -417,121 +419,125 @@ const PageButton = styled.button`
 
 const QuestionnaireList = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   
-  const [questionnaires, setQuestionnaires] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Get question library data from Redux
+  const { questions: libraryQuestions, loading: libraryLoading, error: libraryError } = 
+    useSelector(state => state.questionLibrary);
+  
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch question library on component mount
   useEffect(() => {
-    fetchQuestionnaires();
-  }, [page, search]);
-
-  const fetchQuestionnaires = async () => {
-    setLoading(true);
+    fetchLibraryQuestions();
+  }, []);
+  
+  // Filter questions when library changes or search/page changes
+  useEffect(() => {
+    filterQuestions();
+  }, [libraryQuestions, search, page]);
+  
+  const fetchLibraryQuestions = async () => {
     try {
-      console.log('Fetching questionnaires...');
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('You must be logged in to view questionnaires');
-        navigate('/login');
-        return;
-      }
-      
-      const response = await axios.get(`${API_BASE_URL}/questionnaires`, {
-        params: {
-          page,
-          limit,
-          search: search || undefined,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      console.log('Questionnaires response:', response.data);
-      
-      setQuestionnaires(response.data.results || []);
-      setTotalPages(response.data.totalPages || 1);
-      setTotalResults(response.data.totalResults || 0);
+      setLoading(true);
+      await dispatch(fetchQuestionLibrary()).unwrap();
     } catch (error) {
-      console.error('Error fetching questionnaires:', error);
-      const errorMessage = error.response?.data?.message || 
-                         error.response?.data?.error?.message ||
-                         'Failed to load questionnaires';
-      toast.error(errorMessage);
-      setQuestionnaires([]);
+      console.error('Error fetching question library:', error);
+      toast.error('Failed to load questions');
     } finally {
       setLoading(false);
     }
+  };
+  
+  const filterQuestions = () => {
+    if (!libraryQuestions) return;
+    
+    // Filter questions based on search term
+    let filtered = [...libraryQuestions];
+    
+    if (search) {
+      filtered = filtered.filter(q => 
+        q.text.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Set total results and pages
+    const total = filtered.length;
+    setTotalResults(total);
+    setTotalPages(Math.ceil(total / limit) || 1);
+    
+    // Paginate the results
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    setFilteredQuestions(filtered.slice(start, end));
   };
 
   const handleSearch = (e) => {
     if (e.key === 'Enter') {
       setPage(1);
-      fetchQuestionnaires();
+      filterQuestions();
     }
   };
-
-  const handleDelete = async (id, e) => {
+  
+  const handleDuplicateQuestion = async (question, e) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this questionnaire?')) {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          toast.error('You must be logged in to delete a questionnaire');
-          return;
-        }
-        
-        await axios.delete(`${API_BASE_URL}/questionnaires/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        toast.success('Questionnaire deleted successfully');
-        fetchQuestionnaires();
-      } catch (error) {
-        console.error('Error deleting questionnaire:', error);
-        const errorMessage = error.response?.data?.message || 
-                           error.response?.data?.error?.message || 
-                           'Failed to delete questionnaire';
-        toast.error(errorMessage);
-      }
-    }
-    setActiveMenu(null);
-  };
-
-  const handleDuplicate = async (id, e) => {
-    e.stopPropagation();
+    
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('You must be logged in to duplicate a questionnaire');
-        return;
-      }
+      setLoading(true);
       
-      await axios.post(`${API_BASE_URL}/questionnaires/${id}/duplicate`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      // Create a duplicate with slightly modified text
+      const duplicatedQuestion = {
+        text: `${question.text} (Copy)`,
+        answerType: question.answerType || 'yesno',
+        options: [...(question.options || [])],
+        required: question.required === undefined ? true : question.required
+      };
       
-      toast.success('Questionnaire duplicated successfully');
-      fetchQuestionnaires();
+      await dispatch(addQuestionToLibrary(duplicatedQuestion)).unwrap();
+      toast.success('Question duplicated successfully');
+      
+      // Manually refresh the library
+      await dispatch(fetchQuestionLibrary()).unwrap();
+      
+      // Close menu after action
+      setActiveMenu(null);
     } catch (error) {
-      console.error('Error duplicating questionnaire:', error);
-      const errorMessage = error.response?.data?.message || 
-                         error.response?.data?.error?.message || 
-                         'Failed to duplicate questionnaire';
-      toast.error(errorMessage);
+      console.error('Error duplicating question:', error);
+      toast.error(typeof error === 'string' ? error : 'Failed to duplicate question');
+    } finally {
+      setLoading(false);
     }
-    setActiveMenu(null);
+  };
+  
+  const handleDeleteQuestion = async (questionId, e) => {
+    e.stopPropagation();
+    
+    if (window.confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
+      try {
+        setLoading(true);
+        
+        await dispatch(deleteQuestionFromLibrary(questionId)).unwrap();
+        toast.success('Question deleted successfully');
+        
+        // Manually refresh the library
+        await dispatch(fetchQuestionLibrary()).unwrap();
+        
+        // Close menu after action
+        setActiveMenu(null);
+      } catch (error) {
+        console.error('Error deleting question:', error);
+        toast.error(typeof error === 'string' ? error : 'Failed to delete question');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const handleCreateQuestionnaire = () => {
@@ -548,16 +554,13 @@ const QuestionnaireList = () => {
   };
 
   const handleRowClick = (id) => {
-    navigate(`/questionnaire/${id}`);
+    // Instead of navigating to a questionnaire view, directly view the question
+    navigate(`/inspection/templates?view=${id}`);
   };
-
+  
   const handleMenuToggle = (id, e) => {
     e.stopPropagation();
-    setActiveMenu(activeMenu === id ? null : id);
-  };
-
-  const closeMenu = () => {
-    setActiveMenu(null);
+    setActiveMenu(prevActiveMenu => prevActiveMenu === id ? null : id);
   };
 
   useEffect(() => {
@@ -576,12 +579,12 @@ const QuestionnaireList = () => {
       <PageHeader>
         <Title>
           <FileText size={24} />
-          Questionnaires
+          Question Library
         </Title>
         <ActionButtons>
           <Button primary onClick={handleCreateQuestionnaire}>
             <Plus size={16} />
-            Create Questionnaire
+            Create Question
           </Button>
         </ActionButtons>
       </PageHeader>
@@ -591,7 +594,7 @@ const QuestionnaireList = () => {
           <Search size={18} />
           <input 
             type="text" 
-            placeholder="Search questionnaires..." 
+            placeholder="Search questions..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleSearch}
@@ -605,89 +608,91 @@ const QuestionnaireList = () => {
 
       <QuestionnairesTable>
         <TableHeader>
-          <HeaderCell>Name</HeaderCell>
-          <HeaderCell>Questions</HeaderCell>
-          <HeaderCell>Status</HeaderCell>
+          <HeaderCell>Question Text</HeaderCell>
+          <HeaderCell>Type</HeaderCell>
+          <HeaderCell>Required</HeaderCell>
           <HeaderCell>Created</HeaderCell>
           <HeaderCell hideOnMobile>Updated</HeaderCell>
           <HeaderCell></HeaderCell>
         </TableHeader>
 
-        {loading ? (
+        {loading || libraryLoading ? (
           <LoadingWrapper>
-            Loading questionnaires...
+            Loading questions...
           </LoadingWrapper>
-        ) : questionnaires.length === 0 ? (
+        ) : filteredQuestions.length === 0 ? (
           <NoResultsWrapper>
-            <h3>No questionnaires found</h3>
-            <p>Try adjusting your search or create a new questionnaire.</p>
+            <h3>No questions found</h3>
+            <p>Try adjusting your search or create a new question.</p>
             <Button primary onClick={handleCreateQuestionnaire}>
               <Plus size={16} />
-              Create Questionnaire
+              Create Question
             </Button>
           </NoResultsWrapper>
         ) : (
-          questionnaires.map((questionnaire) => (
+          filteredQuestions.map((question) => (
             <QuestionnaireRow 
-              key={questionnaire._id} 
-              onClick={() => handleRowClick(questionnaire._id)}
+              key={question.id || question._id} 
+              onClick={() => handleRowClick(question.id || question._id)}
             >
               <InfoCell>
                 <NameContainer>
-                  <IconBackground category={questionnaire.category}>
+                  <IconBackground>
                     <FileText size={18} />
                   </IconBackground>
                   <NameContent>
-                    <QuestionnaireName>{questionnaire.title}</QuestionnaireName>
-                    {questionnaire.description && (
-                      <Description>{questionnaire.description}</Description>
-                    )}
+                    <QuestionnaireName>{question.text}</QuestionnaireName>
                   </NameContent>
                 </NameContainer>
               </InfoCell>
               
-              <InfoCell label="Questions">
+              <InfoCell label="Type">
                 <QuestionsCount>
-                  {questionnaire.questions?.length || 0} questions
+                  {question.answerType || 'text'}
                 </QuestionsCount>
               </InfoCell>
               
-              <InfoCell label="Status">
-                <StatusBadge status={questionnaire.status}>
-                  {questionnaire.status === 'published' ? 'Published' : 'Draft'}
+              <InfoCell label="Required">
+                <StatusBadge status={question.required ? 'published' : 'draft'}>
+                  {question.required ? 'Required' : 'Optional'}
                 </StatusBadge>
               </InfoCell>
               
               <InfoCell label="Created">
                 <DateDisplay>
-                  {formatDate(questionnaire.createdAt)}
+                  {formatDate(question.createdAt)}
                 </DateDisplay>
               </InfoCell>
               
               <InfoCell label="Updated" hideOnMobile>
                 <DateDisplay>
-                  {formatDate(questionnaire.updatedAt)}
+                  {formatDate(question.updatedAt)}
                 </DateDisplay>
               </InfoCell>
               
               <ActionsCell onClick={(e) => e.stopPropagation()}>
-                <ActionsButton onClick={(e) => handleMenuToggle(questionnaire._id, e)}>
+                <ActionsButton onClick={(e) => handleMenuToggle(question.id || question._id, e)}>
                   <MoreHorizontal size={16} />
                 </ActionsButton>
                 
-                {activeMenu === questionnaire._id && (
+                {activeMenu === (question.id || question._id) && (
                   <ActionsMenu>
-                    <ActionItem onClick={() => navigate(`/questionnaire/edit/${questionnaire._id}`)}>
+                    <ActionItem onClick={(e) => {
+                      e.stopPropagation(); 
+                      navigate(`/questionnaire/edit/${question.id || question._id}`);
+                    }}>
                       <Edit size={16} />
-                      Edit
+                      Edit Question
                     </ActionItem>
-                    <ActionItem onClick={(e) => handleDuplicate(questionnaire._id, e)}>
+                    
+                    <ActionItem onClick={(e) => handleDuplicateQuestion(question, e)}>
                       <Copy size={16} />
-                      Duplicate
+                      Duplicate Question
                     </ActionItem>
-                    <ActionItem danger onClick={(e) => handleDelete(questionnaire._id, e)}>
+                    
+                    <ActionItem danger onClick={(e) => handleDeleteQuestion(question.id || question._id, e)}>
                       <Trash2 size={16} />
-                      Delete
+                      Delete Question
                     </ActionItem>
                   </ActionsMenu>
                 )}
@@ -696,10 +701,10 @@ const QuestionnaireList = () => {
           ))
         )}
 
-        {!loading && questionnaires.length > 0 && (
+        {!loading && filteredQuestions.length > 0 && (
           <Pagination>
             <PaginationInfo>
-              Showing {((page - 1) * limit) + 1}-{Math.min(page * limit, totalResults)} of {totalResults} questionnaires
+              Showing {((page - 1) * limit) + 1}-{Math.min(page * limit, totalResults)} of {totalResults} questions
             </PaginationInfo>
             
             <PaginationButtons>

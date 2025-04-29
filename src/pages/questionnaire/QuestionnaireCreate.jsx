@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Save, Plus, X } from 'react-feather';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/constants';
+import { useDispatch, useSelector } from 'react-redux';
+import { addQuestionToLibrary, fetchQuestionLibrary } from '../../store/slices/questionLibrarySlice';
 
 // Styled Components
 const PageContainer = styled.div`
@@ -249,74 +251,121 @@ const RequirementBadge = styled.span`
   margin-left: 4px;
 `;
 
-const QuestionnaireCreate = () => {
+const QuestionCreate = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { id } = useParams(); // Get question ID if editing
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'safety',
-    status: 'draft',
-    questions: []
-  });
+  // Get question library data for editing
+  const { questions: libraryQuestions, loading: libraryLoading } = 
+    useSelector(state => state.questionLibrary);
   
-  const [currentQuestion, setCurrentQuestion] = useState({
+  const [question, setQuestion] = useState({
     text: '',
-    type: 'text',
-    required: false,
-    requirementType: 'mandatory',
-    weight: 1,
-    options: []
+    answerType: 'yesno',
+    options: [],
+    required: true
   });
   
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Fetch question data if editing
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      loadQuestion();
+    }
+  }, [id]);
+  
+  const loadQuestion = async () => {
+    try {
+      // First make sure we have the questions loaded
+      if (libraryQuestions.length === 0) {
+        await dispatch(fetchQuestionLibrary()).unwrap();
+      }
+      
+      // Find the question in the state
+      const questionToEdit = libraryQuestions.find(q => 
+        (q.id === id) || (q._id === id)
+      );
+      
+      if (questionToEdit) {
+        setQuestion({
+          ...questionToEdit,
+          // If _id exists but id doesn't, use _id as id
+          id: questionToEdit.id || questionToEdit._id
+        });
+      } else {
+        toast.error('Question not found');
+        navigate('/questionnaire');
+      }
+    } catch (error) {
+      console.error('Error loading question:', error);
+      toast.error('Failed to load question data');
+      navigate('/questionnaire');
+    }
   };
   
-  const handleQuestionChange = (e) => {
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setCurrentQuestion(prev => ({
+    setQuestion(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
   
-  const addQuestion = () => {
-    if (!currentQuestion.text.trim()) {
-      toast.error('Question text is required');
-      return;
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    let updatedQuestion = { 
+      ...question, 
+      answerType: newType
+    };
+    
+    // Add default options based on type
+    if (['multiple_choice', 'select', 'radio', 'checkbox', 'dropdown'].includes(newType)) {
+      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    } else if (newType === 'compliance') {
+      updatedQuestion.options = [
+        'Full compliance',
+        'Partial compliance',
+        'Non-compliant',
+        'Not applicable'
+      ];
+    } else {
+      // Reset options if changing to a type that doesn't need them
+      updatedQuestion.options = [];
     }
     
-    setFormData(prev => ({
-      ...prev,
-      questions: [...prev.questions, { ...currentQuestion }]
-    }));
-    
-    setCurrentQuestion({
-      text: '',
-      type: 'text',
-      required: false,
-      requirementType: 'mandatory',
-      weight: 1,
-      options: []
-    });
+    setQuestion(updatedQuestion);
   };
   
-  const removeQuestion = (index) => {
-    setFormData(prev => ({
+  const addOption = () => {
+    setQuestion(prev => ({
       ...prev,
-      questions: prev.questions.filter((_, i) => i !== index)
+      options: [...(prev.options || []), '']
+    }));
+  };
+  
+  const updateOption = (index, value) => {
+    const options = [...question.options];
+    options[index] = value;
+    setQuestion(prev => ({
+      ...prev,
+      options
+    }));
+  };
+  
+  const removeOption = (index) => {
+    const options = question.options.filter((_, i) => i !== index);
+    setQuestion(prev => ({
+      ...prev,
+      options
     }));
   };
   
   const handleSubmit = async () => {
-    if (!formData.title.trim()) {
-      toast.error('Title is required');
+    if (!question.text.trim()) {
+      toast.error('Question text is required');
       return;
     }
     
@@ -326,29 +375,23 @@ const QuestionnaireCreate = () => {
       // Get the user info from localStorage if available
       const token = localStorage.getItem('token');
       if (!token) {
-        toast.error('You must be logged in to create a questionnaire');
+        toast.error('You must be logged in to create a question');
         navigate('/login');
         return;
       }
       
-      console.log('Sending questionnaire data:', formData);
+      console.log('Adding/updating question in library:', question);
       
-      const response = await axios.post(`${API_BASE_URL}/questionnaires`, formData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Use the Redux action to add the question to the library
+      await dispatch(addQuestionToLibrary(question)).unwrap();
       
-      console.log('Questionnaire creation response:', response.data);
-      
-      toast.success('Questionnaire created successfully');
+      toast.success(isEditing ? 'Question updated successfully' : 'Question added to library successfully');
       navigate('/questionnaire');
     } catch (error) {
-      console.error('Error creating questionnaire:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error?.message ||
-                          'Failed to create questionnaire';
+      console.error('Error adding/updating question to library:', error);
+      const errorMessage = typeof error === 'string' ? error : 
+                          error.message || 
+                          'Failed to add/update question to library';
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -360,9 +403,9 @@ const QuestionnaireCreate = () => {
       <PageHeader>
         <BackButton onClick={() => navigate('/questionnaire')}>
           <ChevronLeft size={16} />
-          Back to Questionnaires
+          Back to Question Library
         </BackButton>
-        <Title>Create Questionnaire</Title>
+        <Title>{isEditing ? 'Edit Question' : 'Create Question'}</Title>
         <ActionButtons>
           <Button 
             primary 
@@ -370,189 +413,134 @@ const QuestionnaireCreate = () => {
             disabled={isSubmitting}
           >
             <Save size={16} />
-            Save Questionnaire
+            {isEditing ? 'Update Question' : 'Save Question'}
           </Button>
         </ActionButtons>
       </PageHeader>
       
       <FormCard>
-        <CardTitle>Basic Information</CardTitle>
+        <CardTitle>Question Details</CardTitle>
         <FormRow>
           <FormGroup>
-            <Label>Title *</Label>
-            <Input
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter questionnaire title"
-              required
-            />
-          </FormGroup>
-        </FormRow>
-        
-        <FormRow>
-          <FormGroup>
-            <Label>Description</Label>
+            <Label>Question Text *</Label>
             <TextArea
-              name="description"
-              value={formData.description}
+              name="text"
+              value={question.text}
               onChange={handleChange}
-              placeholder="Enter description"
+              placeholder="Enter question text"
               rows={3}
+              required
             />
           </FormGroup>
         </FormRow>
         
         <FormRow columns="1fr 1fr">
           <FormGroup>
-            <Label>Category</Label>
+            <Label>Answer Type</Label>
             <Select 
-              name="category" 
-              value={formData.category} 
-              onChange={handleChange}
-              style={{ 
-                borderLeft: `4px solid ${
-                  formData.category === 'safety' ? '#B91C1C' : 
-                  formData.category === 'health' ? '#166534' : 
-                  formData.category === 'environment' ? '#0369A1' :
-                  formData.category === 'quality' ? '#B45309' : '#94A3B8'
-                }`
-              }}
+              name="answerType" 
+              value={question.answerType} 
+              onChange={handleTypeChange}
             >
-              <option value="safety" style={{color: '#B91C1C'}}>Safety</option>
-              <option value="health" style={{color: '#166534'}}>Health</option>
-              <option value="environment" style={{color: '#0369A1'}}>Environment</option>
-              <option value="quality" style={{color: '#B45309'}}>Quality</option>
-              <option value="other" style={{color: '#94A3B8'}}>Other</option>
+              <option value="yesno">Yes/No</option>
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="select">Dropdown/Select</option>
+              <option value="multiple_choice">Multiple Choice</option>
+              <option value="radio">Radio Buttons</option>
+              <option value="checkbox">Checkbox</option>
+              <option value="dropdown">Dropdown</option>
+              <option value="compliance">Compliance</option>
+              <option value="date">Date</option>
+              <option value="file">File Upload</option>
+              <option value="location">Location</option>
+              <option value="signature">Signature</option>
+              <option value="media">Media Upload</option>
+              <option value="slider">Slider</option>
             </Select>
           </FormGroup>
           
           <FormGroup>
-            <Label>Status</Label>
-            <Select 
-              name="status" 
-              value={formData.status} 
-              onChange={handleChange}
-              style={{ 
-                borderLeft: `4px solid ${formData.status === 'draft' ? '#B45309' : '#166534'}`
-              }}
-            >
-              <option value="draft" style={{color: '#B45309'}}>Draft</option>
-              <option value="published" style={{color: '#166534'}}>Published</option>
-            </Select>
+            <Label>Required</Label>
+            <div style={{ marginTop: '10px' }}>
+              <input 
+                type="checkbox" 
+                id="required" 
+                name="required" 
+                checked={question.required} 
+                onChange={handleChange}
+                style={{ marginRight: '8px' }}
+              />
+              <label htmlFor="required">This question is required</label>
+            </div>
           </FormGroup>
         </FormRow>
-      </FormCard>
-      
-      <FormCard>
-        <CardTitle>Questions</CardTitle>
         
-        <QuestionList>
-          {formData.questions.map((question, index) => (
-            <QuestionItem key={index}>
-              <QuestionHeader>
-                <QuestionTitle>
-                  <span>Question {index + 1}</span>
-                  <RequirementBadge type={question.requirementType}>
-                    {question.requirementType === 'mandatory' ? 'Mandatory' : 'Recommended'}
-                  </RequirementBadge>
-                </QuestionTitle>
-                <RemoveButton onClick={() => removeQuestion(index)}>
-                  <X size={16} />
-                </RemoveButton>
-              </QuestionHeader>
+        {['multiple_choice', 'select', 'radio', 'checkbox', 'dropdown', 'compliance'].includes(question.answerType) && (
+          <FormRow>
+            <FormGroup>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px'
+              }}>
+                <Label>Options</Label>
+                {question.answerType !== 'compliance' && (
+                  <Button
+                    type="button"
+                    onClick={addOption}
+                    style={{ padding: '4px 8px', fontSize: '13px' }}
+                    secondary
+                  >
+                    <Plus size={14} />
+                    Add Option
+                  </Button>
+                )}
+              </div>
               
-              <QuestionContent>
-                <div>{question.text}</div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>
-                  Type: {question.type.charAt(0).toUpperCase() + question.type.slice(1)}
-                  {question.weight > 1 && ` • Weight: ${question.weight}`}
+              {question.options.map((option, index) => (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  gap: '8px',
+                  marginBottom: '8px',
+                  alignItems: 'center'
+                }}>
+                  <Input
+                    type="text"
+                    value={option}
+                    onChange={(e) => updateOption(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                    style={{ flex: 1 }}
+                    readOnly={question.answerType === 'compliance'}
+                  />
+                  
+                  {question.answerType !== 'compliance' && (
+                    <button
+                      onClick={() => removeOption(index)}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px'
+                      }}
+                      type="button"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
                 </div>
-              </QuestionContent>
-            </QuestionItem>
-          ))}
-          
-          <FormCard style={{ marginTop: '16px' }}>
-            <CardTitle>Add New Question</CardTitle>
-            
-            <FormRow>
-              <FormGroup>
-                <Label>Question Text *</Label>
-                <Input
-                  name="text"
-                  value={currentQuestion.text}
-                  onChange={handleQuestionChange}
-                  placeholder="Enter question text"
-                />
-              </FormGroup>
-            </FormRow>
-            
-            <FormRow columns="1fr 1fr 1fr">
-              <FormGroup>
-                <Label>Question Type</Label>
-                <Select 
-                  name="type" 
-                  value={currentQuestion.type} 
-                  onChange={handleQuestionChange}
-                >
-                  <option value="text">Text</option>
-                  <option value="number">Number</option>
-                  <option value="yesno">Yes/No</option>
-                  <option value="radio">Radio</option>
-                  <option value="checkbox">Checkbox</option>
-                  <option value="dropdown">Dropdown</option>
-                  <option value="compliance">Compliance</option>
-                  <option value="file">File</option>
-                  <option value="date">Date</option>
-                </Select>
-                <HelpText>Select the type of answer expected for this question</HelpText>
-              </FormGroup>
-              
-              <FormGroup>
-                <Label>Requirement Type</Label>
-                <Select
-                  name="requirementType"
-                  value={currentQuestion.requirementType}
-                  onChange={handleQuestionChange}
-                  style={{ 
-                    borderLeft: `4px solid ${
-                      currentQuestion.requirementType === 'recommended' ? '#1E40AF' : '#B91C1C'
-                    }`
-                  }}
-                >
-                  <option value="mandatory" style={{color: '#B91C1C'}}>
-                    Mandatory
-                  </option>
-                  <option value="recommended" style={{color: '#1E40AF'}}>
-                    Recommended
-                  </option>
-                </Select>
-                <HelpText>Is this question required or recommended?</HelpText>
-              </FormGroup>
-              
-              <FormGroup>
-                <Label>Question Weight</Label>
-                <Input
-                  type="number"
-                  name="weight"
-                  value={currentQuestion.weight}
-                  onChange={handleQuestionChange}
-                  min="1"
-                  max="10"
-                />
-                <HelpText>Higher weight gives the question more importance in scoring</HelpText>
-              </FormGroup>
-            </FormRow>
-            
-            <Button primary onClick={addQuestion} style={{ marginTop: '16px' }}>
-              <Plus size={16} />
-              Add Question
-            </Button>
-          </FormCard>
-        </QuestionList>
+              ))}
+            </FormGroup>
+          </FormRow>
+        )}
       </FormCard>
     </PageContainer>
   );
 };
 
-export default QuestionnaireCreate; 
+export default QuestionCreate; 

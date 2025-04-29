@@ -27,8 +27,9 @@ import InspectionLevelForm from '../pages/inspection/InspectionLevelForm';
 import InspectionLevelView from '../pages/inspection/InspectionLevelView';
 import InspectionReportView from '../pages/inspection/InspectionReportView';
 
-// Questionnaire module imports
+// Questionnaire module imports (renamed to reflect that it's actually the Question Library)
 import QuestionnaireList from '../pages/questionnaire/QuestionnaireList';
+import QuestionCreate from '../pages/questionnaire/QuestionnaireCreate';
 
 import Calendar from '../pages/calendar';
 import Settings from '../pages/settings';
@@ -109,11 +110,10 @@ const AppRoutes = () => {
               </Route>
             </Route>
             
-            {/* Questionnaire routes */}
+            {/* Questionnaire routes (renamed to Question Library for clarity) */}
             <Route path="questionnaire" element={<QuestionnaireList />} />
-            <Route path="questionnaire/create" element={<QuestionnaireList />} />
-            <Route path="questionnaire/:id" element={<QuestionnaireList />} />
-            <Route path="questionnaire/:id/edit" element={<QuestionnaireList />} />
+            <Route path="questionnaire/create" element={<QuestionCreate />} />
+            <Route path="questionnaire/edit/:id" element={<QuestionCreate />} />
             
             <Route path="assets" element={<AssetList />} />
             
@@ -166,11 +166,10 @@ const AppRoutes = () => {
             </Route>
           </Route>
           
-          {/* Questionnaire routes */}
+          {/* Questionnaire routes (renamed to Question Library for clarity) */}
           <Route path="/questionnaire" element={<QuestionnaireList />} />
-          <Route path="/questionnaire/create" element={<QuestionnaireList />} />
-          <Route path="/questionnaire/:id" element={<QuestionnaireList />} />
-          <Route path="/questionnaire/:id/edit" element={<QuestionnaireList />} />
+          <Route path="/questionnaire/create" element={<QuestionCreate />} />
+          <Route path="/questionnaire/edit/:id" element={<QuestionCreate />} />
           
           <Route path="/assets" element={<AssetList />} />
           

@@ -191,8 +191,14 @@ const Sidebar = ({ isOpen, width }) => {
     },
     {
       icon: FileText, 
-      label: 'Template', 
+      label: 'Inspection Templates', 
       path: '/inspection',
+      permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
+    },
+    {
+      icon: FileText, 
+      label: 'Question Library', 
+      path: '/questionnaire',
       permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
     },
     {

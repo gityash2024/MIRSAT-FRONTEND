@@ -21,19 +21,38 @@ export const addQuestionToLibrary = createAsyncThunk(
   'questionLibrary/addQuestion',
   async (questionData, { getState, rejectWithValue }) => {
     try {
-      // Check if question already exists to prevent duplicates
-      const { questionLibrary } = getState();
-      const isDuplicate = questionLibrary.questions.some(
-        q => q.text === questionData.text && q.answerType === questionData.answerType
-      );
+      console.log("Adding question to library:", questionData);
       
-      if (isDuplicate) {
-        return rejectWithValue('This question already exists in the library');
+      // Make sure we're sending clean data without any internal IDs
+      const cleanData = {
+        text: questionData.text,
+        answerType: questionData.answerType,
+        options: questionData.options || [],
+        required: questionData.required !== undefined ? questionData.required : true
+      };
+      
+      // If we're updating an existing question, include the ID
+      if (questionData.id || questionData._id) {
+        cleanData.id = questionData.id || questionData._id;
       }
       
-      const response = await questionLibraryService.addQuestionToLibrary(questionData);
+      // Check if question already exists to prevent duplicates
+      const { questionLibrary } = getState();
+      if (!cleanData.id) { // Only check for duplicates when creating new questions
+        const isDuplicate = questionLibrary.questions.some(
+          q => q.text === cleanData.text && q.answerType === cleanData.answerType
+        );
+        
+        if (isDuplicate) {
+          return rejectWithValue('This question already exists in the library');
+        }
+      }
+      
+      const response = await questionLibraryService.addQuestionToLibrary(cleanData);
+      console.log("API Response for adding question:", response);
       return response;
     } catch (error) {
+      console.error("Error in addQuestionToLibrary:", error);
       return rejectWithValue(extractErrorMessage(error));
     }
   }
@@ -44,9 +63,12 @@ export const deleteQuestionFromLibrary = createAsyncThunk(
   'questionLibrary/deleteQuestionFromLibrary',
   async (id, { rejectWithValue }) => {
     try {
-      await questionLibraryService.deleteQuestionFromLibrary(id);
-      return id;
+      console.log("Deleting question with ID:", id);
+      const response = await questionLibraryService.deleteQuestionFromLibrary(id);
+      console.log("API Response for deleting question:", response);
+      return { id, response };
     } catch (error) {
+      console.error("Error in deleteQuestionFromLibrary:", error);
       return rejectWithValue(extractErrorMessage(error));
     }
   }
@@ -98,9 +120,27 @@ const questionLibrarySlice = createSlice({
       })
       .addCase(addQuestionToLibrary.fulfilled, (state, action) => {
         state.loading = false;
-        // Add the new question to the existing questions array
-        state.questions.push(action.payload.question);
-        state.totalResults += 1;
+        
+        // Check if we're getting a question or data.question in the response
+        const questionData = action.payload.question || action.payload.data;
+        
+        if (questionData) {
+          // Check if we're updating an existing question
+          const existingIndex = state.questions.findIndex(q => 
+            (q._id === questionData._id) || (q.id === questionData.id)
+          );
+          
+          if (existingIndex >= 0) {
+            // Update existing question
+            state.questions[existingIndex] = questionData;
+          } else {
+            // Add new question
+            state.questions.push(questionData);
+            state.totalResults += 1;
+          }
+        } else {
+          console.warn('Unexpected response format in addQuestionToLibrary:', action.payload);
+        }
       })
       .addCase(addQuestionToLibrary.rejected, (state, action) => {
         state.loading = false;
@@ -114,9 +154,18 @@ const questionLibrarySlice = createSlice({
       })
       .addCase(deleteQuestionFromLibrary.fulfilled, (state, action) => {
         state.loading = false;
-        // Remove the deleted question from the array
-        state.questions = state.questions.filter(question => question._id !== action.payload.id);
-        state.totalResults -= 1;
+        
+        // Handle both id formats (_id and id)
+        const deletedId = action.payload.id;
+        if (deletedId) {
+          // Remove the deleted question from the array
+          state.questions = state.questions.filter(question => 
+            question._id !== deletedId && question.id !== deletedId
+          );
+          state.totalResults = Math.max(0, state.totalResults - 1);
+        } else {
+          console.warn('No ID returned from deleteQuestionFromLibrary:', action.payload);
+        }
       })
       .addCase(deleteQuestionFromLibrary.rejected, (state, action) => {
         state.loading = false;
