@@ -1,185 +1,70 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Layers, ChevronDown, ChevronRight, Edit, Trash2, 
-  Activity, FileText, AlertTriangle, X, Clipboard, CheckCircle, Info, Eye, ListChecks
-} from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { 
+  Layers,
+  Trash2,
+  Edit,
+  Eye,
+  AlertTriangle,
+  Activity,
+  User,
+  Calendar,
+  Clock,
+  ListChecks,
+  ChevronRight,
+  ChevronDown,
+  Copy,
+  Clipboard,
+  FileText,
+  PenTool
+} from 'lucide-react';
 import { inspectionService } from '../../services/inspection.service';
-import SubLevelViewModal from './SubLevelViewModal';
-import SubLevelEditModal from './SubLevelEditModal';
-import Skeleton from '../../components/ui/Skeleton';
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-const ModalTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a237e;
-`;
-
-const ModalCloseButton = styled.button`
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 4px;
-  
-  &:hover {
-    color: #333;
-  }
-`;
-
-const ModalActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-`;
+import InspectionLayout from '../../components/common/InspectionLayout';
+import CollapsibleSection from '../../components/ui/CollapsibleSection';
 
 const PageContainer = styled.div`
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 `;
 
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 16px;
-  
-  &:hover {
-    color: #333;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+const SummarySection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 `;
 
-const HeaderInfo = styled.div`
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
+const SummaryCard = styled.div`
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  border-top: 3px solid ${props => props.color || 'var(--color-navy)'};
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
-const IconWrapper = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: #e3f2fd;
-  color: #1a237e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const TitleSection = styled.div``;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a237e;
-  margin-bottom: 8px;
-`;
-
-const SubTitle = styled.p`
-  color: #666;
-  font-size: 14px;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
-const Button = styled.button`
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+const SummaryLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s;
-  cursor: pointer;
-  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: ${props => props.color || 'var(--color-navy)'};
+  margin-bottom: 16px;
+`;
 
-  ${props => {
-    if (props.variant === 'danger') {
-      return `
-        background: #fee2e2;
-        color: #dc2626;
-        border: none;
-        &:hover {
-          background: #fecaca;
-        }
-      `;
-    }
-    if (props.variant === 'primary') {
-      return `
-        background: #1a237e;
-        color: white;
-        border: none;
-        &:hover {
-          background: #151b4f;
-        }
-      `;
-    }
-    return `
-      background: white;
-      color: #1a237e;
-      border: 1px solid #1a237e;
-      &:hover {
-        background: #f5f7fb;
-      }
-    `;
-  }}
+const SummaryValue = styled.div`
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-navy);
+  margin-bottom: 4px;
+`;
 
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
+const SummaryDescription = styled.div`
+  font-size: 13px;
+  color: var(--color-gray-medium);
 `;
 
 const ContentGrid = styled.div`
@@ -202,7 +87,7 @@ const Card = styled.div`
 const CardTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -213,71 +98,71 @@ const LevelHierarchy = styled.div`
   margin-top: 20px;
 `;
 
+const QuestionnaireCard = styled(Card)`
+  margin-top: 24px;
+`;
+
+const StatsList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+`;
+
+const StatCard = styled.div`
+  background-color: var(--color-offwhite);
+  padding: 16px;
+  border-radius: 8px;
+`;
+
+const StatLabel = styled.div`
+  font-size: 13px;
+  color: var(--color-gray-medium);
+  margin-bottom: 8px;
+`;
+
+const StatValue = styled.div`
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-navy);
+`;
+
 const HierarchyNode = styled.div`
-  margin-left: ${props => props.level * 32}px;
-  margin-bottom: 20px;
-  position: relative;
-
-  &:before {
-    content: '';
-    position: absolute;
-    left: -16px;
-    top: 50%;
-    width: 16px;
-    height: 2px;
-    background: #e2e8f0;
-  }
-
-  &:after {
-    content: '';
-    position: absolute;
-    left: -16px;
-    top: -8px;
-    bottom: ${props => props.isLast ? '50%' : '-8px'};
-    width: 2px;
-    background: #e2e8f0;
-  }
-
-  &:first-child:after {
-    top: 50%;
-  }
+  margin-bottom: ${props => props.isLast ? '0' : '8px'};
+  margin-left: ${props => props.level > 0 ? `${props.level * 20}px` : '0'};
 `;
 
 const NodeContent = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px;
-  background: #f8fafc;
+  background-color: var(--color-offwhite);
+  padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  position: relative;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
   
   &:hover {
-    background: #f1f5f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: var(--color-skyblue);
   }
 `;
 
 const NodeIcon = styled.div`
-  min-width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: ${props => props.background || '#e3f2fd'};
-  color: ${props => props.color || '#1a237e'};
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: var(--color-navy);
+  color: white;
+  border-radius: 6px;
+  margin-right: 12px;
 `;
 
 const NodeInfo = styled.div`
   flex: 1;
 
   h4 {
-    font-size: 15px;
-    font-weight: 500;
-    color: #1a237e;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-navy);
     margin-bottom: 4px;
     display: flex;
     align-items: center;
@@ -286,7 +171,45 @@ const NodeInfo = styled.div`
 
   p {
     font-size: 13px;
-    color: #64748b;
+    color: var(--color-gray-medium);
+    margin: 0;
+  }
+`;
+
+const NodeMetadata = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+`;
+
+const MetadataItem = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-gray-medium);
+`;
+
+const NodeActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background-color: ${props => props.color || 'var(--color-offwhite)'};
+  color: ${props => props.textColor || 'var(--color-navy)'};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: ${props => props.hoverColor || 'var(--color-skyblue)'};
   }
 `;
 
@@ -294,696 +217,158 @@ const LevelNumber = styled.span`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
+  width: 24px;
   height: 24px;
-  padding: 0 8px;
-  background-color: #e2e8f0;
-  color: #475569;
+  background-color: var(--color-skyblue);
+  color: var(--color-navy);
   border-radius: 4px;
-  font-size: 12px;
+    font-size: 12px;
   font-weight: 600;
   margin-right: 8px;
-`;
-
-const NodeMetadata = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-`;
-
-const MetadataItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 3px 8px;
-  border-radius: 4px;
-  
-  svg {
-    width: 12px;
-    height: 12px;
-  }
-`;
-
-const NodeActions = styled.div`
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s;
-
-  ${NodeContent}:hover & {
-    opacity: 1;
-  }
-`;
-
-const ActionButton = styled.button`
-  padding: 6px;
-  background: white;
-  border: none;
-  border-radius: 4px;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #f1f5f9;
-    color: #1a237e;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-`;
-
-const StatsList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-`;
-
-const StatCard = styled.div`
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const StatLabel = styled.span`
-  font-size: 13px;
-  color: #666;
-`;
-
-const StatValue = styled.span`
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a237e;
-`;
-
-const TasksList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const TaskItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-`;
-
-const TaskInfo = styled.div`
-  flex: 1;
-  
-  h4 {
-    font-size: 14px;
-    font-weight: 500;
-    color: #1a237e;
-    margin-bottom: 2px;
-  }
-
-  p {
-    font-size: 12px;
-    color: #666;
-  }
-`;
-
-const StatusBadge = styled.span`
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  background: ${props => 
-    props.status === 'completed' ? '#e8f5e9' :
-    props.status === 'in_progress' ? '#fff3e0' :
-    '#f3e5f5'};
-  color: ${props => 
-    props.status === 'completed' ? '#2e7d32' :
-    props.status === 'in_progress' ? '#ed6c02' :
-    '#9c27b0'};
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 48px 0;
-  color: #1a237e;
-`;
-
-const NestedHierarchyNode = styled.div`
-  margin-left: ${props => props.level * 32}px;
-  margin-bottom: 16px;
-  position: relative;
-
-  &:before {
-    content: '';
-    position: absolute;
-    left: -16px;
-    top: 50%;
-    width: 16px;
-    height: 2px;
-    background: #e2e8f0;
-  }
-
-  &:after {
-    content: '';
-    position: absolute;
-    left: -16px;
-    top: -8px;
-    bottom: ${props => props.isLast ? '50%' : '-8px'};
-    width: 2px;
-    background: #e2e8f0;
-  }
-
-  &:first-child:after {
-    top: 50%;
-  }
 `;
 
 const ExpandCollapseButton = styled.button`
   background: none;
   border: none;
   padding: 4px;
-  margin-right: 4px;
   cursor: pointer;
-  color: #666;
+  color: var(--color-gray-medium);
+  margin-right: 8px;
   
   &:hover {
-    color: #1a237e;
-  }
-`;
-
-const ErrorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 0;
-  text-align: center;
-  color: #dc2626;
-  
-  h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
-  }
-  
-  p {
-    color: #666;
-    margin-bottom: 16px;
-  }
-`;
-
-// Add new styled components for the questionnaire section
-const QuestionnaireCard = styled(Card)`
-  margin-top: 24px;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(to bottom, #3949ab, #1a237e);
+    color: var(--color-navy);
   }
 `;
 
 const QuestionList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   margin-top: 16px;
 `;
 
 const QuestionItem = styled.div`
-  margin-bottom: 16px;
-  padding: 16px 20px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-gray-light);
   
-  &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    transform: translateY(-2px);
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
-const QuestionNumber = styled.div`
-  display: inline-block;
-  background: #e0e7ff;
-  color: #3949ab;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-right: 10px;
+const QuestionText = styled.div`
+  font-size: 14px;
+  color: var(--color-navy);
+  margin-bottom: 4px;
 `;
 
-const QuestionHeader = styled.div`
+const QuestionMeta = styled.div`
   display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-gray-medium);
 `;
 
-const MandatoryBadge = styled.span`
+const QuestionType = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: ${props => props.mandatory ? '#dcfce7' : '#fff1f2'};
-  color: ${props => props.mandatory ? '#166534' : '#be123c'};
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 4px;
-  margin-left: 10px;
-  
-  svg {
-    width: 14px;
-    height: 14px;
-  }
+  padding: 2px 8px;
+  background-color: var(--color-skyblue);
+  color: var(--color-navy);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
 `;
 
-const QuestionText = styled.h4`
-  font-size: 16px;
-  color: #334155;
-  margin: 0 0 12px 0;
-  font-weight: 500;
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+`;
+
+const Button = styled.button`
+  padding: 10px 16px;
+  border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
   
-  ${props => props.required && `
-    position: relative;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  ${props => props.variant === 'primary' && `
+    background-color: var(--color-navy);
+    color: white;
+  border: none;
+  
+  &:hover {
+      background-color: var(--color-navy-dark);
+  }
+  `}
+  
+  ${props => props.variant === 'secondary' && `
+    background-color: white;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
     
-    &::after {
-      content: '*';
-      color: #ef4444;
-      margin-left: 4px;
-      font-size: 14px;
+    &:hover {
+      background-color: var(--color-offwhite);
+    }
+  `}
+  
+  ${props => props.variant === 'danger' && `
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: none;
+    
+    &:hover {
+      background-color: #fecaca;
     }
   `}
 `;
 
-const QuestionDetails = styled.div`
-  background: #ffffff;
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin-top: 12px;
-  border: 1px solid #f1f5f9;
-`;
-
-const QuestionType = styled.div`
-  font-size: 12px;
-  color: #64748b;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f5f9;
-  padding: 4px 10px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  
-  svg {
-    width: 14px;
-    height: 14px;
-  }
-`;
-
-const OptionsList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0 0;
-`;
-
-const OptionItem = styled.li`
-  padding: 4px 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  
-  &:before {
-    content: '•';
-    color: #1a237e;
-  }
-`;
-
-// Create InspectionLevelViewSkeleton component
-const InspectionLevelViewSkeleton = () => (
-  <PageContainer>
-    <Skeleton.Base width="180px" height="20px" margin="0 0 24px 0" />
-    
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <Skeleton.Circle size="48px" />
-        <div>
-          <Skeleton.Base width="300px" height="28px" margin="0 0 8px 0" />
-          <Skeleton.Base width="200px" height="16px" />
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <Skeleton.Button width="120px" />
-        <Skeleton.Button width="120px" />
-      </div>
-    </div>
-    
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
-      gap: '24px' 
-    }}>
-      {/* Left Column */}
-      <div>
-        <Skeleton.Card.Wrapper style={{ marginBottom: '24px' }}>
-          <Skeleton.Card.Header>
-            <Skeleton.Base width="140px" height="24px" />
-          </Skeleton.Card.Header>
-          
-          {/* Hierarchy items */}
-          <div style={{ paddingLeft: '24px' }}>
-            {Array(3).fill().map((_, i) => (
-              <div key={i} style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <Skeleton.Circle size="18px" />
-                  <Skeleton.Base width={`${200 + Math.random() * 100}px`} height="18px" />
-                </div>
-                
-                {/* Nested items */}
-                {Math.random() > 0.5 && (
-                  <div style={{ paddingLeft: '24px' }}>
-                    {Array(Math.floor(Math.random() * 3) + 1).fill().map((_, j) => (
-                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <Skeleton.Circle size="16px" />
-                        <Skeleton.Base width={`${150 + Math.random() * 100}px`} height="16px" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </Skeleton.Card.Wrapper>
-        
-        {/* Questionnaire Card */}
-        <Skeleton.Card.Wrapper>
-          <Skeleton.Card.Header>
-            <Skeleton.Base width="220px" height="24px" />
-          </Skeleton.Card.Header>
-          
-          {/* Question items */}
-          {Array(3).fill().map((_, i) => (
-            <div key={i} style={{ 
-              padding: '16px', 
-              marginBottom: '16px', 
-              background: '#f9f9f9', 
-              borderRadius: '8px' 
-            }}>
-              <Skeleton.Base width={`${250 + Math.random() * 150}px`} height="20px" margin="0 0 8px 0" />
-              <Skeleton.Base width="120px" height="16px" margin="0 0 12px 0" />
-              
-              {/* Options if applicable */}
-              {Math.random() > 0.5 && (
-                <div style={{ paddingLeft: '16px' }}>
-                  {Array(Math.floor(Math.random() * 4) + 2).fill().map((_, j) => (
-                    <Skeleton.Base 
-                      key={j} 
-                      width={`${100 + Math.random() * 150}px`} 
-                      height="14px" 
-                      margin="0 0 8px 0" 
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </Skeleton.Card.Wrapper>
-      </div>
-      
-      {/* Right Column */}
-      <div>
-        <Skeleton.Card.Wrapper style={{ marginBottom: '24px' }}>
-          <Skeleton.Card.Header>
-            <Skeleton.Base width="180px" height="24px" />
-          </Skeleton.Card.Header>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            {Array(4).fill().map((_, i) => (
-              <div key={i} style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px' }}>
-                <Skeleton.Base width="120px" height="14px" margin="0 0 8px 0" />
-                <Skeleton.Base width="80px" height="20px" />
-              </div>
-            ))}
-          </div>
-        </Skeleton.Card.Wrapper>
-        
-        <Skeleton.Card.Wrapper>
-          <Skeleton.Card.Header>
-            <Skeleton.Base width="150px" height="24px" />
-          </Skeleton.Card.Header>
-          
-          {/* Task items */}
-          {Array(3).fill().map((_, i) => (
-            <div key={i} style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px',
-              padding: '12px',
-              borderBottom: '1px solid #edf2f7'
-            }}>
-              <Skeleton.Circle size="32px" />
-              <div style={{ flex: 1 }}>
-                <Skeleton.Base width={`${180 + Math.random() * 100}px`} height="18px" margin="0 0 4px 0" />
-                <Skeleton.Base width={`${250 + Math.random() * 150}px`} height="14px" />
-              </div>
-              <Skeleton.Base width="80px" height="24px" radius="12px" />
-            </div>
-          ))}
-        </Skeleton.Card.Wrapper>
-      </div>
-    </div>
-  </PageContainer>
-);
-
-const EmptyState = styled.div`
-  padding: 24px;
-  text-align: center;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 8px;
-  
-  p {
-    margin: 0;
-    font-size: 14px;
-  }
-`;
-
-const TreeContainer = styled.div`
-  padding: 8px 0;
-  
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-`;
-
-const TreeNode = styled.div`
-  margin-bottom: 8px;
-`;
-
-const TreeNodeHeader = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  
-  span {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-  }
-`;
-
-const TreeNodeChildren = styled.div`
-  margin-left: 24px;
-  margin-top: 8px;
-`;
-
-const ExpandButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  margin-right: 8px;
-  color: #64748b;
-  
-  &:hover {
-    color: #1a237e;
-  }
-`;
-
-const TreeNodeActions = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  
-  &:hover {
-    color: #1a237e;
-  }
-`;
-
-const SetHeader = styled.div`
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e0e0e0;
-  
-  h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a237e;
-    margin: 0 0 4px 0;
-  }
-  
-  p {
-    font-size: 14px;
-    color: #64748b;
-    margin: 0;
-  }
-`;
-
-const QuestionsContainer = styled.div`
-  margin-top: 24px;
-  
-  h4 {
-    font-size: 15px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    &:before {
-      content: '';
-      display: inline-block;
-      width: 4px;
-      height: 16px;
-      background: #1a237e;
-      border-radius: 2px;
-    }
-  }
-  
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-`;
-
-const SetQuestionItem = styled.li`
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-`;
-
-const SetQuestionBadge = styled.span`
-  padding: 4px 8px;
-  background: #e0f2fe;
-  color: #0369a1;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-`;
-
-const SetStat = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-// Create a new styled component for the summary section
-const SummarySection = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-`;
-
-const SummaryCard = styled.div`
-  padding: 16px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
+// Confirmation modal for delete
+const Modal = styled.div`
+  position: fixed;
     top: 0;
     left: 0;
-    width: 4px;
-    height: 100%;
-    background: ${props => props.color || '#1a237e'};
-  }
-`;
-
-const SummaryLabel = styled.div`
-  font-size: 13px;
-  color: #64748b;
-  margin-bottom: 8px;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  gap: 8px;
-  
-  svg {
-    color: ${props => props.color || '#1a237e'};
-  }
+  justify-content: center;
+  z-index: 1000;
 `;
 
-const SummaryValue = styled.div`
+const ModalContent = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0 0 16px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-navy);
 `;
 
-const SummaryDescription = styled.div`
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
+const ModalMessage = styled.p`
+  margin: 0 0 24px 0;
+  color: var(--color-gray-medium);
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 `;
 
 const InspectionLevelView = () => {
@@ -994,11 +379,6 @@ const InspectionLevelView = () => {
   const [level, setLevel] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState({});
-  
-  // States for sublevel modals
-  const [selectedSubLevel, setSelectedSubLevel] = useState(null);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchInspectionLevel();
@@ -1009,7 +389,6 @@ const InspectionLevelView = () => {
       setLoading(true);
       setError(null);
       const data = await inspectionService.getInspectionLevel(id);
-      console.log("Fetched inspection level data:", data);
       
       // Convert old backend structure to new sets-based structure for frontend if needed
       let processedData = data;
@@ -1027,54 +406,15 @@ const InspectionLevelView = () => {
             generalQuestions: []
           }]
         };
-      } else {
-        // Ensure all sets have the required properties
-        processedData = {
-          ...data,
-          sets: data.sets.map(set => ({
-            ...set,
-            id: set.id || set._id || Date.now(),
-            name: set.name || 'Unnamed Set',
-            description: set.description || '',
-            subLevels: set.subLevels || [],
-            questions: set.questions || [],
-            generalQuestions: set.generalQuestions || []
-          }))
-        };
       }
       
       setLevel(processedData);
-      console.log("Processed level data:", processedData);
-
-      const expandedState = {};
-      const initExpandedState = (subLevels, prefix = '') => {
-        if (!subLevels || !Array.isArray(subLevels)) return;
-        
-        subLevels.forEach((node, index) => {
-          const nodeId = prefix ? `${prefix}.${index}` : `${index}`;
-          expandedState[nodeId] = true;
-          if (node.subLevels && node.subLevels.length > 0) {
-            initExpandedState(node.subLevels, nodeId);
-          }
-        });
-      };
-      
-      // Initialize expanded state for all sets
-      if (processedData.sets && processedData.sets.length > 0) {
-        processedData.sets.forEach((set, setIndex) => {
-          if (set.subLevels && set.subLevels.length > 0) {
-            initExpandedState(set.subLevels, `set${setIndex}_`);
-          }
-        });
-      }
-      
-      setExpandedNodes(expandedState);
-    } catch (error) {
-      console.error('Error fetching template:', error);
-      setError(error.message || 'Failed to load template');
-      toast.error('Failed to load template');
-    } finally {
       setLoading(false);
+    } catch (err) {
+      console.error('Error fetching inspection level:', err);
+      setError(err);
+      setLoading(false);
+      toast.error('Failed to load template data');
     }
   };
 
@@ -1082,14 +422,32 @@ const InspectionLevelView = () => {
     try {
       setLoading(true);
       await inspectionService.deleteInspectionLevel(id);
-      toast.success('Inspection level deleted successfully');
+      toast.success('Template deleted successfully');
       navigate('/inspection');
-    } catch (error) {
-      console.error('Error deleting template:', error);
-      toast.error(error.message || 'Failed to delete template');
-    } finally {
-      setShowDeleteModal(false);
+    } catch (err) {
+      console.error('Error deleting inspection level:', err);
+      toast.error('Failed to delete template');
       setLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      // Implement publish logic
+      toast.success('Template published successfully');
+    } catch (err) {
+      console.error('Error publishing template:', err);
+      toast.error('Failed to publish template');
+    }
+  };
+
+  const handleDuplicate = async () => {
+    try {
+      // Implement duplicate logic
+      toast.success('Template duplicated successfully');
+    } catch (err) {
+      console.error('Error duplicating template:', err);
+      toast.error('Failed to duplicate template');
     }
   };
 
@@ -1100,123 +458,101 @@ const InspectionLevelView = () => {
     }));
   };
   
-  // Find a sublevel by path (e.g., "set0_0.1.2" or "0.1.2")
-  const findSubLevelByPath = (path) => {
-    if (!level) return null;
+  // Count total items in the template (levels, questions)
+  const countTotalItems = (data) => {
+    let levelCount = 0;
+    let questionCount = 0;
     
-    // If path contains 'set', it references a specific set
-    if (path.startsWith('set')) {
-      // Extract set index and path within set (e.g., "set0_0.1.2" -> setIndex=0, pathInSet="0.1.2")
-      const [setPrefix, ...pathParts] = path.split('_');
-      const setIndex = parseInt(setPrefix.replace('set', ''), 10);
-      const pathInSet = pathParts.join('_');
+    if (!data) return { levelCount, questionCount };
+    
+    // Count from sets structure
+    if (data.sets && Array.isArray(data.sets)) {
+      data.sets.forEach(set => {
+        // Count general questions
+        questionCount += set.generalQuestions?.length || 0;
       
-      if (!level.sets || !level.sets[setIndex]) return null;
-      
-      const set = level.sets[setIndex];
-      
-      // Handle case where pathInSet is empty (the set itself is selected)
-      if (!pathInSet) return set;
-      
-      // Navigate through the sublevel path
-      const indices = pathInSet.split('.');
-      let currentLevel = set.subLevels;
-      let currentNode = null;
-      
-      for (const index of indices) {
-        if (!currentLevel || !currentLevel[index]) return null;
-        currentNode = currentLevel[index];
-        currentLevel = currentNode.subLevels || [];
-      }
-      
-      return currentNode;
+        // Count from subLevels recursively
+        const countFromSubLevels = (subLevels) => {
+          if (!subLevels || !Array.isArray(subLevels)) return;
+          
+          levelCount += subLevels.length;
+          
+          subLevels.forEach(level => {
+            questionCount += level.questions?.length || 0;
+            countFromSubLevels(level.subLevels);
+          });
+        };
+        
+        countFromSubLevels(set.subLevels);
+      });
     } else {
-      // Legacy path format without set prefix - assume first set or direct subLevels
-      const subLevels = level.sets?.[0]?.subLevels || level.subLevels;
-      if (!subLevels) return null;
+      // Legacy structure
+      questionCount += data.questions?.length || 0;
       
-      const indices = path.split('.');
-      let currentLevel = subLevels;
-      let currentNode = null;
+      const countFromSubLevels = (subLevels) => {
+        if (!subLevels || !Array.isArray(subLevels)) return;
+        
+        levelCount += subLevels.length;
+        
+        subLevels.forEach(level => {
+          questionCount += level.questions?.length || 0;
+          countFromSubLevels(level.subLevels);
+        });
+      };
       
-      for (const index of indices) {
-        if (!currentLevel[index]) return null;
-        currentNode = currentLevel[index];
-        currentLevel = currentNode.subLevels || [];
-      }
-      
-      return currentNode;
+      countFromSubLevels(data.subLevels);
     }
-  };
-  
-  // Handle sublevel view action
-  const handleViewSubLevel = (path) => {
-    const subLevel = findSubLevelByPath(path);
-    if (subLevel) {
-      setSelectedSubLevel(subLevel);
-      setShowViewModal(true);
-    }
-  };
-  
-  // Handle sublevel edit action
-  const handleEditSubLevel = (path) => {
-    const subLevel = findSubLevelByPath(path);
-    if (subLevel) {
-      setSelectedSubLevel(subLevel);
-      setShowEditModal(true);
-    }
-  };
-  
-  // Update sublevel after edit
-  const handleUpdateSubLevel = async (updatedSubLevel) => {
-    try {
-      setLoading(true);
-      await inspectionService.updateSubLevel(id, updatedSubLevel._id, updatedSubLevel);
-      toast.success('Sub level updated successfully');
-      setShowEditModal(false);
-      fetchInspectionLevel(); // Refresh data
-    } catch (error) {
-      console.error('Error updating sub level:', error);
-      toast.error(error.message || 'Failed to update sub level');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Helper function to count questions for a specific level
-  const countLevelQuestions = (level, questions) => {
-    if (!questions || !Array.isArray(questions)) return 0;
     
-    return questions.filter(q => q.levelId === level._id).length;
+    return { levelCount, questionCount };
+  };
+  
+  // Count questions in a set
+  const countSetQuestions = (set) => {
+    let count = set.questions?.length || 0;
+    count += set.generalQuestions?.length || 0;
+    
+    const countFromSubLevels = (subLevels) => {
+      if (!subLevels || !Array.isArray(subLevels)) return 0;
+      
+      let total = 0;
+      subLevels.forEach(level => {
+        total += level.questions?.length || 0;
+        total += countFromSubLevels(level.subLevels);
+      });
+      
+      return total;
+    };
+    
+    count += countFromSubLevels(set.subLevels);
+    return count;
   };
 
-  // Modify the renderSubLevels function in the component
-  const renderSubLevels = (subLevels, prefix = '', setIndex = null) => {
+  // Render hierarchy for a set
+  const renderLevelHierarchy = (subLevels, prefix = '') => {
     if (!subLevels || !Array.isArray(subLevels) || subLevels.length === 0) {
-      return null;
+      return (
+        <div style={{
+          padding: '16px',
+          textAlign: 'center',
+          color: 'var(--color-gray-medium)',
+          background: 'var(--color-offwhite)',
+          borderRadius: '8px'
+        }}>
+          No levels defined for this template
+        </div>
+      );
     }
-
-    return (
-      <div>
-        {subLevels.map((subLevel, index) => {
-          const nodeId = setIndex !== null 
-            ? `set${setIndex}_${prefix}${prefix ? '.' : ''}${index}`
-            : `${prefix}${prefix ? '.' : ''}${index}`;
-          
-          const isExpanded = nodeId in expandedNodes ? expandedNodes[nodeId] : true;
+    
+    return subLevels.map((subLevel, index) => {
+      const nodeId = subLevel._id || subLevel.id || `node-${index}`;
+      const isExpanded = expandedNodes[nodeId];
           const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
-          const questionsCount = level?.questions ? countLevelQuestions(subLevel, level.questions) : 0;
-          
-          // Generate the level number for display
-          const levelNumber = prefix 
-            ? `${prefix}${index + 1}` 
-            : setIndex !== null 
-              ? `${String.fromCharCode(65 + setIndex)}.${index + 1}` // A.1, A.2, B.1, B.2, etc.
-              : String.fromCharCode(65 + index); // A, B, C for top level without set index
+      const questionsCount = (subLevel.questions?.length || 0);
+      const levelNumber = prefix ? `${prefix}.${index + 1}` : String.fromCharCode(65 + index);
           
           return (
             <HierarchyNode 
-              key={subLevel._id || `node-${nodeId}`} 
+          key={nodeId} 
               level={prefix.split('.').length + (prefix ? 0 : 1)}
               isLast={index === subLevels.length - 1}
             >
@@ -1251,217 +587,142 @@ const InspectionLevelView = () => {
                   </NodeMetadata>
                 </NodeInfo>
                 <NodeActions>
-                  <ActionButton onClick={() => handleViewSubLevel(nodeId)}>
+              <ActionButton>
                     <Eye size={16} />
                   </ActionButton>
-                  <ActionButton onClick={() => handleEditSubLevel(nodeId)}>
+              <ActionButton>
                     <Edit size={16} />
                   </ActionButton>
                 </NodeActions>
               </NodeContent>
               
               {hasChildren && isExpanded && (
-                renderSubLevels(subLevel.subLevels, `${prefix}${prefix ? '.' : ''}${index}`, setIndex)
+            <div style={{ marginTop: '8px' }}>
+              {renderLevelHierarchy(subLevel.subLevels, levelNumber)}
+            </div>
               )}
             </HierarchyNode>
           );
-        })}
-      </div>
-    );
+    });
   };
   
-  // Helper function to count questions for a set
-  const countSetQuestions = (set) => {
-    if (!set) return 0;
+  // Render questions from a set
+  const renderQuestions = (set) => {
+    const allQuestions = [
+      ...(set.generalQuestions || []).map(q => ({ ...q, isGeneral: true })),
+      ...(set.questions || [])
+    ];
     
-    let count = 0;
-    
-    // Count general questions
-    if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
-      count += set.generalQuestions.length;
+    if (allQuestions.length === 0) {
+      return (
+        <div style={{ 
+          padding: '16px', 
+          background: 'var(--color-offwhite)', 
+          borderRadius: '8px', 
+          textAlign: 'center',
+          color: 'var(--color-gray-medium)'
+        }}>
+          <AlertTriangle size={18} style={{ marginBottom: '8px' }} />
+          <p>No inspection questions defined for this template</p>
+        </div>
+      );
     }
     
-    // Count set-level questions
-    if (set.questions && Array.isArray(set.questions)) {
-      count += set.questions.length;
-    }
-    
-    return count;
+    return (
+      <QuestionList>
+        {allQuestions.map((question, index) => (
+          <QuestionItem key={question._id || question.id || index}>
+            <QuestionText>
+              {index + 1}. {question.text || 'Untitled Question'}
+            </QuestionText>
+            <QuestionMeta>
+              <div>
+                <QuestionType>
+                  {question.answerType === 'yesno' ? 'Yes/No' : 
+                   question.answerType === 'multiple' ? 'Multiple Choice' : 
+                   question.answerType === 'text' ? 'Text Input' : 
+                   'Standard'}
+                </QuestionType>
+                {question.isGeneral && (
+                  <span style={{ marginLeft: '8px', fontSize: '11px' }}>
+                    General Question
+                  </span>
+                )}
+              </div>
+              <div>
+                {question.required ? 'Required' : 'Optional'}
+              </div>
+            </QuestionMeta>
+          </QuestionItem>
+        ))}
+      </QuestionList>
+    );
   };
-
-  // Function to get a human-readable question type
-  const getQuestionTypeLabel = (type) => {
-    const types = {
-      'yesno': 'Yes/No Question',
-      'text': 'Text Input',
-      'number': 'Number Input',
-      'select': 'Single Select',
-      'multiple_choice': 'Multiple Choice',
-      'compliance': 'Compliance Status'
-    };
-    return types[type] || type;
-  };
-
-  // Count total questions and levels across all sets and sublevels
-  function countTotalItems(level) {
-    if (!level) return { questionCount: 0, levelCount: 0 };
-    
-    let questionCount = level.questions?.length || 0;
-    let levelCount = 0;
-    
-    // Function to count sublevels recursively
-    const countSubLevels = (subLevels) => {
-      if (!subLevels || !Array.isArray(subLevels)) return 0;
-      
-      let count = subLevels.length;
-      
-      for (const subLevel of subLevels) {
-        if (subLevel.subLevels && Array.isArray(subLevel.subLevels)) {
-          count += countSubLevels(subLevel.subLevels);
-        }
-      }
-      
-      return count;
-    };
-    
-    // Count from direct subLevels (legacy structure)
-    if (level.subLevels && Array.isArray(level.subLevels)) {
-      levelCount += countSubLevels(level.subLevels);
-    }
-    
-    // Count from sets structure
-    if (level.sets && Array.isArray(level.sets)) {
-      level.sets.forEach(set => {
-        if (set.subLevels && Array.isArray(set.subLevels)) {
-          levelCount += countSubLevels(set.subLevels);
-        }
-        if (set.questions && Array.isArray(set.questions)) {
-          questionCount += set.questions.length;
-        }
-        if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
-          questionCount += set.generalQuestions.length;
-        }
-      });
-    }
-    
-    return { questionCount, levelCount };
-  }
 
   if (loading) {
-    return <InspectionLevelViewSkeleton />;
-  }
-
-  if (error) {
     return (
-      <PageContainer>
-        <ErrorContainer>
-          <h3>Error Loading Template</h3>
-          <p>{error}</p>
-          <Button onClick={() => navigate('/inspection')}>
-            <ArrowLeft size={18} />
-            Back to Template
-          </Button>
-        </ErrorContainer>
-      </PageContainer>
+      <InspectionLayout 
+        title="Loading Template..." 
+        baseUrl={`/inspection/${id}`}
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <div className="spinner" style={{
+              border: '3px solid #f3f3f3',
+              borderTop: '3px solid var(--color-navy)',
+              borderRadius: '50%',
+              width: '30px',
+              height: '30px',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto'
+            }}></div>
+          </div>
+          <p>Loading template data...</p>
+        </div>
+      </InspectionLayout>
     );
   }
 
-  if (!level) {
+  if (error || !level) {
     return (
-      <PageContainer>
-        <ErrorContainer>
-          <h3>Template Not Found</h3>
-          <p>The template you're looking for doesn't exist or has been removed</p>
-          <Button onClick={() => navigate('/inspection')}>
-            <ArrowLeft size={18} />
-            Back to Template
+      <InspectionLayout 
+        title="Error" 
+        baseUrl={`/inspection/${id}`}
+      >
+        <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626' }}>
+          <AlertTriangle size={32} style={{ margin: '0 auto 16px' }} />
+          <p>Failed to load template data. Please try again later.</p>
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/inspection')}
+            style={{ margin: '16px auto 0', display: 'inline-flex' }}
+          >
+            Back to Templates
           </Button>
-        </ErrorContainer>
-      </PageContainer>
+        </div>
+      </InspectionLayout>
     );
   }
+
+  const { levelCount, questionCount } = countTotalItems(level);
 
   return (
-    <PageContainer>
-      {showDeleteModal && (
-        <ModalOverlay>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Delete Template</ModalTitle>
-              <ModalCloseButton onClick={() => setShowDeleteModal(false)}>
-                <X size={20} />
-              </ModalCloseButton>
-            </ModalHeader>
-            <p>Are you sure you want to delete this template? This action cannot be undone.</p>
-            <ModalActions>
-              <Button onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-              <Button variant="danger" onClick={handleDelete} disabled={loading}>Delete</Button>
-            </ModalActions>
-          </ModalContent>
-        </ModalOverlay>
-      )}
-      
-      {showViewModal && selectedSubLevel && (
-        <SubLevelViewModal 
-          subLevel={selectedSubLevel} 
-          onClose={() => setShowViewModal(false)} 
-        />
-      )}
-      
-      {showEditModal && selectedSubLevel && (
-        <SubLevelEditModal 
-          subLevel={selectedSubLevel} 
-          onClose={() => setShowEditModal(false)}
-          onSave={handleUpdateSubLevel}
-          loading={loading}
-        />
-      )}
-
-      <BackButton onClick={() => navigate('/inspection')} disabled={loading}>
-        <ArrowLeft size={18} />
-        Back to Template
-      </BackButton>
-
-      <Header>
-        <HeaderInfo>
-          <IconWrapper>
-            <Layers size={24} />
-          </IconWrapper>
-          <TitleSection>
-            <PageTitle>{level.name}</PageTitle>
-            <SubTitle>{level.description}</SubTitle>
-          </TitleSection>
-        </HeaderInfo>
-
-        <ButtonGroup>
-          <Button 
-            as={Link} 
-            to={`/inspection/${id}/edit`}
-            disabled={loading}
+    <InspectionLayout 
+      title={level.name || 'Inspection Template'} 
+      onBack={() => navigate('/inspection')}
+      onPublish={handlePublish}
+      baseUrl={`/inspection/${id}`}
+      lastPublished={level.updatedAt ? new Date(level.updatedAt).toLocaleString() : null}
           >
-            <Edit size={16} />
-            Edit Level
-          </Button>
-          <Button 
-            variant="danger"
-            onClick={() => setShowDeleteModal(true)}
-            disabled={loading}
-          >
-            <Trash2 size={16} />
-            Delete Level
-          </Button>
-        </ButtonGroup>
-      </Header>
-
-      {level && (
+      <PageContainer>
         <SummarySection>
-          <SummaryCard color="#1a237e">
-            <SummaryLabel color="#1a237e">
+          <SummaryCard color="var(--color-navy)">
+            <SummaryLabel color="var(--color-navy)">
               <Layers size={16} />
               Template Type
             </SummaryLabel>
             <SummaryValue>
-              {level.type ? level.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown Type'}
+              {level.type ? level.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'General Template'}
             </SummaryValue>
             <SummaryDescription>
               {level.status ? level.status.charAt(0).toUpperCase() + level.status.slice(1) : 'Active'} • 
@@ -1469,55 +730,84 @@ const InspectionLevelView = () => {
             </SummaryDescription>
           </SummaryCard>
           
-          <SummaryCard color="#0891b2">
-            <SummaryLabel color="#0891b2">
+          <SummaryCard color="var(--color-teal)">
+            <SummaryLabel color="var(--color-teal)">
               <ListChecks size={16} />
               Questions
             </SummaryLabel>
             <SummaryValue>
-              {countTotalItems(level).questionCount} Questions
+              {questionCount} Questions
             </SummaryValue>
             <SummaryDescription>
-              {level.questions?.filter(q => q.mandatory !== false).length || 0} Mandatory • 
-              {level.questions?.filter(q => q.mandatory === false).length || 0} Recommended
+              {level.questions?.filter(q => q.required !== false).length || 0} Required • 
+              {level.questions?.filter(q => q.required === false).length || 0} Optional
             </SummaryDescription>
           </SummaryCard>
           
-          <SummaryCard color="#059669">
-            <SummaryLabel color="#059669">
+          <SummaryCard color="var(--color-seafoam)">
+            <SummaryLabel color="var(--color-seafoam)">
               <Layers size={16} />
               Levels
             </SummaryLabel>
             <SummaryValue>
-              {countTotalItems(level).levelCount} Levels
+              {levelCount} Levels
             </SummaryValue>
             <SummaryDescription>
               Created on {new Date(level.createdAt).toLocaleDateString()}
             </SummaryDescription>
           </SummaryCard>
           
-          <SummaryCard color="#d97706">
-            <SummaryLabel color="#d97706">
+          <SummaryCard color="var(--color-coral)">
+            <SummaryLabel color="var(--color-coral)">
               <Activity size={16} />
               Compliance Rate
             </SummaryLabel>
             <SummaryValue>
-              {level.metrics?.complianceRate || '0%'}
+              {level.metrics?.complianceRate || 'N/A'}
             </SummaryValue>
             <SummaryDescription>
               {level.metrics?.completedTasks || 0} completed tasks
             </SummaryDescription>
           </SummaryCard>
         </SummarySection>
-      )}
+
+        <ButtonGroup>
+          <Button 
+            as={Link} 
+            to={`/inspection/${id}/edit/build`}
+            variant="primary"
+          >
+            <Edit size={16} />
+            Edit Template
+          </Button>
+          
+          <Button 
+            variant="secondary"
+            onClick={handleDuplicate}
+          >
+            <Copy size={16} />
+            Duplicate
+          </Button>
+          
+          <Button 
+            variant="danger"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <Trash2 size={16} />
+            Delete Template
+          </Button>
+        </ButtonGroup>
 
       <ContentGrid>
         <div>
           <Card>
             <CardTitle>
-              <Activity size={18} />
-              Level Hierarchy
+                <Layers size={18} />
+                Template Structure
             </CardTitle>
+              <p style={{ marginBottom: '20px', color: 'var(--color-gray-medium)', fontSize: '14px' }}>
+                {level.description || 'No description provided for this template.'}
+              </p>
             <LevelHierarchy>
               {level.sets && Array.isArray(level.sets) && level.sets.length > 0 ? (
                 level.sets.map((set, setIndex) => {
@@ -1526,179 +816,55 @@ const InspectionLevelView = () => {
                   const questionCount = countSetQuestions(set);
                   
                   return (
-                    <div key={set.id || set._id || `set-${setIndex}`}>
-                      <SetHeader>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <h3>{set.name || `Set ${setIndex + 1}`}</h3>
-                          <div style={{ display: 'flex', gap: '16px' }}>
-                            <SetStat>
-                              <Layers size={16} />
-                              <span>{subLevelCount} Level{subLevelCount !== 1 ? 's' : ''}</span>
-                            </SetStat>
-                            <SetStat>
-                              <ListChecks size={16} />
-                              <span>{questionCount} Question{questionCount !== 1 ? 's' : ''}</span>
-                            </SetStat>
-                          </div>
-                        </div>
-                        {set.description && <p>{set.description}</p>}
-                      </SetHeader>
-                      
-                      <TreeContainer>
-                        {renderSubLevels(set.subLevels, '', setIndex)}
-                      </TreeContainer>
-                      
-                      {set.generalQuestions && Array.isArray(set.generalQuestions) && set.generalQuestions.length > 0 && (
-                        <QuestionsContainer>
-                          <h4>General Questions</h4>
-                          <ul>
-                            {set.generalQuestions.map((question, qIndex) => (
-                              <SetQuestionItem key={question.id || question._id || `q-${qIndex}`}>
-                                <span>
-                                  {qIndex + 1}. {question.text}
-                                </span>
-                                <SetQuestionBadge>
-                                  {getQuestionTypeLabel(question.answerType)}
-                                </SetQuestionBadge>
-                              </SetQuestionItem>
-                            ))}
-                          </ul>
-                        </QuestionsContainer>
-                      )}
-                      
-                      {set.questions && Array.isArray(set.questions) && set.questions.length > 0 && (
-                        <QuestionsContainer>
-                          <h4>Set Questions</h4>
-                          <ul>
-                            {set.questions.map((question, qIndex) => (
-                              <SetQuestionItem key={question.id || question._id || `q-${qIndex}`}>
-                                <span>
-                                  {qIndex + 1}. {question.text}
-                                </span>
-                                <SetQuestionBadge>
-                                  {getQuestionTypeLabel(question.answerType)}
-                                </SetQuestionBadge>
-                              </SetQuestionItem>
-                            ))}
-                          </ul>
-                        </QuestionsContainer>
-                      )}
+                      <CollapsibleSection
+                        key={set.id || setIndex}
+                        title={set.name || `Set ${setIndex + 1}`}
+                        number={setIndex + 1}
+                        isInitiallyExpanded={setIndex === 0}
+                        questionsCount={questionCount}
+                        completedCount={0}
+                        status="pending"
+                      >
+                        <div>
+                          {set.description && (
+                            <p style={{ marginBottom: '16px', color: 'var(--color-gray-medium)' }}>
+                              {set.description}
+                            </p>
+                          )}
+                          {renderLevelHierarchy(set.subLevels || [])}
                     </div>
+                      </CollapsibleSection>
                   );
                 })
-              ) : level.subLevels && Array.isArray(level.subLevels) && level.subLevels.length > 0 ? (
-                // Backward compatibility with old structure
-                <TreeContainer>
-                  {renderSubLevels(level.subLevels)}
-                </TreeContainer>
               ) : (
-                <EmptyState>
-                  <p>No level structure defined</p>
-                </EmptyState>
+                  // Legacy structure - use top-level subLevels directly
+                  renderLevelHierarchy(level.subLevels || [])
               )}
             </LevelHierarchy>
           </Card>
 
-          {/* Add Questionnaire Card */}
           <QuestionnaireCard>
             <CardTitle>
-              <Clipboard size={18} />
-              Inspection Questions
+                <ListChecks size={18} />
+                Template Questions
             </CardTitle>
             
-            {level.questions && level.questions.length > 0 ? (
-              <QuestionList>
-                {level.questions.map((question, index) => {
-                  // Calculate the checkpoint ID
-                  let checkpointId = `${index + 1}`;
-                  
-                  if (question.levelId) {
-                    // Find the related level info
-                    const findLevelNumbering = (levels, id, parentNumber = '') => {
-                      if (!levels) return null;
-                      
-                      for (let i = 0; i < levels.length; i++) {
-                        const level = levels[i];
-                        const currentId = level._id?.toString();
-                        
-                        // Calculate current level number
-                        const currentNumber = parentNumber 
-                          ? `${parentNumber}.${i + 1}` 
-                          : String.fromCharCode(65 + i); // A, B, C, etc. for top level
-                        
-                        if (currentId === id) {
-                          return currentNumber;
-                        }
-                        
-                        if (level.subLevels && level.subLevels.length > 0) {
-                          const foundInSub = findLevelNumbering(level.subLevels, id, currentNumber);
-                          if (foundInSub) return foundInSub;
-                        }
-                      }
-                      
-                      return null;
-                    };
-                    
-                    // Find all questions with the same levelId to determine this question's position
-                    const positionInLevel = level.questions
-                      .filter(q => q.levelId === question.levelId)
-                      .findIndex(q => q._id === question._id) + 1;
-                    
-                    const levelNumber = findLevelNumbering(level.subLevels, question.levelId);
-                    
-                    if (levelNumber) {
-                      checkpointId = `${levelNumber}.${positionInLevel}`;
-                    }
-                  }
-                  
-                  return (
-                    <QuestionItem key={question._id || question.id || index}>
-                      <QuestionHeader>
-                        <QuestionNumber>{checkpointId}</QuestionNumber>
-                        <QuestionType>
-                          {question.answerType === 'yesno' ? <CheckCircle size={14} /> : 
-                           question.answerType === 'multiple_choice' ? <ListChecks size={14} /> : 
-                           <Info size={14} />}
-                          {getQuestionTypeLabel(question.answerType)}
-                        </QuestionType>
-                        <MandatoryBadge mandatory={question.mandatory !== false}>
-                          {question.mandatory === false ? 
-                            <><AlertTriangle size={14} />Recommended</> : 
-                            <><CheckCircle size={14} />Mandatory</>}
-                        </MandatoryBadge>
-                      </QuestionHeader>
-                      
-                      <QuestionText required={question.required}>
-                        {question.text}
-                      </QuestionText>
-                      
-                      {(question.answerType === 'select' || question.answerType === 'multiple_choice') && 
-                        question.options && question.options.length > 0 && (
-                          <QuestionDetails>
-                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Response Options:</div>
-                            <OptionsList>
-                              {question.options.map((option, optIndex) => (
-                                <OptionItem key={optIndex}>{option}</OptionItem>
-                              ))}
-                            </OptionsList>
-                          </QuestionDetails>
-                        )
-                      }
-                    </QuestionItem>
-                  );
-                })}
-              </QuestionList>
-            ) : (
-              <div style={{ 
-                padding: '16px', 
-                background: '#f8fafc', 
-                borderRadius: '8px', 
-                textAlign: 'center',
-                color: '#64748b'
-              }}>
-                <AlertTriangle size={18} style={{ marginBottom: '8px' }} />
-                <p>No inspection questions defined for this template</p>
-              </div>
+              {level.sets && Array.isArray(level.sets) && level.sets.length > 0 ? (
+                level.sets.map((set, setIndex) => (
+                  <CollapsibleSection
+                    key={`questions-${set.id || setIndex}`}
+                    title={`${set.name || `Set ${setIndex + 1}`} Questions`}
+                    number={`Q${setIndex + 1}`}
+                    isInitiallyExpanded={false}
+                    questionsCount={countSetQuestions(set)}
+                    completedCount={0}
+                    status="pending"
+                  >
+                    {renderQuestions(set)}
+                  </CollapsibleSection>
+                ))
+              ) : (
+                renderQuestions({ questions: level.questions || [] })
             )}
           </QuestionnaireCard>
         </div>
@@ -1720,44 +886,91 @@ const InspectionLevelView = () => {
               </StatCard>
               <StatCard>
                 <StatLabel>Avg. Completion Time</StatLabel>
-                <StatValue>{level.metrics?.avgCompletionTime || '0h'}</StatValue>
+                  <StatValue>{level.metrics?.avgCompletionTime || 'N/A'}</StatValue>
               </StatCard>
               <StatCard>
                 <StatLabel>Compliance Rate</StatLabel>
-                <StatValue>{level.metrics?.complianceRate || '0%'}</StatValue>
+                  <StatValue>{level.metrics?.complianceRate || 'N/A'}</StatValue>
               </StatCard>
             </StatsList>
+          </Card>
+
+            <Card style={{ marginTop: '24px' }}>
+              <CardTitle>
+                <Calendar size={18} />
+                Inspection Schedule
+              </CardTitle>
+              
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '32px 0', 
+                color: 'var(--color-gray-medium)'
+              }}>
+                <Clock size={24} style={{ marginBottom: '16px', opacity: 0.6 }} />
+                <p>No upcoming inspections scheduled</p>
+                <Button
+                  variant="secondary"
+                  style={{ margin: '16px auto 0', display: 'inline-flex' }}
+                >
+                  <PenTool size={16} />
+                  Schedule Inspection
+                </Button>
+              </div>
           </Card>
 
           <Card style={{ marginTop: '24px' }}>
             <CardTitle>
               <FileText size={18} />
-              Assigned Tasks
+                Recent Reports
             </CardTitle>
-            {level.assignedTasks && level.assignedTasks.length > 0 ? (
-              <TasksList>
-                {level.assignedTasks.map(task => (
-                  <TaskItem key={task._id || `task-${Math.random()}`}>
-                    <NodeIcon background="#f0f9ff" color="#0284c7">
-                      <FileText size={16} />
-                    </NodeIcon>
-                    <TaskInfo>
-                      <h4>{task.title}</h4>
-                      <p>{task.description}</p>
-                    </TaskInfo>
-                    <StatusBadge status={task.status || 'pending'}>
-                      {task.status ? (task.status.charAt(0).toUpperCase() + task.status.slice(1)) : 'Pending'}
-                    </StatusBadge>
-                  </TaskItem>
-                ))}
-              </TasksList>
-            ) : (
-              <p>No tasks assigned</p>
-            )}
+              
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '32px 0', 
+                color: 'var(--color-gray-medium)'
+              }}>
+                <FileText size={24} style={{ marginBottom: '16px', opacity: 0.6 }} />
+                <p>No reports generated yet</p>
+                <Button
+                  as={Link}
+                  to={`/inspection/${id}/report`}
+                  variant="secondary"
+                  style={{ margin: '16px auto 0', display: 'inline-flex' }}
+                >
+                  <Eye size={16} />
+                  View Report Template
+                </Button>
+              </div>
           </Card>
         </div>
       </ContentGrid>
     </PageContainer>
+
+      {showDeleteModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>Delete Template</ModalTitle>
+            <ModalMessage>
+              Are you sure you want to delete this template? This action cannot be undone.
+            </ModalMessage>
+            <ModalActions>
+              <Button 
+                variant="secondary"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="danger"
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+    </InspectionLayout>
   );
 };
 

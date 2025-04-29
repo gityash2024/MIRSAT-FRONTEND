@@ -26,7 +26,7 @@ const ChartHeader = styled.div`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -106,7 +106,7 @@ const CustomTooltip = ({ active, payload }) => {
         <p style={{ 
           margin: '0 0 4px', 
           fontWeight: 600, 
-          color: '#1a237e',
+          color: 'var(--color-navy)',
           fontSize: '13px'
         }}>
           {payload[0].payload.name}
@@ -216,8 +216,8 @@ const ComplianceChart = ({ dateRange, filters }) => {
               <Radar
                 name="Score"
                 dataKey="score"
-                stroke="#1a237e"
-                fill="#1a237e"
+                stroke="var(--color-navy)"
+                fill="var(--color-navy)"
                 fillOpacity={0.2}
               />
               <Tooltip content={<CustomTooltip />} />

@@ -29,7 +29,7 @@ const Header = styled.div`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -50,7 +50,7 @@ const FilterTabs = styled.div`
 const Tab = styled.button`
   padding: 6px 12px;
   border: none;
-  background: ${props => props.active ? '#1a237e' : 'transparent'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'transparent'};
   color: ${props => props.active ? 'white' : '#64748b'};
   border-radius: 6px;
   font-size: 13px;
@@ -58,7 +58,7 @@ const Tab = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#1a237e' : '#f1f5f9'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f1f5f9'};
   }
 `;
 
@@ -131,7 +131,7 @@ const TimelineHeader = styled.div`
 const TimelineTitle = styled.h4`
   font-size: 14px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
   margin: 0;
 `;
 
@@ -178,7 +178,7 @@ const ActionButton = styled.button`
   padding: 6px 12px;
   background: white;
   border: 1px solid #e2e8f0;
-  color: ${props => props.variant === 'danger' ? '#dc2626' : '#1a237e'};
+  color: ${props => props.variant === 'danger' ? '#dc2626' : 'var(--color-navy)'};
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;

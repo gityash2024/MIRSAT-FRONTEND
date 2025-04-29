@@ -16,7 +16,7 @@ const ChartContainer = styled(motion.div)`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -40,9 +40,9 @@ const ChartTypeButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#64748b'};
-  border: 1px solid ${props => props.active ? '#1a237e' : '#e2e8f0'};
+  border: 1px solid ${props => props.active ? 'var(--color-navy)' : '#e2e8f0'};
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -50,7 +50,7 @@ const ChartTypeButton = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#1a237e' : '#f8fafc'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
   }
 `;
 

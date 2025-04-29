@@ -68,7 +68,7 @@ const MetricValue = styled.div`
 const Value = styled.span`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const Unit = styled.span`
@@ -107,7 +107,7 @@ const BreakdownLabel = styled.span`
 `;
 
 const BreakdownValue = styled.span`
-  color: #1a237e;
+  color: var(--color-navy);
   font-weight: 500;
 `;
 
@@ -122,7 +122,7 @@ const ProgressBar = styled.div`
 
 const ProgressFill = styled(motion.div)`
   height: 100%;
-  background: ${props => props.color || '#1a237e'};
+  background: ${props => props.color || 'var(--color-navy)'};
   width: ${props => props.value}%;
 `;
 

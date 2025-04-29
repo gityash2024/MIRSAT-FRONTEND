@@ -50,7 +50,7 @@ const BackButton = styled.button`
   gap: 10px;
   background: rgba(255, 255, 255, 0.8);
   border: none;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -112,7 +112,7 @@ const TitleSection = styled.div`
 const Title = styled.h1`
   font-size: 22px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
   letter-spacing: -0.5px;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
@@ -293,7 +293,7 @@ const ScoreCard = styled.div`
     .value {
       font-size: 18px;
       font-weight: 700;
-      color: #1a237e;
+      color: var(--color-navy);
     }
   }
 `;
@@ -325,7 +325,7 @@ const ProgressBar = styled.div`
   
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #1a237e 0%, #5c6bc0 100%);
+    background: linear-gradient(90deg, var(--color-navy) 0%, #5c6bc0 100%);
     border-radius: 8px;
     width: ${props => props.progress}%;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -347,7 +347,7 @@ const ProgressHeader = styled.div`
   .progress-percentage {
     font-size: 15px;
     font-weight: 700;
-    color: #1a237e;
+    color: var(--color-navy);
     background: rgba(255, 255, 255, 0.6);
     padding: 4px 10px;
     border-radius: 20px;
@@ -400,7 +400,7 @@ const TimerWidget = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-size: 18px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 15px;
   border: 1px solid rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
@@ -412,7 +412,7 @@ const TimerWidget = styled.div`
   }
   
   svg {
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .timer-controls {
@@ -470,7 +470,7 @@ const RightPanel = styled.div`
 const RightPanelTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -503,7 +503,7 @@ const ActionButton = styled.button`
   gap: 10px;
   background: rgba(255, 255, 255, 0.8);
   border: none;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -534,11 +534,11 @@ const ActionButton = styled.button`
 
 const StepBackButton = styled(ActionButton)`
   background: rgba(255, 255, 255, 0.8);
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const NextButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, #3f51b5 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
   
@@ -550,7 +550,7 @@ const NextButton = styled(ActionButton)`
 `;
 
 const StartButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, #3f51b5 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
   
@@ -619,7 +619,7 @@ const TaskDetailSection = styled.div`
 const SectionTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -652,7 +652,7 @@ const StepCircle = styled.div`
   height: 30px;
   border-radius: 50%;
   background: ${props => props.active 
-    ? '#1a237e' 
+    ? 'var(--color-navy)' 
     : props.completed 
       ? '#4caf50' 
       : '#e0e0e0'};
@@ -672,7 +672,7 @@ const StepCircle = styled.div`
 
 const StepLabel = styled.div`
   font-size: 12px;
-  color: ${props => props.active ? '#1a237e' : '#666'};
+  color: ${props => props.active ? 'var(--color-navy)' : '#666'};
   font-weight: ${props => props.active ? 600 : 400};
 `;
 
@@ -710,7 +710,7 @@ const ScoreSummary = styled.div`
 const ScoreTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -745,7 +745,7 @@ const ScoreItem = styled.div`
   .score-value {
     font-size: 20px;
     font-weight: 700;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .score-percent {
@@ -762,7 +762,7 @@ const AssessmentSection = styled.div`
 const AssessmentTitle = styled.h4`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
 `;
 
@@ -781,7 +781,7 @@ const AssessmentTable = styled.table`
   th {
     background: rgba(26, 35, 126, 0.05);
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   tr:hover td {
@@ -829,7 +829,7 @@ const TreeItemContent = styled.div`
 
 const TreeItemText = styled.span`
   font-size: 14px;
-  color: ${props => props.active ? '#1a237e' : '#4b5563'};
+  color: ${props => props.active ? 'var(--color-navy)' : '#4b5563'};
   font-weight: ${props => props.active ? '600' : '400'};
 `;
 
@@ -839,7 +839,7 @@ const TreeItemIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.active ? '#1a237e' : '#4b5563'};
+  color: ${props => props.active ? 'var(--color-navy)' : '#4b5563'};
 `;
 
 const QuestionnaireView = styled.div`
@@ -1434,7 +1434,7 @@ const UserTaskDetail = () => {
             {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
               <ScoreSummary>
                 <ScoreTitle>
-                  <Award size={20} color="#1a237e" />
+                  <Award size={20} color="var(--color-navy)" />
                   Compliance Score Summary
                 </ScoreTitle>
                 
@@ -1507,7 +1507,7 @@ const UserTaskDetail = () => {
                 fontSize: '18px', 
                 fontWeight: '600', 
                 marginBottom: '16px',
-                color: '#1a237e',
+                color: 'var(--color-navy)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px' 
@@ -1524,7 +1524,7 @@ const UserTaskDetail = () => {
                 fontSize: '18px', 
                 fontWeight: '600', 
                 marginBottom: '16px',
-                color: '#1a237e',
+                color: 'var(--color-navy)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px' 
@@ -1546,7 +1546,7 @@ const UserTaskDetail = () => {
             {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
               <ScoreSummary>
                 <ScoreTitle>
-                  <Award size={20} color="#1a237e" />
+                  <Award size={20} color="var(--color-navy)" />
                   Inspection Scoring Summary
                 </ScoreTitle>
                 
@@ -1616,11 +1616,11 @@ const UserTaskDetail = () => {
             width: '50px', 
             height: '50px', 
             border: '5px solid #f3f3f3',
-            borderTop: '5px solid #1a237e', 
+            borderTop: '5px solid var(--color-navy)', 
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <div style={{ fontSize: '16px', color: '#1a237e', fontWeight: '500' }}>
+          <div style={{ fontSize: '16px', color: 'var(--color-navy)', fontWeight: '500' }}>
             Loading task details...
           </div>
         </div>
@@ -1870,7 +1870,7 @@ const UserTaskDetail = () => {
                       padding: '8px',
                       background: '#f8fafc',
                       borderRadius: '8px',
-                      color: '#1a237e',
+                      color: 'var(--color-navy)',
                       textDecoration: 'none',
                       fontSize: '14px',
                       transition: 'all 0.2s ease'

@@ -18,7 +18,7 @@ const Container = styled.div`
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -35,7 +35,7 @@ const NoSubLevelsMessage = styled.div`
   h3 {
     font-size: 18px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 8px;
   }
   
@@ -132,7 +132,7 @@ const NodeIcon = styled.div`
   justify-content: center;
   width: 20px;
   margin-right: 8px;
-  color: ${props => props.isSelected ? '#1a237e' : '#64748b'};
+  color: ${props => props.isSelected ? 'var(--color-navy)' : '#64748b'};
 `;
 
 const StatusIcon = styled.div`
@@ -167,7 +167,7 @@ const StatusIcon = styled.div`
 
 const NodeLabel = styled.div`
   font-size: 14px;
-  color: ${props => props.isSelected ? '#1a237e' : '#334155'};
+  color: ${props => props.isSelected ? 'var(--color-navy)' : '#334155'};
   font-weight: ${props => props.isSelected ? '600' : '400'};
   flex-grow: 1;
   white-space: nowrap;
@@ -242,7 +242,7 @@ const ContentHeader = styled.div`
 const ContentTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -324,7 +324,7 @@ const ScoringSummary = styled.div`
 const SectionTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -353,7 +353,7 @@ const ScoreItem = styled.div`
   .score-value {
     font-size: 16px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .score-percent {
@@ -609,7 +609,7 @@ const ProgressInfo = styled.div`
   .percentage {
     font-size: 14px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -633,7 +633,7 @@ const Breadcrumbs = styled.div`
 const Breadcrumb = styled.span`
   cursor: pointer;
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
     text-decoration: underline;
   }
 `;
@@ -644,7 +644,7 @@ const BreadcrumbSeparator = styled.span`
 
 const LevelNumber = styled.span`
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-right: 6px;
 `;
 
@@ -1330,7 +1330,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
           <>
             <ActionInput>
               <div>
-                <MessageSquare size={16} color="#1a237e" />
+                <MessageSquare size={16} color="var(--color-navy)" />
                 <span style={{ marginLeft: '8px', fontSize: '14px', fontWeight: '500' }}>Notes</span>
                 <CommentInput 
                   placeholder="Add your inspection notes here..."
@@ -1340,7 +1340,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
               </div>
               
               <div>
-                <PaperclipIcon size={16} color="#1a237e" />
+                <PaperclipIcon size={16} color="var(--color-navy)" />
                 <span style={{ marginLeft: '8px', fontSize: '14px', fontWeight: '500' }}>Photos</span>
                 
                 <ImageUploadWrapper>
@@ -1362,7 +1362,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
                       alignItems: 'center', 
                       gap: '8px', 
                       marginTop: '10px',
-                      color: '#1a237e'
+                      color: 'var(--color-navy)'
                     }}>
                       <Loader size={16} />
                       <span>Uploading...</span>
@@ -1391,7 +1391,7 @@ const InspectionStepForm = ({ task, onUpdateProgress, onExportReport }) => {
               </div>
               
               <TimeInputContainer>
-                <Timer size={16} color="#1a237e" />
+                <Timer size={16} color="var(--color-navy)" />
                 <span style={{ fontSize: '14px', fontWeight: '500' }}>Time Spent (hours):</span>
                 <TimeInput 
                   type="number" 

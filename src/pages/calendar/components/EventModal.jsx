@@ -38,7 +38,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const CloseButton = styled.button`
@@ -55,7 +55,7 @@ const CloseButton = styled.button`
 
   &:hover {
     background: #f1f5f9;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -77,7 +77,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const Input = styled.input`
@@ -85,12 +85,12 @@ const Input = styled.input`
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 14px;
-  color: #1a237e;
+  color: var(--color-navy);
   transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -100,13 +100,13 @@ const Select = styled.select`
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 14px;
-  color: #1a237e;
+  color: var(--color-navy);
   background: white;
   transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -116,14 +116,14 @@ const Textarea = styled.textarea`
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 14px;
-  color: #1a237e;
+  color: var(--color-navy);
   min-height: 100px;
   resize: vertical;
   transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -157,7 +157,7 @@ const Button = styled.button`
       `;
     }
     return props.variant === 'primary' ? `
-      background: #1a237e;
+      background: var(--color-navy);
       color: white;
       border: none;
 
@@ -166,8 +166,8 @@ const Button = styled.button`
       }
     ` : `
       background: white;
-      color: #1a237e;
-      border: 1px solid #1a237e;
+      color: var(--color-navy);
+      border: 1px solid var(--color-navy);
 
       &:hover {
         background: #f5f7fb;

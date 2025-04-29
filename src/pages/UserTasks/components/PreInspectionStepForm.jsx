@@ -9,7 +9,7 @@ const Container = styled.div`
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
 `;
 
@@ -57,7 +57,7 @@ const MetaItem = styled.div`
   }
   
   svg {
-    color: #1a237e;
+    color: var(--color-navy);
     flex-shrink: 0;
   }
   
@@ -147,7 +147,7 @@ const AssetInfo = styled.div`
 const AssetTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
   display: flex;
   align-items: center;

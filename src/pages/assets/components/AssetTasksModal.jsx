@@ -54,7 +54,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   margin: 0;
   font-size: 18px;
-  color: #1a237e;
+  color: var(--color-navy);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -73,7 +73,7 @@ const CloseButton = styled.button`
   
   &:hover {
     background: #f1f5f9;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -106,7 +106,7 @@ const TasksHeader = styled.div`
 const TaskTitle = styled.h4`
   margin: 0;
   font-size: 16px;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const TaskCount = styled.span`
@@ -209,7 +209,7 @@ const TaskButton = styled(Link)`
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   font-size: 13px;
   border: none;
@@ -296,7 +296,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
         </ModalHeader>
         
         <AssetInfo>
-          <h4 style={{ margin: '12px 0', fontSize: '16px', color: '#1a237e' }}>Asset Information</h4>
+          <h4 style={{ margin: '12px 0', fontSize: '16px', color: 'var(--color-navy)' }}>Asset Information</h4>
           <AssetDetail><strong>Name:</strong> {asset.displayName || 'N/A'}</AssetDetail>
           <AssetDetail><strong>Type:</strong> {asset.type || 'N/A'}</AssetDetail>
           <AssetDetail><strong>ID:</strong> {asset.uniqueId || 'N/A'}</AssetDetail>

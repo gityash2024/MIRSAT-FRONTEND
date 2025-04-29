@@ -38,7 +38,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -89,7 +89,7 @@ const NestedSubLevels = styled.div`
 const NestedTitle = styled.h4`
   font-size: 16px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
 `;
 
@@ -103,7 +103,7 @@ const SubLevelItem = styled.div`
   h5 {
     font-size: 14px;
     font-weight: 500;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 4px;
   }
   
@@ -127,7 +127,7 @@ const Button = styled.button`
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   border: none;
   cursor: pointer;

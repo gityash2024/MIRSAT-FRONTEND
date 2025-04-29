@@ -41,7 +41,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin: 0;
 `;
 
@@ -89,7 +89,7 @@ const Input = styled.input`
   
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -105,7 +105,7 @@ const Select = styled.select`
   
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -134,7 +134,7 @@ const Button = styled.button`
   transition: all 0.2s;
   
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
     

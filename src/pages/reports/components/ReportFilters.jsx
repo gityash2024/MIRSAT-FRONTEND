@@ -21,7 +21,7 @@ const FilterGroup = styled.div``;
 const FilterTitle = styled.h4`
   font-size: 14px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
 `;
 
@@ -52,12 +52,12 @@ const Checkbox = styled.label`
 const CustomCheckbox = styled.div`
   width: 18px;
   height: 18px;
-  border: 2px solid ${props => props.checked ? '#1a237e' : '#e2e8f0'};
+  border: 2px solid ${props => props.checked ? 'var(--color-navy)' : '#e2e8f0'};
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${props => props.checked ? '#1a237e' : 'white'};
+  background: ${props => props.checked ? 'var(--color-navy)' : 'white'};
   transition: all 0.2s;
 `;
 
@@ -83,7 +83,7 @@ const FilterTag = styled.div`
   background: #f1f5f9;
   border-radius: 6px;
   font-size: 12px;
-  color: #1a237e;
+  color: var(--color-navy);
 
   button {
     display: flex;
@@ -122,7 +122,7 @@ const Button = styled.button`
   transition: all 0.2s;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -131,8 +131,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f8fafc;

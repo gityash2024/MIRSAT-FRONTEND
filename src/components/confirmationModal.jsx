@@ -31,7 +31,7 @@ const Content = styled(AlertDialog.Content)`
 const Title = styled(AlertDialog.Title)`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
 `;
 

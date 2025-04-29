@@ -5,7 +5,7 @@ const SwitchContainer = styled.button`
   position: relative;
   width: ${props => props.width || '40px'};
   height: ${props => props.height || '20px'};
-  background: ${props => props.checked ? '#1a237e' : '#e0e0e0'};
+  background: ${props => props.checked ? 'var(--color-navy)' : '#e0e0e0'};
   border-radius: 20px;
   padding: 2px;
   border: none;

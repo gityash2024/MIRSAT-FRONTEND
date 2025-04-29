@@ -49,7 +49,7 @@ const Input = styled.input`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -64,7 +64,7 @@ const TextArea = styled.textarea`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -78,7 +78,7 @@ const Select = styled.select`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -158,7 +158,7 @@ const ToggleIndicator = styled.div`
   position: relative;
   width: 40px;
   height: 20px;
-  background: ${props => props.checked ? '#1a237e' : '#e0e0e0'};
+  background: ${props => props.checked ? 'var(--color-navy)' : '#e0e0e0'};
   border-radius: 20px;
   padding: 2px;
   transition: all 0.3s;
@@ -181,7 +181,7 @@ const AttachmentSection = styled.div`
   text-align: center;
   transition: all 0.3s;
   &:hover {
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 `;
 
@@ -232,7 +232,7 @@ const AttachmentProgress = styled.div`
 const ProgressBar = styled.div`
   width: ${props => props.progress}%;
   height: 100%;
-  background: #1a237e;
+  background: var(--color-navy);
   transition: width 0.3s ease;
 `;
 
@@ -260,7 +260,7 @@ const Button = styled.button`
   transition: all 0.3s;
   cursor: pointer;
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
     &:hover {
@@ -272,8 +272,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
     &:hover {
       background: #f5f7fb;
     }
@@ -283,7 +283,7 @@ const Button = styled.button`
 const SectionTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e0e0e0;
@@ -337,7 +337,7 @@ const UserPickerButton = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -388,7 +388,7 @@ const AdvancedToggle = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -407,7 +407,7 @@ const UploadButton = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
   ${props => props.disabled && `
     opacity: 0.7;
@@ -428,7 +428,7 @@ const IconButton = styled.button`
   cursor: pointer;
   color: #64748b;
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 

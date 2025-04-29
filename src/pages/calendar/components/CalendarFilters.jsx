@@ -23,7 +23,7 @@ const FilterGroup = styled.div`
   h3 {
     font-size: 14px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 12px;
   }
 `;
@@ -51,7 +51,7 @@ const Checkbox = styled.label`
   }
 
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -72,7 +72,7 @@ const FilterTag = styled.div`
   background: #f1f5f9;
   border-radius: 4px;
   font-size: 12px;
-  color: #1a237e;
+  color: var(--color-navy);
 
   button {
     display: flex;
@@ -104,7 +104,7 @@ const SearchContainer = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
       box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
     }
   }

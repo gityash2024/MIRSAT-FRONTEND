@@ -87,13 +87,13 @@ const DropdownHeader = styled.div`
 const DropdownTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const Badge = styled.span`
   padding: 4px 12px;
   background: ${props => props.color || '#e3f2fd'};
-  color: ${props => props.textColor || '#1a237e'};
+  color: ${props => props.textColor || 'var(--color-navy)'};
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
@@ -145,7 +145,7 @@ const IconWrapper = styled.div`
   padding: 8px;
   border-radius: 50%;
   background: ${props => props.bg || '#e3f2fd'};
-  color: ${props => props.color || '#1a237e'};
+  color: ${props => props.color || 'var(--color-navy)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,7 +158,7 @@ const TextContent = styled.div`
 const NotificationTitle = styled.h4`
   font-size: 14px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -180,7 +180,7 @@ const ViewAllButton = styled(Link)`
   gap: 8px;
   padding: 12px;
   background: #f8fafc;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
@@ -261,7 +261,7 @@ const TitleSection = styled.div``;
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -284,9 +284,9 @@ const ActionButtons = styled.div`
 
 const FilterButton = styled.button`
   padding: 8px 16px;
-  border: 1px solid ${props => props.isActive ? '#1a237e' : '#e5e7eb'};
-  background: ${props => props.isActive ? '#1a237e' : 'white'};
-  color: ${props => props.isActive ? 'white' : '#1a237e'};
+  border: 1px solid ${props => props.isActive ? 'var(--color-navy)' : '#e5e7eb'};
+  background: ${props => props.isActive ? 'var(--color-navy)' : 'white'};
+  color: ${props => props.isActive ? 'white' : 'var(--color-navy)'};
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -295,7 +295,7 @@ const FilterButton = styled.button`
 
   &:hover {
     background: ${props => props.isActive ? '#151b4f' : '#f8fafc'};
-    border-color: ${props => props.isActive ? '#151b4f' : '#1a237e'};
+    border-color: ${props => props.isActive ? '#151b4f' : 'var(--color-navy)'};
   }
 `;
 
@@ -324,7 +324,7 @@ const CardIconWrapper = styled.div`
 const CardTitle = styled.h3`
   font-size: 16px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -353,7 +353,7 @@ const ActionIconButton = styled.button`
 
   &:hover {
     background: #f1f5f9;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -362,7 +362,7 @@ const CardLink = styled(Link)`
   align-items: center;
   gap: 4px;
   padding: 12px 16px;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
@@ -386,7 +386,7 @@ const PaginationButton = styled.button`
   padding: 8px 16px;
   border: 1px solid #e5e7eb;
   background: white;
-  color: #1a237e;
+  color: var(--color-navy);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -395,7 +395,7 @@ const PaginationButton = styled.button`
 
   &:hover:not(:disabled) {
     background: #f8fafc;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 
   &:disabled {
@@ -421,7 +421,7 @@ const EmptyState = styled.div`
 const EmptyTitle = styled.h3`
   font-size: 18px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
   margin: 16px 0 8px;
 `;
 
@@ -530,7 +530,7 @@ const ActionButton = styled.button`
   padding: 8px 16px;
   border: 1px solid #e5e7eb;
   background: white;
-  color: #1a237e;
+  color: var(--color-navy);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -539,7 +539,7 @@ const ActionButton = styled.button`
 
   &:hover {
     background: #f8fafc;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 `;
 

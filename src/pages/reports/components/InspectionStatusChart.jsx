@@ -18,7 +18,7 @@ const ChartHeader = styled.div`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -62,7 +62,7 @@ const StatusLabel = styled.span`
 const StatusValue = styled.span`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const LoadingContainer = styled.div`
@@ -75,7 +75,7 @@ const LoadingContainer = styled.div`
   color: #64748b;
 `;
 
-const COLORS = ['#1a237e', '#4caf50', '#ff9800', '#f44336'];
+const COLORS = ['var(--color-navy)', '#4caf50', '#ff9800', '#f44336'];
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -87,7 +87,7 @@ const CustomTooltip = ({ active, payload }) => {
         borderRadius: '6px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        <p style={{ margin: 0, color: '#1a237e', fontWeight: 500 }}>
+        <p style={{ margin: 0, color: 'var(--color-navy)', fontWeight: 500 }}>
           {payload[0].name}
         </p>
         <p style={{ margin: '4px 0 0', color: '#64748b' }}>

@@ -25,6 +25,10 @@ import InspectionLevelList from '../pages/inspection/InspectionLevelList';
 import InspectionLevelTree from '../pages/inspection/InspectionLevelTree';
 import InspectionLevelForm from '../pages/inspection/InspectionLevelForm';
 import InspectionLevelView from '../pages/inspection/InspectionLevelView';
+import InspectionReportView from '../pages/inspection/InspectionReportView';
+
+// Questionnaire module imports
+import QuestionnaireList from '../pages/questionnaire/QuestionnaireList';
 
 import Calendar from '../pages/calendar';
 import Settings from '../pages/settings';
@@ -63,9 +67,7 @@ const AppRoutes = () => {
       <Route
         path="/login"
         element={
-
               <Login />
-            
         }
       />
 
@@ -91,9 +93,27 @@ const AppRoutes = () => {
               <Route index element={<InspectionLevelList />} />
               <Route path="tree" element={<InspectionLevelTree />} />
             </Route>
-            <Route path="inspection/create" element={<InspectionLevelForm />} />
-            <Route path="inspection/:id" element={<InspectionLevelView />} />
-            <Route path="inspection/:id/edit" element={<InspectionLevelForm />} />
+            <Route path="inspection/create/*">
+              <Route index element={<Navigate to="build" replace />} />
+              <Route path="build" element={<InspectionLevelForm />} />
+              <Route path="report" element={<InspectionReportView isCreating={true} />} />
+            </Route>
+            <Route path="inspection/:id">
+              <Route index element={<Navigate to="build" replace />} />
+              <Route path="build" element={<InspectionLevelView />} />
+              <Route path="report" element={<InspectionReportView />} />
+              <Route path="edit/*">
+                <Route index element={<Navigate to="build" replace />} />
+                <Route path="build" element={<InspectionLevelForm />} />
+                <Route path="report" element={<InspectionReportView isEditing={true} />} />
+              </Route>
+            </Route>
+            
+            {/* Questionnaire routes */}
+            <Route path="questionnaire" element={<QuestionnaireList />} />
+            <Route path="questionnaire/create" element={<QuestionnaireList />} />
+            <Route path="questionnaire/:id" element={<QuestionnaireList />} />
+            <Route path="questionnaire/:id/edit" element={<QuestionnaireList />} />
             
             <Route path="assets" element={<AssetList />} />
             
@@ -130,9 +150,27 @@ const AppRoutes = () => {
             <Route index element={<InspectionLevelList />} />
             <Route path="tree" element={<InspectionLevelTree />} />
           </Route>
-          <Route path="/inspection/create" element={<InspectionLevelForm />} />
-          <Route path="/inspection/:id" element={<InspectionLevelView />} />
-          <Route path="/inspection/:id/edit" element={<InspectionLevelForm />} />
+          <Route path="/inspection/create/*">
+            <Route index element={<Navigate to="build" replace />} />
+            <Route path="build" element={<InspectionLevelForm />} />
+            <Route path="report" element={<InspectionReportView isCreating={true} />} />
+          </Route>
+          <Route path="/inspection/:id">
+            <Route index element={<Navigate to="build" replace />} />
+            <Route path="build" element={<InspectionLevelView />} />
+            <Route path="report" element={<InspectionReportView />} />
+            <Route path="edit/*">
+              <Route index element={<Navigate to="build" replace />} />
+              <Route path="build" element={<InspectionLevelForm />} />
+              <Route path="report" element={<InspectionReportView isEditing={true} />} />
+            </Route>
+          </Route>
+          
+          {/* Questionnaire routes */}
+          <Route path="/questionnaire" element={<QuestionnaireList />} />
+          <Route path="/questionnaire/create" element={<QuestionnaireList />} />
+          <Route path="/questionnaire/:id" element={<QuestionnaireList />} />
+          <Route path="/questionnaire/:id/edit" element={<QuestionnaireList />} />
           
           <Route path="/assets" element={<AssetList />} />
           

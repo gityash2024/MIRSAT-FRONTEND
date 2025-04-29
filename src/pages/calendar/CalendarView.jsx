@@ -35,12 +35,12 @@ const CalendarWrapper = styled.div`
     
     .fc-toolbar-title {
       font-size: 1.2em;
-      color: #1a237e;
+      color: var(--color-navy);
     }
 
     .fc-button-primary {
-      background-color: #1a237e;
-      border-color: #1a237e;
+      background-color: var(--color-navy);
+      border-color: var(--color-navy);
 
       &:hover {
         background-color: #151b4f;
@@ -71,7 +71,7 @@ const CalendarWrapper = styled.div`
 
     .fc-day-header {
       font-weight: 600;
-      color: #1a237e;
+      color: var(--color-navy);
     }
 
     .fc-daygrid-day-number {
@@ -87,7 +87,7 @@ const LoadingIndicator = styled.div`
   justify-content: center;
   align-items: center;
   height: 200px;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 16px;
 `;
 
@@ -111,7 +111,7 @@ const PageSelector = styled.div`
 const PageButton = styled.button`
   padding: 5px 10px;
   border: 1px solid #e0e0e0;
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#333'};
   border-radius: 4px;
   cursor: pointer;
@@ -121,7 +121,7 @@ const PageButton = styled.button`
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: ${props => props.active ? '#1a237e' : '#f5f7fb'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f5f7fb'};
   }
 
   &:disabled {
@@ -319,7 +319,7 @@ const CalendarView = () => {
   function getStatusColor(status) {
     switch (status) {
       case 'pending':
-        return '#1a237e'; // Dark blue
+        return 'var(--color-navy)'; // Dark blue
       case 'in_progress':
         return '#1976d2'; // Medium blue
       case 'completed':
@@ -327,7 +327,7 @@ const CalendarView = () => {
       case 'cancelled':
         return '#ef4444'; // Red
       default:
-        return '#1a237e'; // Default blue
+        return 'var(--color-navy)'; // Default blue
     }
   }
   

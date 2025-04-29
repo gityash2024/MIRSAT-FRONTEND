@@ -21,7 +21,7 @@ const PageHeader = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
 `;
 
@@ -52,7 +52,7 @@ const ProfileCard = styled(Card)`
 `;
 
 const ProfileHeader = styled.div`
-  background: linear-gradient(to right, #1a237e, #3949ab);
+  background: linear-gradient(to right, var(--color-navy), #3949ab);
   height: 120px;
   position: relative;
 `;
@@ -67,7 +67,7 @@ const ProfileAvatar = styled.div`
   justify-content: center;
   font-size: 32px;
   font-weight: 700;
-  color: #1a237e;
+  color: var(--color-navy);
   position: absolute;
   bottom: -50px;
   left: 50%;
@@ -82,7 +82,7 @@ const ProfileAvatar = styled.div`
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     display: flex;
     align-items: center;
@@ -101,7 +101,7 @@ const ProfileInfo = styled.div`
   .name {
     font-size: 20px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 4px;
   }
   
@@ -128,7 +128,7 @@ const ProfileMetaItem = styled.div`
   }
   
   .icon {
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .label {
@@ -151,7 +151,7 @@ const FormCard = styled(Card)`
 const FormTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -190,7 +190,7 @@ const Input = styled.input`
   
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
   
@@ -202,7 +202,7 @@ const Input = styled.input`
 
 const Button = styled.button`
   padding: 10px 16px;
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   border: none;
   border-radius: 8px;

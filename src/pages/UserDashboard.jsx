@@ -25,7 +25,7 @@ const DashboardContainer = styled.div`
 const WelcomeText = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 32px;
 `;
 
@@ -55,7 +55,7 @@ const StatCard = styled.div`
   .value {
     font-size: 28px;
     font-weight: 700;
-    color: #1a237e;
+    color: var(--color-navy);
     margin: 8px 0;
   }
 
@@ -81,7 +81,7 @@ const Card = styled.div`
 const CardTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -149,7 +149,7 @@ const ActionButton = styled.button`
   gap: 6px;
   
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     
     &:hover {
@@ -211,7 +211,7 @@ const PerformanceCard = styled.div`
   .metric-value {
     font-size: 20px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -232,7 +232,7 @@ const EmptyState = styled.div`
   h3 {
     font-size: 18px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 8px;
   }
   

@@ -26,7 +26,7 @@ const Section = styled.div`
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -124,7 +124,7 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -140,7 +140,7 @@ const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 `;
 
@@ -170,7 +170,7 @@ const ToggleInput = styled.input`
   height: 0;
 
   &:checked + span {
-    background-color: #1a237e;
+    background-color: var(--color-navy);
   }
 
   &:checked + span:before {
@@ -216,9 +216,9 @@ const Button = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: ${props => props.variant === 'primary' ? '#1a237e' : 'white'};
-  color: ${props => props.variant === 'primary' ? 'white' : '#1a237e'};
-  border: 1px solid ${props => props.variant === 'primary' ? '#1a237e' : '#e2e8f0'};
+  background: ${props => props.variant === 'primary' ? 'var(--color-navy)' : 'white'};
+  color: ${props => props.variant === 'primary' ? 'white' : 'var(--color-navy)'};
+  border: 1px solid ${props => props.variant === 'primary' ? 'var(--color-navy)' : '#e2e8f0'};
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -297,7 +297,7 @@ const PasswordInput = styled.div`
     padding: 4px;
     
     &:hover {
-      color: #1a237e;
+      color: var(--color-navy);
     }
   }
 `;

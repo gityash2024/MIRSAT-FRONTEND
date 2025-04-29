@@ -25,7 +25,7 @@ const Section = styled.div`
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -57,7 +57,7 @@ const RoleGrid = styled.div`
 const RoleCard = styled(Card)`
   display: grid;
   gap: 16px;
-  border: 2px solid ${props => props.isDefault ? '#1a237e' : '#e2e8f0'};
+  border: 2px solid ${props => props.isDefault ? 'var(--color-navy)' : '#e2e8f0'};
   position: relative;
 `;
 
@@ -118,7 +118,7 @@ const DefaultBadge = styled.span`
   top: -12px;
   right: 16px;
   padding: 4px 12px;
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   border-radius: 12px;
   font-size: 12px;
@@ -131,16 +131,16 @@ const Button = styled.button`
   gap: 8px;
   padding: ${props => props.size === 'small' ? '6px 12px' : '10px 20px'};
   background: ${props => {
-    if (props.variant === 'primary') return '#1a237e';
+    if (props.variant === 'primary') return 'var(--color-navy)';
     if (props.variant === 'danger') return '#dc2626';
     return 'white';
   }};
   color: ${props => {
     if (props.variant === 'primary' || props.variant === 'danger') return 'white';
-    return '#1a237e';
+    return 'var(--color-navy)';
   }};
   border: 1px solid ${props => {
-    if (props.variant === 'primary') return '#1a237e';
+    if (props.variant === 'primary') return 'var(--color-navy)';
     if (props.variant === 'danger') return '#dc2626';
     return '#e2e8f0';
   }};
@@ -197,7 +197,7 @@ const ModalContent = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
 `;
 
@@ -223,7 +223,7 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -239,7 +239,7 @@ const Textarea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -257,7 +257,7 @@ const ToggleInput = styled.input`
   height: 0;
 
   &:checked + span {
-    background-color: #1a237e;
+    background-color: var(--color-navy);
   }
 
   &:checked + span:before {

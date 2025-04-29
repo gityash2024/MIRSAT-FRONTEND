@@ -16,7 +16,7 @@ const Container = styled.div`
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -199,7 +199,7 @@ const NoQuestionsMessage = styled.div`
   h3 {
     font-size: 18px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 8px;
   }
   
@@ -219,7 +219,7 @@ const SaveButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, #3f51b5 100%);
   color: white;
   font-weight: 600;
   border: none;
@@ -271,7 +271,7 @@ const ValidationMessage = styled.div`
 const SectionTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin: 24px 0 12px 0;
   display: flex;
   align-items: center;
@@ -309,7 +309,7 @@ const ScoreItem = styled.div`
   .score-value {
     font-size: 16px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .score-percent {

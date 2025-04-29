@@ -74,7 +74,7 @@ const PageHeader = styled.div`
 const Title = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
   text-shadow: 0 1px 2px rgba(26, 35, 126, 0.1);
 `;
@@ -230,7 +230,7 @@ const TaskHeader = styled.div`
 const TaskTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   max-width: 65%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -292,7 +292,7 @@ const TaskDetailRow = styled.div`
   color: #666;
   
   svg {
-    color: #1a237e;
+    color: var(--color-navy);
     flex-shrink: 0;
   }
 `;
@@ -314,7 +314,7 @@ const TaskProgress = styled.div`
   }
   
   .progress-percentage {
-    color: #1a237e;
+    color: var(--color-navy);
     font-weight: 500;
   }
   
@@ -488,7 +488,7 @@ const EmptyTasks = styled.div`
   h3 {
     font-size: 18px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 8px;
   }
   
@@ -682,7 +682,7 @@ const TaskTable = styled.table`
   
   th {
     font-weight: 500;
-    color: #1a237e;
+    color: var(--color-navy);
     border-bottom: 1px solid rgba(224, 224, 224, 0.5);
   }
   

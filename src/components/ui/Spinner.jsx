@@ -17,7 +17,7 @@ const SpinnerContainer = styled.div`
   height: ${props => props.size || 24}px;
   border: 2px solid #e0e0e0;
   border-radius: 50%;
-  border-top-color: #1a237e;
+  border-top-color: var(--color-navy);
 `;
 
 const Spinner = ({ size }) => {

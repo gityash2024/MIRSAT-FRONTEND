@@ -23,7 +23,7 @@ const FilterHeader = styled.div`
   h2 {
     font-size: 16px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin: 0;
     display: flex;
     align-items: center;
@@ -50,7 +50,7 @@ const FilterGroup = styled.div`
   h3 {
     font-size: 14px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-top: 0;
     margin-bottom: 16px;
     display: flex;
@@ -61,7 +61,7 @@ const FilterGroup = styled.div`
       background: #e8eaf6;
       padding: 4px;
       border-radius: 6px;
-      color: #1a237e;
+      color: var(--color-navy);
     }
   }
 `;
@@ -94,12 +94,12 @@ const CheckboxLabel = styled.label`
 const CustomCheckbox = styled.div`
   width: 18px;
   height: 18px;
-  border: 2px solid ${props => props.$checked ? '#1a237e' : '#d4d4d8'};
+  border: 2px solid ${props => props.$checked ? 'var(--color-navy)' : '#d4d4d8'};
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${props => props.$checked ? '#1a237e' : 'white'};
+  background: ${props => props.$checked ? 'var(--color-navy)' : 'white'};
   transition: all 0.2s;
   flex-shrink: 0;
   
@@ -110,7 +110,7 @@ const CustomCheckbox = styled.div`
 
 const CheckboxText = styled.span`
   font-size: 14px;
-  color: ${props => props.$checked ? '#1a237e' : '#64748b'};
+  color: ${props => props.$checked ? 'var(--color-navy)' : '#64748b'};
   font-weight: ${props => props.$checked ? '500' : '400'};
   transition: all 0.2s;
 `;
@@ -181,7 +181,7 @@ const FilterTag = styled.div`
   background: #e8eaf6;
   border-radius: 20px;
   font-size: 13px;
-  color: #1a237e;
+  color: var(--color-navy);
   border: 1px solid #c5cae9;
   
   button {
@@ -232,7 +232,7 @@ const Button = styled.button`
   gap: 8px;
 
   ${props => props.$variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -242,12 +242,12 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
+    color: var(--color-navy);
     border: 1px solid #c5cae9;
 
     &:hover {
       background: #f8fafc;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
     }
   `}
   

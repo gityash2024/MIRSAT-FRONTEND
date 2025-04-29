@@ -13,7 +13,7 @@ const Container = styled.div`
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
   display: flex;
   align-items: center;
@@ -64,7 +64,7 @@ const MetaItem = styled.div`
   }
   
   svg {
-    color: #1a237e;
+    color: var(--color-navy);
     flex-shrink: 0;
   }
   
@@ -163,7 +163,7 @@ const AssetInfo = styled.div`
 const AssetTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -193,7 +193,7 @@ const ScoringSummary = styled.div`
 const SectionTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -222,7 +222,7 @@ const ScoreItem = styled.div`
   .score-value {
     font-size: 16px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   .score-percent {
@@ -276,7 +276,7 @@ const AssessmentSection = styled.div`
 const AssessmentTitle = styled.h4`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 12px;
 `;
 
@@ -295,7 +295,7 @@ const AssessmentTable = styled.table`
   th {
     background: rgba(26, 35, 126, 0.05);
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
   
   tr:hover td {

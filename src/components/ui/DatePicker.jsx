@@ -25,7 +25,7 @@ const DatePickerWrapper = styled.div`
     
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
       box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
     }
   }
@@ -43,7 +43,7 @@ const DatePickerWrapper = styled.div`
   }
   
   .react-datepicker__day--selected {
-    background-color: #1a237e;
+    background-color: var(--color-navy);
     color: white;
   }
   
@@ -56,7 +56,7 @@ const DatePickerWrapper = styled.div`
   }
   
   .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
-    background-color: #1a237e;
+    background-color: var(--color-navy);
     color: white;
   }
 `;

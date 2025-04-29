@@ -28,7 +28,7 @@ const Header = styled.div`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -57,11 +57,11 @@ const SearchBar = styled.div`
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 14px;
-    color: #1a237e;
+    color: var(--color-navy);
 
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
     }
   }
 
@@ -91,7 +91,7 @@ const Button = styled.button`
   transition: all 0.2s;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -100,8 +100,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f8fafc;
@@ -119,7 +119,7 @@ const Th = styled.th`
   padding: 12px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   background: #f8fafc;
   border-bottom: 2px solid #e2e8f0;
   cursor: pointer;
@@ -335,7 +335,7 @@ const InspectorPerformanceTable = ({ dateRange, filters }) => {
                 
               return (
                 <tr key={inspector.id}>
-                  <Td style={{ fontWeight: 500, color: '#1a237e' }}>
+                  <Td style={{ fontWeight: 500, color: 'var(--color-navy)' }}>
                     {inspector.name}
                   </Td>
                   <Td>{inspector.tasksCompleted}</Td>

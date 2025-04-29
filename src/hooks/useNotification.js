@@ -14,7 +14,7 @@ const useNotification = () => {
   // Initialize socket connection
   useEffect(() => {
     if (user && token) {
-      const socketInstance = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+      const socketInstance = io(process.env.REACT_APP_API_URL || 'http://localhost:5001', {
         auth: { token },
         withCredentials: true,
         transports: ['websocket', 'polling']

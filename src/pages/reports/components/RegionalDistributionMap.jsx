@@ -29,7 +29,7 @@ const Header = styled.div`
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -61,7 +61,7 @@ const MetricCard = styled.div`
   padding: 16px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid ${props => props.color || '#1a237e'};
+  border-left: 4px solid ${props => props.color || 'var(--color-navy)'};
 `;
 
 const MetricHeader = styled.div`
@@ -79,7 +79,7 @@ const MetricName = styled.span`
 const MetricValue = styled.div`
   font-size: 20px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   display: flex;
   align-items: baseline;
   gap: 4px;
@@ -132,7 +132,7 @@ const IssueDetails = styled.div`
 const IssueName = styled.span`
   font-size: 13px;
   font-weight: 500;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const IssueLocation = styled.span`
@@ -174,7 +174,7 @@ const CustomTooltip = ({ active, payload }) => {
         <p style={{ 
           margin: '0 0 8px', 
           fontWeight: 600, 
-          color: '#1a237e' 
+          color: 'var(--color-navy)' 
         }}>
           {payload[0].payload.region}
         </p>
@@ -193,7 +193,7 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const COLORS = ['#1a237e', '#1565c0', '#1976d2', '#1e88e5', '#2196f3'];
+const COLORS = ['var(--color-navy)', '#1565c0', '#1976d2', '#1e88e5', '#2196f3'];
 
 const RegionalDistributionMap = ({ dateRange, filters }) => {
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -287,7 +287,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
                   axisLine={{ stroke: '#e2e8f0' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" fill="#1a237e">
+                <Bar dataKey="count" fill="var(--color-navy)">
                   {regionalData.data.map((entry, index) => (
                     <Cell 
                       key={entry.region}
@@ -322,10 +322,10 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
           </div>
 
           <MetricsList>
-            <MetricCard color="#1a237e">
+            <MetricCard color="var(--color-navy)">
               <MetricHeader>
                 <MetricName>Total Inspections</MetricName>
-                <Activity size={16} color="#1a237e" />
+                <Activity size={16} color="var(--color-navy)" />
               </MetricHeader>
               <MetricValue>
                 {regionalData.metrics.totalInspections.toLocaleString()}

@@ -34,7 +34,7 @@ const Header = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -78,7 +78,7 @@ const MenuItem = styled.button`
   border: none;
   border-radius: 8px;
   background: ${props => props.active ? '#f1f5f9' : 'transparent'};
-  color: ${props => props.active ? '#1a237e' : '#64748b'};
+  color: ${props => props.active ? 'var(--color-navy)' : '#64748b'};
   font-size: 14px;
   font-weight: ${props => props.active ? '500' : 'normal'};
   cursor: pointer;
@@ -87,7 +87,7 @@ const MenuItem = styled.button`
 
   &:hover {
     background: #f1f5f9;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 
   .icon {

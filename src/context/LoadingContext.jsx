@@ -24,7 +24,7 @@ const Spinner = styled.div`
   height: 50px;
   border: 5px solid rgba(26, 35, 126, 0.2);
   border-radius: 50%;
-  border-top-color: #1a237e;
+  border-top-color: var(--color-navy);
   animation: spin 1s ease-in-out infinite;
   
   @keyframes spin {
@@ -36,7 +36,7 @@ const Spinner = styled.div`
 
 const LoadingMessage = styled.div`
   margin-top: 16px;
-  color: #1a237e;
+  color: var(--color-navy);
   font-weight: 500;
 `;
 

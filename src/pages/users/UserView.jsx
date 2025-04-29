@@ -51,7 +51,7 @@ const Avatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 32px;
   font-weight: 600;
 `;
@@ -65,7 +65,7 @@ const UserInfo = styled.div`
 const UserName = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const UserRole = styled.div`
@@ -91,8 +91,8 @@ const EditButton = styled(Link)`
   gap: 8px;
   padding: 8px 16px;
   background: white;
-  border: 1px solid #1a237e;
-  color: #1a237e;
+  border: 1px solid var(--color-navy);
+  color: var(--color-navy);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -145,7 +145,7 @@ const DetailItem = styled.div`
   color: #666;
   font-size: 14px;
   .icon {
-    color: #1a237e;
+    color: var(--color-navy);
     opacity: 0.7;
   }
 `;
@@ -187,7 +187,7 @@ const StatCard = styled.div`
   .value {
     font-size: 24px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 

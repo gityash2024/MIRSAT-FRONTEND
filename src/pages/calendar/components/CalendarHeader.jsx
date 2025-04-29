@@ -47,7 +47,7 @@ const TitleSection = styled.div``;
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -77,7 +77,7 @@ const Button = styled.button`
   position: relative;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -86,8 +86,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f5f7fb;
@@ -132,7 +132,7 @@ const DropdownItem = styled.button`
   }
   
   svg {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -170,7 +170,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     
     // Add title
     doc.setFontSize(18);
-    doc.setTextColor(26, 35, 126); // #1a237e
+    doc.setTextColor(26, 35, 126); // var(--color-navy)
     doc.text('Calendar Events Report', 14, 22);
     
     // Add date

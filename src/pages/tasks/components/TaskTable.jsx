@@ -11,6 +11,7 @@ import { PERMISSIONS } from '../../../utils/permissions';
 import usePermissions from '../../../hooks/usePermissions';
 import { deleteTask } from '../../../store/slices/taskSlice';
 import Skeleton from '../../../components/ui/Skeleton';
+import { themeColors, getStatusColor } from '../../../utils/themeUtils';
 
 const TableContainer = styled.div`
   background: white;
@@ -26,7 +27,7 @@ const Table = styled.table`
   th, td {
     padding: 16px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--color-gray-light);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -36,25 +37,25 @@ const Table = styled.table`
   }
 
   th {
-    background: #f5f7fb;
+    background: var(--color-offwhite);
     font-weight: 600;
-    color: #333;
+    color: var(--color-gray-dark);
     font-size: 14px;
     cursor: pointer;
     user-select: none;
     
     &:hover {
-      background: #e8eaf6;
+      background: var(--color-skyblue);
     }
   }
 
   td {
     font-size: 14px;
-    color: #666;
+    color: var(--color-gray-medium);
   }
 
   tbody tr:hover {
-    background: #f5f7fb;
+    background: var(--color-offwhite);
   }
 `;
 
@@ -69,12 +70,12 @@ const DialogContent = styled.div`
 const DialogTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-error);
   margin-bottom: 8px;
 `;
 
 const DialogMessage = styled.p`
-  color: #666;
+  color: var(--color-gray-medium);
   font-size: 14px;
   margin-bottom: 24px;
 `;
@@ -94,20 +95,21 @@ const DialogButton = styled.button`
   transition: all 0.2s;
 
   ${props => props.variant === 'danger' ? `
-    background: #dc2626;
+    background: var(--color-error);
     color: white;
     border: none;
 
     &:hover {
-      background: #b91c1c;
+      background: var(--color-error);
+      opacity: 0.9;
     }
   ` : `
     background: white;
-    color: #666;
-    border: 1px solid #e0e0e0;
+    color: var(--color-gray-medium);
+    border: 1px solid var(--color-gray-light);
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--color-offwhite);
     }
   `}
 `;
@@ -117,7 +119,7 @@ const LoadingOverlay = styled.div`
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-gray-medium);
   font-size: 14px;
 `;
 
@@ -126,7 +128,7 @@ const NoDataMessage = styled.div`
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-gray-medium);
   font-size: 14px;
 `;
 
@@ -141,13 +143,13 @@ const ActionButton = styled.button`
   border: none;
   padding: 6px;
   border-radius: 4px;
-  color: #666;
+  color: var(--color-gray-medium);
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--color-offwhite);
+    color: var(--color-navy);
   }
 `;
 
@@ -156,11 +158,11 @@ const PaginationContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-gray-light);
 `;
 
 const PaginationInfo = styled.div`
-  color: #666;
+  color: var(--color-gray-medium);
   font-size: 14px;
 `;
 
@@ -171,7 +173,7 @@ const PaginationButtons = styled.div`
 
 const PaginationButton = styled.button`
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-gray-light);
   padding: 8px;
   border-radius: 6px;
   cursor: pointer;
@@ -181,7 +183,7 @@ const PaginationButton = styled.button`
   justify-content: center;
 
   &:hover:not(:disabled) {
-    background: #f5f5f5;
+    background: var(--color-offwhite);
   }
 
   &:disabled {
@@ -222,14 +224,14 @@ const SortIcon = styled.span`
 const RowNumber = styled.td`
   width: 50px;
   text-align: center;
-  color: #888;
+  color: var(--color-gray-medium);
   font-size: 13px;
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #e0e0e0;
+  background-color: var(--color-gray-light);
   border-radius: 4px;
   position: relative;
   overflow: hidden;
@@ -241,9 +243,9 @@ const ProgressFill = styled.div`
   left: 0;
   height: 100%;
   background-color: ${props => {
-    if (props.value < 30) return '#dc2626';
-    if (props.value < 70) return '#f59e0b';
-    return '#10b981';
+    if (props.value < 30) return 'var(--color-error)';
+    if (props.value < 70) return 'var(--color-warning)';
+    return 'var(--color-success)';
   }};
   width: ${props => `${props.value}%`};
   border-radius: 4px;
@@ -253,7 +255,7 @@ const ProgressFill = styled.div`
 const ProgressText = styled.div`
   margin-top: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--color-gray-medium);
   text-align: right;
 `;
 
@@ -291,7 +293,7 @@ const SublevelsModalHeader = styled.div`
 const SublevelsModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-gray-dark);
 `;
 
 const SublevelsModalCloseButton = styled.button`
@@ -299,10 +301,10 @@ const SublevelsModalCloseButton = styled.button`
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--color-gray-medium);
   
   &:hover {
-    color: #333;
+    color: var(--color-navy);
   }
 `;
 
@@ -318,8 +320,8 @@ const TreeItemContainer = styled.div`
 const TreeItem = styled.div`
   padding: 8px;
   border-radius: 6px;
-  background: ${props => props.level === 0 ? '#f0f4f8' : 'transparent'};
-  border-left: ${props => props.level > 0 ? '2px solid #e0e0e0' : 'none'};
+  background: ${props => props.level === 0 ? 'var(--color-skyblue)' : 'transparent'};
+  border-left: ${props => props.level > 0 ? '2px solid var(--color-gray-light)' : 'none'};
   margin-left: ${props => props.level > 0 ? '8px' : '0'};
   font-weight: ${props => props.level === 0 ? '500' : '400'};
 `;
@@ -330,7 +332,7 @@ const TreeItemName = styled.div`
 
 const TreeItemDescription = styled.div`
   font-size: 12px;
-  color: #666;
+  color: var(--color-gray-medium);
 `;
 
 const TaskTableSkeleton = () => {

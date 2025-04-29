@@ -14,13 +14,13 @@ const DatePickerTrigger = styled.button`
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  color: #1a237e;
+  color: var(--color-navy);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 `;
 
@@ -47,14 +47,14 @@ const PresetButton = styled.button`
   padding: 6px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#64748b'};
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#1a237e' : '#f8fafc'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
   }
 `;
 
@@ -82,7 +82,7 @@ const DateInput = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
     }
   }
 `;

@@ -33,7 +33,7 @@ const HeaderLeft = styled.div``;
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -54,13 +54,13 @@ const CategoryButton = styled.button`
   font-size: 13px;
   font-weight: 500;
   border: 1px solid #e2e8f0;
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#64748b'};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#1a237e' : '#f8fafc'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
   }
 `;
 
@@ -75,7 +75,7 @@ const MetricCard = styled.div`
   padding: 16px;
   border-radius: 8px;
   background: ${props => props.highlight ? '#f1f5f9' : '#f8fafc'};
-  border: ${props => props.highlight ? '1px solid #1a237e' : '1px solid transparent'};
+  border: ${props => props.highlight ? '1px solid var(--color-navy)' : '1px solid transparent'};
 `;
 
 const MetricLabel = styled.div`
@@ -87,7 +87,7 @@ const MetricLabel = styled.div`
 const MetricValue = styled.div`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const MetricTrend = styled.div`
@@ -121,7 +121,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}
       >
-        <p style={{ margin: '0 0 8px', fontWeight: 600, color: '#1a237e' }}>{label}</p>
+        <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--color-navy)' }}>{label}</p>
         {payload.map((entry, index) => (
           <p
             key={index}
@@ -272,7 +272,7 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
                 type="monotone"
                 dataKey={selectedCategory}
                 name={selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
-                stroke="#1a237e"
+                stroke="var(--color-navy)"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}

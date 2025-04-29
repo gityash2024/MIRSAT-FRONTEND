@@ -211,6 +211,46 @@ MIT License - see LICENSE.md
 
 For support, email support@mirsat-portal.com or raise an issue in the repository.
 
+## Theming
+
+MIRSAT uses a consistent theme system based on CSS variables. The theme is defined in `src/index.css` and `src/config/theme.js`.
+
+### Theme Colors
+
+The application uses a custom color palette designed specifically for the MIRSAT brand:
+
+- Primary: Deep Navy Blue (#1A3A5F), Soft Teal (#4B8C9E), Light Seafoam (#A9CDCE)
+- Secondary: Sand Beige (#E3D9CA), Muted Coral (#E99B83), Pale Sky Blue (#D6E5EA)
+- Neutrals: Off-White (#F7F9FA), Light Gray (#E2E8ED), Medium Gray (#8CA3B7), Dark Slate (#2D4654)
+- Status Colors: Success (#7CB797), Warning (#DFBE7F), Error (#D18C92), Info (#7CA7C8)
+
+### Theme Documentation
+
+Complete theme documentation is available in `src/docs/THEMING.md`. This includes:
+
+- Detailed color palette with usage guidelines
+- Component styling guidelines
+- Theme integration methods
+- Status indicators and compliance levels
+
+### Theme Utilities
+
+Use the theme utilities in `src/utils/themeUtils.js` for complex theming scenarios.
+
+### Theme Checker
+
+Run the theme checker script to identify hardcoded colors that should be replaced with theme variables:
+
+```bash
+# Install dependencies if needed
+npm install glob --save-dev
+
+# Run the theme checker
+node scripts/theme-checker.js
+```
+
+This will scan your code for hardcoded colors and suggest replacements using theme variables.
+
 
 flowchart TD
     A[User Authentication] --> B[Role Check]

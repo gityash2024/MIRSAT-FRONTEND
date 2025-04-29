@@ -16,13 +16,13 @@ import axios from 'axios';
 const DashboardContainer = styled.div`
   min-height: 100vh;
   padding: 24px;
-  background-color: #f5f7fb;
+  background-color: var(--color-offwhite);
 `;
 
 const WelcomeText = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 32px;
 `;
 
@@ -52,13 +52,13 @@ const StatCard = styled.div`
   .value {
     font-size: 28px;
     font-weight: 700;
-    color: #1a237e;
+    color: var(--color-navy);
     margin: 8px 0;
   }
 
   .label {
     font-size: 14px;
-    color: #666;
+    color: var(--color-gray-medium);
   }
 `;
 
@@ -78,20 +78,20 @@ const Card = styled.div`
 const CardTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 24px;
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #e0e0e0;
+  background-color: var(--color-gray-light);
   border-radius: 4px;
   overflow: hidden;
 
   .fill {
     height: 100%;
-    background-color: #1a237e;
+    background-color: var(--color-navy);
     border-radius: 4px;
     transition: width 0.3s ease;
   }
@@ -108,13 +108,13 @@ const ProgressItem = styled.div`
 
   .task-name {
     font-size: 14px;
-    color: #666;
+    color: var(--color-gray-medium);
   }
 
   .percentage {
     font-size: 14px;
     font-weight: 500;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -127,7 +127,7 @@ const TeamMemberItem = styled.div`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #f5f7fb;
+    background-color: var(--color-offwhite);
   }
 
   .member-info {
@@ -139,25 +139,25 @@ const TeamMemberItem = styled.div`
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background-color: #e3f2fd;
+      background-color: var(--color-skyblue);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #1a237e;
+      color: var(--color-navy);
       font-weight: 600;
     }
 
     .name {
       font-size: 14px;
-      color: #333;
+      color: var(--color-gray-dark);
     }
   }
 
   .performance {
     padding: 4px 12px;
     border-radius: 16px;
-    background-color: #e3f2fd;
-    color: #1a237e;
+    background-color: var(--color-skyblue);
+    color: var(--color-navy);
     font-weight: 500;
     font-size: 14px;
   }
@@ -169,18 +169,18 @@ const LoadingSpinner = styled.div`
   align-items: center;
   height: 200px;
   font-size: 16px;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const EmptyState = styled.div`
   padding: 16px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-gray-medium);
 `;
 
 // Test Notification Button
 const TestButton = styled.button`
-  background-color: #1a237e;
+  background-color: var(--color-navy);
   color: white;
   border: none;
   border-radius: 8px;
@@ -192,7 +192,7 @@ const TestButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #151b4f;
+    background-color: var(--color-navy-dark);
   }
 `;
 
@@ -352,11 +352,11 @@ const Dashboard = () => {
       return [...Array(4)].map((_, index) => (
         <ScrollAnimation key={index} animation="fadeIn" delay={index * 0.1}>
           <StatCard>
-            <div className="icon-wrapper" style={{ backgroundColor: '#f5f7fb' }}>
-              {index === 0 && <Calendar size={24} color="#1976d2" />}
-              {index === 1 && <CheckSquare size={24} color="#2e7d32" />}
-              {index === 2 && <Clock size={24} color="#ed6c02" />}
-              {index === 3 && <ShieldCheck size={24} color="#9c27b0" />}
+            <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-offwhite)' }}>
+              {index === 0 && <Calendar size={24} color="var(--color-info)" />}
+              {index === 1 && <CheckSquare size={24} color="var(--color-success)" />}
+              {index === 2 && <Clock size={24} color="var(--color-warning)" />}
+              {index === 3 && <ShieldCheck size={24} color="var(--color-teal)" />}
             </div>
             <div className="value">0</div>
             <div className="label">
@@ -372,28 +372,35 @@ const Dashboard = () => {
 
     return stats.map((stat, index) => {
       let Icon;
+      let iconColor;
+      
       switch (stat.icon) {
         case 'Calendar':
           Icon = Calendar;
+          iconColor = 'var(--color-info)';
           break;
         case 'CheckSquare':
           Icon = CheckSquare;
+          iconColor = 'var(--color-success)';
           break;
         case 'Clock':
           Icon = Clock;
+          iconColor = 'var(--color-warning)';
           break;
         case 'ShieldCheck':
           Icon = ShieldCheck;
+          iconColor = 'var(--color-teal)';
           break;
         default:
           Icon = Calendar;
+          iconColor = 'var(--color-info)';
       }
 
       return (
         <ScrollAnimation key={index} animation="fadeIn" delay={index * 0.1}>
           <StatCard>
-            <div className="icon-wrapper" style={{ backgroundColor: stat.bgColor }}>
-              <Icon size={24} color={stat.color} />
+            <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)' }}>
+              <Icon size={24} color={iconColor} />
             </div>
             <div className="value">{stat.value}</div>
             <div className="label">{stat.label}</div>

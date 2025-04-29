@@ -16,7 +16,7 @@ const MenuTrigger = styled.button`
   color: ${props => props.color || '#64748b'};
   
   &:hover {
-    color: ${props => props.hoverColor || '#1a237e'};
+    color: ${props => props.hoverColor || 'var(--color-navy)'};
   }
 `;
 

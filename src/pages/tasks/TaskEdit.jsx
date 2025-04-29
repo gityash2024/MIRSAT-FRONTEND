@@ -37,7 +37,7 @@ const BackButton = styled.button`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
 `;
 

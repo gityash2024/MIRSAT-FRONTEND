@@ -76,7 +76,7 @@ const HeaderContent = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
 `;
 
@@ -91,8 +91,8 @@ const EditButton = styled.button`
   gap: 8px;
   padding: 8px 16px;
   background: white;
-  border: 1px solid #1a237e;
-  color: #1a237e;
+  border: 1px solid var(--color-navy);
+  color: var(--color-navy);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -166,7 +166,7 @@ const MetaItem = styled.div`
   color: #666;
   font-size: 14px;
   .icon {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -191,7 +191,7 @@ const StatCard = styled.div`
   .value {
     font-size: 24px;
     font-weight: 600;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -204,7 +204,7 @@ const ProgressBar = styled.div`
   margin-top: 8px;
   .fill {
     height: 100%;
-    background: #1a237e;
+    background: var(--color-navy);
     border-radius: 4px;
     transition: width 0.3s ease;
   }
@@ -329,7 +329,7 @@ const CommentInput = styled.div`
     resize: vertical;
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
     }
   }
 `;
@@ -379,9 +379,9 @@ const Button = styled.button`
   gap: 8px;
   padding: 8px 16px;
   background: ${props => props.$variant === 'danger' ? '#ef4444' : 
-               props.$variant === 'secondary' ? 'white' : '#1a237e'};
-  color: ${props => props.$variant === 'secondary' ? '#1a237e' : 'white'};
-  border: ${props => props.$variant === 'secondary' ? '1px solid #1a237e' : 'none'};
+               props.$variant === 'secondary' ? 'white' : 'var(--color-navy)'};
+  color: ${props => props.$variant === 'secondary' ? 'var(--color-navy)' : 'white'};
+  border: ${props => props.$variant === 'secondary' ? '1px solid var(--color-navy)' : 'none'};
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -413,7 +413,7 @@ const QuestionItem = styled.div`
   padding: 16px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #1a237e;
+  border-left: 3px solid var(--color-navy);
 `;
 
 const QuestionHeader = styled.div`
@@ -430,7 +430,7 @@ const QuestionText = styled.div`
 
 const QuestionType = styled.span`
   background: #e3f2fd;
-  color: #1a237e;
+  color: var(--color-navy);
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
@@ -739,7 +739,7 @@ const TaskView = () => {
     return (
       <PageContainer>
         <div style={{ padding: '24px', textAlign: 'center' }}>
-          <h2 style={{ color: '#1a237e', marginBottom: '16px' }}>Task Data Error</h2>
+          <h2 style={{ color: 'var(--color-navy)', marginBottom: '16px' }}>Task Data Error</h2>
           <p style={{ marginBottom: '24px' }}>There was an issue loading the task data. The task may have been deleted or you don't have permission to view it.</p>
           <Button onClick={() => navigate('/tasks')}>
             <ArrowLeft size={18} />
@@ -983,7 +983,7 @@ const TaskView = () => {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="completed" fill="#1a237e" />
+                <Bar dataKey="completed" fill="var(--color-navy)" />
               </RechartsBarChart>
             </ResponsiveContainer>
           </ChartCard>

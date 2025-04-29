@@ -88,7 +88,7 @@ const ActionButton = styled.button`
   width: 32px;
   height: 32px;
   background: ${props => props.danger ? '#fee2e2' : '#f5f7fb'};
-  color: ${props => props.danger ? '#dc2626' : '#1a237e'};
+  color: ${props => props.danger ? '#dc2626' : 'var(--color-navy)'};
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -124,7 +124,7 @@ const PaginationButton = styled.button`
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: ${props => props.active ? '#1a237e' : '#f5f7fb'};
+  background: ${props => props.active ? 'var(--color-navy)' : '#f5f7fb'};
   color: ${props => props.active ? 'white' : '#666'};
   border: none;
   border-radius: 6px;
@@ -133,7 +133,7 @@ const PaginationButton = styled.button`
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: ${props => props.active ? '#1a237e' : '#e8eaf6'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#e8eaf6'};
   }
 `;
 

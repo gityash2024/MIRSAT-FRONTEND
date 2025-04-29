@@ -14,13 +14,15 @@ import {
   User,
   FileBarChart,
   ListChecks,
-  Database
+  Database,
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/permissions';
 
 const SidebarContainer = styled.div`
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   height: 100vh;
   width: ${props => props.collapsed ? '70px' : '260px'};
@@ -216,6 +218,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: Database,
       permission: 'view_assets',
       roles: ['admin']
+    },
+    {
+      title: 'Questionnaires',
+      path: '/questionnaire',
+      icon: FileText,
+      permission: 'view_questionnaires',
+      roles: ['admin', 'manager']
     },
     {
       title: 'Calendar',

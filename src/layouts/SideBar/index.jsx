@@ -19,7 +19,7 @@ const SidebarContainer = styled.div`
   top: 0;
   height: 100vh;
   width: ${props => props.width}px;
-  background: #1a237e;
+  background: var(--color-navy);
   color: white;
   transition: width 0.3s ease;
   z-index: 1000;

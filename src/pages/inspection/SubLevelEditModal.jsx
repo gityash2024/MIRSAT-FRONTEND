@@ -38,7 +38,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -83,7 +83,7 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
   
@@ -104,7 +104,7 @@ const TextArea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
   
@@ -140,7 +140,7 @@ const Button = styled.button`
   cursor: pointer;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -149,8 +149,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f5f7fb;

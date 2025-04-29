@@ -16,7 +16,7 @@ const Avatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.textColor || '#1a237e'};
+  color: ${props => props.textColor || 'var(--color-navy)'};
   font-weight: 600;
   font-size: 14px;
 `;

@@ -32,7 +32,7 @@ const HeaderLeft = styled.div``;
 const Title = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 4px;
 `;
 
@@ -52,13 +52,13 @@ const ToggleButton = styled.button`
   font-size: 13px;
   font-weight: 500;
   border: 1px solid #e2e8f0;
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#64748b'};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#1a237e' : '#f8fafc'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
   }
 `;
 
@@ -86,7 +86,7 @@ const MetricLabel = styled.span`
 const MetricValue = styled.span`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const LoadingContainer = styled.div`
@@ -111,7 +111,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}
       >
-        <p style={{ margin: '0 0 8px', fontWeight: 600, color: '#1a237e' }}>{label}</p>
+        <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--color-navy)' }}>{label}</p>
         {payload.map((entry, index) => (
           <p
             key={index}
@@ -246,8 +246,8 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
           >
             <defs>
               <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1a237e" stopOpacity={0.1}/>
-                <stop offset="95%" stopColor="#1a237e" stopOpacity={0}/>
+                <stop offset="5%" stopColor="var(--color-navy)" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="var(--color-navy)" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="completedGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#4caf50" stopOpacity={0.1}/>
@@ -274,7 +274,7 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
               type="monotone"
               dataKey="total"
               name="Total Tasks"
-              stroke="#1a237e"
+              stroke="var(--color-navy)"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#totalGradient)"

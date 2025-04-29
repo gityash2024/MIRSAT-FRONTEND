@@ -30,7 +30,7 @@ const Header = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -66,7 +66,7 @@ const SearchBox = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
       box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
     }
   }
@@ -97,7 +97,7 @@ const Button = styled.button`
   cursor: pointer;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -106,8 +106,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f5f7fb;
@@ -165,7 +165,7 @@ const NodeContent = styled.div`
 
   &:hover {
     background: #f1f5f9;
-    border-color: #1a237e;
+    border-color: var(--color-navy);
   }
 `;
 
@@ -181,7 +181,7 @@ const ToggleButton = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    color: #1a237e;
+    color: var(--color-navy);
   }
 
   &:disabled {
@@ -195,7 +195,7 @@ const NodeIcon = styled.div`
   height: 32px;
   border-radius: 6px;
   background: ${props => props.background || '#e3f2fd'};
-  color: ${props => props.color || '#1a237e'};
+  color: ${props => props.color || 'var(--color-navy)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,7 +207,7 @@ const NodeInfo = styled.div`
   h4 {
     font-size: 14px;
     font-weight: 500;
-    color: #1a237e;
+    color: var(--color-navy);
     margin-bottom: 2px;
   }
 
@@ -239,7 +239,7 @@ const ActionButton = styled.button`
 
   &:hover {
     background: #f1f5f9;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 
   &:disabled {
@@ -269,7 +269,7 @@ const EmptyState = styled.div`
   h3 {
     font-size: 18px;
     margin-bottom: 8px;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 
   p {
@@ -309,7 +309,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const ModalCloseButton = styled.button`

@@ -50,7 +50,7 @@ const Header = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   margin-bottom: 8px;
 `;
 
@@ -83,7 +83,7 @@ const SearchBox = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #1a237e;
+      border-color: var(--color-navy);
       box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
     }
   }
@@ -114,7 +114,7 @@ const Button = styled.button`
   cursor: pointer;
 
   ${props => props.variant === 'primary' ? `
-    background: #1a237e;
+    background: var(--color-navy);
     color: white;
     border: none;
 
@@ -123,8 +123,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: #1a237e;
-    border: 1px solid #1a237e;
+    color: var(--color-navy);
+    border: 1px solid var(--color-navy);
 
     &:hover {
       background: #f5f7fb;
@@ -172,7 +172,7 @@ const DropdownItem = styled.button`
   }
 
   .icon {
-    color: #1a237e;
+    color: var(--color-navy);
     opacity: 0.7;
   }
 
@@ -234,7 +234,7 @@ const RoleBadge = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #1a237e;
+  color: var(--color-navy);
 
   .icon {
     opacity: 0.7;
@@ -247,7 +247,7 @@ const UserInfo = styled.div`
   gap: 4px;
 
   .name {
-    color: #1a237e;
+    color: var(--color-navy);
     font-weight: 500;
   }
 
@@ -283,7 +283,7 @@ const ActionButton = styled.button`
 
   &:hover {
     background: #f5f7fb;
-    color: #1a237e;
+    color: var(--color-navy);
   }
 `;
 
@@ -378,7 +378,7 @@ const LoadingSpinner = styled.div`
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: #1a237e;
+  color: var(--color-navy);
 `;
 
 const PaginationContainer = styled.div`
@@ -421,9 +421,9 @@ const PaginationButton = styled.button`
 `;
 
 const PageNumberButton = styled.button`
-  background: ${props => props.active ? '#1a237e' : 'white'};
+  background: ${props => props.active ? 'var(--color-navy)' : 'white'};
   color: ${props => props.active ? 'white' : '#333'};
-  border: 1px solid ${props => props.active ? '#1a237e' : '#e0e0e0'};
+  border: 1px solid ${props => props.active ? 'var(--color-navy)' : '#e0e0e0'};
   width: 32px;
   height: 32px;
   border-radius: 6px;
@@ -434,7 +434,7 @@ const PageNumberButton = styled.button`
   justify-content: center;
 
   &:hover:not(:disabled) {
-    background: ${props => props.active ? '#1a237e' : '#f5f5f5'};
+    background: ${props => props.active ? 'var(--color-navy)' : '#f5f5f5'};
   }
 
   &:disabled {
@@ -644,7 +644,7 @@ const UserList = () => {
     
     // Add title
     doc.setFontSize(20);
-    doc.setTextColor(26, 35, 126); // #1a237e
+    doc.setTextColor(26, 35, 126); // var(--color-navy)
     doc.text('User Management Report', 15, 15);
     
     // Add subtitle and date

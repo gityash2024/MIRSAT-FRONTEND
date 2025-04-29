@@ -1,0 +1,4658 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import styled, { css } from 'styled-components';
+import { 
+  Plus, 
+  Trash2, 
+  AlertCircle, 
+  Save, 
+  ArrowLeft, 
+  Folder, 
+  ChevronRight, 
+  ChevronDown,
+  ChevronLeft,
+  Check,
+  X,
+  Edit,
+  User,
+  Eye,
+  Search,
+  Copy,
+  CheckCircle,
+  Clock,
+  List,
+  Grid,
+  HelpCircle,
+  ListChecks,
+  Database,
+  BookOpen,
+  PlusCircle,
+  Move,
+  Layers,
+  Link2,
+  FileText,
+  Filter,
+  RefreshCw,
+  Clipboard,
+  Trash,
+  ChevronUp,
+  Settings,
+  AlertTriangle,
+  Minus,
+  Loader,
+  Info,
+  Calendar,
+  Upload,
+  Smartphone,
+  ArrowUpRight,
+  History,
+  Award,
+  FileX
+} from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { toast } from 'react-hot-toast';
+import { inspectionService } from '../../services/inspection.service';
+import {
+  fetchQuestionLibrary,
+  addQuestionToLibrary,
+  deleteQuestionFromLibrary
+} from '../../store/slices/questionLibrarySlice';
+import { updateInspectionLevel } from '../../store/slices/inspectionLevelSlice';
+import Skeleton from '../../components/ui/Skeleton';
+import InspectionLayout from '../../components/common/InspectionLayout';
+import ComplianceResponseSelector from '../../components/ui/ComplianceResponseSelector';
+import ScoreAssignmentComponent from '../../components/ui/ScoreAssignmentComponent';
+import QuestionLogicBuilder from '../../components/ui/QuestionLogicBuilder';
+import debounce from 'lodash/debounce';
+import { v4 as uuidv4 } from 'uuid';
+import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
+import axios from 'axios';
+import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
+
+// Modal component for confirmations
+const ConfirmationModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = "Confirm", 
+  cancelText = "Cancel" 
+}) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '400px',
+        maxWidth: '90%',
+        padding: '24px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>{title}</h3>
+        <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>{message}</p>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              backgroundColor: 'white',
+              color: '#4b5563',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {cancelText}
+          </button>
+          <button 
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add a new DiscardConfirmationModal component
+const DiscardConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm
+}) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '400px',
+        maxWidth: '90%',
+        padding: '24px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Discard Template</h3>
+        <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>
+          Are you sure you want to discard this template? All unsaved changes will be lost.
+        </p>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              backgroundColor: 'white',
+              color: '#4b5563',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Discard
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PageContainer = styled.div`
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+`;
+
+const Header = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  div {
+    display: flex;
+  gap: 8px;
+  }
+`;
+
+const BackButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  
+  &:hover {
+    color: #334155;
+  }
+`;
+
+const Button = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #e2e8f0;
+    color: #334155;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const FormSection = styled.section`
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
+    margin-top: 0;
+    color: #334155;
+    font-size: 18px;
+    font-weight: 600;
+  }
+`;
+
+const FormRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  
+  > * {
+    flex: 1;
+    min-width: 250px;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+`;
+
+const Input = styled.input`
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  
+  &:focus {
+    border-color: #94a3b8;
+    outline: none;
+  }
+  
+  &::placeholder {
+    color: #cbd5e1;
+  }
+`;
+
+const TextArea = styled.textarea`
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.2s;
+  
+  &:focus {
+    border-color: #94a3b8;
+    outline: none;
+  }
+  
+  &::placeholder {
+    color: #cbd5e1;
+  }
+`;
+
+const Select = styled.select`
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  transition: border-color 0.2s;
+  
+  &:focus {
+    border-color: #94a3b8;
+    outline: none;
+  }
+`;
+
+const SaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #388E3C;
+  }
+
+  &:disabled {
+    background-color: #A5D6A7;
+    cursor: not-allowed;
+  }
+`;
+
+const PublishButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #1976D2;
+  }
+
+  &:disabled {
+    background-color: #90CAF9;
+    cursor: not-allowed;
+  }
+`;
+
+const StatusBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: ${props => props.status === 'published' ? '#E8F5E9' : '#FFF3E0'};
+  color: ${props => props.status === 'published' ? '#388E3C' : '#F57C00'};
+`;
+
+const SaveMessage = styled.div`
+  padding: 8px 16px;
+  background-color: #E8F5E9;
+  color: #388E3C;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const AddTabButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #2196F3;
+`;
+
+const SectionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+const SectionCard = styled.div`
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  padding: 16px;
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  
+  h4 {
+    margin: 0;
+    font-size: 16px;
+  }
+`;
+
+const QuestionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: #757575;
+  
+  p {
+    margin: 16px 0;
+  }
+`;
+
+const PageWrapper = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const PageTitle = styled.h1`
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const SubTitle = styled.p`
+  color: #666;
+  font-size: 14px;
+`;
+
+const Form = styled.form`
+  display: grid;
+  gap: 24px;
+`;
+
+const FormSectionWithTabs = styled(FormSection)`
+  padding: 24px 0 0 0;
+  overflow: hidden;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TabsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #E0E0E0;
+  margin-bottom: 16px;
+  overflow-x: auto;
+`;
+
+const Tab = styled.div`
+  padding: 8px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid ${props => props.active ? '#2196F3' : 'transparent'};
+  color: ${props => props.active ? '#2196F3' : '#757575'};
+  font-weight: ${props => props.active ? '500' : 'normal'};
+  white-space: nowrap;
+`;
+
+const TabCount = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: ${props => props.$active ? 'var(--color-navy)' : '#e2e8f0'};
+  color: ${props => props.$active ? 'white' : '#64748b'};
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
+const TabContent = styled.div`
+  padding: 0 24px 24px 24px;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const SubLevelsContainer = styled.div`
+  margin-top: 16px;
+`;
+
+const SubLevelItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: ${props => props.isDragging ? '#f1f5f9' : '#f8fafc'};
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid ${props => props.isDragging ? 'var(--color-navy)' : '#e0e0e0'};
+`;
+
+const DragHandle = styled.div`
+  cursor: grab;
+  color: #666;
+  
+  &:hover {
+    color: var(--color-navy);
+  }
+`;
+
+const SubLevelInput = styled(Input)`
+  flex: 1;
+`;
+
+const IconButton = styled.button`
+  padding: 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f5f7fb;
+    color: var(--color-navy);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+`;
+
+const TabNavigationButtons = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+`;
+
+const DiscardButton = styled(Button)`
+  background: #fee2e2;
+  color: #b91c1c;
+    border: none;
+    &:hover {
+    background: #fecaca;
+  }
+`;
+
+const ErrorMessage = styled.span`
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+`;
+
+const NestedSubLevelsContainer = styled.div`
+  margin-left: 40px;
+  margin-top: 8px;
+`;
+
+const ExpandCollapseButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: var(--color-navy);
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+  color: var(--color-navy);
+  gap: 12px;
+  
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--color-navy);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const Spinner = styled.div`
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--color-navy);
+  border-radius: 50%;
+  width: ${props => props.size || '30px'};
+  height: ${props => props.size || '30px'};
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const QuestionnaireSection = styled(FormSection)`
+  margin-top: 20px;
+`;
+
+const QuestionItem = styled.div`
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const QuestionTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const QuestionActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const QuestionForm = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+`;
+
+const OptionsContainer = styled.div`
+  margin-top: 12px;
+`;
+
+const OptionItem = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+`;
+
+const AddButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-navy);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: ${props => props.mt || '16px'};
+  
+  &:hover {
+    background: #3949ab;
+  }
+  
+  &:disabled {
+    background: #9fa8da;
+    cursor: not-allowed;
+  }
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  
+  input {
+    cursor: pointer;
+  }
+  
+  &:hover {
+    color: var(--color-navy);
+  }
+`;
+
+const QuestionLibraryButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f5ff;
+  border: 1px solid #d0e1ff;
+  color: var(--color-navy);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #d0e1ff;
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin: 0;
+`;
+
+const ModalClose = styled.button`
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    color: var(--color-navy);
+  }
+`;
+
+const SearchInput = styled.div`
+  position: relative;
+  margin-bottom: 16px;
+  
+  input {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+  }
+`;
+
+const QuestionLibraryList = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const QuestionLibraryItem = styled.div`
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f0f5ff;
+    border-color: #d0e1ff;
+  }
+`;
+
+const QuestionLibraryItemContent = styled.div`
+  margin-bottom: 8px;
+`;
+
+const QuestionLibraryItemFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+`;
+
+const QuestionLibraryEmpty = styled.div`
+  text-align: center;
+  padding: 32px 0;
+  color: #64748b;
+`;
+
+const SaveToLibraryButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--color-navy);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #f0f5ff;
+  }
+`;
+
+const AutoSaveIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: ${props => props.status === 'saving' ? 'var(--color-navy)' : props.status === 'saved' ? '#22c55e' : '#64748b'};
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: ${props => props.status === 'saving' ? '#e8eaf6' : props.status === 'saved' ? '#f0fdf4' : 'transparent'};
+`;
+
+const BadgeContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+`;
+
+const Badge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: ${props => props.color || '#e0e0e0'};
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+`;
+
+const TreeNodeContainer = styled.div`
+  margin-bottom: 8px;
+`;
+
+const TreeNode = styled.div`
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  ${props => props.selected && `
+    background: #e8f5e9;
+    border-color: #66bb6a;
+  `}
+  
+  &:hover {
+    background: ${props => props.selected ? '#e8f5e9' : '#f0f5ff'};
+    border-color: ${props => props.selected ? '#66bb6a' : '#d0e1ff'};
+  }
+`;
+
+const TreeNodeContent = styled.div`
+  flex: 1;
+  font-size: 14px;
+  font-weight: ${props => props.isParent ? '500' : '400'};
+  margin-left: ${props => `${props.level * 20}px`};
+  color: #333;
+`;
+
+const TreeNodeChildren = styled.div`
+  margin-left: 20px;
+`;
+
+const QuestionFilter = styled.div`
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const FilterButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: ${props => props.active ? 'var(--color-navy)' : '#f5f7fb'};
+  color: ${props => props.active ? 'white' : '#666'};
+  border: 1px solid ${props => props.active ? 'var(--color-navy)' : '#e0e0e0'};
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${props => props.active ? '#151b4f' : '#e8eaf6'};
+  }
+`;
+
+const QuestionsSummary = styled.div`
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  
+  h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-navy);
+    margin-bottom: 12px;
+  }
+  
+  ul {
+    padding-left: 16px;
+    margin: 0;
+  }
+  
+  li {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+`;
+
+const PageInfo = styled.div`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const PaginationButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const PaginationButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: white;
+  color: var(--color-navy);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f5f7fb;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const TabMenu = styled.div`
+  padding: 0 24px 8px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const QuestionPagination = ({ currentPage, totalPages, onPageChange }) => {
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      onPageChange(page);
+    }
+  };
+
+  return (
+    <PaginationContainer>
+      <PageInfo>
+        Page {currentPage} of {totalPages}
+      </PageInfo>
+      <PaginationButtons>
+        <PaginationButton
+          onClick={() => goToPage(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </PaginationButton>
+        <PaginationButton
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </PaginationButton>
+        <PaginationButton
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </PaginationButton>
+        <PaginationButton
+          onClick={() => goToPage(totalPages)}
+          disabled={currentPage === totalPages}
+        >
+          Last
+        </PaginationButton>
+      </PaginationButtons>
+    </PaginationContainer>
+  );
+};
+
+// First add the new styled components for the three-column layout
+
+const QuestionTable = styled.div`
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+`;
+
+const QuestionTableHeader = styled.div`
+  display: grid;
+  grid-template-columns: 40px 1fr 260px 120px;
+  background: #f1f5f9;
+  padding: 12px 16px;
+  font-weight: 500;
+  color: #334155;
+  font-size: 14px;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const QuestionTableRow = styled.div`
+  display: grid;
+  grid-template-columns: 40px 1fr 260px 120px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+  
+  &:hover {
+    background: #f8fafc;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const DragHandleIcon = styled.div`
+  cursor: grab;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #e2e8f0;
+    color: #64748b;
+  }
+`;
+
+const QuestionActionsMenu = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+`;
+
+const QuestionNumber = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #334155;
+`;
+
+// Now update the QuestionItemComponent implementation
+
+const QuestionItemComponent = ({ 
+  question, 
+  questionIndex, 
+  loading, 
+  updateQuestion, 
+  removeQuestion,
+  allLevels = [],
+  onMoveQuestion
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
+  const [questionFilter, setQuestionFilter] = useState('all');
+  const [showLogicBuilder, setShowLogicBuilder] = useState(false);
+  const [showScoreEditor, setShowScoreEditor] = useState(false);
+  const [totalScore, setTotalScore] = useState(1);
+  
+  // Get dispatch and library items from Redux
+  const dispatch = useDispatch();
+  const { questions: libraryItems, loading: libraryLoading } = useSelector(state => state.questionLibrary);
+  
+  // Calculate total score based on question type and weights
+  useEffect(() => {
+    let score = 1;
+    
+    if (question.answerType === 'yesno' && question.scores?.yes) {
+      score = (question.weight || 1) * question.scores.yes;
+    } else if (question.answerType === 'compliance') {
+      // Find highest score from compliance options
+      const highestScore = Math.max(
+        ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
+      );
+      score = (question.weight || 1) * highestScore;
+    } else if (question.answerType === 'multiple' && question.scores) {
+      // Find highest score from multiple choice options
+      const highestScore = Math.max(
+        ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
+      );
+      score = (question.weight || 1) * highestScore;
+    }
+    
+    setTotalScore(score);
+  }, [question]);
+  
+  // Load library with proper debugging
+  const loadLibrary = async () => {
+    console.log("QuestionItem: Loading question library...");
+    try {
+      const result = await dispatch(fetchQuestionLibrary()).unwrap();
+      console.log("QuestionItem: Library loaded successfully");
+      console.log("QuestionItem: Found", result?.results?.length || 0, "questions");
+      
+      if (result?.results?.length === 0) {
+        console.log("QuestionItem: Empty library result - might be an API issue");
+      }
+    } catch (error) {
+      console.error("QuestionItem: Error loading library:", error);
+    }
+  };
+  
+  // Load library when modal opens
+  useEffect(() => {
+    if (showLibraryModal) {
+      loadLibrary();
+    }
+  }, [showLibraryModal]);
+  
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    let updatedQuestion = { 
+      ...question, 
+      type: newType,         // Set the type property
+      answerType: newType    // Also set answerType for backward compatibility
+    };
+    
+    // Add default options based on type
+    if (newType === 'multiple' || newType === 'checkbox') {
+      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    } else if (newType === 'compliance') {
+      updatedQuestion.options = [
+        'Full compliance',
+        'Partial compliance',
+        'Non-compliant',
+        'Not applicable'
+      ];
+      
+      // Add default scores for compliance options
+      updatedQuestion.scoring = {
+        enabled: true,
+        max: 2
+      };
+      
+      updatedQuestion.scores = {
+        'Full compliance': 2,
+        'Partial compliance': 1,
+        'Non-compliant': 0,
+        'Not applicable': 0
+      };
+    } else if (newType === 'radio' || newType === 'dropdown' || newType === 'select') {
+      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    } else if (newType === 'yesno' || newType === 'yes_no') {
+      // Add default scores for Yes/No
+      updatedQuestion.options = ['Yes', 'No', 'N/A'];
+      updatedQuestion.scoring = {
+        enabled: true,
+        max: 1
+      };
+      updatedQuestion.scores = {
+        'Yes': 1,
+        'No': 0,
+        'N/A': 0
+      };
+    } else {
+      // Reset options if changing to a type that doesn't need them
+      updatedQuestion.options = [];
+      // Keep scoring if it exists, otherwise initialize it
+      if (!updatedQuestion.scoring) {
+        updatedQuestion.scoring = {
+          enabled: false,
+          max: 1
+        };
+      }
+    }
+    
+    updateQuestion(updatedQuestion);
+  };
+  
+  const addOption = () => {
+    const options = [...(question.options || []), ''];
+    updateQuestion({ ...question, options });
+  };
+  
+  const updateOption = (index, value) => {
+    const options = [...(question.options || [])];
+    options[index] = value;
+    updateQuestion({ ...question, options });
+  };
+  
+  const removeOption = (index) => {
+    const options = (question.options || []).filter((_, i) => i !== index);
+    
+    // Also remove score for this option
+    const scores = { ...(question.scores || {}) };
+    if (options[index] && scores[options[index]]) {
+      delete scores[options[index]];
+    }
+    
+    updateQuestion({ ...question, options, scores });
+  };
+  
+  // Update option score
+  const updateOptionScore = (option, score) => {
+    const scores = { ...(question.scores || {}) };
+    scores[option] = parseInt(score) || 0;
+    updateQuestion({ ...question, scores });
+  };
+  
+  // New function to save question to library
+  const saveToLibrary = async () => {
+    if (!question.text) {
+      toast.error('Please add question text before saving to library');
+      return;
+    }
+    
+    try {
+      // Prepare question for library
+      const libraryQuestion = {
+        text: question.text,
+        answerType: question.answerType || 'yesno',
+        options: question.options || [],
+        required: !!question.required
+      };
+      
+      // Use the addQuestionToLibrary action from the Redux store
+      await dispatch(addQuestionToLibrary(libraryQuestion));
+      toast.success('Question saved to library');
+      
+      // Refresh the library to show the new question
+      loadLibrary();
+    } catch (error) {
+      console.error('Error saving to library:', error);
+      toast.error('Failed to save question to library');
+    }
+  };
+
+  // Function to handle selecting a question from the library
+  const handleSelectFromLibrary = (libraryQuestion) => {
+    // Map field names from database to component fields
+    const updatedQuestion = {
+      ...question,
+      text: libraryQuestion.text || '',
+      // Map different answer types to the component's expected format
+      answerType: libraryQuestion.answerType || 'yesno',
+      options: libraryQuestion.options || [],
+      required: !!libraryQuestion.required
+    };
+    
+    console.log("Selected library question:", libraryQuestion);
+    console.log("Updated question:", updatedQuestion);
+    
+    updateQuestion(updatedQuestion);
+    setShowLibraryModal(false);
+  };
+  
+  // Get answer type label for display
+  const getAnswerTypeLabel = (type) => {
+    switch(type) {
+      case 'yesno': return 'Yes/No';
+      case 'text': return 'Text Input';
+      case 'multiple': return 'Multiple Choice';
+      case 'compliance': return 'Compliance';
+      case 'location': return 'Location';
+      case 'signature': return 'Signature';
+      case 'date': return 'Date & Time';
+      case 'checkbox': return 'Checkbox';
+      case 'number': return 'Number';
+      case 'media': return 'Media Upload';
+      case 'slider': return 'Slider';
+      default: return 'Yes/No';
+    }
+  };
+
+  // This is the minimized view of the question in the three-column layout
+  return (
+    <>
+      <div
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('questionIndex', questionIndex.toString());
+          e.dataTransfer.setData('questionData', JSON.stringify(question));
+        }}
+        style={{ width: '100%' }}
+      >
+        <QuestionTableRow>
+          <DragHandleIcon>
+            <Move size={18} />
+          </DragHandleIcon>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <QuestionNumber>
+              {questionIndex + 1}. {question.text || 'Untitled Question'}
+              {question.mandatory && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
+            </QuestionNumber>
+            {question.description && (
+              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                {question.description}
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div style={{ 
+              padding: '6px 12px', 
+              backgroundColor: '#f1f5f9', 
+              borderRadius: '4px',
+                display: 'inline-flex',
+                alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+              color: '#334155',
+              fontWeight: '500'
+            }}>
+              {question.answerType === 'yesno' && <ToggleLeft size={14} />}
+              {question.answerType === 'text' && <FileText size={14} />}
+              {question.answerType === 'multiple' && <List size={14} />}
+              {question.answerType === 'compliance' && <CheckCircle size={14} />}
+              {question.answerType === 'date' && <Calendar size={14} />}
+              {getAnswerTypeLabel(question.answerType)}
+            </div>
+          </div>
+          
+          <QuestionActionsMenu>
+            <IconButton 
+              onClick={() => setExpanded(!expanded)}
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </IconButton>
+            
+            <IconButton
+              onClick={() => onMoveQuestion && onMoveQuestion(questionIndex, question)}
+              title="Move to another section"
+            >
+              <ArrowUpRight size={18} />
+            </IconButton>
+            
+            <IconButton
+              onClick={() => setShowDeleteModal(true)}
+              title="Remove Question"
+              style={{ color: '#ef4444' }}
+            >
+              <Trash2 size={18} />
+            </IconButton>
+          </QuestionActionsMenu>
+        </QuestionTableRow>
+        </div>
+        
+      {/* Expanded view when a question is clicked */}
+        {expanded && (
+        <div style={{ 
+          padding: '20px',
+          background: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0'
+        }}>
+          <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: '2fr 1fr' }}>
+            <div>
+              <FormGroup>
+                <Label>Question Text <span style={{ color: 'red' }}>*</span></Label>
+                <Input
+                  type="text"
+                  value={question.text || ''}
+                  onChange={(e) => updateQuestion({ ...question, text: e.target.value })}
+                  placeholder="Enter question text"
+                />
+              </FormGroup>
+              
+              <FormGroup style={{ marginTop: '16px' }}>
+                <Label>Description</Label>
+                <TextArea
+                  value={question.description || ''}
+                  onChange={(e) => updateQuestion({ ...question, description: e.target.value })}
+                  placeholder="Enter question description or instructions"
+                  rows={2}
+                />
+              </FormGroup>
+              
+              <FormGroup style={{ marginTop: '16px' }}>
+                <Label>Answer Type</Label>
+                <Select
+                  name="type"
+                  value={question.type || question.answerType || 'text'}
+                  onChange={handleTypeChange}
+                  disabled={loading}
+                >
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="yesno">Yes/No</option>
+                  <option value="dropdown">Dropdown</option>
+                  <option value="radio">Radio Buttons</option>
+                  <option value="checkbox">Checkbox</option>
+                  <option value="multiple">Multiple Choice</option>
+                  <option value="compliance">Compliance</option>
+                  <option value="signature">Signature</option>
+                  <option value="date">Date</option>
+                  <option value="file">File Upload</option>
+                </Select>
+              </FormGroup>
+              
+              {/* Options editor for multiple choice or compliance questions */}
+              {['multiple', 'compliance'].includes(question.answerType) && (
+                <FormGroup style={{ marginTop: '16px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                    alignItems: 'center' 
+                  }}>
+                    <Label>Options</Label>
+                    {question.answerType === 'multiple' && (
+                      <Button
+                    type="button"
+                    onClick={addOption}
+                        style={{ padding: '4px 8px', fontSize: '13px' }}
+                      >
+                        <Plus size={14} />
+                        Add Option
+                      </Button>
+                    )}
+                </div>
+                
+                  <div style={{ marginTop: '12px' }}>
+                {(question.options || []).map((option, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    gap: '8px',
+                        marginBottom: '8px',
+                        alignItems: 'center'
+                  }}>
+                        <Input
+                      type="text"
+                      value={option}
+                      onChange={(e) => updateOption(index, e.target.value)}
+                      placeholder={`Option ${index + 1}`}
+                          style={{ flex: 1 }}
+                          readOnly={question.answerType === 'compliance'}
+                        />
+                        
+                        <Input
+                          type="number"
+                          value={question.scores?.[option] || 0}
+                          onChange={(e) => updateOptionScore(option, e.target.value)}
+                          placeholder="Score"
+                          style={{ width: '80px' }}
+                          min="0"
+                        />
+                        
+                        {question.answerType === 'multiple' && (
+                          <IconButton
+                      onClick={() => removeOption(index)}
+                            style={{ color: '#ef4444' }}
+                            title="Remove Option"
+                          >
+                            <X size={18} />
+                          </IconButton>
+                        )}
+                  </div>
+                ))}
+                  </div>
+                </FormGroup>
+              )}
+              
+              {/* Score editor for Yes/No questions */}
+              {question.answerType === 'yesno' && (
+                <FormGroup style={{ marginTop: '16px' }}>
+                  <Label>Scoring</Label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '8px' }}>
+                    <div>
+                      <Label style={{ fontSize: '13px' }}>Yes Score</Label>
+                      <Input
+                        type="number"
+                        value={question.scores?.yes || 1}
+                        onChange={(e) => {
+                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
+                          scores.yes = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores });
+                        }}
+                        min="0"
+                      />
+              </div>
+                    <div>
+                      <Label style={{ fontSize: '13px' }}>No Score</Label>
+                      <Input
+                        type="number"
+                        value={question.scores?.no || 0}
+                        onChange={(e) => {
+                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
+                          scores.no = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores });
+                        }}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label style={{ fontSize: '13px' }}>N/A Score</Label>
+                      <Input
+                        type="number"
+                        value={question.scores?.na || 0}
+                        onChange={(e) => {
+                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
+                          scores.na = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores });
+                        }}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </FormGroup>
+              )}
+            </div>
+            
+            <div>
+            <div style={{ 
+                padding: '16px', 
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                background: 'white',
+                marginBottom: '16px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Question Settings</div>
+                
+                <FormGroup style={{ marginBottom: '12px' }}>
+                  <Label>Requirement Type</Label>
+                  <Select
+                    id={`requirement-${questionIndex}`}
+                    value={question.requirementType || "mandatory"}
+                    onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value, mandatory: e.target.value === "mandatory" })}
+                  style={{ 
+                      borderLeft: `4px solid ${
+                        question.requirementType === 'recommended' ? '#1E40AF' : '#B91C1C'
+                      }`
+                    }}
+                  >
+                    <option value="mandatory" style={{color: '#B91C1C'}}>
+                      Mandatory
+                    </option>
+                    <option value="recommended" style={{color: '#1E40AF'}}>
+                      Recommended
+                    </option>
+                  </Select>
+                </FormGroup>
+                
+                <FormGroup style={{ marginBottom: '12px' }}>
+                  <Label>Question Weight</Label>
+                  <Input
+                    type="number"
+                    value={question.weight || 1}
+                    onChange={(e) => updateQuestion({ ...question, weight: Math.max(1, parseInt(e.target.value) || 1) })}
+                    min="1"
+                  />
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                    Multiplies the base score value
+              </div>
+                </FormGroup>
+                
+                <FormGroup>
+                  <Label>Max Possible Score</Label>
+              <div style={{ 
+                    padding: '8px 12px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontWeight: '500',
+                    color: '#334155'
+                  }}>
+                    {totalScore} points
+                  </div>
+                </FormGroup>
+                
+                {/* Enhanced Scoring Settings */}
+                {question.scoring?.enabled && (
+                  <div style={{ marginTop: '16px' }}>
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                      marginBottom: '12px',
+                      color: 'var(--color-navy)',
+                      fontWeight: '500'
+                    }}>
+                      <Award size={16} />
+                      <span>Detailed Scoring</span>
+                    </div>
+                    
+                    {question.type === 'yesno' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                        <div>
+                          <Label>Yes Score</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={question.scores?.Yes || 1}
+                            onChange={(e) => {
+                              const newScores = { ...(question.scores || {}) };
+                              newScores.Yes = parseInt(e.target.value) || 0;
+                              updateQuestion({ ...question, scores: newScores });
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Label>No Score</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={question.scores?.No || 0}
+                            onChange={(e) => {
+                              const newScores = { ...(question.scores || {}) };
+                              newScores.No = parseInt(e.target.value) || 0;
+                              updateQuestion({ ...question, scores: newScores });
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Label>N/A Score</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={question.scores?.['N/A'] || 0}
+                            onChange={(e) => {
+                              const newScores = { ...(question.scores || {}) };
+                              newScores['N/A'] = parseInt(e.target.value) || 0;
+                              updateQuestion({ ...question, scores: newScores });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {question.type === 'compliance' && (
+                      <div>
+                        <div style={{ display: 'grid', gap: '8px' }}>
+                          {['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'].map((option, idx) => (
+                            <div key={idx} style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              padding: '8px',
+                              background: idx % 2 === 0 ? '#f8fafc' : 'white',
+                  borderRadius: '4px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              <span>{option}</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={question.scores?.[option] || (idx === 0 ? 2 : idx === 1 ? 1 : 0)}
+                                onChange={(e) => {
+                                  const newScores = { ...(question.scores || {}) };
+                                  newScores[option] = parseInt(e.target.value) || 0;
+                                  updateQuestion({ ...question, scores: newScores });
+                                }}
+                                style={{ width: '80px' }}
+                              />
+                  </div>
+                          ))}
+                </div>
+              </div>
+                    )}
+                  </div>
+                )}
+            </div>
+            
+              <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                <Button
+                  type="button"
+                  onClick={saveToLibrary}
+                  style={{ width: '100%' }}
+                >
+                  <Save size={16} />
+                  Save to Library
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={() => setShowLibraryModal(true)}
+                  style={{ width: '100%' }}
+                >
+                  <Folder size={16} />
+                  Select from Library
+                </Button>
+          </div>
+      </div>
+              </div>
+          </div>
+        )}
+      
+      {/* Confirmation modal for deleting the question */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {
+          removeQuestion(questionIndex);
+          setShowDeleteModal(false);
+        }}
+        title="Delete Question"
+        message="Are you sure you want to delete this question? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+      
+      {/* Question library modal */}
+      {showLibraryModal && (
+        <Modal
+          isOpen={showLibraryModal}
+          onClose={() => setShowLibraryModal(false)}
+          title="Question Library"
+        >
+          <div style={{ padding: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <Input
+                  type="text"
+                  placeholder="Search questions..."
+                value={librarySearchQuery}
+                  onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                style={{ width: '100%' }}
+                />
+              </div>
+              
+            {libraryLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                Loading questions...
+              </div>
+            ) : (
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {libraryItems.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                    No questions in the library. Save questions to build your library.
+                      </div>
+                ) : (
+                  libraryItems
+                    .filter(q => {
+                      // Filter by search term
+                      if (librarySearchQuery) {
+                        return q.text.toLowerCase().includes(librarySearchQuery.toLowerCase());
+                      }
+                      return true;
+                    })
+                    .map((libraryQuestion, index) => (
+                      <div 
+                        key={libraryQuestion._id || index}
+                      style={{
+                          padding: '12px',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          marginBottom: '8px',
+                          cursor: 'pointer',
+                          background: 'white',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => handleSelectFromLibrary(libraryQuestion)}
+                      >
+                        <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                          {libraryQuestion.text}
+                        </div>
+                      <div style={{ 
+                          fontSize: '12px', 
+                          color: '#64748b',
+                        display: 'flex', 
+                          alignItems: 'center',
+                          gap: '8px' 
+                        }}>
+                          <span>Type: {getAnswerTypeLabel(libraryQuestion.answerType)}</span>
+                          {libraryQuestion.options && libraryQuestion.options.length > 0 && (
+                            <span>• {libraryQuestion.options.length} options</span>
+                          )}
+                        </div>
+                        </div>
+                    ))
+                )}
+              </div>
+            )}
+            
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <Button onClick={() => setShowLibraryModal(false)}>
+                Cancel
+              </Button>
+          </div>
+        </div>
+        </Modal>
+      )}
+    </>
+  );
+};
+
+const SubLevelTreeComponent = ({ 
+  subLevels, 
+  level = 0, 
+  selectedLevelId,
+  onSelectLevel,
+  parentNumber = '', // Add parent number parameter for auto-numbering
+  searchQuery = ''
+}) => {
+  const [expandedLevels, setExpandedLevels] = useState({});
+  
+  // Toggle level expanded/collapsed
+  const toggleLevel = (levelId) => {
+    setExpandedLevels(prev => ({
+      ...prev,
+      [levelId]: !prev[levelId]
+    }));
+  };
+  
+  useEffect(() => {
+    // Auto-expand all when searching
+    if (searchQuery) {
+      const expandAll = {};
+      const addExpandedIds = (levels) => {
+        if (!levels || !Array.isArray(levels)) return;
+        
+        levels.forEach(node => {
+          const nodeId = node.id || node._id;
+          if (nodeId) expandAll[nodeId] = true;
+          if (node.subLevels && node.subLevels.length > 0) {
+            addExpandedIds(node.subLevels);
+          }
+        });
+      };
+      
+      addExpandedIds(subLevels);
+      setExpandedLevels(expandAll);
+    }
+  }, [searchQuery, subLevels]);
+  
+  if (!subLevels || !Array.isArray(subLevels)) return null;
+  
+  // Filter levels recursively based on search query
+  const filterLevels = (levels, query) => {
+    if (!query) return levels;
+    
+    return levels.filter(node => {
+      // Check if current node matches search
+      const nameMatch = node.name?.toLowerCase().includes(query.toLowerCase());
+      
+      // Check if any children match search
+      const hasMatchingChildren = 
+        node.subLevels && 
+        node.subLevels.length > 0 && 
+        filterLevels(node.subLevels, query).length > 0;
+      
+      return nameMatch || hasMatchingChildren;
+    }).map(node => {
+      if (node.subLevels && node.subLevels.length > 0) {
+        return {
+          ...node,
+          subLevels: filterLevels(node.subLevels, query)
+        };
+      }
+      return node;
+    });
+  };
+  
+  const filteredLevels = filterLevels(subLevels, searchQuery);
+  
+  return (
+    <>
+      {filteredLevels.map((subLevel, index) => {
+        if (!subLevel) return null;
+        
+        const levelId = subLevel.id || subLevel._id;
+        const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
+        const isExpanded = levelId ? expandedLevels[levelId] : false;
+        
+        return (
+          <div key={levelId || `sublevel-${index}`}>
+            <TreeNodeContainer>
+              <TreeNode 
+                selected={selectedLevelId === levelId}
+                onClick={() => levelId && onSelectLevel(levelId)}
+              >
+                {hasChildren && (
+                  <div onClick={(e) => {
+                    e.stopPropagation();
+                    levelId && toggleLevel(levelId);
+                  }}>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </div>
+                )}
+                <TreeNodeContent level={level} isParent={hasChildren}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '24px',
+                    height: '24px',
+                    backgroundColor: '#e2e8f0',
+                    color: '#475569',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    marginRight: '8px'
+                  }}>
+                    {/* Replace existing numbering with A-style format */}
+                    {level === 0 
+                      ? String.fromCharCode(65 + index) // A, B, C, etc. for top level
+                      : parentNumber 
+                        ? `${parentNumber}${index + 1}` 
+                        : `${index + 1}`
+                    }
+                  </span>
+                  {subLevel.name || 'Unnamed Level'}
+                </TreeNodeContent>
+                <BadgeContainer>
+                  <Badge color="#3949ab">{subLevel.questionCount || 0}</Badge>
+                </BadgeContainer>
+              </TreeNode>
+              
+              {hasChildren && isExpanded && (
+                <div style={{ marginLeft: '20px' }}>
+                  <SubLevelTreeComponent 
+                    subLevels={subLevel.subLevels} 
+                    level={level + 1}
+                    selectedLevelId={selectedLevelId}
+                    onSelectLevel={onSelectLevel}
+                    parentNumber={level === 0 
+                      ? `${String.fromCharCode(65 + index)}.` 
+                      : `${parentNumber}${index + 1}.`
+                    } 
+                    searchQuery={searchQuery}
+                  />
+                </div>
+              )}
+            </TreeNodeContainer>
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+// Component to display activity history
+const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '550px',
+        maxWidth: '90%',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        padding: '24px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: 'var(--color-navy)' }}>Template Activity</h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px'
+            }}
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div style={{ 
+          marginBottom: '24px',
+          padding: '16px',
+          background: '#f8fafc',
+          borderRadius: '8px',
+          fontSize: '14px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '16px', color: 'var(--color-navy)', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>Template Details</div>
+          <div style={{ fontSize: '14px', color: '#64748b' }}>
+            <div style={{ marginBottom: '8px' }}><strong>Name:</strong> {formData.name || 'Untitled'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>ID:</strong> {formData._id || 'New Template'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Type:</strong> {formData.type || '-'}</div>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Requirement:</strong> {formData.requirementType ? 
+                <RequirementBadge type={formData.requirementType}>
+                  {formData.requirementType === 'mandatory' ? 'Mandatory' : 'Recommended'}
+                </RequirementBadge> 
+                : '-'}
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Priority:</strong> {formData.priority ? 
+                <span>
+                  <PriorityBadge priority={formData.priority} />
+                  {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
+                </span> 
+                : '-'}
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Status:</strong> <InspectionStatusBadge status={formData.status} style={{padding: '2px 8px', fontSize: '12px'}}>
+                {formData.status === 'draft' ? 'Draft' : 'Published'}
+              </InspectionStatusBadge>
+            </div>
+            <div style={{ marginBottom: '8px' }}><strong>Created:</strong> {formatDate(formData.createdAt)}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Last Modified:</strong> {formatDate(formData.updatedAt)}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Created By:</strong> {formData.createdBy?.name || 'System'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Last Modified By:</strong> {formData.updatedBy?.name || 'System'}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Pages:</strong> {formData.pages?.length || 0}</div>
+            <div style={{ marginBottom: '8px' }}><strong>Questions:</strong> {formData.pages?.reduce((count, page) => 
+              count + (page.sections?.reduce((sCount, section) => 
+                sCount + (section.questions?.length || 0), 0) || 0), 0) || 0}
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Description:</strong> 
+              <div style={{ 
+                padding: '8px',
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '4px',
+                marginTop: '4px',
+                color: '#334155',
+                fontSize: '13px',
+                maxHeight: '80px',
+                overflowY: 'auto'
+              }}>
+                {formData.description || 'No description provided.'}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h3 style={{ 
+          fontSize: '16px',
+          fontWeight: '600',
+          margin: '0 0 16px 0',
+          color: 'var(--color-navy)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <History size={16} />
+          Activity Log
+        </h3>
+        
+        {activities.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {activities.map((activity, index) => (
+              <div 
+                key={index}
+                style={{
+                  padding: '12px',
+                  borderLeft: '3px solid var(--color-navy)',
+                  background: index % 2 === 0 ? '#f8fafc' : 'white',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  marginBottom: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '22px',
+                    height: '22px',
+                    backgroundColor: 'var(--color-navy)',
+                    color: 'white',
+                    borderRadius: '11px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {activities.length - index}
+                  </span>
+                  <span style={{ color: '#334155' }}>{activity.title}</span>
+                </div>
+                <div style={{ 
+                  fontSize: '12px',
+                  color: '#64748b',
+                  display: 'flex',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>{activity.user?.name || 'System'}</span>
+                  <span>{formatDate(activity.timestamp)}</span>
+                </div>
+                {activity.details && (
+                  <div style={{
+                    fontSize: '13px',
+                    marginTop: '8px',
+                    padding: '6px',
+                    background: 'rgba(226, 232, 240, 0.5)',
+                    borderRadius: '4px',
+                    color: '#475569'
+                  }}>
+                    {activity.details}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ 
+            padding: '16px',
+            textAlign: 'center', 
+            color: '#64748b',
+            fontSize: '14px',
+            background: '#f1f5f9',
+            borderRadius: '6px',
+            border: '1px dashed #cbd5e1'
+          }}>
+            <div style={{ marginBottom: '8px' }}><FileX size={24} style={{ opacity: 0.5 }} /></div>
+            No activity recorded yet.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Custom loading skeleton component
+const SkeletonLoader = () => {
+  return (
+    <LoadingSpinner>
+      <div className="spinner"></div>
+      <p>Loading template data...</p>
+    </LoadingSpinner>
+  );
+};
+
+// Add MoveQuestionModal component for moving questions between sections
+const MoveQuestionModal = ({ 
+  isOpen, 
+  onClose, 
+  question,
+  questionIndex,
+  allSets,
+  currentSetIndex,
+  onMoveQuestion 
+}) => {
+  const [targetSetIndex, setTargetSetIndex] = useState(currentSetIndex);
+  const [targetLevelId, setTargetLevelId] = useState(null);
+  
+  // Flatten the sublevel tree for the select dropdown
+  const getFlattenedLevels = (subLevels, prefix = '', result = []) => {
+    if (!subLevels || !subLevels.length) return result;
+    
+    subLevels.forEach((level, index) => {
+      const levelNumber = `${prefix}${index + 1}`;
+      result.push({
+        id: level.id,
+        name: `${levelNumber}. ${level.name || 'Unnamed Section'}`,
+        level
+      });
+      
+      if (level.subLevels && level.subLevels.length) {
+        getFlattenedLevels(level.subLevels, `${levelNumber}.`, result);
+      }
+    });
+    
+    return result;
+  };
+  
+  const targetSet = allSets[targetSetIndex] || {};
+  const flattenedLevels = getFlattenedLevels(targetSet.subLevels || []);
+  
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Move Question">
+      <div style={{ padding: '20px' }}>
+        <FormGroup style={{ marginBottom: '16px' }}>
+          <Label>Question to Move</Label>
+          <div style={{ 
+            padding: '12px', 
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            background: '#f8fafc'
+          }}>
+            {question?.text || 'Untitled Question'}
+          </div>
+        </FormGroup>
+        
+        <FormGroup style={{ marginBottom: '16px' }}>
+          <Label>Select Target Page</Label>
+          <Select
+            value={targetSetIndex}
+            onChange={(e) => {
+              setTargetSetIndex(parseInt(e.target.value));
+              setTargetLevelId(null); // Reset selected level when changing set
+            }}
+          >
+            {allSets.map((set, idx) => (
+              <option key={set.id || idx} value={idx}>
+                {set.name || `Page ${idx + 1}`}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
+        
+        <FormGroup style={{ marginBottom: '24px' }}>
+          <Label>Select Target Section</Label>
+          {flattenedLevels.length > 0 ? (
+            <Select
+              value={targetLevelId || ''}
+              onChange={(e) => setTargetLevelId(e.target.value)}
+            >
+              <option value="">-- Select a section --</option>
+              {flattenedLevels.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {level.name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <div style={{ 
+              padding: '12px', 
+              color: '#64748b',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              No sections available in this page. Please create a section first.
+            </div>
+          )}
+        </FormGroup>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <Button type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              if (!targetLevelId) {
+                toast.error('Please select a target section');
+          return;
+              }
+              
+              onMoveQuestion(questionIndex, question, targetSetIndex, targetLevelId);
+              onClose();
+            }}
+            disabled={!targetLevelId}
+          >
+            Move Question
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// Replace the MobilePreviewPanel component
+const MobilePreviewPanel = ({ 
+  formData, 
+  currentSet,
+  allQuestions,
+  scoreSummary, 
+  activeSetIndex,
+  isOpen = true,
+  onClose
+}) => {
+  const [activePage, setActivePage] = useState(activeSetIndex || 0);
+  const totalPages = formData?.pages?.length || 0;
+  
+  // Handle next and previous page navigation
+  const nextPage = () => {
+    if (activePage < totalPages - 1) {
+      setActivePage(activePage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (activePage > 0) {
+      setActivePage(activePage - 1);
+    }
+  };
+  
+  // Get the current page data safely
+  const getCurrentPageData = () => {
+    if (!formData?.pages || formData.pages.length === 0) {
+      return {
+        name: 'No pages available',
+    description: '',
+        sections: []
+      };
+    }
+    
+    const safeIndex = Math.min(activePage, formData.pages.length - 1);
+    return formData.pages[safeIndex] || {
+      name: 'Page not found',
+      description: '',
+      sections: []
+    };
+  };
+  
+  // Get all questions for display
+  const getDisplayQuestions = () => {
+    const page = getCurrentPageData();
+    
+    if (!page.sections || page.sections.length === 0) {
+      return [];
+    }
+    
+    return page.sections.flatMap(section => 
+      section.questions.map(q => ({
+        ...q,
+        sectionName: section.name
+      }))
+    );
+  };
+  
+  // Calculate scoring information
+  const getScoreInfo = () => {
+    const questions = getDisplayQuestions();
+    const scoringQuestions = questions.filter(q => q.scoring && q.scoring.enabled);
+    const totalMax = scoringQuestions.reduce((sum, q) => sum + (q.scoring?.max || 0), 0);
+    
+    return {
+      totalQuestions: questions.length,
+      scoringQuestions: scoringQuestions.length,
+      totalMaxScore: totalMax
+    };
+  };
+
+  // Helper to get a user-friendly type name
+  const getTypeName = (type) => {
+    const typeMap = {
+      'text': 'Text',
+      'number': 'Number',
+      'yesno': 'Yes/No',
+      'yes_no': 'Yes/No',
+      'dropdown': 'Dropdown',
+      'select': 'Dropdown',
+      'checkbox': 'Checkbox',
+      'multiple': 'Multiple Choice',
+      'radio': 'Radio Buttons',
+      'compliance': 'Compliance',
+      'signature': 'Signature',
+      'date': 'Date',
+      'file': 'File Upload',
+      'upload': 'File Upload'
+    };
+    
+    return typeMap[type] || type;
+  };
+
+  // Render appropriate input field based on question type
+  const renderQuestionInput = (question) => {
+    // Use either type or answerType, whichever is available
+    const type = question.type || question.answerType || 'text';
+    
+    switch(type) {
+      case 'text':
+        return (
+          <div style={{
+            padding: '8px 12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white'
+          }}>
+            Text input field
+          </div>
+        );
+      
+      case 'number':
+        return (
+          <div style={{
+            padding: '8px 12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white'
+          }}>
+            Number input field
+          </div>
+        );
+      
+      case 'yesno':
+      case 'yes_no':
+        return (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            fontSize: '12px'
+          }}>
+            {(question.options?.length > 0 ? question.options : ['Yes', 'No', 'N/A']).map((option, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '50%',
+                  background: 'white'
+                }} />
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case 'dropdown':
+      case 'select':
+        return (
+          <div style={{
+            padding: '8px 12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>Select an option</span>
+            <span>▼</span>
+          </div>
+        );
+      
+      case 'checkbox':
+      case 'multiple':
+        return (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            fontSize: '12px'
+          }}>
+            {question.options && question.options.length > 0 ? (
+              question.options.map((option, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '2px',
+                    background: 'white'
+                  }} />
+                  <span>{typeof option === 'string' ? option : option.text || 'Option'}</span>
+                </div>
+              ))
+            ) : (
+              <div>No options defined</div>
+            )}
+          </div>
+        );
+      
+      case 'radio':
+        return (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            fontSize: '12px'
+          }}>
+            {question.options && question.options.length > 0 ? (
+              question.options.map((option, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '50%',
+                    background: 'white'
+                  }} />
+                  <span>{typeof option === 'string' ? option : option.text || 'Option'}</span>
+                </div>
+              ))
+            ) : (
+              <div>No options defined</div>
+            )}
+          </div>
+        );
+      
+      case 'compliance':
+        return (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            fontSize: '12px'
+          }}>
+            {['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'].map((option, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '50%',
+                  background: 'white'
+                }} />
+                <span>{option}</span>
+                <span style={{
+                  marginLeft: 'auto',
+                  fontSize: '10px',
+                  color: '#64748b',
+                  background: '#f1f5f9',
+                  padding: '1px 4px',
+                  borderRadius: '2px'
+                }}>
+                  {index === 0 ? '2' : index === 1 ? '1' : '0'}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case 'signature':
+        return (
+          <div style={{
+            padding: '12px',
+            border: '1px dashed #94a3b8',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white',
+            height: '60px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            Signature field (tap to sign)
+          </div>
+        );
+      
+      case 'date':
+        return (
+          <div style={{
+            padding: '8px 12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>Select date</span>
+            <span>📅</span>
+          </div>
+        );
+      
+      case 'file':
+      case 'upload':
+        return (
+          <div style={{
+            padding: '10px 12px',
+            border: '1px dashed #94a3b8',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            <span>📎</span>
+            <span>Upload file/photo</span>
+          </div>
+        );
+      
+      default:
+        return (
+          <div style={{
+            padding: '8px 12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            background: 'white'
+          }}>
+            Input field for {type || 'unknown'} type
+          </div>
+        );
+    }
+  };
+  
+  const currentPage = getCurrentPageData();
+  const displayQuestions = getDisplayQuestions();
+  const scoreInfo = getScoreInfo();
+  
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      width: '320px',
+      height: '100%',
+      borderLeft: '1px solid #e2e8f0',
+      background: '#ffffff',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'fixed',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      zIndex: 100,
+      boxShadow: '-5px 0 15px rgba(0,0,0,0.05)'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px',
+        borderBottom: '1px solid #e2e8f0'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Smartphone size={18} />
+          <span style={{ fontWeight: '500' }}>Mobile Preview</span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#64748b'
+          }}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        <div style={{
+          width: '280px',
+          minHeight: '500px',
+          border: '1px solid #e2e8f0',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#f8fafc'
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #e2e8f0',
+            background: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}>
+            <h3 style={{
+              margin: 0,
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#0f172a'
+            }}>
+              {formData?.name || 'Untitled Inspection'}
+            </h3>
+            <div style={{
+              fontSize: '12px',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>Type: {formData?.type || 'Not specified'}</span>
+              <span>Priority: {formData?.priority || 'Not set'}</span>
+            </div>
+          </div>
+          
+          {/* Page Navigation */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 16px',
+              borderBottom: '1px solid #e2e8f0',
+              background: '#fff'
+            }}>
+              <button
+                onClick={prevPage}
+                disabled={activePage === 0}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: activePage === 0 ? 'not-allowed' : 'pointer',
+                  opacity: activePage === 0 ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <ChevronLeft size={16} />
+                Prev
+              </button>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Page {activePage + 1} of {totalPages}
+              </span>
+              <button
+                onClick={nextPage}
+                disabled={activePage === totalPages - 1}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: activePage === totalPages - 1 ? 'not-allowed' : 'pointer',
+                  opacity: activePage === totalPages - 1 ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+          
+          {/* Page Content */}
+          <div style={{ padding: '16px', flex: 1 }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600 }}>
+              {currentPage.name || `Page ${activePage + 1}`}
+            </h4>
+            
+            {currentPage.description && (
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '12px', 
+                color: '#64748b' 
+              }}>
+                {currentPage.description}
+              </p>
+            )}
+            
+            {currentPage.sections && currentPage.sections.length > 0 ? (
+              <>
+                {currentPage.sections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} style={{ 
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <h5 style={{ 
+                      margin: '0 0 8px 0', 
+                      fontSize: '13px',
+                      fontWeight: 600
+                    }}>
+                      {section.name || `Section ${sectionIndex + 1}`}
+                    </h5>
+                    
+                    {section.description && (
+                      <p style={{ 
+                        margin: '0 0 12px 0', 
+                        fontSize: '12px', 
+                        color: '#64748b' 
+                      }}>
+                        {section.description}
+                      </p>
+                    )}
+                    
+                    {section.questions && section.questions.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {section.questions.map((question, questionIndex) => (
+                          <div key={questionIndex} style={{
+                            padding: '10px',
+                            background: '#f8fafc',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            <div style={{ fontWeight: '500', marginBottom: '8px' }}>
+                              {questionIndex + 1}. {question.text || 'Untitled Question'}
+                              {question.required && <span style={{ color: 'red' }}> *</span>}
+                            </div>
+                            
+                            {question.description && (
+                              <div style={{ 
+                                fontSize: '11px', 
+                                color: '#64748b', 
+                                marginBottom: '8px' 
+                              }}>
+                                {question.description}
+                              </div>
+                            )}
+                            
+                            {/* Render appropriate input based on question type */}
+                            <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+                              {renderQuestionInput(question)}
+                            </div>
+                            
+                            <div style={{ 
+                              fontSize: '11px', 
+                              color: '#64748b',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginTop: '8px' 
+                            }}>
+                              <span>Type: {getTypeName(question.type || question.answerType) || 'Text'}</span>
+                              {question.scoring && question.scoring.enabled && (
+                                <span style={{ 
+                                  background: '#e8f5e9', 
+                                  color: '#2e7d32',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '10px'
+                                }}>
+                                  Score: {question.scoring.max || 1}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#94a3b8',
+                        textAlign: 'center',
+                        padding: '8px'
+                      }}>
+                        No questions in this section
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div style={{ 
+                padding: '16px', 
+                textAlign: 'center',
+                color: '#94a3b8',
+                fontSize: '12px',
+                background: 'white',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0'
+              }}>
+                No sections have been added to this page yet
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Footer with summary */}
+      <div style={{ 
+        padding: '16px',
+        borderTop: '1px solid #e2e8f0',
+        background: '#f8fafc'
+      }}>
+        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
+          Summary:
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ 
+            padding: '8px',
+            background: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            flex: 1,
+            textAlign: 'center',
+            fontSize: '12px'
+          }}>
+            <div style={{ color: '#64748b' }}>Questions</div>
+            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.totalQuestions}</div>
+          </div>
+          <div style={{ 
+            padding: '8px',
+            background: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            flex: 1,
+            textAlign: 'center',
+            fontSize: '12px'
+          }}>
+            <div style={{ color: '#64748b' }}>Scoring</div>
+            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.scoringQuestions}/{scoreInfo.totalQuestions}</div>
+          </div>
+          <div style={{ 
+            padding: '8px',
+            background: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            flex: 1,
+            textAlign: 'center',
+            fontSize: '12px'
+          }}>
+            <div style={{ color: '#64748b' }}>Max Score</div>
+            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.totalMaxScore}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ... existing code ...
+
+// Add styled components needed for the InspectionLevelForm component just before it
+const InspectionFormRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  
+  > * {
+    flex: 1;
+    min-width: 250px;
+  }
+`;
+
+const InspectionFormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const InspectionFormSection = styled.section`
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+  
+  h3 {
+    margin-top: 0;
+    color: #334155;
+    font-size: 18px;
+    font-weight: 600;
+  }
+`;
+
+const InspectionSaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #388E3C;
+  }
+
+  &:disabled {
+    background-color: #A5D6A7;
+    cursor: not-allowed;
+  }
+`;
+
+const InspectionPublishButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #1976D2;
+  }
+
+  &:disabled {
+    background-color: #90CAF9;
+    cursor: not-allowed;
+  }
+`;
+
+const InspectionStatusBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 16px;
+  background-color: ${props => props.status === 'draft' ? '#FEF3C7' : '#DCFCE7'};
+  color: ${props => props.status === 'draft' ? '#B45309' : '#166534'};
+  border: 1px solid ${props => props.status === 'draft' ? '#FCD34D' : '#86EFAC'};
+`;
+
+const InspectionSaveMessage = styled.div`
+  padding: 8px 16px;
+  background-color: #E8F5E9;
+  color: #388E3C;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const InspectionAddTabButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #2196F3;
+`;
+
+const InspectionSectionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+const InspectionSectionCard = styled.div`
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  padding: 16px;
+`;
+
+const InspectionSectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+  }
+`;
+
+const InspectionQuestionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+const InspectionEmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: #757575;
+  
+  p {
+    margin: 16px 0;
+  }
+`;
+
+// Add these styled component definitions after other styled components and before the component functions
+
+const SectionsWrapper = styled.div`
+  margin-top: 24px;
+  
+  h4 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--color-navy);
+  }
+`;
+
+const SectionBox = styled.div`
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: ${props => props.active ? '#f8fafc' : 'white'};
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: ${props => props.active ? 'var(--color-navy)' : '#c0c0c0'};
+  }
+`;
+
+const TabSectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: ${props => props.active ? '#f1f5f9' : 'white'};
+  border-bottom: ${props => props.active ? '1px solid #e0e0e0' : 'none'};
+`;
+
+const TabSectionTitle = styled.h5`
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-navy);
+`;
+
+const SectionButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const SectionContent = styled.div`
+  padding: 16px;
+`;
+
+const QuestionsContainer = styled.div`
+  margin-top: 16px;
+  
+  h5 {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--color-navy);
+    font-weight: 500;
+  }
+`;
+
+const QuestionBox = styled.div`
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+`;
+
+const TabQuestionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const TabQuestionTitle = styled.h6`
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-navy);
+`;
+
+const TabQuestionActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const QuestionContent = styled.div`
+  padding: 12px;
+`;
+
+const TabEmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  text-align: center;
+  
+  svg {
+    color: #ccc;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    margin-bottom: 16px;
+    color: #666;
+  }
+`;
+
+// Add these after other styled components and before the QuestionItemComponent definition
+const QuestionScoringContainer = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+`;
+
+const QuestionScoreTitle = styled.h6`
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+// Add these section tab styled components
+const SectionTabsContainer = styled.div`
+  display: flex;
+  overflow-x: auto;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const SectionTab = styled.div`
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid ${props => props.$active ? 'var(--color-navy)' : 'transparent'};
+  color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
+  font-weight: ${props => props.$active ? '500' : 'normal'};
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const SectionAddButton = styled.button`
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+// Styled component for the priority badge
+const PriorityBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  background-color: ${props => {
+    switch(props.priority) {
+      case 'high': return '#EF4444';
+      case 'medium': return '#F59E0B';
+      case 'low': return '#10B981';
+      default: return '#94A3B8';
+    }
+  }};
+`;
+
+// Styled component for the requirement type badge
+const RequirementBadge = styled.span`
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: ${props => props.type === 'mandatory' ? '#FEE2E2' : '#DBEAFE'};
+  color: ${props => props.type === 'mandatory' ? '#B91C1C' : '#1E40AF'};
+  border: 1px solid ${props => props.type === 'mandatory' ? '#FECACA' : '#BFDBFE'};
+  margin-left: 4px;
+`;
+
+// Add these new styled components at the top where other styled components are declared
+const MainTabsContainer = styled.div`
+  display: flex;
+  gap: 2px;
+  margin-bottom: 24px;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+`;
+
+const MainTab = styled.div`
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: ${props => props.$active ? '600' : '500'};
+  background-color: ${props => props.$active ? 'white' : 'transparent'};
+  color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: ${props => props.$active ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'};
+  
+  &:hover {
+    background-color: ${props => props.$active ? 'white' : '#e2e8f0'};
+  }
+`;
+
+// Update the existing SectionCard with improved styling
+const SectionCard = styled.div`
+  background-color: #FFFFFF;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-color: #cbd5e1;
+  }
+`;
+
+// Update the existing SectionHeader with improved styling
+const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  
+  h4 {
+    margin: 0;
+    font-size: 16px;
+  }
+`;
+
+const InspectionLevelForm = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+      name: '',
+      description: '',
+    type: '',
+    priority: '',
+    status: 'draft',
+    pages: []
+  });
+  const [activePageIndex, setActivePageIndex] = useState(0);
+  const [activeSectionIndex, setActiveSectionIndex] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
+  const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+  const [isActivityHistoryOpen, setIsActivityHistoryOpen] = useState(false);
+  const [isMoveQuestionModalOpen, setIsMoveQuestionModalOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic-info');
+  const [activeSectionTab, setActiveSectionTab] = useState(0); // For section tabs
+  const [templateComplexity, setTemplateComplexity] = useState({
+    totalQuestions: 0,
+    totalSections: 0,
+    totalPages: 0,
+    isComplex: false
+  });
+  
+  useEffect(() => {
+    // Fetch asset types for the dropdown
+    dispatch(fetchAssetTypes());
+    
+    if (id) {
+      loadTemplate();
+      } else {
+      // Initialize with one empty page
+      setFormData({
+        ...formData,
+        pages: [{
+          name: 'Page 1',
+          description: '',
+          sections: []
+        }]
+      });
+    }
+  }, [id, dispatch]);
+
+  const loadTemplate = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/templates/${id}`);
+      setFormData(response.data);
+      setActivities(response.data.activities || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading template:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setSaveMessage('Saving template...');
+      
+      // Add a small delay to ensure loading state is visible
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      let response;
+      
+      // Convert formData to the structure expected by the API
+      const templateData = {
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        priority: formData.priority,
+        status: formData.status,
+        subLevels: [], // Will be populated with sections
+        questions: []  // Will collect all questions
+      };
+      
+      // Transform pages and sections to subLevels
+      if (formData.pages && formData.pages.length > 0) {
+        formData.pages.forEach((page, pageIndex) => {
+          // Create a top-level node for the page
+          const pageNode = {
+            name: page.name || `Page ${pageIndex + 1}`,
+            description: page.description || '',
+            order: pageIndex,
+            subLevels: []
+          };
+          
+          // Add all sections as subLevels of the page
+          if (page.sections && page.sections.length > 0) {
+            page.sections.forEach((section, sectionIndex) => {
+              const sectionNode = {
+                name: section.name || `Inspection Level ${sectionIndex + 1}`,
+                description: section.description || '',
+                order: sectionIndex,
+                questions: section.questions || []
+              };
+              
+              // Add questions to the main questions array as well
+              if (section.questions && section.questions.length > 0) {
+                templateData.questions = [
+                  ...templateData.questions,
+                  ...section.questions.map(q => ({
+                    ...q,
+                    levelId: sectionNode._id // Will be generated by MongoDB
+                  }))
+                ];
+              }
+              
+              pageNode.subLevels.push(sectionNode);
+            });
+          }
+          
+          templateData.subLevels.push(pageNode);
+        });
+      }
+      
+      if (id) {
+        response = await axios.put(`/api/v1/inspection/${id}`, templateData, {
+          timeout: 60000, // Increase timeout to 60s for large templates
+        });
+      } else {
+        response = await axios.post('/api/v1/inspection', templateData, {
+          timeout: 60000, // Increase timeout to 60s for large templates
+        });
+        
+        // Clear local storage after successful save
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        
+        // Navigate only after successful creation
+        navigate(`/inspection/template/${response.data._id || response.data.id}`);
+      }
+      
+      setSaveMessage('Template saved successfully');
+      setTimeout(() => setSaveMessage(''), 3000);
+      setLoading(false);
+      return response.data;
+    } catch (error) {
+      console.error('Error saving template:', error);
+      setSaveMessage(`Error: ${error.response?.data?.message || 'Failed to save template'}`);
+      setTimeout(() => setSaveMessage(''), 5000);
+      setLoading(false);
+      return null;
+    }
+  };
+
+  const handlePublish = async () => {
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmPublish = async () => {
+    try {
+      setLoading(true);
+      setSaveMessage('Saving and publishing template...');
+      
+      // Add a small delay to ensure loading state is visible
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const savedData = await handleSave();
+      
+      if (savedData) {
+        await axios.put(`/api/templates/${savedData.id}/publish`, {}, {
+          timeout: 30000, // 30s timeout for publish operation
+        });
+        setFormData({
+          ...formData,
+          status: 'published'
+        });
+        setSaveMessage('Template published successfully');
+      }
+      
+      setIsConfirmModalOpen(false);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error publishing template:', error);
+      setSaveMessage(`Error: ${error.response?.data?.message || 'Failed to publish template'}`);
+      setTimeout(() => setSaveMessage(''), 5000);
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setIsDiscardModalOpen(true);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
+  const addPage = () => {
+    const newPages = [...formData.pages];
+    newPages.push({
+      name: `Page ${newPages.length + 1}`,
+      description: '',
+      sections: []
+    });
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+    
+    setActivePageIndex(newPages.length - 1);
+  };
+
+  const updatePage = (index, data) => {
+    const newPages = [...formData.pages];
+    newPages[index] = {
+      ...newPages[index],
+      ...data
+    };
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+  };
+
+  const addSection = () => {
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    
+    activePage.sections.push({
+      name: `Section ${activePage.sections.length + 1}`,
+      description: '',
+      subLevels: [],
+      questions: []
+    });
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+    
+    setActiveSectionIndex(activePage.sections.length - 1);
+  };
+
+  const updateSection = (sectionIndex, data) => {
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    
+    activePage.sections[sectionIndex] = {
+      ...activePage.sections[sectionIndex],
+      ...data
+    };
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+  };
+
+  const addQuestion = (sectionIndex) => {
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    const section = activePage.sections[sectionIndex];
+    
+    section.questions.push({
+      text: '',
+      description: '',
+      type: 'text',
+      required: false,
+      options: [],
+      scoring: {
+        enabled: false,
+        max: 1,
+        weights: {}
+      }
+    });
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+  };
+
+  const updateQuestion = (sectionIndex, questionIndex, data) => {
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    const section = activePage.sections[sectionIndex];
+    
+    section.questions[questionIndex] = {
+      ...section.questions[questionIndex],
+      ...data
+    };
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+  };
+
+  const removeQuestion = (sectionIndex, questionIndex) => {
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    const section = activePage.sections[sectionIndex];
+    
+    section.questions.splice(questionIndex, 1);
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+  };
+
+  const openMoveQuestionModal = (sectionIndex, questionIndex) => {
+    const question = formData.pages[activePageIndex].sections[sectionIndex].questions[questionIndex];
+    setSelectedQuestion(question);
+    setSelectedQuestionIndex(questionIndex);
+    setActiveSectionIndex(sectionIndex);
+    setIsMoveQuestionModalOpen(true);
+  };
+
+  const handleMoveQuestion = (targetSectionIndex) => {
+    if (targetSectionIndex === activeSectionIndex) {
+      setIsMoveQuestionModalOpen(false);
+      return;
+    }
+    
+    const newPages = [...formData.pages];
+    const activePage = newPages[activePageIndex];
+    const sourceSection = activePage.sections[activeSectionIndex];
+    const targetSection = activePage.sections[targetSectionIndex];
+    
+    // Remove from source
+    const [movedQuestion] = sourceSection.questions.splice(selectedQuestionIndex, 1);
+    
+    // Add to target
+    targetSection.questions.push(movedQuestion);
+    
+    setFormData({
+      ...formData,
+      pages: newPages
+    });
+    
+    setIsMoveQuestionModalOpen(false);
+  };
+
+  // Function to handle guide toggle
+  const toggleGuide = () => {
+    setIsGuideOpen(!isGuideOpen);
+  };
+
+  // Calculate template complexity
+  useEffect(() => {
+    if (!formData || !formData.pages) return;
+    
+    let questionCount = 0;
+    let sectionCount = 0;
+    let pageCount = formData.pages.length;
+    
+    formData.pages.forEach(page => {
+      if (page.sections) {
+        sectionCount += page.sections.length;
+        
+        page.sections.forEach(section => {
+          if (section.questions) {
+            questionCount += section.questions.length;
+          }
+        });
+      }
+    });
+    
+    // Determine if template might be too complex to save
+    // These thresholds should be adjusted based on actual observed limits
+    const isComplex = questionCount > 200 || sectionCount > 50 || pageCount > 20;
+    
+    setTemplateComplexity({
+      totalQuestions: questionCount,
+      totalSections: sectionCount,
+      totalPages: pageCount,
+      isComplex
+    });
+  }, [formData]);
+
+  // Transform template data to report format
+  const transformTemplateToReportData = () => {
+    // Extract sections from pages and their sections
+    const sections = [];
+    let totalScore = 0;
+    let maxScore = 0;
+    
+    // Basic validation but ensure we show what we have even if incomplete
+    if (!formData) {
+      return getEmptyReportTemplate();
+    }
+    
+    // Process all pages and sections even if some fields are incomplete
+    if (formData.pages && formData.pages.length > 0) {
+      formData.pages.forEach((page, pageIndex) => {
+        if (page.sections && page.sections.length > 0) {
+          page.sections.forEach((section, sectionIndex) => {
+            const sectionData = {
+              id: `section_${pageIndex}_${sectionIndex}`,
+              name: section.name || `Inspection Level ${sectionIndex + 1} (Page ${pageIndex + 1})`,
+              description: section.description || '',
+              score: 0,
+              maxScore: 0,
+              status: 'not_applicable',
+              items: []
+            };
+        
+        // Process questions
+            if (section.questions && section.questions.length > 0) {
+              section.questions.forEach(question => {
+                const questionScore = question.scoring?.enabled ? (question.scoring.max || 1) : 0;
+                maxScore += questionScore;
+                
+                sectionData.items.push({
+                  title: question.text || 'Unnamed Question',
+                  status: 'not_applicable'
+                });
+                
+                sectionData.maxScore += questionScore;
+              });
+            }
+            
+            // Calculate section status
+            sectionData.status = sectionData.maxScore > 0 ? 'partial_compliance' : 'not_applicable';
+            
+            sections.push(sectionData);
+          });
+        }
+      });
+    }
+    
+    return {
+      title: formData.name || 'Draft Inspection Template',
+      score: 0, // No real score in template preview
+      maxScore: maxScore,
+      completedAt: new Date().toLocaleString(),
+      sections,
+      flaggedItems: [],
+      metadata: {
+        documentNumber: id ? `Template ID: ${id}` : 'New Template',
+        inspectionLocation: 'Not specified',
+        inspectionDate: new Date().toLocaleDateString(),
+        inspectorName: 'Not assigned',
+        operatorName: 'Preview Mode'
+      }
+    };
+  };
+  
+  // Helper function for empty template
+  const getEmptyReportTemplate = () => {
+    return {
+      title: 'Inspection Template',
+      score: 0,
+      maxScore: 0,
+      completedAt: new Date().toLocaleString(),
+      sections: [],
+      flaggedItems: [],
+      metadata: {
+        documentNumber: 'Template ID: Draft',
+        inspectionLocation: 'Not specified',
+        inspectionDate: new Date().toLocaleDateString(),
+        inspectorName: 'Not assigned',
+        operatorName: 'Draft Template'
+      }
+    };
+  };
+
+  // Add local storage key and functions
+  const LOCAL_STORAGE_KEY = 'inspection_template_draft';
+  
+  // Create a debounced auto-save function
+  const autoSaveToLocalStorage = useRef(
+    debounce((data) => {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        console.log('Template auto-saved to local storage');
+    } catch (error) {
+        console.error('Error auto-saving to local storage:', error);
+      }
+    }, 2000)
+  ).current;
+  
+  // Load template from local storage on initial render
+  useEffect(() => {
+    if (!id) {
+      try {
+        const savedTemplate = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedTemplate) {
+          const parsedTemplate = JSON.parse(savedTemplate);
+          setFormData(parsedTemplate);
+          toast.success('Loaded saved draft from local storage', { 
+            duration: 3000,
+            style: { background: '#10B981', color: 'white' }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading from local storage:', error);
+      }
+    }
+  }, [id]);
+  
+  // Auto-save template changes to local storage
+  useEffect(() => {
+    if (!id && formData.pages && formData.pages.length > 0) {
+      autoSaveToLocalStorage(formData);
+    }
+  }, [formData, id, autoSaveToLocalStorage]);
+
+  return (
+    <PageContainer>
+      {loading && <SkeletonLoader />}
+      
+      <Header>
+        <BackButton onClick={handleBack}>
+          <ChevronLeft size={20} />
+          Back
+        </BackButton>
+        <h1>{id ? 'Edit Template' : 'Create Template'}</h1>
+        <div>
+          <Button onClick={() => setIsActivityHistoryOpen(true)}>
+            <History size={16} />
+            Activity
+          </Button>
+          <Button onClick={() => setIsMobilePreviewOpen(true)}>
+            <Smartphone size={16} />
+            Preview
+          </Button>
+          <Button onClick={toggleGuide}>
+            <HelpCircle size={16} />
+            Guide
+          </Button>
+          <InspectionSaveButton onClick={handleSave} disabled={loading}>
+            <Save size={16} />
+            Save
+          </InspectionSaveButton>
+          <InspectionPublishButton
+            onClick={handlePublish}
+            disabled={loading || !formData.name}
+          >
+            <Upload size={16} />
+            Publish
+          </InspectionPublishButton>
+        </div>
+      </Header>
+      
+      {saveMessage && <InspectionSaveMessage>{saveMessage}</InspectionSaveMessage>}
+      
+      {templateComplexity.isComplex && (
+        <div style={{
+          padding: '12px 16px',
+          background: '#fff3cd',
+          border: '1px solid #ffeeba',
+          borderRadius: '4px',
+          marginBottom: '16px',
+          color: '#856404',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <AlertTriangle size={20} />
+          <div>
+            <strong>Warning:</strong> This template is becoming complex ({templateComplexity.totalQuestions} questions, 
+            {templateComplexity.totalSections} sections, {templateComplexity.totalPages} pages). 
+            You may experience slow performance or issues when saving. Consider breaking it into multiple templates.
+          </div>
+        </div>
+      )}
+      
+      {/* Main tabs navigation */}
+      <MainTabsContainer>
+        <MainTab 
+          $active={activeTab === 'basic-info'} 
+          onClick={() => setActiveTab('basic-info')}
+        >
+          <Info size={16} />
+          Basic Information
+        </MainTab>
+        <MainTab 
+          $active={activeTab === 'pages-questions'} 
+          onClick={() => setActiveTab('pages-questions')}
+        >
+          <Layers size={16} />
+          Pages & Questions
+        </MainTab>
+        <MainTab 
+          $active={activeTab === 'report-preview'} 
+          onClick={() => setActiveTab('report-preview')}
+        >
+          <FileText size={16} />
+          Report Preview
+        </MainTab>
+      </MainTabsContainer>
+      
+      {/* Guide modal */}
+      {isGuideOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{ 
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            width: '700px',
+            maxWidth: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            padding: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              borderBottom: '1px solid #e2e8f0',
+              paddingBottom: '16px'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: 'var(--color-navy)' }}>
+                <HelpCircle size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+                Template Creation Guide
+              </h2>
+              <button
+                onClick={toggleGuide}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: '#64748b'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ marginTop: 0, color: '#64748b' }}>Follow these steps to create an effective inspection template:</p>
+              
+              <div style={{ 
+                background: '#f1f5f9', 
+                borderRadius: '8px',
+                padding: '16px', 
+                marginBottom: '16px' 
+              }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '16px', 
+                  color: 'var(--color-navy)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}>1</div>
+                  Basic Information
+                  </h3>
+                <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
+                  Start by filling out the template name, type, description, and priority in the "Basic Information" tab.
+                </p>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                  <li>Template Name is required</li>
+                  <li>Choose an appropriate Type for better organization</li>
+                  <li>Add a clear Description to help users understand the template's purpose</li>
+                </ul>
+              </div>
+              
+              <div style={{ 
+                background: '#f1f5f9', 
+                borderRadius: '8px', 
+                padding: '16px', 
+                marginBottom: '16px' 
+              }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '16px', 
+                  color: 'var(--color-navy)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}>2</div>
+                  Pages and Questions
+                </h3>
+                <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
+                  Create the structure of your inspection with pages, inspection levels, and questions.
+                </p>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                  <li>Add Pages to organize your inspection into logical sections</li>
+                  <li>Add Inspection Levels to each page to group related questions</li>
+                  <li>Create Questions with appropriate types (Text, Yes/No, Compliance, etc.)</li>
+                  <li>Configure scoring for questions to enable compliance assessment</li>
+                </ul>
+              </div>
+              
+              <div style={{ 
+                background: '#f1f5f9', 
+                borderRadius: '8px',
+                padding: '16px'
+              }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '16px', 
+                  color: 'var(--color-navy)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}>3</div>
+                  Report Preview and Publishing
+                </h3>
+                <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
+                  Preview your template and publish when ready.
+                </p>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                  <li>Use the "Report" tab to preview how your template will look</li>
+                  <li>Save your template frequently to avoid losing work</li>
+                  <li>Click "Publish" when you're ready to make it available for inspections</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              borderTop: '1px solid #e2e8f0',
+              paddingTop: '16px' 
+            }}>
+              <Button
+                onClick={toggleGuide}
+                style={{
+                  backgroundColor: 'var(--color-navy)',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Got it!
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Basic Information Tab */}
+      {activeTab === 'basic-info' && (
+        <InspectionFormSection>
+          <h3 style={{ marginBottom: "20px" }}>Basic Information</h3>
+          <InspectionFormRow>
+            <InspectionFormGroup>
+              <Label>Template Name*</Label>
+                            <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter template name"
+                required
+              />
+            </InspectionFormGroup>
+            <InspectionFormGroup>
+                    <Label>Type</Label>
+                    <Select 
+                      name="type" 
+                      value={formData.type} 
+                      onChange={handleChange}
+                    >
+                      <option value="">Select type</option>
+                {assetTypes.map(type => (
+                  <option key={type._id} value={type.name}>
+                            {type.name}
+                          </option>
+                ))}
+                    </Select>
+            </InspectionFormGroup>
+          </InspectionFormRow>
+          <InspectionFormRow>
+            <InspectionFormGroup>
+                    <Label>Description</Label>
+                            <TextArea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                placeholder="Enter description"
+                rows={3}
+              />
+            </InspectionFormGroup>
+          </InspectionFormRow>
+          <InspectionFormRow>
+            <InspectionFormGroup>
+              <Label>Priority</Label>
+              <Select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                style={{ 
+                  borderLeft: `4px solid ${
+                    formData.priority === 'high' ? '#EF4444' : 
+                    formData.priority === 'medium' ? '#F59E0B' : 
+                    formData.priority === 'low' ? '#10B981' : '#94A3B8'
+                  }`
+                }}
+              >
+                <option value="">Select priority</option>
+                <option value="low" style={{color: '#10B981'}}>
+                  Low
+                </option>
+                <option value="medium" style={{color: '#F59E0B'}}>
+                  Medium
+                </option>
+                <option value="high" style={{color: '#B91C1C'}}>
+                  High
+                </option>
+              </Select>
+            </InspectionFormGroup>
+            <InspectionFormGroup>
+              <Label>Requirement Type</Label>
+              <Select
+                name="requirementType"
+                value={formData.requirementType || ""}
+                onChange={handleChange}
+                style={{ 
+                  borderLeft: `4px solid ${
+                    formData.requirementType === 'mandatory' ? '#B91C1C' : 
+                    formData.requirementType === 'recommended' ? '#1E40AF' : '#94A3B8'
+                  }`
+                }}
+              >
+                <option value="">Select type</option>
+                <option value="mandatory" style={{color: '#B91C1C'}}>
+                  Mandatory
+                </option>
+                <option value="recommended" style={{color: '#1E40AF'}}>
+                  Recommended
+                </option>
+              </Select>
+            </InspectionFormGroup>
+            <InspectionFormGroup>
+              <Label>Status</Label>
+              <InspectionStatusBadge status={formData.status}>
+                {formData.status === 'draft' ? 'Draft' : 'Published'}
+              </InspectionStatusBadge>
+            </InspectionFormGroup>
+          </InspectionFormRow>
+        </InspectionFormSection>
+      )}
+      
+      {/* Pages and Questions Tab */}
+      {activeTab === 'pages-questions' && (
+        <InspectionFormSection>
+          <h3 style={{ marginBottom: "20px" }}>Pages and Questions</h3>
+          
+          {formData.pages.length > 0 && (
+            <TabsContainer>
+              {formData.pages.map((page, index) => (
+                <Tab
+                  key={index}
+                  $active={index === activePageIndex}
+                  onClick={() => setActivePageIndex(index)}
+                >
+                  {page.name || `Page ${index + 1}`}
+                </Tab>
+              ))}
+              <InspectionAddTabButton onClick={addPage}>
+                <Plus size={16} />
+              </InspectionAddTabButton>
+            </TabsContainer>
+          )}
+          
+          {formData.pages.length > 0 && (
+            <div>
+              <InspectionFormRow>
+                <InspectionFormGroup>
+                  <Label>Page Name</Label>
+                            <Input
+                    value={formData.pages[activePageIndex].name}
+                    onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
+                    placeholder="Enter page name"
+                  />
+                </InspectionFormGroup>
+                <InspectionFormGroup>
+                  <Label>Page Description</Label>
+                            <TextArea
+                    value={formData.pages[activePageIndex].description}
+                    onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
+                    placeholder="Enter page description"
+                    rows={2}
+                  />
+                </InspectionFormGroup>
+              </InspectionFormRow>
+              
+              <SectionsWrapper>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h4 style={{ color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Folder size={16} />
+                    Inspection Levels
+                  </h4>
+                  <Button onClick={addSection} style={{ backgroundColor: 'var(--color-navy)' }}>
+                    <Plus size={16} style={{ marginRight: '4px' }} />
+                    Add Inspection Level
+                  </Button>
+                </div>
+                
+                {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
+                  <>
+                    {formData.pages[activePageIndex].sections.map((section, sectionIndex) => (
+                      <SectionCard key={sectionIndex}>
+                        <SectionHeader>
+                          <h5 style={{ margin: 0, fontWeight: '500', color: 'var(--color-navy)' }}>
+                            {section.name || `Inspection Level ${sectionIndex + 1}`}
+                          </h5>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <Button
+                              onClick={() => {
+                                setActiveSectionIndex(sectionIndex);
+                                // Add your existing functionality here
+                              }}
+                              style={{ 
+                                backgroundColor: activeSectionIndex === sectionIndex ? 'var(--color-navy)' : '#e2e8f0',
+                                color: activeSectionIndex === sectionIndex ? 'white' : '#475569'
+                              }}
+                            >
+                              <Edit size={14} />
+                            </Button>
+                            {/* Add your existing buttons here */}
+                          </div>
+                        </SectionHeader>
+                        
+                        <SectionBody>
+                          {/* Existing section content */}
+                        </SectionBody>
+                      </SectionCard>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '40px 20px', 
+                    background: '#f8fafc', 
+                    borderRadius: '8px',
+                    border: '1px dashed #cbd5e1'
+                  }}>
+                    <div style={{ 
+                      width: '60px', 
+                      height: '60px', 
+                      background: '#e2e8f0', 
+                      borderRadius: '30px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      margin: '0 auto 16px auto'
+                    }}>
+                      <Folder size={24} style={{ color: '#94a3b8' }} />
+                    </div>
+                    <h4 style={{ color: '#475569', margin: '0 0 8px 0' }}>No inspection levels yet</h4>
+                    <p style={{ color: '#64748b', margin: '0 0 16px 0' }}>Add an inspection level to start organizing your questions</p>
+                    <Button onClick={addSection} style={{ backgroundColor: 'var(--color-navy)' }}>
+                      <Plus size={16} style={{ marginRight: '4px' }} />
+                      Add Inspection Level
+                    </Button>
+                  </div>
+                )}
+              </SectionsWrapper>
+                  </div>
+                )}
+                
+          {formData.pages.length === 0 && (
+            <TabEmptyState>
+              <FileText size={32} />
+              <p>No pages added yet</p>
+              <Button onClick={addPage}>
+                <Plus size={16} style={{ marginRight: '4px' }} />
+                Add Page
+              </Button>
+            </TabEmptyState>
+          )}
+        </InspectionFormSection>
+      )}
+      
+      {/* Report Preview Tab */}
+      {activeTab === 'report-preview' && (
+        <InspectionFormSection>
+          <h3 style={{ marginBottom: "20px" }}>Report Preview</h3>
+          
+          {!formData.pages || formData.pages.length === 0 ? (
+            <TabEmptyState>
+              <FileText size={32} />
+              <p>Please add at least one page and inspection level to generate a report preview</p>
+              <Button onClick={() => setActiveTab('pages-questions')}>
+                Go to Pages and Questions
+              </Button>
+            </TabEmptyState>
+                  ) : (
+                    <div style={{ 
+              background: 'white', 
+              border: '1px solid #e0e0e0', 
+                      borderRadius: '8px', 
+              padding: '24px',
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}>
+              <ReportPreviewComponent reportData={transformTemplateToReportData()} />
+                    </div>
+          )}
+        </InspectionFormSection>
+      )}
+      
+      {/* Modals */}
+      {isConfirmModalOpen && (
+        <ConfirmationModal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setIsConfirmModalOpen(false)}
+          onConfirm={confirmPublish}
+          title="Publish Template"
+          message="Are you sure you want to publish this template? Once published, it will be available for use in inspections."
+          confirmText="Publish"
+        />
+      )}
+      
+      {isDiscardModalOpen && (
+        <DiscardConfirmationModal
+          isOpen={isDiscardModalOpen}
+          onClose={() => setIsDiscardModalOpen(false)}
+          onConfirm={() => navigate('/inspection/templates')}
+        />
+      )}
+      
+      {isMobilePreviewOpen && (
+        <MobilePreviewPanel
+          isOpen={isMobilePreviewOpen}
+          onClose={() => setIsMobilePreviewOpen(false)}
+          formData={formData}
+          activeSetIndex={activePageIndex}
+        />
+      )}
+      
+      {isActivityHistoryOpen && (
+      <ActivityHistoryCard 
+        formData={formData} 
+        activities={activities}
+          isOpen={isActivityHistoryOpen}
+          onClose={() => setIsActivityHistoryOpen(false)}
+        />
+      )}
+      
+      {isMoveQuestionModalOpen && selectedQuestion && (
+        <MoveQuestionModal
+          isOpen={isMoveQuestionModalOpen}
+          onClose={() => setIsMoveQuestionModalOpen(false)}
+          question={selectedQuestion}
+          questionIndex={selectedQuestionIndex}
+          allSets={formData.pages[activePageIndex].sections}
+          currentSetIndex={activeSectionIndex}
+          onMoveQuestion={handleMoveQuestion}
+        />
+      )}
+    </PageContainer>
+  );
+};
+
+export default InspectionLevelForm;

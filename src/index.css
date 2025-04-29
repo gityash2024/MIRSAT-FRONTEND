@@ -3,6 +3,35 @@
 @tailwind utilities;
 
 :root {
+  /* Primary colors */
+  --color-navy: #1A3A5F;
+  --color-navy-dark: #142f4c;
+  --color-teal: #4B8C9E;
+  --color-seafoam: #A9CDCE;
+  
+  /* Secondary colors */
+  --color-sand: #E3D9CA;
+  --color-coral: #E99B83;
+  --color-skyblue: #D6E5EA;
+  
+  /* Neutrals */
+  --color-offwhite: #F7F9FA;
+  --color-gray-light: #E2E8ED;
+  --color-gray-medium: #8CA3B7;
+  --color-gray-dark: #2D4654;
+  
+  /* Status colors */
+  --color-success: #7CB797;
+  --color-warning: #DFBE7F;
+  --color-error: #D18C92;
+  --color-info: #7CA7C8;
+  
+  /* Compliance levels */
+  --color-compliance-full: #7CB797;
+  --color-compliance-partial: #DFBE7F;
+  --color-compliance-non: #D18C92;
+  --color-compliance-na: #8CA3B7;
+  
   font-family: '_thesansarab_9750fc', '_thesansarab_Fallback_9750fc', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -14,5 +43,41 @@
 
 body {
   min-height: 100vh;
-  background-color: #f5f7fb;
+  background-color: var(--color-offwhite);
+}
+
+/* Common utility classes for the compliance status */
+.compliance-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.compliance-full {
+  background-color: var(--color-compliance-full);
+  color: white;
+}
+
+.compliance-partial {
+  background-color: var(--color-compliance-partial);
+  color: white;
+}
+
+.compliance-non {
+  background-color: var(--color-compliance-non);
+  color: white;
+}
+
+.compliance-na {
+  background-color: var(--color-compliance-na);
+  color: white;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
