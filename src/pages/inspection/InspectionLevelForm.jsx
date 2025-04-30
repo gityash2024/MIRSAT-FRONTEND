@@ -4054,7 +4054,7 @@ const InspectionLevelForm = () => {
         if (savedTemplate) {
           const parsedTemplate = JSON.parse(savedTemplate);
           setFormData(parsedTemplate);
-          toast.success('Loaded saved draft from local storage', { 
+          toast.success('Welcome back! restored your previous state.', { 
             duration: 3000,
             style: { background: '#10B981', color: 'white' }
           });
