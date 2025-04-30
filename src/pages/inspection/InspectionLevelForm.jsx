@@ -3781,7 +3781,7 @@ const InspectionLevelForm = () => {
         localStorage.removeItem(LOCAL_STORAGE_KEY);
         
         // Redirect to the templates listing page after successful creation
-        navigate('/inspection/templates');
+        navigate('/inspection');
         setSaveMessage('Template created successfully');
         return response.data;
       }
@@ -3838,7 +3838,7 @@ const InspectionLevelForm = () => {
         
         // Redirect to template listing after publishing
         setTimeout(() => {
-          navigate('/inspection/templates');
+          navigate('/inspection');
         }, 1500);
       }
       
@@ -4794,7 +4794,7 @@ const InspectionLevelForm = () => {
         <DiscardConfirmationModal
           isOpen={isDiscardModalOpen}
           onClose={() => setIsDiscardModalOpen(false)}
-          onConfirm={() => navigate('/inspection/templates')}
+          onConfirm={() => navigate('/inspection')}
         />
       )}
       

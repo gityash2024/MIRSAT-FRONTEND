@@ -790,10 +790,10 @@ const InspectionLevelList = ({
               <ChevronDownCircle size={14} />
             </Button>
             <DropdownContent ref={exportDropdownRef} show={showExportDropdown}>
-              <DropdownItem onClick={() => handleExport('docx')}>
+              {/* <DropdownItem onClick={() => handleExport('docx')}>
                 <FileText size={16} />
                 Export as Word
-              </DropdownItem>
+              </DropdownItem> */}
               <DropdownItem onClick={() => handleExport('pdf')}>
                 <FileText size={16} />
                 Export as PDF
