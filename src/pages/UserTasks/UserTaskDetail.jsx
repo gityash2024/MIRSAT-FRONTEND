@@ -8,7 +8,7 @@ import {
   Download, Info, CheckSquare, Camera, FileText, Loader,
   Circle, MoreHorizontal, Timer, PlayCircle, PauseCircle,
   File, ChevronUp, ChevronDown, MessageSquare, ChevronRight, ChevronLeft,
-  Award, Clipboard, AlertCircle
+  Award, Clipboard, AlertCircle, Layers, HelpCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { 
@@ -500,35 +500,31 @@ const ButtonContainer = styled.div`
 const ActionButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  color: var(--color-navy);
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--color-navy);
   cursor: pointer;
-  padding: 10px 16px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.9);
-    color: #0d1186;
-  }
-  
-  &:active {
-    transform: translateY(0);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+  
+  svg {
+    color: var(--color-navy);
   }
 `;
 
@@ -1005,6 +1001,338 @@ const UserTaskDetailSkeleton = () => (
   </PageContainer>
 );
 
+// New styled components for the tabbed interface
+const TabsContainer = styled.div`
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const TabButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: ${props => props.active ? 'var(--color-navy)' : '#64748b'};
+  position: relative;
+  cursor: pointer;
+  white-space: nowrap;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: ${props => props.active ? 'var(--color-navy)' : 'transparent'};
+    border-radius: 3px 3px 0 0;
+    transition: all 0.2s ease;
+  }
+  
+  &:hover {
+    color: var(--color-navy);
+  }
+`;
+
+const PageSelector = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+`;
+
+const PageTitle = styled.div`
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-navy);
+`;
+
+const PageNavButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: ${props => props.disabled ? '#f1f5f9' : 'white'};
+  color: ${props => props.disabled ? '#94a3b8' : 'var(--color-navy)'};
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  box-shadow: ${props => props.disabled ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.08)'};
+  margin: 0 4px;
+  
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const PageIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 16px;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+`;
+
+// Add the missing styled component definitions
+const MetaContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+`;
+
+const MetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #64748b;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+  
+  svg {
+    color: var(--color-navy);
+  }
+`;
+
+const ActionContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  
+  @media (min-width: 768px) {
+    align-items: flex-end;
+  }
+`;
+
+// Add missing comment section components
+const CommentSection = styled.div`
+  margin-top: 32px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+`;
+
+const CommentsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+`;
+
+const CommentItem = styled.div`
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+`;
+
+const CommentHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const CommentAuthor = styled.div`
+  font-weight: 600;
+  color: var(--color-navy);
+  font-size: 14px;
+`;
+
+const CommentTime = styled.div`
+  font-size: 12px;
+  color: #64748b;
+`;
+
+const CommentText = styled.div`
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+`;
+
+const CommentForm = styled.form`
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+`;
+
+const CommentInput = styled.textarea`
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: none;
+  height: 80px;
+  background: white;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+  }
+`;
+
+const SendButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-navy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 40px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #0d1186;
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  
+  svg {
+    color: #94a3b8;
+    margin-bottom: 16px;
+  }
+  
+  h2 {
+    color: var(--color-navy);
+    margin-bottom: 8px;
+    font-size: 20px;
+  }
+  
+  p {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+`;
+
+const Button = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-navy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #0d1186;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(26, 35, 126, 0.2);
+  }
+`;
+
+// New styled components for Inspection Template
+const InspectionTemplateHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 16px;
+  }
+`;
+
+const PageNavigation = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ExportButtonWrapper = styled.div`
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+`;
+
+const EmptyInspectionState = styled.div`
+  padding: 40px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin-bottom: 8px;
+  }
+  
+  p {
+    color: #64748b;
+  }
+`;
+
 const UserTaskDetail = () => {
   const dispatch = useDispatch();
   const { taskId } = useParams();
@@ -1013,7 +1341,7 @@ const UserTaskDetail = () => {
   const commentBoxRef = useRef(null);
   const timerRef = useRef(null);
   const [expandedSubLevels, setExpandedSubLevels] = useState({});
-  const [comment, setComment] = useState('');
+  const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
@@ -1029,6 +1357,10 @@ const UserTaskDetail = () => {
     actionLoading
   } = useSelector((state) => state.userTasks);
 
+  // New state variables for tabbed interface
+  const [activeTab, setActiveTab] = useState('overview');
+  const [activePage, setActivePage] = useState(0);
+  
   useEffect(() => {
     dispatch(fetchUserTaskDetails(taskId));
     
@@ -1140,15 +1472,15 @@ const UserTaskDetail = () => {
   };
 
   const handleCommentSubmit = async () => {
-    if (!comment.trim()) return;
+    if (!commentText.trim()) return;
     
     try {
       await dispatch(addUserTaskComment({
         taskId,
-        comment
+        comment: commentText
       })).unwrap();
       
-      setComment('');
+      setCommentText('');
       
       if (commentBoxRef.current) {
         commentBoxRef.current.style.height = 'auto';
@@ -1176,9 +1508,30 @@ const UserTaskDetail = () => {
 
   const handleExportReport = async () => {
     try {
-      await userTaskService.exportTaskReport(taskId);
+      toast.loading('Generating report...');
+      const result = await dispatch(exportTaskReport(taskId)).unwrap();
+      
+      if (result.url) {
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.setAttribute('download', `inspection_report_${taskId}.pdf`);
+        document.body.appendChild(link);
+        
+        // Trigger the download
+        link.click();
+        
+        // Clean up
+        document.body.removeChild(link);
+        toast.dismiss();
+        toast.success('Report downloaded successfully');
+      } else {
+        toast.dismiss();
+        toast.error('Failed to generate report: No URL returned');
+      }
     } catch (error) {
-      toast.error(error.message || 'Failed to download report');
+      toast.dismiss();
+      toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
     }
   };
   
@@ -1486,7 +1839,7 @@ const UserTaskDetail = () => {
             
             {currentTask.status === 'in_progress' && (
               <ButtonContainer>
-                <NextButton onClick={() => setActiveStep(1)} disabled={actionLoading}>
+                <NextButton onClick={() => setActiveTab('pageWise')} disabled={actionLoading}>
                   Continue Inspection
                   <ChevronRight size={16} />
                 </NextButton>
@@ -1601,6 +1954,190 @@ const UserTaskDetail = () => {
     }
   };
 
+  // Function to navigate between pages in the page-wise UI
+  const handlePageChange = (direction) => {
+    if (direction === 'next' && activePage < (currentTask?.inspectionLevel?.pages?.length - 1 || 0)) {
+      setActivePage(activePage + 1);
+    } else if (direction === 'prev' && activePage > 0) {
+      setActivePage(activePage - 1);
+    }
+  };
+  
+  // Function to get current page data
+  const getCurrentPageData = () => {
+    if (!currentTask?.inspectionLevel?.pages || currentTask.inspectionLevel.pages.length === 0) {
+      return {
+        name: 'No pages available',
+        description: '',
+        sections: []
+      };
+    }
+    
+    return currentTask.inspectionLevel.pages[activePage] || {
+      name: 'Page not found',
+      description: '',
+      sections: []
+    };
+  };
+  
+  // Render function for tab content
+  const renderTabContent = () => {
+    // Calculate scores and other variables needed in multiple cases
+    const scores = calculateScores();
+    const taskCompleted = currentTask?.status === 'completed';
+    const isInspector = user?.role === 'inspector';
+    const hasInspectionLevel = currentTask?.inspectionLevel && 
+                            currentTask.inspectionLevel._id;
+    const hasSubLevels = hasInspectionLevel && 
+                      currentTask.inspectionLevel.subLevels && 
+                      currentTask.inspectionLevel.subLevels.length > 0;
+    const canCompleteTask = isInspector && 
+                         currentTask?.status === 'in_progress' && 
+                         (currentTask.overallProgress === 100 || !hasSubLevels);
+    
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <>
+            <TaskDetailSection>
+              <SectionTitle>Task Overview</SectionTitle>
+              <PreInspectionStepForm task={currentTask} />
+              
+              {/* Display scoring summary if task is in progress or completed */}
+              {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
+                <ScoreSummary>
+                  <ScoreTitle>
+                    <Award size={20} color="var(--color-navy)" />
+                    Compliance Score Summary
+                  </ScoreTitle>
+                  
+                  <ScoreGrid>
+                    <ScoreItem>
+                      <div className="score-label">Total Score</div>
+                      <div className="score-value">
+                        {scores.achieved} / {scores.total}
+                        <span className="score-percent">({scores.percentage}%)</span>
+                      </div>
+                    </ScoreItem>
+                    
+                    <ScoreItem>
+                      <div className="score-label">Questionnaire</div>
+                      <div className="score-value">
+                        {currentTask.questionnaireCompleted ? 
+                          <CheckCircle size={18} color="#4caf50" style={{ marginRight: '5px' }} /> : 
+                          <AlertCircle size={18} color="#f57c00" style={{ marginRight: '5px' }} />}
+                        {currentTask.questionnaireCompleted ? 'Completed' : 'Pending'}
+                      </div>
+                    </ScoreItem>
+                    
+                    <ScoreItem>
+                      <div className="score-label">Checkpoints</div>
+                      <div className="score-value">
+                        {currentTask.overallProgress}%
+                      </div>
+                    </ScoreItem>
+                  </ScoreGrid>
+                  
+                  {canCompleteTask && !taskCompleted && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                      <Button onClick={handleCompleteTask} disabled={actionLoading}>
+                        <CheckCircle size={18} /> Mark Task as Complete
+                      </Button>
+                    </div>
+                  )}
+                </ScoreSummary>
+              )}
+              
+              {(currentTask.status === 'pending' || !currentTask.status) && (
+                <ButtonContainer>
+                  <NextButton onClick={handleStartTask} disabled={actionLoading}>
+                    Start Inspection
+                    <ChevronRight size={16} />
+                  </NextButton>
+                </ButtonContainer>
+              )}
+              
+              {currentTask.status === 'in_progress' && (
+                <ButtonContainer>
+                  <NextButton onClick={() => setActiveTab('pageWise')} disabled={actionLoading}>
+                    Continue Inspection
+                    <ChevronRight size={16} />
+                  </NextButton>
+                </ButtonContainer>
+              )}
+            </TaskDetailSection>
+          </>
+        );
+      case 'pageWise':
+        const currentPage = getCurrentPageData();
+        const totalPages = currentTask?.inspectionLevel?.pages?.length || 0;
+        
+        return (
+          <>
+            <InspectionTemplateHeader>
+              <PageNavigation>
+                <PageNavButton 
+                  onClick={() => handlePageChange('prev')}
+                  disabled={activePage === 0}
+                >
+                  <ChevronLeft size={18} />
+                </PageNavButton>
+                
+                <PageTitle>{currentPage.name}</PageTitle>
+                
+                <PageIndicator>
+                  Page {activePage + 1} of {totalPages}
+                </PageIndicator>
+                
+                <PageNavButton 
+                  onClick={() => handlePageChange('next')}
+                  disabled={activePage >= totalPages - 1}
+                >
+                  <ChevronRight size={18} />
+                </PageNavButton>
+              </PageNavigation>
+              
+              <ExportButtonWrapper>
+                <ActionButton 
+                  onClick={handleExportReport}
+                  disabled={currentTask.status === 'pending'}
+                >
+                  <Download size={16} />
+                  Export Report
+                </ActionButton>
+              </ExportButtonWrapper>
+            </InspectionTemplateHeader>
+            
+            {currentPage.description && (
+              <Description style={{ marginBottom: '20px' }}>
+                {currentPage.description}
+              </Description>
+            )}
+            
+            {currentPage.sections && currentPage.sections.length > 0 ? (
+              <InspectionStepForm 
+                task={currentTask}
+                activePage={activePage}
+                pageData={currentPage}
+                onUpdateProgress={(updatedTask) => {
+                  dispatch(fetchUserTaskDetails(taskId));
+                }}
+                onExportReport={handleExportReport}
+              />
+            ) : (
+              <EmptyInspectionState>
+                <HelpCircle size={40} color="#94a3b8" style={{ margin: '0 auto 16px' }} />
+                <h3>No sections available</h3>
+                <p>This page doesn't have any sections or inspection items yet.</p>
+              </EmptyInspectionState>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   if (loading || (!error && !currentTask)) {
     return (
       <PageContainer>
@@ -1678,252 +2215,142 @@ const UserTaskDetail = () => {
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/user-tasks')}>
+      <BackButton onClick={() => navigate(-1)}>
         <ArrowLeft size={18} />
         Back to Tasks
       </BackButton>
       
-      <Header>
-        <HeaderContent>
-          <TitleSection>
-            <Title>{currentTask.title}</Title>
-            <Description>{currentTask.description}</Description>
-          </TitleSection>
-          <div>
-            <StatusBadge status={currentTask.status || 'pending'}>
-              <StatusIcon status={currentTask.status || 'pending'} size={14} />
-              {currentTask.status ? currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ') : 'Pending'}
-            </StatusBadge>
-            <PriorityBadge priority={currentTask.priority || 'medium'}>
-              {currentTask.priority ? currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1) : 'Medium'}
-            </PriorityBadge>
-          </div>
-        </HeaderContent>
-      </Header>
-      
-      {currentTask.status === 'in_progress' && (
-        <TimerWidget>
-          <Timer size={20} />
-          <span>{formatTime(timer)}</span>
-          <div className="timer-controls">
-            {timerRunning ? (
-              <button className="timer-button pause" onClick={stopTimer}>
-                <PauseCircle size={20} />
-              </button>
-            ) : (
-              <button className="timer-button play" onClick={startTimer}>
-                <PlayCircle size={20} />
-              </button>
-            )}
-          </div>
-        </TimerWidget>
-      )}
-      
-      {renderStepper()}
-      
-      <DetailLayout>
-        <div>
-          {renderStepContent()}
-        </div>
-        
-        <RightPanel>
-          <RightPanelTitle>
-            <Info size={16} />
-            Task Summary
-          </RightPanelTitle>
-          
-          <RightPanelSection>
-            <div style={{ marginBottom: '8px', fontWeight: '500' }}>Asset Information</div>
-            {currentTask?.asset ? (
-              <div>
-                {typeof currentTask.asset === 'object' ? (
-                  <>
-                    <div>{currentTask.asset.displayName || currentTask.asset.name || 'Unnamed Asset'}</div>
-                    {currentTask.asset.uniqueId && (
-                      <div style={{ color: '#64748b', fontSize: '14px' }}>
-                        ID: {currentTask.asset.uniqueId}
-                      </div>
-                    )}
-                    {currentTask.asset.type && (
-                      <div style={{ color: '#64748b', fontSize: '14px' }}>
-                        Type: {currentTask.asset.type}
-                      </div>
-                    )}
-                    {currentTask.asset.serialNumber && (
-                      <div style={{ color: '#64748b', fontSize: '14px' }}>
-                        S/N: {currentTask.asset.serialNumber}
-                      </div>
-                    )}
-                    {currentTask.asset.location && (
-                      <div style={{ color: '#64748b', fontSize: '14px' }}>
-                        Location: {currentTask.asset.location}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div>Asset ID: {currentTask.asset}</div>
+      {loading ? (
+        <UserTaskDetailSkeleton />
+      ) : currentTask ? (
+        <>
+          <Header>
+            <HeaderContent>
+              <TitleSection>
+                <Title>
+                  {currentTask.name}
+                  <StatusBadge status={currentTask.status}>
+                    <StatusIcon status={currentTask.status} />
+                    {currentTask.status === 'pending' && 'Pending'}
+                    {currentTask.status === 'in_progress' && 'In Progress'}
+                    {currentTask.status === 'completed' && 'Completed'}
+                  </StatusBadge>
+                </Title>
+                {currentTask.description && (
+                  <Description>{currentTask.description}</Description>
                 )}
-              </div>
-            ) : (
-              <div style={{ color: '#64748b' }}>No asset assigned</div>
-            )}
-          </RightPanelSection>
-          
-          <RightPanelSection>
-            <div style={{ marginBottom: '8px', fontWeight: '500' }}>Task Progress</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ 
-                width: '100%', 
-                height: '8px', 
-                background: '#e2e8f0',
-                borderRadius: '4px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${currentTask.overallProgress || 0}%`,
-                  height: '100%',
-                  background: '#3b82f6',
-                  borderRadius: '4px'
-                }}></div>
-              </div>
-              <span style={{ fontWeight: '500' }}>{currentTask.overallProgress || 0}%</span>
-            </div>
-          </RightPanelSection>
-          
-          {(currentTask?.status === 'completed' || 
-            (currentTask?.questionnaireResponses && 
-             Object.keys(currentTask?.questionnaireResponses || {}).length > 0)) && (
-            <RightPanelSection>
-              <RightPanelTitle>
-                <CheckSquare size={16} />
-                Questionnaire Summary
-              </RightPanelTitle>
-              
-              {currentTask.questionnaireResponses && Object.keys(currentTask.questionnaireResponses).length > 0 ? (
-                <div>
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{ fontWeight: '500' }}>Status: </span>
-                    {currentTask.questionnaireCompleted ? (
-                      <span style={{ color: '#2e7d32' }}>Completed</span>
-                    ) : (
-                      <span style={{ color: '#f57c00' }}>In Progress</span>
-                    )}
-                  </div>
-                  
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{ fontWeight: '500' }}>Questions Answered: </span>
-                    {Object.keys(currentTask.questionnaireResponses).length}
-                  </div>
-                  
-                  <div>
-                    <span style={{ fontWeight: '500' }}>Compliance Rate: </span>
-                    {(() => {
-                      const responses = Object.values(currentTask.questionnaireResponses);
-                      if (responses.length === 0) return '0%';
-                      
-                      const fullCompliance = responses.filter(r => 
-                        r === 'full_compliance' || r === 'yes'
-                      ).length;
-                      
-                      const partialCompliance = responses.filter(r => 
-                        r === 'partial_compliance'
-                      ).length;
-                      
-                      const notApplicable = responses.filter(r => 
-                        r === 'na' || r === 'not_applicable'
-                      ).length;
-                      
-                      const effectiveTotal = responses.length - notApplicable;
-                      
-                      if (effectiveTotal === 0) return '100%';
-                      
-                      const rate = ((fullCompliance * 2 + partialCompliance) / (effectiveTotal * 2)) * 100;
-                      return `${Math.round(rate)}%`;
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-                  No questionnaire responses available
-                </div>
-              )}
-            </RightPanelSection>
-          )}
-          
-          <RightPanelSection>
-            <RightPanelTitle>
-              <PaperclipIcon size={16} />
-              Attachments
-            </RightPanelTitle>
-            {currentTask.attachments && currentTask.attachments.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {currentTask.attachments.map((att, idx) => (
-                  <a
-                    key={idx}
-                    href={att.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px',
-                      background: '#f8fafc',
-                      borderRadius: '8px',
-                      color: 'var(--color-navy)',
-                      textDecoration: 'none',
-                      fontSize: '14px',
-                      transition: 'all 0.2s ease'
-                    }}
+                <MetaContainer>
+                  {currentTask.dueDate && (
+                    <MetaItem>
+                      <Calendar size={16} />
+                      <span>Due Date: {formatDate(currentTask.dueDate)}</span>
+                    </MetaItem>
+                  )}
+                  {currentTask.location && (
+                    <MetaItem>
+                      <Map size={16} />
+                      <span>Location: {currentTask.location}</span>
+                    </MetaItem>
+                  )}
+                  {currentTask.inspectionType && (
+                    <MetaItem>
+                      <Clipboard size={16} />
+                      <span>Type: {currentTask.inspectionType}</span>
+                    </MetaItem>
+                  )}
+                  {currentTask.priority && (
+                    <MetaItem>
+                      <AlertTriangle size={16} />
+                      <span>Priority: {currentTask.priority}</span>
+                      <PriorityBadge priority={currentTask.priority}>
+                        {currentTask.priority}
+                      </PriorityBadge>
+                    </MetaItem>
+                  )}
+                </MetaContainer>
+              </TitleSection>
+              <ActionContainer>
+                <ButtonGroup>
+                  <ActionButton 
+                    onClick={handleExportReport}
+                    disabled={currentTask.status === 'pending'}
                   >
-                    <File size={16} />
-                    <span>{att.filename || `Attachment ${idx + 1}`}</span>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-                No attachments available
-              </div>
-            )}
-          </RightPanelSection>
+                    <Download size={16} />
+                    Export Report
+                  </ActionButton>
+                </ButtonGroup>
+              </ActionContainer>
+            </HeaderContent>
+          </Header>
           
-          {currentTask.flaggedItems && currentTask.flaggedItems.length > 0 && (
-            <RightPanelSection>
-              <RightPanelTitle>
-                <AlertTriangle size={16} />
-                Flagged Items ({currentTask.flaggedItems.length})
-              </RightPanelTitle>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {currentTask.flaggedItems.map((item, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#fff8e1',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 152, 0, 0.2)',
-                    }}
-                  >
-                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>
-                      {item.title || 'Flagged Item'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {item.category || 'General'} - {item.status || 'Issue'}
-                    </div>
-                    {item.notes && (
-                      <div style={{ fontSize: '13px', marginTop: '6px' }}>
-                        {item.notes}
+          <TabsContainer>
+            <TabButton 
+              active={activeTab === 'overview'} 
+              onClick={() => setActiveTab('overview')}
+            >
+              <Info size={18} />
+              Overview
+            </TabButton>
+            <TabButton 
+              active={activeTab === 'pageWise'} 
+              onClick={() => setActiveTab('pageWise')}
+            >
+              <Layers size={18} />
+              Inspection Template
+            </TabButton>
+          </TabsContainer>
+          
+          {renderTabContent()}
+          
+          <CommentSection>
+            <SectionTitle>Comments</SectionTitle>
+            <CommentsContainer>
+              {currentTask.comments && currentTask.comments.length > 0 ? (
+                currentTask.comments.map((comment, index) => (
+                  <CommentItem key={index}>
+                    <CommentHeader>
+                      <div>
+                        <CommentAuthor>
+                          {comment.user?.name || 'Unknown User'}
+                        </CommentAuthor>
+                        <CommentTime>
+                          {formatDateTime(comment.createdAt)}
+                        </CommentTime>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </RightPanelSection>
-          )}
-        </RightPanel>
-      </DetailLayout>
+                    </CommentHeader>
+                    <CommentText>{comment.text}</CommentText>
+                  </CommentItem>
+                ))
+              ) : (
+                <EmptyState>
+                  <MessageSquare size={32} />
+                  <p>No comments yet. Be the first to comment!</p>
+                </EmptyState>
+              )}
+            </CommentsContainer>
+            <CommentForm onSubmit={(e) => {
+              e.preventDefault();
+              handleCommentSubmit();
+            }}>
+              <CommentInput
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <SendButton type="submit" disabled={!commentText.trim()}>
+                <Send size={18} />
+              </SendButton>
+            </CommentForm>
+          </CommentSection>
+        </>
+      ) : (
+        <EmptyState>
+          <AlertCircle size={48} />
+          <h2>Task Not Found</h2>
+          <p>The task you're looking for doesn't exist or you don't have permission to view it.</p>
+          <Button onClick={() => navigate('/tasks')}>Back to Tasks</Button>
+        </EmptyState>
+      )}
     </PageContainer>
   );
 };

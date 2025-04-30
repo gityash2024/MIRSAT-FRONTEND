@@ -458,7 +458,7 @@ const UserDashboard = () => {
           {recentTasks?.length > 0 ? (
             <div>
               {recentTasks.map((task) => (
-                <TaskItem key={task._id}>
+                <TaskItem key={task.id}>
                   <div className="task-info">
                     <div 
                       className="status-icon" 
@@ -481,7 +481,7 @@ const UserDashboard = () => {
                   <div className="task-actions">
                     <ActionButton 
                       variant="primary"
-                      onClick={() => handleViewTask(task._id)}
+                      onClick={() => handleViewTask(task.id)}
                     >
                       View Details
                     </ActionButton>

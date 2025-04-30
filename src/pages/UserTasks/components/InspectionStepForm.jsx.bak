@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { updateUserTaskProgress, uploadTaskAttachment } from '../../../store/slices/userTasksSlice';
-import { CustomTimeInput } from './TimeInput';
 
 const Container = styled.div`
   padding: 16px;
@@ -451,6 +450,244 @@ const FileInputLabel = styled.label`
   }
 `;
 
+const TimeInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TimeLabel = styled.span`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const StartTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #c8e6c9;
+  }
+`;
+
+const StopTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid rgba(198, 40, 40, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #ffcdd2;
+  }
+`;
+
+const ComplianceButtons = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  justify-content: center;
+`;
+
+const PhotoPreviewContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  position: relative;
+`;
+
+const PhotoPreview = styled.div`
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: scale(1.05);
+  }
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .remove-button {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #d32f2f;
+    
+    &:hover {
+      background: white;
+    }
+  }
+`;
+
+const PhotoLightbox = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  
+  img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  .close-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+  }
+`;
+
+const ImageUploadWrapper = styled.div`
+  position: relative;
+  min-height: 120px;
+  margin-bottom: 12px;
+`;
+
+const ProgressBar = styled.div`
+  height: 8px;
+  background-color: rgba(224, 224, 224, 0.6);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 24px;
+  
+  .fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(26, 35, 126, 0.8), rgba(63, 81, 181, 0.9));
+    border-radius: 4px;
+    width: ${props => props.progress || 0}%;
+  }
+`;
+
+const ProgressInfo = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  
+  .label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+  }
+  
+  .percentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-navy);
+  }
+`;
+
+const ExportButton = styled(ActionButton)`
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #0d47a1;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+  margin-top: 24px;
+`;
+
+const Breadcrumbs = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const Breadcrumb = styled.span`
+  cursor: pointer;
+  &:hover {
+    color: var(--color-navy);
+    text-decoration: underline;
+  }
+`;
+
+const BreadcrumbSeparator = styled.span`
+  color: #94a3b8;
+`;
+
+const LevelNumber = styled.span`
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-right: 6px;
+`;
+
+const StatusIcon2 = ({ status, size = 18 }) => {
+  switch (status) {
+    case 'completed':
+    case 'full_compliance':
+      return <CheckCircle size={size} color="#388e3c" />;
+    case 'failed':
+    case 'incomplete':
+    case 'non_compliance':
+      return <XCircle size={size} color="#d32f2f" />;
+    case 'in_progress':
+    case 'partial_compliance':
+      return <AlertCircle size={size} color="#f57c00" />;
+    case 'not_applicable':
+      return <HelpCircle size={size} color="#9e9e9e" />;
+    case 'pending':
+    default:
+      return <Clock size={size} color="#64748b" />;
+  }
+};
 
 // Add styled components for the new design
 const InspectionContainer = styled.div`
@@ -557,197 +794,6 @@ const ExportButtonContainer = styled.div`
   margin-top: 16px;
 `;
 
-const SectionsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-bottom: 24px;
-`;
-
-// Add status icon component
-const StatusIcon2 = ({ status, size = 18 }) => {
-  switch(status) {
-    case 'completed':
-    case 'full_compliance':
-      return <CheckCircle size={size} color="#388e3c" />;
-    case 'failed':
-    case 'incomplete':
-    case 'non_compliance':
-      return <XCircle size={size} color="#d32f2f" />;
-    case 'in_progress':
-    case 'partial_compliance':
-      return <AlertTriangle size={size} color="#f57c00" />;
-    case 'not_applicable':
-      return <Clock size={size} color="#9e9e9e" />;
-    default:
-      return <Clock size={size} color="#64748b" />;
-  }
-};
-
-// Add this styled component for level numbers
-const LevelNumber = styled.span`
-  font-weight: 600;
-  color: var(--color-navy);
-  margin-right: 4px;
-`;
-
-// Add these photo-related components
-const PhotoPreviewContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-`;
-
-const PhotoPreview = styled.div`
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .remove-button {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  
-  &:hover .remove-button {
-    opacity: 1;
-  }
-`;
-
-const PhotoLightbox = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  img {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-  }
-  
-  .close-button {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-  }
-`;
-
-const ImageUploadWrapper = styled.div`
-  margin-top: 10px;
-`;
-
-// Add these question-related components
-const QuestionMandatory = styled.span`
-  font-size: 12px;
-  color: #f44336;
-  margin-left: 8px;
-`;
-
-// Add compliance buttons component
-const ComplianceButtons = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
-  justify-content: center;
-`;
-
-// Add progress bar components
-const ProgressBar = styled.div`
-  width: 100%;
-  height: 8px;
-  background-color: #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 24px;
-  
-  .fill {
-    height: 100%;
-    width: ${props => `${props.progress}%`};
-    background: linear-gradient(90deg, #3f51b5 0%, #1976d2 100%);
-    border-radius: 4px;
-    transition: width 0.5s ease;
-  }
-`;
-
-const ProgressInfo = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  font-size: 14px;
-  
-  .label {
-    color: #64748b;
-  }
-  
-  .percentage {
-    font-weight: 600;
-    color: var(--color-navy);
-  }
-`;
-
-const ExportButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #3f51b5 0%, #1976d2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.3);
-  }
-`;
-
 const NoSelectionMessage = styled.div`
   display: flex;
   flex-direction: column;
@@ -770,52 +816,6 @@ const NoSelectionMessage = styled.div`
   p {
     max-width: 300px;
     margin: 0 auto;
-  }
-`;
-
-// Add other required styled components
-const TimeInputContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const TimeLabel = styled.span`
-  font-size: 14px;
-  color: #64748b;
-`;
-
-const StartTimerButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid rgba(46, 125, 50, 0.2);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  
-  &:hover {
-    background: #c8e6c9;
-  }
-`;
-
-const StopTimerButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid rgba(198, 40, 40, 0.2);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  
-  &:hover {
-    background: #ffcdd2;
   }
 `;
 
@@ -848,162 +848,6 @@ const InspectionStepForm = ({
   
   const fileInputRefs = useRef({});
   const timerRefs = useRef({});
-  
-  // Move getSections function inside the component
-  const getSections = () => {
-    // This would normally extract sections from the task data
-    // For now, return subLevels from the inspection data
-    const { subLevels } = getInspectionData();
-    return subLevels || [];
-  };
-  
-  // Add the missing calculateSectionScore function
-  const calculateSectionScore = (sectionId) => {
-    if (!task || !task.progress) {
-      return { achieved: 0, total: 0, percentage: 0 };
-    }
-    
-    // Find the progress item for this section
-    const progressItem = task.progress.find(p => 
-      p.subLevelId && (p.subLevelId.toString() === sectionId.toString() || p.subLevelId === sectionId)
-    );
-    
-    if (!progressItem) {
-      return { achieved: 0, total: 0, percentage: 0 };
-    }
-    
-    // Calculate score based on status
-    let achieved = 0;
-    const total = 2; // Assuming each section is worth 2 points
-    
-    if (progressItem.status === 'completed' || progressItem.status === 'full_compliance') {
-      achieved = 2;
-    } else if (progressItem.status === 'in_progress' || progressItem.status === 'partial_compliance') {
-      achieved = 1;
-    }
-    
-    const percentage = Math.round((achieved / total) * 100);
-    
-    return { achieved, total, percentage };
-  };
-  
-  // Add the missing calculateQuestionScore function
-  const calculateQuestionScore = (question, sectionId) => {
-    // For now, we'll return a dummy score since questions might not have 
-    // separate scoring in the current data model
-    return { achieved: 1, total: 1 };
-  };
-  
-  // Add the missing renderQuestionInput function
-  const renderQuestionInput = (question, sectionId) => {
-    if (!question) return null;
-    
-    // Get current status to determine if inputs should be disabled
-    const status = getSubLevelStatus(sectionId);
-    const isCompleted = ['completed', 'full_compliance', 'failed', 'non_compliance', 'not_applicable'].includes(status);
-    const isTaskCompleted = task && task.status === 'completed';
-    const disabled = isCompleted || isTaskCompleted;
-    
-    switch (question.type) {
-      case 'compliance':
-        return (
-          <ComplianceButtonGroup>
-            <ComplianceButton 
-              selected={status === 'full_compliance'}
-              onClick={() => !disabled && handleComplianceChange(sectionId, 'full_compliance')}
-              disabled={disabled || loading[sectionId]}
-            >
-              {loading[sectionId] ? <Loader size={16} /> : <CheckCircle size={16} />}
-              Full Compliance
-            </ComplianceButton>
-            <ComplianceButton 
-              selected={status === 'partial_compliance'}
-              onClick={() => !disabled && handleComplianceChange(sectionId, 'partial_compliance')}
-              disabled={disabled || loading[sectionId]}
-            >
-              {loading[sectionId] ? <Loader size={16} /> : <AlertCircle size={16} />}
-              Partial Compliance
-            </ComplianceButton>
-            <ComplianceButton 
-              selected={status === 'non_compliance'}
-              onClick={() => !disabled && handleComplianceChange(sectionId, 'non_compliance')}
-              disabled={disabled || loading[sectionId]}
-            >
-              {loading[sectionId] ? <Loader size={16} /> : <XCircle size={16} />}
-              Non-Compliance
-            </ComplianceButton>
-            <ComplianceButton 
-              selected={status === 'not_applicable'}
-              onClick={() => !disabled && handleComplianceChange(sectionId, 'not_applicable')}
-              disabled={disabled || loading[sectionId]}
-            >
-              {loading[sectionId] ? <Loader size={16} /> : <HelpCircle size={16} />}
-              Not Applicable
-            </ComplianceButton>
-          </ComplianceButtonGroup>
-        );
-        
-      case 'text':
-        return (
-          <TextInput 
-            type="text"
-            placeholder="Enter your answer here"
-            disabled={disabled}
-            // We would need to implement a state for question responses
-            // value={getQuestionResponse(question._id, sectionId) || ''}
-            // onChange={(e) => handleQuestionResponse(question._id, sectionId, e.target.value)}
-          />
-        );
-        
-      case 'radio':
-        return (
-          <RadioGroup>
-            {(question.options || []).map((option, idx) => (
-              <RadioOption key={idx}>
-                <RadioInput 
-                  type="radio"
-                  name={`question_${question._id}`}
-                  id={`option_${question._id}_${idx}`}
-                  disabled={disabled}
-                  // value={option.value}
-                  // checked={getQuestionResponse(question._id, sectionId) === option.value}
-                  // onChange={() => handleQuestionResponse(question._id, sectionId, option.value)}
-                />
-                <RadioLabel htmlFor={`option_${question._id}_${idx}`}>{option.label}</RadioLabel>
-              </RadioOption>
-            ))}
-          </RadioGroup>
-        );
-        
-      case 'signature':
-        return (
-          <SignatureArea>
-            <SignatureBox 
-              // onClick={() => !disabled && openSignatureCapture(question._id, sectionId)}
-              style={{
-                height: '100px',
-                border: '1px dashed #e2e8f0',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#64748b',
-                fontSize: '14px'
-              }}
-            >
-              Click to sign
-            </SignatureBox>
-          </SignatureArea>
-        );
-        
-      default:
-        return (
-          <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-            No input available for this question type.
-          </div>
-        );
-    }
-  };
   
   // Initialize from existing task data
   useEffect(() => {
@@ -1735,7 +1579,7 @@ const InspectionStepForm = ({
               <TimeInputContainer>
                 <Timer size={16} color="var(--color-navy)" />
                 <span style={{ fontSize: '14px', fontWeight: '500' }}>Time Spent (hours):</span>
-                <CustomTimeInput 
+                <TimeInput 
                   type="number" 
                   min="0" 
                   step="0.01"
@@ -1744,15 +1588,19 @@ const InspectionStepForm = ({
                   readOnly={activeTimers[subLevelId]}
                 />
                 {activeTimers[subLevelId] ? (
-                  <StopTimerButton onClick={() => stopTimer(subLevelId)}>
-                    <PauseCircle size={16} />
-                    Stop
-                  </StopTimerButton>
+                  <ActionButton 
+                    onClick={() => stopTimer(subLevelId)}
+                    style={{ backgroundColor: '#ffebee', color: '#d32f2f' }}
+                  >
+                    Stop Timer
+                  </ActionButton>
                 ) : (
-                  <StartTimerButton onClick={() => startTimer(subLevelId)}>
-                    <PlayCircle size={16} />
-                    Start
-                  </StartTimerButton>
+                  <ActionButton 
+                    onClick={() => startTimer(subLevelId)}
+                    style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}
+                  >
+                    Start Timer
+                  </ActionButton>
                 )}
               </TimeInputContainer>
             </ActionInput>
@@ -2047,7 +1895,7 @@ const InspectionStepForm = ({
                         </InputLabel>
                         
                         <TimeInputContainer>
-                          <CustomTimeInput 
+                          <TimeInput 
                             type="number" 
                             min="0" 
                             step="0.01"
@@ -2426,5 +2274,569 @@ const InputLabel = styled.div`
   gap: 8px;
 `;
 
+const TimeInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TimeLabel = styled.span`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const StartTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #c8e6c9;
+  }
+`;
+
+const StopTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid rgba(198, 40, 40, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #ffcdd2;
+  }
+`;
+
+const ComplianceButtons = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  justify-content: center;
+`;
+
+// New styled components for the linear layout
+const SectionsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+`;
+
+const SectionCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+`;
+
+const SectionHeader = styled.div`
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const SectionHeaderContent = styled.div`
+  display: flex;
+  gap: 12px;
+  flex: 1;
+`;
+
+const SectionNumber = styled.div`
+  width: 32px;
+  height: 32px;
+  background: var(--color-navy);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+`;
+
+const SectionDescription = styled.div`
+  padding: 16px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  border-bottom: 1px solid #edf2f7;
+`;
+
+const SectionScore = styled.div`
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  min-width: 120px;
+`;
+
+const ScoreTitle = styled.div`
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+`;
+
+const ScoreValue = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-navy);
+`;
+
+const ScorePercentage = styled.span`
+  font-size: 14px;
+  color: ${props => props.percent >= 80 ? '#4caf50' : props.percent >= 50 ? '#ff9800' : '#f44336'};
+  margin-left: 4px;
+`;
+
+const QuestionsContainer = styled.div`
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const QuestionCard = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
+const QuestionNumber = styled.div`
+  min-width: 24px;
+  height: 24px;
+  background: var(--color-navy-light);
+  color: var(--color-navy);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+`;
+
+const QuestionText = styled.div`
+  font-weight: 500;
+  color: #334155;
+  flex-grow: 1;
+`;
+
+const QuestionDescription = styled.div`
+  color: #64748b;
+  font-size: 14px;
+  margin-left: 36px;
+  margin-bottom: 16px;
+`;
+
+const QuestionResponseArea = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const ResponseContainer = styled.div`
+  flex: 1;
+`;
+
+const QuestionScoreBox = styled.div`
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 100px;
+  
+  @media (max-width: 768px) {
+    align-self: flex-end;
+  }
+`;
+
+const ComplianceButtonGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const ComplianceButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: ${props => props.selected ? 'var(--color-navy-light)' : 'white'};
+  color: ${props => props.selected ? 'var(--color-navy)' : '#64748b'};
+  border: 1px solid ${props => props.selected ? 'var(--color-navy)' : '#e2e8f0'};
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover:not(:disabled) {
+    background: var(--color-navy-light);
+    color: var(--color-navy);
+    border-color: var(--color-navy);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const TextInput = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+  }
+  
+  &:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+  }
+`;
+
+const RadioGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const RadioOption = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const RadioInput = styled.input`
+  cursor: pointer;
+  
+  &:disabled {
+    cursor: not-allowed;
+  }
+`;
+
+const RadioLabel = styled.label`
+  font-size: 14px;
+  color: #334155;
+  cursor: pointer;
+`;
+
+const SignatureArea = styled.div`
+  margin-top: 8px;
+`;
+
+const SignatureBox = styled.div`
+  width: 100%;
+  cursor: pointer;
+`;
+
+const ClearButton = styled.button`
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #f8fafc;
+  }
+`;
+
+const SectionFooter = styled.div`
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.5);
+  border-top: 1px solid #e2e8f0;
+`;
+
+const FooterTitle = styled.h4`
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const FooterContent = styled.div`
+  display: flex;
+  gap: 24px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const InputLabel = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TimeInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TimeLabel = styled.span`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const StartTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #c8e6c9;
+  }
+`;
+
+const StopTimerButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid rgba(198, 40, 40, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #ffcdd2;
+  }
+`;
+
+const ComplianceButtons = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  justify-content: center;
+`;
+
 export default InspectionStepForm;
 
+// Helper function to get sections
+function getSections() {
+  if (pageData && pageData.sections) {
+    return pageData.sections;
+  } else if (task?.inspectionLevel?.subLevels) {
+    return task.inspectionLevel.subLevels;
+  }
+  return [];
+}
+
+// Helper function to calculate section score
+function calculateSectionScore(sectionId) {
+  const sectionQuestions = getSections().find(s => s._id === sectionId)?.questions || [];
+  let total = 0;
+  let achieved = 0;
+  
+  // For compliance-type questions
+  sectionQuestions.forEach(question => {
+    if (question.mandatory !== false) {
+      const status = complianceStatus[sectionId];
+      total += 2; // Each question is worth 2 points max
+      
+      if (status === 'completed' || status === 'full_compliance') {
+        achieved += 2;
+      } else if (status === 'in_progress' || status === 'partial_compliance') {
+        achieved += 1;
+      }
+    }
+  });
+  
+  const percentage = total > 0 ? Math.round((achieved / total) * 100) : 0;
+  
+  return { total, achieved, percentage };
+}
+
+// Helper function to calculate question score
+function calculateQuestionScore(question, sectionId) {
+  if (question.mandatory === false) {
+    return { total: 0, achieved: 0 };
+  }
+  
+  const status = complianceStatus[sectionId];
+  const total = 2; // Each question is worth 2 points max
+  let achieved = 0;
+  
+  if (status === 'completed' || status === 'full_compliance') {
+    achieved = 2;
+  } else if (status === 'in_progress' || status === 'partial_compliance') {
+    achieved = 1;
+  }
+  
+  return { total, achieved };
+}
+
+// Function to render appropriate input based on question type
+function renderQuestionInput(question, sectionId) {
+  const status = getSubLevelStatus(sectionId);
+  const isCompleted = status === 'completed' || status === 'full_compliance';
+  const isPartial = status === 'in_progress' || status === 'partial_compliance';
+  const isFailed = status === 'failed' || status === 'incomplete' || status === 'non_compliance';
+  const isNotApplicable = status === 'not_applicable';
+  const isDisabled = isCompleted || isFailed || isNotApplicable;
+  
+  switch (question.type) {
+    case 'compliance':
+      return (
+        <ComplianceButtonGroup>
+          <ComplianceButton 
+            selected={isCompleted}
+            onClick={() => !isDisabled && handleComplianceChange(sectionId, 'full_compliance')}
+            disabled={isDisabled || loading[sectionId]}
+          >
+            <CheckCircle size={16} />
+            Full Compliance
+          </ComplianceButton>
+          <ComplianceButton 
+            selected={isPartial}
+            onClick={() => !isDisabled && handleComplianceChange(sectionId, 'partial_compliance')}
+            disabled={isDisabled || loading[sectionId]}
+          >
+            <AlertCircle size={16} />
+            Partial Compliance
+          </ComplianceButton>
+          <ComplianceButton 
+            selected={isFailed}
+            onClick={() => !isDisabled && handleComplianceChange(sectionId, 'non_compliance')}
+            disabled={isDisabled || loading[sectionId]}
+          >
+            <XCircle size={16} />
+            Non-Compliance
+          </ComplianceButton>
+          <ComplianceButton 
+            selected={isNotApplicable}
+            onClick={() => !isDisabled && handleComplianceChange(sectionId, 'not_applicable')}
+            disabled={isDisabled || loading[sectionId]}
+          >
+            <HelpCircle size={16} />
+            Not Applicable
+          </ComplianceButton>
+        </ComplianceButtonGroup>
+      );
+    case 'text':
+      return (
+        <TextInput 
+          type="text"
+          placeholder="Enter your response here..."
+          disabled={isDisabled}
+          // Additional text input handling logic would go here
+        />
+      );
+    case 'radio':
+      return (
+        <RadioGroup>
+          {(question.options || ['Yes', 'No', 'N/A']).map((option, index) => (
+            <RadioOption key={index}>
+              <RadioInput 
+                type="radio" 
+                name={`radio-${question._id}`} 
+                id={`radio-${question._id}-${index}`}
+                disabled={isDisabled}
+                // Additional radio input handling logic would go here
+              />
+              <RadioLabel htmlFor={`radio-${question._id}-${index}`}>{option}</RadioLabel>
+            </RadioOption>
+          ))}
+        </RadioGroup>
+      );
+    case 'signature':
+      return (
+        <SignatureArea>
+          {isDisabled ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+              Signature function is disabled in this compliance state
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                Sign in the area below
+              </div>
+              <SignatureBox>
+                {/* Signature component would go here */}
+                <div style={{ 
+                  height: '100px', 
+                  border: '1px dashed #cbd5e1', 
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Edit size={24} color="#94a3b8" />
+                </div>
+              </SignatureBox>
+              <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                <ClearButton>Clear Signature</ClearButton>
+              </div>
+            </>
+          )}
+        </SignatureArea>
+      );
+    default:
+      return (
+        <div style={{ padding: '12px', color: '#64748b' }}>
+          This question type is not supported.
+        </div>
+      );
+  }
+}

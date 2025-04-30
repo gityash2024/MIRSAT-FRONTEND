@@ -85,9 +85,14 @@ export const addTaskComment = createAsyncThunk(
   'tasks/addTaskComment',
   async ({ id, content }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/tasks/${id}/comments`, { content });
+      // Ensure content is a string, not an object
+      const contentToSend = typeof content === 'object' ? JSON.stringify(content) : content;
+      console.log('Sending comment content:', contentToSend, 'Type:', typeof contentToSend);
+      
+      const response = await api.post(`/tasks/${id}/comments`, { content: contentToSend });
       return response.data;
     } catch (error) {
+      console.error('Error adding comment:', error.response?.data || error);
       toast.error(error.response?.data?.message || 'Error adding comment');
       return rejectWithValue(error.response?.data);
     }

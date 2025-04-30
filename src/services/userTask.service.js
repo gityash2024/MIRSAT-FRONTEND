@@ -53,7 +53,11 @@ export const userTaskService = {
 
   // Add a comment to a task
   addTaskComment: async (taskId, content) => {
-    const response = await api.post(`/tasks/${taskId}/comments`, { content });
+    // Ensure content is a string, not an object
+    const contentToSend = typeof content === 'object' ? JSON.stringify(content) : content;
+    console.log('Service - Sending comment content:', contentToSend, 'Type:', typeof contentToSend);
+    
+    const response = await api.post(`/tasks/${taskId}/comments`, { content: contentToSend });
     return response.data;
   },
 

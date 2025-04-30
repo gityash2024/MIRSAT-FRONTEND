@@ -1125,7 +1125,7 @@ const UserTasks = () => {
       {tasks.results && tasks.results.length > 0 ? (
         <TasksGrid ref={tasksGridRef}>
           {tasks.results.map((task, index) => (
-            <TaskCard key={task._id} ref={el => cardRefs.current[index] = el}>
+            <TaskCard key={task.id} ref={el => cardRefs.current[index] = el}>
               <TaskHeader>
                 <TaskTitle>{task.title}</TaskTitle>
                 <StatusBadge status={task.status}>
@@ -1176,7 +1176,7 @@ const UserTasks = () => {
               
               <TaskActions>
                 <TaskButton 
-                  onClick={() => viewTaskDetails(task._id)}
+                  onClick={() => viewTaskDetails(task.id)}
                 >
                   View Details
                 </TaskButton>
@@ -1184,7 +1184,7 @@ const UserTasks = () => {
                 {task.status === 'pending' && (
                   <TaskButton 
                     primary
-                    onClick={() => handleStartTask(task._id)}
+                    onClick={() => handleStartTask(task.id)}
                     disabled={actionLoading}
                   >
                     {actionLoading ? (
@@ -1201,7 +1201,7 @@ const UserTasks = () => {
                 {task.status === 'in_progress' && (
                   <TaskButton 
                     primary
-                    onClick={() => viewTaskDetails(task._id)}
+                    onClick={() => viewTaskDetails(task.id)}
                   >
                     <PlayCircle size={16} />
                     Continue
