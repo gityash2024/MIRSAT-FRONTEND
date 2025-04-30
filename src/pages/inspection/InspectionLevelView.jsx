@@ -245,7 +245,7 @@ const QuestionList = styled.div`
 `;
 
 const QuestionItem = styled.div`
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--color-gray-light);
   
   &:last-child {
@@ -254,9 +254,45 @@ const QuestionItem = styled.div`
 `;
 
 const QuestionText = styled.div`
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 8px;
   color: var(--color-navy);
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const RequiredTag = styled.span`
+  background-color: #fff0f0;
+  color: #e53e3e;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-left: 8px;
+`;
+
+const QuestionDescription = styled.div`
+  color: var(--color-gray-medium);
+  font-size: 14px;
+  margin-bottom: 8px;
+`;
+
+const OptionsList = styled.div`
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const OptionItem = styled.div`
+  background-color: var(--color-offwhite);
+  color: var(--color-navy);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: inline-block;
 `;
 
 const QuestionMeta = styled.div`
@@ -379,6 +415,7 @@ const InspectionLevelView = () => {
   const [level, setLevel] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState({});
+  const [activeTab, setActiveTab] = useState('pages');
 
   useEffect(() => {
     fetchInspectionLevel();
@@ -388,56 +425,75 @@ const InspectionLevelView = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await inspectionService.getInspectionLevel(id);
       
-      // Convert old backend structure to new sets-based structure for frontend if needed
-      let processedData = data;
-      
-      // If data doesn't have sets but has subLevels, convert to new format
-      if (!data.sets || !Array.isArray(data.sets) || data.sets.length === 0) {
-        processedData = {
+      try {
+        const data = await inspectionService.getInspectionLevel(id);
+        console.log('Retrieved template data:', data);
+        
+        // Process the data to ensure consistent format for display
+        let processedData = {
           ...data,
-          sets: [{
-            id: Date.now(),
-            name: data.name ? `${data.name} Set` : 'Main Set',
-            description: data.description || 'Main inspection set',
-            subLevels: data.subLevels || [],
-            questions: data.questions || [],
-            generalQuestions: []
-          }]
+          // Ensure these fields exist
+          pages: data.pages || [],
+          subLevels: data.subLevels || []
         };
+        
+        setLevel(processedData);
+        setLoading(false);
+      } catch (error) {
+        throw error;
       }
-      
-      setLevel(processedData);
-      setLoading(false);
     } catch (err) {
       console.error('Error fetching inspection level:', err);
-      setError(err);
+      setError(err.message || 'Failed to fetch inspection level');
       setLoading(false);
-      toast.error('Failed to load template data');
+      toast.error(`Failed to load template data: ${err.message}`);
     }
   };
 
   const handleDelete = async () => {
     try {
       setLoading(true);
-      await inspectionService.deleteInspectionLevel(id);
-      toast.success('Template deleted successfully');
-      navigate('/inspection');
-    } catch (err) {
-      console.error('Error deleting inspection level:', err);
-      toast.error('Failed to delete template');
+      
+      try {
+        await inspectionService.deleteInspectionLevel(id);
+        toast.success('Template deleted successfully');
+        navigate('/inspection');
+      } catch (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error(`Failed to delete template: ${error.message}`);
+    } finally {
       setLoading(false);
+      setShowDeleteModal(false);
     }
   };
 
   const handlePublish = async () => {
     try {
-      // Implement publish logic
-      toast.success('Template published successfully');
-    } catch (err) {
-      console.error('Error publishing template:', err);
-      toast.error('Failed to publish template');
+      setLoading(true);
+      
+      // Create publish data with status set to active
+      const publishData = {
+        ...level,
+        status: 'active'
+      };
+      
+      try {
+        await inspectionService.updateInspectionLevel(id, publishData);
+        toast.success('Template published successfully');
+        // Refresh the data
+        window.location.reload();
+      } catch (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error publishing template:', error);
+      toast.error(`Failed to publish template: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -469,8 +525,15 @@ const InspectionLevelView = () => {
     if (data.sets && Array.isArray(data.sets)) {
       data.sets.forEach(set => {
         // Count general questions
-        questionCount += set.generalQuestions?.length || 0;
+        if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
+          questionCount += set.generalQuestions.length;
+        }
       
+        // Count questions directly in the set
+        if (set.questions && Array.isArray(set.questions)) {
+          questionCount += set.questions.length;
+        }
+        
         // Count from subLevels recursively
         const countFromSubLevels = (subLevels) => {
           if (!subLevels || !Array.isArray(subLevels)) return;
@@ -478,7 +541,9 @@ const InspectionLevelView = () => {
           levelCount += subLevels.length;
           
           subLevels.forEach(level => {
-            questionCount += level.questions?.length || 0;
+            if (level.questions && Array.isArray(level.questions)) {
+              questionCount += level.questions.length;
+            }
             countFromSubLevels(level.subLevels);
           });
         };
@@ -487,7 +552,9 @@ const InspectionLevelView = () => {
       });
     } else {
       // Legacy structure
-      questionCount += data.questions?.length || 0;
+      if (data.questions && Array.isArray(data.questions)) {
+        questionCount += data.questions.length;
+      }
       
       const countFromSubLevels = (subLevels) => {
         if (!subLevels || !Array.isArray(subLevels)) return;
@@ -495,7 +562,9 @@ const InspectionLevelView = () => {
         levelCount += subLevels.length;
         
         subLevels.forEach(level => {
-          questionCount += level.questions?.length || 0;
+          if (level.questions && Array.isArray(level.questions)) {
+            questionCount += level.questions.length;
+          }
           countFromSubLevels(level.subLevels);
         });
       };
@@ -508,15 +577,24 @@ const InspectionLevelView = () => {
   
   // Count questions in a set
   const countSetQuestions = (set) => {
-    let count = set.questions?.length || 0;
-    count += set.generalQuestions?.length || 0;
+    let count = 0;
+    
+    if (set.questions && Array.isArray(set.questions)) {
+      count += set.questions.length;
+    }
+    
+    if (set.generalQuestions && Array.isArray(set.generalQuestions)) {
+      count += set.generalQuestions.length;
+    }
     
     const countFromSubLevels = (subLevels) => {
       if (!subLevels || !Array.isArray(subLevels)) return 0;
       
       let total = 0;
       subLevels.forEach(level => {
-        total += level.questions?.length || 0;
+        if (level.questions && Array.isArray(level.questions)) {
+          total += level.questions.length;
+        }
         total += countFromSubLevels(level.subLevels);
       });
       
@@ -659,6 +737,222 @@ const InspectionLevelView = () => {
     );
   };
 
+  // Render pages and sections in a hierarchical structure
+  const renderPagesAndSections = () => {
+    if (!level || !level.pages || level.pages.length === 0) {
+      return (
+        <div style={{
+          padding: '16px',
+          textAlign: 'center',
+          color: 'var(--color-gray-medium)',
+          background: 'var(--color-offwhite)',
+          borderRadius: '8px'
+        }}>
+          No pages or sections defined for this template
+        </div>
+      );
+    }
+    
+    return (
+      <div>
+        {level.pages.map((page, pageIndex) => {
+          const pageId = page._id || page.id || `page-${pageIndex}`;
+          const isPageExpanded = expandedNodes[pageId];
+          
+          return (
+            <div key={pageId} style={{ marginBottom: '16px' }}>
+              <div 
+                style={{
+                  background: 'var(--color-navy)',
+                  color: 'white',
+                  padding: '12px 16px',
+                  borderRadius: '8px 8px 0 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+                onClick={() => toggleNodeExpanded(pageId)}
+              >
+                {isPageExpanded ? (
+                  <ChevronDown size={18} style={{ marginRight: '8px' }} />
+                ) : (
+                  <ChevronRight size={18} style={{ marginRight: '8px' }} />
+                )}
+                <strong style={{ flex: 1 }}>Page {pageIndex + 1}: {page.name}</strong>
+                {page.sections && (
+                  <span style={{ fontSize: '13px', opacity: 0.7 }}>
+                    {page.sections.length} section{page.sections.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              
+              {isPageExpanded && (
+                <div style={{ 
+                  border: '1px solid #e2e8f0', 
+                  borderTop: 'none', 
+                  borderRadius: '0 0 8px 8px',
+                  overflow: 'hidden'
+                }}>
+                  {page.description && (
+                    <div style={{ 
+                      padding: '12px 16px', 
+                      borderBottom: '1px solid #e2e8f0',
+                      fontSize: '14px',
+                      background: '#f8fafc'
+                    }}>
+                      {page.description}
+                    </div>
+                  )}
+                  
+                  {page.sections && page.sections.length > 0 ? (
+                    page.sections.map((section, sectionIndex) => {
+                      const sectionId = section._id || section.id || `section-${pageIndex}-${sectionIndex}`;
+                      const isSectionExpanded = expandedNodes[sectionId];
+                      const questionCount = section.questions?.length || 0;
+                      
+                      return (
+                        <div key={sectionId}>
+                          <div 
+                            style={{
+                              background: '#f1f5f9',
+                              padding: '10px 16px',
+                              borderBottom: '1px solid #e2e8f0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => toggleNodeExpanded(sectionId)}
+                          >
+                            {isSectionExpanded ? (
+                              <ChevronDown size={16} style={{ marginRight: '8px' }} />
+                            ) : (
+                              <ChevronRight size={16} style={{ marginRight: '8px' }} />
+                            )}
+                            <strong style={{ flex: 1 }}>Section {sectionIndex + 1}: {section.name}</strong>
+                            {questionCount > 0 && (
+                              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                {questionCount} question{questionCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {isSectionExpanded && (
+                            <div>
+                              {section.description && (
+                                <div style={{ 
+                                  padding: '10px 16px', 
+                                  borderBottom: '1px solid #e2e8f0',
+                                  fontSize: '13px',
+                                  background: '#f8fafc',
+                                  fontStyle: 'italic',
+                                  color: '#64748b'
+                                }}>
+                                  {section.description}
+                                </div>
+                              )}
+                              
+                              {section.questions && section.questions.length > 0 ? (
+                                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                                  {section.questions.map((question, questionIndex) => (
+                                    <li 
+                                      key={question._id || question.id || `q-${questionIndex}`}
+                                      style={{
+                                        padding: '12px 16px 12px 24px',
+                                        borderBottom: questionIndex < section.questions.length - 1 ? '1px solid #e2e8f0' : 'none',
+                                        background: 'white'
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                        <div style={{ 
+                                          minWidth: '24px', 
+                                          height: '24px', 
+                                          background: '#f1f5f9', 
+                                          color: '#64748b',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: '12px',
+                                          fontSize: '12px',
+                                          fontWeight: '500',
+                                          marginTop: '2px'
+                                        }}>
+                                          {questionIndex + 1}
+                                        </div>
+                                        <div>
+                                          <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+                                            {question.text}
+                                          </div>
+                                          {question.description && (
+                                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+                                              {question.description}
+                                            </div>
+                                          )}
+                                          {question.options && question.options.length > 0 && (
+                                            <div style={{ 
+                                              display: 'flex', 
+                                              flexWrap: 'wrap', 
+                                              gap: '6px',
+                                              marginTop: '8px'
+                                            }}>
+                                              {question.options.map((option, optionIndex) => (
+                                                <div 
+                                                  key={optionIndex}
+                                                  style={{
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    background: '#e2e8f0',
+                                                    fontSize: '12px',
+                                                    color: '#475569'
+                                                  }}
+                                                >
+                                                  {option}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div style={{ 
+                                  padding: '12px 16px',
+                                  background: 'white',
+                                  color: '#94a3b8',
+                                  textAlign: 'center',
+                                  fontStyle: 'italic',
+                                  fontSize: '13px'
+                                }}>
+                                  No questions in this section
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{ 
+                      padding: '16px',
+                      textAlign: 'center',
+                      color: '#94a3b8',
+                      background: 'white',
+                      fontStyle: 'italic',
+                      fontSize: '13px'
+                    }}>
+                      No sections in this page
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <InspectionLayout 
@@ -713,7 +1007,8 @@ const InspectionLevelView = () => {
       onPublish={handlePublish}
       baseUrl={`/inspection/${id}`}
       lastPublished={level.updatedAt ? new Date(level.updatedAt).toLocaleString() : null}
-          >
+      showBuildTabOnly={true}
+    >
       <PageContainer>
         <SummarySection>
           <SummaryCard color="var(--color-navy)">
@@ -739,8 +1034,11 @@ const InspectionLevelView = () => {
               {questionCount} Questions
             </SummaryValue>
             <SummaryDescription>
-              {level.questions?.filter(q => q.required !== false).length || 0} Required • 
-              {level.questions?.filter(q => q.required === false).length || 0} Optional
+              {level.questions && Array.isArray(level.questions) ? 
+                `${level.questions.filter(q => q.required !== false).length || 0} Required • 
+                 ${level.questions.filter(q => q.required === false).length || 0} Optional` : 
+                 'No direct questions'
+              }
             </SummaryDescription>
           </SummaryCard>
           
@@ -781,6 +1079,7 @@ const InspectionLevelView = () => {
             Edit Template
           </Button>
           
+          {/* Duplicate button commented out as requested
           <Button 
             variant="secondary"
             onClick={handleDuplicate}
@@ -788,6 +1087,7 @@ const InspectionLevelView = () => {
             <Copy size={16} />
             Duplicate
           </Button>
+          */}
           
           <Button 
             variant="danger"
@@ -798,102 +1098,160 @@ const InspectionLevelView = () => {
           </Button>
         </ButtonGroup>
 
-      <ContentGrid>
-        <div>
-          <Card>
-            <CardTitle>
-                <Layers size={18} />
-                Template Structure
-            </CardTitle>
-              <p style={{ marginBottom: '20px', color: 'var(--color-gray-medium)', fontSize: '14px' }}>
-                {level.description || 'No description provided for this template.'}
-              </p>
-            <LevelHierarchy>
-              {level.sets && Array.isArray(level.sets) && level.sets.length > 0 ? (
-                level.sets.map((set, setIndex) => {
-                  // Count sublevels for this set, including nested ones
-                  const subLevelCount = set.subLevels?.length || 0;
-                  const questionCount = countSetQuestions(set);
-                  
-                  return (
-                      <CollapsibleSection
-                        key={set.id || setIndex}
-                        title={set.name || `Set ${setIndex + 1}`}
-                        number={setIndex + 1}
-                        isInitiallyExpanded={setIndex === 0}
-                        questionsCount={questionCount}
-                        completedCount={0}
-                        status="pending"
-                      >
-                        <div>
-                          {set.description && (
-                            <p style={{ marginBottom: '16px', color: 'var(--color-gray-medium)' }}>
-                              {set.description}
-                            </p>
-                          )}
-                          {renderLevelHierarchy(set.subLevels || [])}
-                    </div>
-                      </CollapsibleSection>
-                  );
-                })
-              ) : (
-                  // Legacy structure - use top-level subLevels directly
-                  renderLevelHierarchy(level.subLevels || [])
-              )}
-            </LevelHierarchy>
-          </Card>
-
-          <QuestionnaireCard>
-            <CardTitle>
-                <ListChecks size={18} />
-                Template Questions
-            </CardTitle>
+        <ContentGrid>
+          <div>
+            {/* Tab Navigation */}
+            <div style={{ 
+              display: 'flex', 
+              borderBottom: '1px solid #e2e8f0', 
+              marginBottom: '20px'
+            }}>
+              <div
+                onClick={() => setActiveTab('pages')}
+                style={{
+                  padding: '12px 20px',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === 'pages' ? '2px solid var(--color-navy)' : '2px solid transparent',
+                  color: activeTab === 'pages' ? 'var(--color-navy)' : '#757575',
+                  fontWeight: activeTab === 'pages' ? '500' : 'normal',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Layers size={16} />
+                Pages & Sections
+              </div>
+              
+              <div
+                onClick={() => setActiveTab('sublevels')}
+                style={{
+                  padding: '12px 20px',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === 'sublevels' ? '2px solid var(--color-navy)' : '2px solid transparent',
+                  color: activeTab === 'sublevels' ? 'var(--color-navy)' : '#757575',
+                  fontWeight: activeTab === 'sublevels' ? '500' : 'normal',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <ListChecks size={16} />
+                Sublevel Structure
+              </div>
+            </div>
             
-              {level.sets && Array.isArray(level.sets) && level.sets.length > 0 ? (
-                level.sets.map((set, setIndex) => (
-                  <CollapsibleSection
-                    key={`questions-${set.id || setIndex}`}
-                    title={`${set.name || `Set ${setIndex + 1}`} Questions`}
-                    number={`Q${setIndex + 1}`}
-                    isInitiallyExpanded={false}
-                    questionsCount={countSetQuestions(set)}
-                    completedCount={0}
-                    status="pending"
-                  >
-                    {renderQuestions(set)}
-                  </CollapsibleSection>
-                ))
+            <Card>
+              <CardTitle>
+                {activeTab === 'pages' ? (
+                  <>
+                    <Layers size={18} />
+                    Template Pages & Sections
+                  </>
+                ) : (
+                  <>
+                    <ListChecks size={18} />
+                    Inspection Levels Hierarchy
+                  </>
+                )}
+              </CardTitle>
+              
+              {activeTab === 'pages' ? (
+                <div>
+                  {level.pages && level.pages.length > 0 ? (
+                    renderPagesAndSections()
+                  ) : (
+                    <div style={{
+                      padding: '24px',
+                      textAlign: 'center',
+                      color: 'var(--color-gray-medium)',
+                      background: 'var(--color-offwhite)',
+                      borderRadius: '8px'
+                    }}>
+                      This template uses the legacy structure. Use the "Sublevel Structure" tab to view it.
+                    </div>
+                  )}
+                </div>
               ) : (
-                renderQuestions({ questions: level.questions || [] })
-            )}
-          </QuestionnaireCard>
-        </div>
-
-        <div>
-          <Card>
-            <CardTitle>
-              <Activity size={18} />
-              Performance Metrics
-            </CardTitle>
-            <StatsList>
-              <StatCard>
-                <StatLabel>Completed Tasks</StatLabel>
-                <StatValue>{level.metrics?.completedTasks || 0}</StatValue>
-              </StatCard>
-              <StatCard>
-                <StatLabel>Active Inspectors</StatLabel>
-                <StatValue>{level.metrics?.activeInspectors || 0}</StatValue>
-              </StatCard>
-              <StatCard>
-                <StatLabel>Avg. Completion Time</StatLabel>
-                  <StatValue>{level.metrics?.avgCompletionTime || 'N/A'}</StatValue>
-              </StatCard>
-              <StatCard>
-                <StatLabel>Compliance Rate</StatLabel>
-                  <StatValue>{level.metrics?.complianceRate || 'N/A'}</StatValue>
-              </StatCard>
-            </StatsList>
-          </Card>
+                <LevelHierarchy>
+                  {level.sets && level.sets.length > 0 ? (
+                    level.sets.map((set, index) => (
+                      <CollapsibleSection 
+                        key={set.id || set._id || index}
+                        title={`${set.name || `Set ${index + 1}`}`}
+                        subtitle={`${countSetQuestions(set)} questions`}
+                        defaultOpen={index === 0}
+                      >
+                        {renderLevelHierarchy(set.subLevels)}
+                      </CollapsibleSection>
+                    ))
+                  ) : (
+                    renderLevelHierarchy(level.subLevels)
+                  )}
+                </LevelHierarchy>
+              )}
+            </Card>
+            
+            <QuestionnaireCard>
+              <CardTitle>
+                <ListChecks size={18} />
+                Questionnaire
+              </CardTitle>
+              
+              {level.questions && level.questions.length > 0 ? (
+                <QuestionList>
+                  {level.questions.map((question, index) => (
+                    <QuestionItem key={question._id || question.id || index}>
+                      <QuestionText>
+                        {index + 1}. {question.text}
+                        {question.required && <RequiredTag>Required</RequiredTag>}
+                      </QuestionText>
+                      {question.description && (
+                        <QuestionDescription>{question.description}</QuestionDescription>
+                      )}
+                      {question.options && question.options.length > 0 && (
+                        <OptionsList>
+                          {question.options.map((option, optIndex) => (
+                            <OptionItem key={optIndex}>{option}</OptionItem>
+                          ))}
+                        </OptionsList>
+                      )}
+                    </QuestionItem>
+                  ))}
+                </QuestionList>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-gray-medium)' }}>
+                  No general questions available
+                </div>
+              )}
+            </QuestionnaireCard>
+          </div>
+          
+          <div>
+            <Card>
+              <CardTitle>
+                <Activity size={18} />
+                Performance Metrics
+              </CardTitle>
+              <StatsList>
+                <StatCard>
+                  <StatLabel>Completed Tasks</StatLabel>
+                  <StatValue>{level.metrics?.completedTasks || 0}</StatValue>
+                </StatCard>
+                <StatCard>
+                  <StatLabel>Active Inspectors</StatLabel>
+                  <StatValue>{level.metrics?.activeInspectors || 0}</StatValue>
+                </StatCard>
+                <StatCard>
+                  <StatLabel>Avg. Completion Time</StatLabel>
+                    <StatValue>{level.metrics?.avgCompletionTime || 'N/A'}</StatValue>
+                </StatCard>
+                <StatCard>
+                  <StatLabel>Compliance Rate</StatLabel>
+                    <StatValue>{level.metrics?.complianceRate || 'N/A'}</StatValue>
+                </StatCard>
+              </StatsList>
+            </Card>
 
             <Card style={{ marginTop: '24px' }}>
               <CardTitle>
@@ -916,35 +1274,10 @@ const InspectionLevelView = () => {
                   Schedule Inspection
                 </Button>
               </div>
-          </Card>
-
-          <Card style={{ marginTop: '24px' }}>
-            <CardTitle>
-              <FileText size={18} />
-                Recent Reports
-            </CardTitle>
-              
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '32px 0', 
-                color: 'var(--color-gray-medium)'
-              }}>
-                <FileText size={24} style={{ marginBottom: '16px', opacity: 0.6 }} />
-                <p>No reports generated yet</p>
-                <Button
-                  as={Link}
-                  to={`/inspection/${id}/report`}
-                  variant="secondary"
-                  style={{ margin: '16px auto 0', display: 'inline-flex' }}
-                >
-                  <Eye size={16} />
-                  View Report Template
-                </Button>
-              </div>
-          </Card>
-        </div>
-      </ContentGrid>
-    </PageContainer>
+            </Card>
+          </div>
+        </ContentGrid>
+      </PageContainer>
 
       {showDeleteModal && (
         <Modal>

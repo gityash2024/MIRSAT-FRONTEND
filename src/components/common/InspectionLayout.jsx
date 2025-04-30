@@ -240,7 +240,8 @@ const InspectionLayout = ({
   onSave,
   onPublish,
   baseUrl = '',
-  saveStatus = 'saved'
+  saveStatus = 'saved',
+  showBuildTabOnly = false
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -248,107 +249,133 @@ const InspectionLayout = ({
   
   // Check which tab is active based on the path
   const isReportTab = path.includes('/report');
+  const isSettingsTab = path.includes('/settings');
+  const isPreviewTab = path.includes('/preview');
   
-  // Handle navigation
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      navigate(-1);
+      navigate('/inspection');
     }
   };
   
-  // Get status text based on save status
   const getStatusText = () => {
-    switch(saveStatus) {
-      case 'saving':
-        return 'Saving changes...';
-      case 'error':
-        return 'Error saving changes';
-      case 'pending':
-        return 'Unsaved changes';
-      case 'saved':
-      default:
-        return 'Changes saved automatically';
-    }
+    if (saveStatus === 'saved') return 'All changes saved';
+    if (saveStatus === 'saving') return 'Saving changes...';
+    if (saveStatus === 'error') return 'Error saving changes';
+    return 'Unsaved changes';
   };
   
-  // Get icon based on save status
   const getStatusIcon = () => {
-    switch(saveStatus) {
-      case 'saving':
-        return <Clock size={14} />;
-      case 'error':
-        return <AlertCircle size={14} />;
-      case 'pending':
-        return <AlertCircle size={14} />;
-      case 'saved':
-      default:
-        return <Save size={14} />;
-    }
+    if (saveStatus === 'saved') return <Save size={14} />;
+    if (saveStatus === 'saving') return <Clock size={14} />;
+    if (saveStatus === 'error') return <AlertCircle size={14} />;
+    return <Clock size={14} />;
   };
-  
+
   return (
     <PageWrapper>
       <Header>
         <HeaderLeft>
           <BackButton onClick={handleBack}>
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
             Back
           </BackButton>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: '18px', 
+            fontWeight: '600', 
+            color: 'var(--color-navy)'
+          }}>
+            {title}
+          </h1>
         </HeaderLeft>
-        
         <HeaderRight>
-          {onPublish && (
+          {/* Additional buttons rendered based on path */}
+          {path.includes('/edit') && onSave && (
+            <SaveButton onClick={onSave}>
+              <Save size={16} />
+              Save Template
+            </SaveButton>
+          )}
+          
+          {onPublish && !path.includes('/edit') && (
             <PublishButton onClick={onPublish}>
+              <LayoutTemplate size={16} />
               Publish
             </PublishButton>
           )}
           
-          <HelpButton>
+          {/* Question icon removed */}
+          
+          {/* Settings icon removed */}
+          
+          <HelpButton title="Help">
             <HelpCircle size={18} />
           </HelpButton>
-          
-          <SettingsButton>
-            <Settings size={18} />
-          </SettingsButton>
         </HeaderRight>
       </Header>
       
-      <TabsContainer>
-        <TabItem isActive={!isReportTab}>
-          <TabLink to={`${baseUrl}/build`} isActive={!isReportTab}>
-            <TabLabel>
-              <TabNumber isActive={!isReportTab}>1</TabNumber>
-              Build
-            </TabLabel>
-          </TabLink>
-        </TabItem>
-        
-        <TabItem isActive={isReportTab}>
-          <TabLink to={`${baseUrl}/report`} isActive={isReportTab}>
-            <TabLabel>
-              <TabNumber isActive={isReportTab}>2</TabNumber>
-              Report
-            </TabLabel>
-          </TabLink>
-        </TabItem>
-      </TabsContainer>
+      {path.includes('/edit') && (
+        <TabsContainer>
+          <TabItem isActive={!isReportTab && !isSettingsTab && !isPreviewTab}>
+            <TabLink 
+              to={`${baseUrl}/edit/build`}
+              isActive={!isReportTab && !isSettingsTab && !isPreviewTab}
+            >
+              <TabLabel>
+                <TabNumber isActive={!isReportTab && !isSettingsTab && !isPreviewTab}>1</TabNumber>
+                Build Template
+              </TabLabel>
+            </TabLink>
+          </TabItem>
+          
+          {!showBuildTabOnly && (
+            <>
+              <TabItem isActive={isReportTab}>
+                <TabLink 
+                  to={`${baseUrl}/edit/report`}
+                  isActive={isReportTab}
+                >
+                  <TabLabel>
+                    <TabNumber isActive={isReportTab}>2</TabNumber>
+                    Reports
+                  </TabLabel>
+                </TabLink>
+              </TabItem>
+              
+              <TabItem isActive={isSettingsTab}>
+                <TabLink 
+                  to={`${baseUrl}/edit/settings`}
+                  isActive={isSettingsTab}
+                >
+                  <TabLabel>
+                    <TabNumber isActive={isSettingsTab}>3</TabNumber>
+                    Settings
+                  </TabLabel>
+                </TabLink>
+              </TabItem>
+            </>
+          )}
+        </TabsContainer>
+      )}
       
-      <StatusBar>
-        <StatusText status={saveStatus}>
-          <span>
-            {getStatusIcon()}
-            {getStatusText()}
-          </span>
-        </StatusText>
-        
-        {lastPublished && (
-          <LastPublished>
-            Last saved: {lastPublished}
-          </LastPublished>
-        )}
-      </StatusBar>
+      {path.includes('/edit') && (
+        <StatusBar>
+          <StatusText status={saveStatus}>
+            <span>
+              {getStatusIcon()}
+              {getStatusText()}
+            </span>
+          </StatusText>
+          {lastPublished && (
+            <LastPublished>
+              Last published: {lastPublished}
+            </LastPublished>
+          )}
+        </StatusBar>
+      )}
       
       <ContentWrapper>
         {children}

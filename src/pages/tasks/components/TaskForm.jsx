@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
 import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
@@ -13,7 +13,6 @@ import DatePicker from '../../../components/ui/DatePicker';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
 import { fetchAssets } from '../../../store/slices/assetSlice';
-import Skeleton from '../../../components/ui/Skeleton';
 
 const Form = styled.form`
   display: grid;
@@ -49,7 +48,7 @@ const Input = styled.input`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: var(--color-navy);
+    border-color: #1a237e;
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -64,7 +63,7 @@ const TextArea = styled.textarea`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: var(--color-navy);
+    border-color: #1a237e;
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -78,7 +77,7 @@ const Select = styled.select`
   transition: all 0.3s;
   &:focus {
     outline: none;
-    border-color: var(--color-navy);
+    border-color: #1a237e;
     box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
@@ -158,7 +157,7 @@ const ToggleIndicator = styled.div`
   position: relative;
   width: 40px;
   height: 20px;
-  background: ${props => props.checked ? 'var(--color-navy)' : '#e0e0e0'};
+  background: ${props => props.checked ? '#1a237e' : '#e0e0e0'};
   border-radius: 20px;
   padding: 2px;
   transition: all 0.3s;
@@ -181,7 +180,7 @@ const AttachmentSection = styled.div`
   text-align: center;
   transition: all 0.3s;
   &:hover {
-    border-color: var(--color-navy);
+    border-color: #1a237e;
   }
 `;
 
@@ -232,7 +231,7 @@ const AttachmentProgress = styled.div`
 const ProgressBar = styled.div`
   width: ${props => props.progress}%;
   height: 100%;
-  background: var(--color-navy);
+  background: #1a237e;
   transition: width 0.3s ease;
 `;
 
@@ -260,7 +259,7 @@ const Button = styled.button`
   transition: all 0.3s;
   cursor: pointer;
   ${props => props.variant === 'primary' ? `
-    background: var(--color-navy);
+    background: #1a237e;
     color: white;
     border: none;
     &:hover {
@@ -272,8 +271,8 @@ const Button = styled.button`
     }
   ` : `
     background: white;
-    color: var(--color-navy);
-    border: 1px solid var(--color-navy);
+    color: #1a237e;
+    border: 1px solid #1a237e;
     &:hover {
       background: #f5f7fb;
     }
@@ -283,7 +282,7 @@ const Button = styled.button`
 const SectionTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-navy);
+  color: #1a237e;
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e0e0e0;
@@ -337,7 +336,7 @@ const UserPickerButton = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: var(--color-navy);
+    color: #1a237e;
   }
 `;
 
@@ -388,7 +387,7 @@ const AdvancedToggle = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: var(--color-navy);
+    color: #1a237e;
   }
 `;
 
@@ -407,7 +406,7 @@ const UploadButton = styled.button`
   gap: 8px;
   color: #64748b;
   &:hover {
-    color: var(--color-navy);
+    color: #1a237e;
   }
   ${props => props.disabled && `
     opacity: 0.7;
@@ -428,76 +427,31 @@ const IconButton = styled.button`
   cursor: pointer;
   color: #64748b;
   &:hover {
-    color: var(--color-navy);
+    color: #1a237e;
   }
 `;
 
-// Create a TaskFormSkeleton component
-const TaskFormSkeleton = () => (
-  <div style={{ display: 'grid', gap: '24px' }}>
-    {/* Title field */}
-    <Skeleton.Form.Field>
-      <Skeleton.Form.Label width="80px" />
-      <Skeleton.Form.Input height="42px" />
-    </Skeleton.Form.Field>
-    
-    {/* Description field */}
-    <Skeleton.Form.Field>
-      <Skeleton.Form.Label width="100px" />
-      <Skeleton.Form.Input height="120px" />
-    </Skeleton.Form.Field>
-    
-    {/* Priority and Deadline row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
-      <Skeleton.Form.Field>
-        <Skeleton.Form.Label width="70px" />
-        <Skeleton.Form.Input height="42px" />
-      </Skeleton.Form.Field>
-      <Skeleton.Form.Field>
-        <Skeleton.Form.Label width="80px" />
-        <Skeleton.Form.Input height="42px" />
-      </Skeleton.Form.Field>
-    </div>
-    
-    {/* Location field */}
-    <Skeleton.Form.Field>
-      <Skeleton.Form.Label width="80px" />
-      <Skeleton.Form.Input height="42px" />
-    </Skeleton.Form.Field>
-    
-    {/* Assigned Users field */}
-    <Skeleton.Form.Field>
-      <Skeleton.Form.Label width="130px" />
-      <Skeleton.Form.Input height="60px" />
-    </Skeleton.Form.Field>
-    
-    {/* Template row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
-      <Skeleton.Form.Field>
-        <Skeleton.Form.Label width="150px" />
-        <Skeleton.Form.Input height="42px" />
-      </Skeleton.Form.Field>
-      <div></div>
-    </div>
-    
-    {/* Toggle switch */}
-    <Skeleton.Form.Field>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Skeleton.Base width="40px" height="20px" radius="20px" />
-        <Skeleton.Base width="50px" height="16px" />
-      </div>
-    </Skeleton.Form.Field>
-    
-    {/* Advanced Options button */}
-    <Skeleton.Base width="140px" height="24px" />
-    
-    {/* Button group */}
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-      <Skeleton.Button width="90px" />
-      <Skeleton.Button width="90px" />
-    </div>
-  </div>
-);
+const UsersContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const UserBadge = styled.span`
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+`;
+
+const NoUsersText = styled.span`
+  color: #64748b;
+  font-size: 12px;
+`;
 
 const TaskForm = ({ 
   initialData = {}, 
@@ -506,45 +460,62 @@ const TaskForm = ({
   isSubmitting: propIsSubmitting = false,
   usersProp = [],
   inspectionLevelsProp = [],
-  isEdit = false
+  assetsProp = []
 }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
-  const userDropdownRef = useRef(null);
   const stateUsers = useSelector(state => state.users.users);
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
-  const usersLoading = useSelector(state => state.users.loading);
-  const inspectionLevelsLoading = useSelector(state => state.inspectionLevels?.loading);
-  const { assets = [] } = useSelector(state => state.assets || { assets: [] });
-  
-  const initialLoading = (usersProp.length === 0 && usersLoading) || 
-                         (inspectionLevelsProp.length === 0 && inspectionLevelsLoading);
+  const stateAssets = useSelector(state => state.assets?.assets);
 
   let users = usersProp.length > 0 ? usersProp : stateUsers;
   users = users?.filter(user => user.role === 'inspector');
   const inspectionLevels = inspectionLevelsProp.length > 0 ? inspectionLevelsProp : stateInspectionLevels;
+  const assets = assetsProp.length > 0 ? assetsProp : stateAssets;
+
+  // Helper function to extract user IDs from various formats
+  const extractUserIds = (assignedUsers) => {
+    if (!assignedUsers || !Array.isArray(assignedUsers)) return [];
+    
+    return assignedUsers
+      .filter(user => user != null)
+      .map(user => {
+        // Handle if user is directly an ID string
+        if (typeof user === 'string') return user;
+        // Handle if user is an object with _id
+        if (user && user._id) return user._id;
+        // Handle if user is directly an ID
+        return user;
+      })
+      .filter(id => id && id !== 'undefined');
+  };
 
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     description: initialData.description || '',
-    assignedTo: initialData.assignedTo?.map(user => typeof user === 'object' ? user._id : user) || [],
-    status: initialData.status || 'pending',
     priority: initialData.priority || 'medium',
-    deadline: initialData.deadline ? new Date(initialData.deadline) : null,
-    location: initialData.location || '',
-    inspectionLevel: initialData.inspectionLevel?._id || initialData.inspectionLevel || '',
-    asset: initialData.asset?._id || initialData.asset || '',
+    status: initialData.status || 'open',
+    dueDate: initialData.dueDate ? new Date(initialData.dueDate) : null,
+    assignedTo: extractUserIds(initialData.assignedTo),
+    inspectionLevel: initialData.inspectionLevel?._id || '',
+    asset: initialData.asset?._id || '',
     isActive: initialData.isActive !== undefined ? initialData.isActive : true,
     attachments: initialData.attachments || []
   });
   
   const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
   const [errors, setErrors] = useState({});
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
-  const [showAdvanced, setShowAdvanced] = useState(isEdit);
-
+  useEffect(() => {
+    // Debug logging for initialData
+    console.log('Initial data passed to TaskForm:', initialData);
+    if (initialData && initialData._id) {
+      console.log('Task ID for form:', initialData._id);
+    }
+  }, [initialData]);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -553,45 +524,57 @@ const TaskForm = ({
     setIsSubmitting(true);
     
     try {
+      // Get the selected user ID
+      const userId = formData.assignedTo.length > 0 ? formData.assignedTo[0] : null;
+      
+      // Get task ID - handle both id and _id formats
+      const taskId = initialData?.id || initialData?._id;
+      let selectedUserId=users?.filter(user=>user.name===userId)[0]?.id
+      
       // Prepare task data
       const taskData = {
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
-        deadline: formData.deadline,
-        location: formData.location,
-        assignedTo: formData.assignedTo,
+        status: formData.status,
+        deadline: formData.dueDate, // Map dueDate to deadline for backend compatibility
+        location: formData.location || '',
+        assignedTo: [selectedUserId]||[], // Send as array
         inspectionLevel: formData.inspectionLevel,
-        asset: formData.asset || null, // Ensure we handle empty string case properly
+        asset: formData.asset || undefined, // Include asset ID if selected
         isActive: formData.isActive,
         attachments: formData.attachments
       };
       
-      console.log('Submitting task data:', taskData);
-      console.log('Asset being submitted:', taskData.asset);
-      
       // Call API to create or update task
-      if (initialData._id) {
+      if (initialData && taskId) {
+        // Ensure we have a valid ID before attempting update
+        if (taskId === 'undefined') {
+          throw new Error('Invalid task ID for update operation');
+        }
+        
+        console.log('Updating task with ID:', taskId);
+        
         // For updates, ensure we're passing the correct ID and data format
         const updateResult = await dispatch(updateTask({ 
-          id: initialData._id, 
+          id: taskId, 
           data: taskData 
         })).unwrap();
-        
-        console.log('Task update result:', updateResult);
         
         if (updateResult) {
           toast.success('Task updated successfully');
           if (onCancel) onCancel(updateResult); // Pass the updated task back
         }
       } else {
+        console.log('Creating new task');
+        
         const createResult = await dispatch(createTask(taskData)).unwrap();
         toast.success('Task created successfully');
         if (onCancel) onCancel(createResult); // Pass the created task back
       }
     } catch (error) {
       console.error('Error in task form submission:', error);
-      toast.error(`Failed to ${initialData._id ? 'update' : 'create'} task: ${error.message || 'Error occurred'}`);
+      toast.error(`Failed to ${initialData?.id || initialData?._id ? 'update' : 'create'} task: ${error.message || 'Error occurred'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -608,16 +591,16 @@ const TaskForm = ({
       newErrors.description = 'Description is required';
     }
     
-    if (!formData.deadline) {
-      newErrors.deadline = 'Deadline is required';
+    if (!formData.dueDate) {
+      newErrors.dueDate = 'Deadline is required';
     }
     
-    if (formData.assignedTo.length === 0) {
-      newErrors.assignedTo = 'At least one user must be assigned';
+    if (formData.assignedTo.length === 0 || !formData.assignedTo[0]) {
+      newErrors.assignedTo = 'User assignment is required';
     }
     
     if (!formData.inspectionLevel) {
-      newErrors.inspectionLevel = 'An template must be selected';
+      newErrors.inspectionLevel = 'An inspection level must be selected';
     }
     
     setErrors(newErrors);
@@ -634,32 +617,6 @@ const TaskForm = ({
   
   const handleCancel = () => {
     if (onCancel) onCancel();
-  };
-  
-  const handleUserToggle = (userId) => {
-    setFormData(prev => {
-      const isAlreadyAssigned = prev.assignedTo.includes(userId);
-      return {
-        ...prev,
-        assignedTo: isAlreadyAssigned 
-          ? prev.assignedTo.filter(id => id !== userId) 
-          : [...prev.assignedTo, userId]
-      };
-    });
-  };
-  
-  const handleRemoveUser = (userId) => {
-    setFormData(prev => ({
-      ...prev,
-      assignedTo: prev.assignedTo.filter(id => id !== userId)
-    }));
-  };
-  
-  const handleToggleActive = () => {
-    setFormData(prev => ({
-      ...prev,
-      isActive: !prev.isActive
-    }));
   };
   
   const handleAttachmentChange = async (event) => {
@@ -708,78 +665,87 @@ const TaskForm = ({
   };
   
   useEffect(() => {
-    if (users.length === 0 && usersProp.length === 0) {
-      dispatch(fetchUsers());
-    }
-    if (inspectionLevels?.length === 0 && inspectionLevelsProp.length === 0) {
-      dispatch(fetchInspectionLevels());
-    }
-    // Always fetch assets to ensure we have the latest data
-    dispatch(fetchAssets());
-  }, [dispatch, users.length, inspectionLevels?.length, usersProp.length, inspectionLevelsProp.length]);
-  
-  // Debug initial values
-  useEffect(() => {
-    console.log('TaskForm initialData:', initialData);
-    console.log('Asset ID from initial data:', initialData.asset?._id || initialData.asset);
-    console.log('Current formData:', formData);
-  }, []);
-  
-  // Monitor asset field specifically
-  useEffect(() => {
-    console.log('Asset field updated in form:', formData.asset);
-    console.log('Available assets:', assets);
-  }, [formData.asset, assets]);
-  
-  useEffect(() => {
-    // Handle clicks outside of user dropdown
-    const handleClickOutside = (event) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
-        setShowUserDropdown(false);
+    // Fetch users if not provided as props
+    if (usersProp.length === 0) {
+      // Add a flag to prevent multiple calls
+      const localStorageKey = 'usersFetchInitiated';
+      const fetchInitiated = sessionStorage.getItem(localStorageKey);
+      
+      if (!fetchInitiated) {
+        sessionStorage.setItem(localStorageKey, 'true');
+        dispatch(fetchUsers())
+          .unwrap()
+          .catch(error => {
+            console.error('Error fetching users:', error);
+          })
+          .finally(() => {
+            // Reset after 10 seconds to allow refetching if needed
+            setTimeout(() => {
+              sessionStorage.removeItem(localStorageKey);
+            }, 10000);
+          });
       }
-    };
-
-    if (showUserDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showUserDropdown]);
-  
-  // Show skeleton loader while data is loading
-  if (initialLoading) {
-    return <TaskFormSkeleton />;
-  }
+    
+    // Fetch inspection levels if not provided as props
+    if (inspectionLevelsProp.length === 0) {
+      // Add a flag to prevent multiple calls
+      const localStorageKey = 'inspectionLevelsFetchInitiated';
+      const fetchInitiated = sessionStorage.getItem(localStorageKey);
+      
+      if (!fetchInitiated) {
+        sessionStorage.setItem(localStorageKey, 'true');
+        dispatch(fetchInspectionLevels())
+          .unwrap()
+          .catch(error => {
+            console.error('Error fetching inspection levels:', error);
+          })
+          .finally(() => {
+            // Reset after 10 seconds to allow refetching if needed
+            setTimeout(() => {
+              sessionStorage.removeItem(localStorageKey);
+            }, 10000);
+          });
+      }
+    }
+    
+    // Fetch assets if not provided as props
+    if (assetsProp.length === 0) {
+      // Add a flag to prevent multiple calls
+      const localStorageKey = 'assetsFetchInitiated';
+      const fetchInitiated = sessionStorage.getItem(localStorageKey);
+      
+      if (!fetchInitiated) {
+        sessionStorage.setItem(localStorageKey, 'true');
+        dispatch(fetchAssets())
+          .unwrap()
+          .catch(error => {
+            console.error('Error fetching assets:', error);
+          })
+          .finally(() => {
+            // Reset after 10 seconds to allow refetching if needed
+            setTimeout(() => {
+              sessionStorage.removeItem(localStorageKey);
+            }, 10000);
+          });
+      }
+    }
+  }, [usersProp.length, inspectionLevelsProp.length, assetsProp.length, dispatch]);
   
   return (
     <Form onSubmit={handleSubmit}>
       <FormRow>
         <FormGroup>
-          <Label>Title *</Label>
+          <Label>Title</Label>
           <Input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Enter task title"
+            required
           />
           {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Priority *</Label>
-          <Select
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </Select>
         </FormGroup>
       </FormRow>
       
@@ -798,16 +764,32 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
+          <Label>Priority</Label>
+          <Select
+            name="priority"
+            value={formData.priority}
+            onChange={handleChange}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </Select>
+        </FormGroup>
+        
+        <FormGroup>
           <Label>Deadline</Label>
           <DatePicker
-            selected={formData.deadline}
-            onChange={date => setFormData(prev => ({ ...prev, deadline: date }))}
+            selected={formData.dueDate}
+            onChange={date => setFormData(prev => ({ ...prev, dueDate: date }))}
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
             dateFormat="MMMM d, yyyy h:mm aa"
+            placeholderText="Select deadline date and time"
+            minDate={new Date()}
+            required
           />
-          {errors.deadline && <ErrorMessage>{errors.deadline}</ErrorMessage>}
+          {errors.dueDate && <ErrorMessage>{errors.dueDate}</ErrorMessage>}
         </FormGroup>
       </FormRow>
       
@@ -823,62 +805,39 @@ const TaskForm = ({
       </FormGroup>
       
       <FormGroup>
-        <Label>Assigned Users</Label>
-        <UserSelection ref={userDropdownRef}>
-          <UserList>
-            {formData.assignedTo.map(userId => {
-              const user = users.find(u => u._id === userId);
-              return user ? (
-                <UserTag key={userId}>
-                  <span>{user.name}</span>
-                  <RemoveButton onClick={() => handleRemoveUser(userId)}>
-                    <X size={14} />
-                  </RemoveButton>
-                </UserTag>
-              ) : null;
-            })}
-          </UserList>
-          
-          <UserPickerButton 
-            type="button" 
-            onClick={() => setShowUserDropdown(!showUserDropdown)}
-          >
-            <Users size={16} />
-            <span>Add Users</span>
-            {showUserDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </UserPickerButton>
-          
-          {showUserDropdown && (
-            <UserDropdown>
-              {users?.map(user => (
-                <UserOption 
-                  key={user._id}
-                  selected={formData.assignedTo.includes(user._id)}
-                  onClick={(e) => {
-                    e.stopPropagation();  // Prevent closing the dropdown
-                    handleUserToggle(user._id);
-                  }}
-                >
-                  <User size={16} />
-                  <span>{user.name}</span>
-                  {formData.assignedTo.includes(user._id) && <Check size={16} />}
-                </UserOption>
-              ))}
-            </UserDropdown>
-          )}
-        </UserSelection>
+        <Label>Assigned User</Label>
+        <Select
+          name="assignedUser"
+          value={formData.assignedTo.length > 0 ? formData.assignedTo[0] : ''}
+          onChange={(e) => {
+            const userId = e.target.value;
+            setFormData(prev => ({
+              ...prev,
+              assignedTo: userId ? [userId] : []
+            }));
+          }}
+          required
+        >
+          <option value="">Select User</option>
+          {users?.map(user => (
+            <option key={user._id} value={user._id}>
+              {user.name || user.email || 'Unknown user'}
+            </option>
+          ))}
+        </Select>
         {errors.assignedTo && <ErrorMessage>{errors.assignedTo}</ErrorMessage>}
       </FormGroup>
       
       <FormRow>
         <FormGroup>
-          <Label>Template *</Label>
+          <Label>Inspection Level</Label>
           <Select
             name="inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
+            required
           >
-            <option value="">Select template</option>
+            <option value="">Select Inspection Level</option>
             {inspectionLevels?.map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}
@@ -887,6 +846,7 @@ const TaskForm = ({
           </Select>
           {errors.inspectionLevel && <ErrorMessage>{errors.inspectionLevel}</ErrorMessage>}
         </FormGroup>
+        
         <FormGroup>
           <Label>Asset</Label>
           <Select
@@ -894,18 +854,13 @@ const TaskForm = ({
             value={formData.asset}
             onChange={handleChange}
           >
-            <option value="">Select asset (optional)</option>
-            {assets.length > 0 ? (
-              assets.map(asset => (
-                <option key={asset._id} value={asset._id}>
-                  {asset.displayName} ({asset.uniqueId} - {asset.type})
-                </option>
-              ))
-            ) : (
-              <option value="">Loading assets...</option>
-            )}
+            <option value="">Select Asset (Optional)</option>
+            {assets?.map(asset => (
+              <option key={asset.id} value={asset.id}>
+                {asset.displayName || asset.uniqueId} - {asset.type}
+              </option>
+            ))}
           </Select>
-          {formData.asset && <small>Selected Asset ID: {formData.asset}</small>}
         </FormGroup>
       </FormRow>
 
@@ -913,26 +868,27 @@ const TaskForm = ({
         <ToggleSwitch>
           <ToggleIndicator 
             checked={formData.isActive}
-            onClick={handleToggleActive}
+            onClick={() => setFormData(prev => ({
+              ...prev,
+              isActive: !prev.isActive
+            }))}
           />
           <span>Active</span>
         </ToggleSwitch>
       </FormGroup>
 
-      {isEdit && (
-        <AdvancedToggle 
-          type="button" 
-          onClick={(e) => {
-            e.preventDefault(); // Prevent form submission
-            setShowAdvanced(!showAdvanced);
-          }}
-        >
-          <span>Advanced Options</span>
-          {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </AdvancedToggle>
-      )}
+      <AdvancedToggle 
+        type="button" 
+        onClick={(e) => {
+          e.preventDefault(); // Prevent form submission
+          setShowAdvanced(!showAdvanced);
+        }}
+      >
+        <span>Advanced Options</span>
+        {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </AdvancedToggle>
       
-      {isEdit && showAdvanced && (
+      {showAdvanced && (
         <>
           <FormGroup>
             <Label>Attachments</Label>

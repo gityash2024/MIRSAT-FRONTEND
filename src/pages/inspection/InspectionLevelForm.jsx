@@ -68,6 +68,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import axios from 'axios';
 import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
+import Alert from '@mui/material/Alert';
 
 // Modal component for confirmations
 const ConfirmationModal = ({ 
@@ -3588,6 +3589,7 @@ const InspectionLevelForm = () => {
     totalPages: 0,
     isComplex: false
   });
+  const [saveError, setSaveError] = useState('');
   
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -3611,12 +3613,79 @@ const InspectionLevelForm = () => {
   const loadTemplate = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/templates/${id}`);
-      setFormData(response.data);
-      setActivities(response.data.activities || []);
+      
+      // Use the correct API endpoint with proper headers
+      const response = await axios.get(`http://localhost:5001/api/v1/inspection/${id}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const templateData = response.data;
+      console.log('Loaded template data:', templateData);
+      
+      // Transform the data into the format expected by the form
+      let formattedData = {
+        name: templateData.name,
+        description: templateData.description,
+        type: templateData.type,
+        priority: templateData.priority || 'medium',
+        status: templateData.status || 'draft',
+        requirementType: templateData.requirementType || 'mandatory',
+        pages: []
+      };
+      
+      // If we have the new pages format
+      if (templateData.pages && templateData.pages.length > 0) {
+        formattedData.pages = templateData.pages.map(page => ({
+          ...page,
+          id: page._id || page.id,
+          sections: page.sections ? page.sections.map(section => ({
+            ...section,
+            id: section._id || section.id,
+            questions: section.questions ? section.questions.map(q => ({
+              ...q,
+              id: q._id || q.id
+            })) : []
+          })) : []
+        }));
+      } 
+      // If we have the old subLevels format
+      else if (templateData.subLevels && templateData.subLevels.length > 0) {
+        // Convert subLevels to pages and sections
+        formattedData.pages = templateData.subLevels.map((page, pageIndex) => {
+          return {
+            id: page._id || page.id,
+            name: page.name,
+            description: page.description || 'No description provided',
+            order: page.order || pageIndex,
+            sections: page.subLevels ? page.subLevels.map((section, sectionIndex) => {
+              return {
+                id: section._id || section.id,
+                name: section.name,
+                description: section.description || 'No description provided',
+                order: section.order || sectionIndex,
+                questions: section.questions ? section.questions.map(q => ({
+                  ...q,
+                  id: q._id || q.id
+                })) : []
+              };
+            }) : []
+          };
+        });
+      }
+      // If we don't have either structure, create an empty pages structure
+      else {
+        formattedData.pages = [];
+      }
+      
+      console.log('Formatted data for form:', formattedData);
+      setFormData(formattedData);
+      setActivities(templateData.activities || []);
       setLoading(false);
     } catch (error) {
       console.error('Error loading template:', error);
+      setSaveError(`Error loading template: ${error.response?.data?.error?.message || error.message}`);
       setLoading(false);
     }
   };
@@ -3624,78 +3693,97 @@ const InspectionLevelForm = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
+      setSaveError('');
       setSaveMessage('Saving template...');
       
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      let response;
+      // Prepare questions array
+      const allQuestions = [];
       
-      // Convert formData to the structure expected by the API
+      // Basic template data
       const templateData = {
         name: formData.name,
-        description: formData.description,
+        description: formData.description || 'No description provided',
         type: formData.type,
-        priority: formData.priority,
-        status: formData.status,
-        subLevels: [], // Will be populated with sections
-        questions: []  // Will collect all questions
+        priority: formData.priority || 'medium',
+        status: formData.status || 'draft',
+        requirementType: formData.requirementType || 'mandatory',
+        pages: [],
+        questions: []
       };
-      
-      // Transform pages and sections to subLevels
+
+      // Transform the data structure for the API
       if (formData.pages && formData.pages.length > 0) {
         formData.pages.forEach((page, pageIndex) => {
-          // Create a top-level node for the page
-          const pageNode = {
-            name: page.name || `Page ${pageIndex + 1}`,
-            description: page.description || '',
+          const pageData = {
+            name: page.name,
+            description: page.description || 'No description provided',
             order: pageIndex,
-            subLevels: []
+            sections: []
           };
           
-          // Add all sections as subLevels of the page
           if (page.sections && page.sections.length > 0) {
             page.sections.forEach((section, sectionIndex) => {
-              const sectionNode = {
-                name: section.name || `Inspection Level ${sectionIndex + 1}`,
-                description: section.description || '',
+              // Process section questions
+              const processedQuestions = section.questions 
+                ? section.questions.map(q => ({
+                    ...q,
+                    description: q.description || ''
+                  }))
+                : [];
+                
+              const sectionData = {
+                name: section.name,
+                description: section.description || 'No description provided',
                 order: sectionIndex,
-                questions: section.questions || []
+                questions: processedQuestions
               };
               
-              // Add questions to the main questions array as well
-              if (section.questions && section.questions.length > 0) {
-                templateData.questions = [
-                  ...templateData.questions,
-                  ...section.questions.map(q => ({
-                    ...q,
-                    levelId: sectionNode._id // Will be generated by MongoDB
-                  }))
-                ];
-              }
+              pageData.sections.push(sectionData);
               
-              pageNode.subLevels.push(sectionNode);
+              // Add questions to the main questions array as well
+              if (processedQuestions.length > 0) {
+                allQuestions.push(...processedQuestions);
+              }
             });
           }
           
-          templateData.subLevels.push(pageNode);
+          templateData.pages.push(pageData);
         });
       }
       
+      // Set the questions array
+      templateData.questions = allQuestions;
+      
+      // Debug output to see what we're sending
+      console.log('Template data before sending:', JSON.stringify(templateData));
+      
+      let response;
+      
       if (id) {
-        response = await axios.put(`/api/v1/inspection/${id}`, templateData, {
-          timeout: 60000, // Increase timeout to 60s for large templates
+        response = await axios.put(`http://localhost:5001/api/v1/inspection/${id}`, templateData, {
+          timeout: 60000, // Increase timeout for large templates
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
       } else {
-        response = await axios.post('/api/v1/inspection', templateData, {
-          timeout: 60000, // Increase timeout to 60s for large templates
+        response = await axios.post('http://localhost:5001/api/v1/inspection', templateData, {
+          timeout: 60000, // Increase timeout for large templates
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
         // Clear local storage after successful save
         localStorage.removeItem(LOCAL_STORAGE_KEY);
         
-        // Navigate only after successful creation
-        navigate(`/inspection/template/${response.data._id || response.data.id}`);
+        // Redirect to the templates listing page after successful creation
+        navigate('/inspection/templates');
+        setSaveMessage('Template created successfully');
+        return response.data;
       }
       
       setSaveMessage('Template saved successfully');
@@ -3703,10 +3791,10 @@ const InspectionLevelForm = () => {
       setLoading(false);
       return response.data;
     } catch (error) {
-      console.error('Error saving template:', error);
-      setSaveMessage(`Error: ${error.response?.data?.message || 'Failed to save template'}`);
-      setTimeout(() => setSaveMessage(''), 5000);
+      console.error('Save error:', error);
       setLoading(false);
+      setSaveError(error.response?.data?.error?.message || error.message || 'Error saving template');
+      setSaveMessage('');
       return null;
     }
   };
@@ -3723,25 +3811,43 @@ const InspectionLevelForm = () => {
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
       
+      // First save the template
       const savedData = await handleSave();
       
       if (savedData) {
-        await axios.put(`/api/templates/${savedData.id}/publish`, {}, {
+        // Update the status to 'active' instead of 'draft'
+        const publishData = {
+          ...savedData,
+          status: 'active'
+        };
+        
+        // Use the correct API endpoint
+        await axios.put(`http://localhost:5001/api/v1/inspection/${savedData._id || savedData.id}`, publishData, {
           timeout: 30000, // 30s timeout for publish operation
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
+        
         setFormData({
           ...formData,
-          status: 'published'
+          status: 'active'
         });
+        
         setSaveMessage('Template published successfully');
+        
+        // Redirect to template listing after publishing
+        setTimeout(() => {
+          navigate('/inspection/templates');
+        }, 1500);
       }
       
       setIsConfirmModalOpen(false);
       setLoading(false);
     } catch (error) {
       console.error('Error publishing template:', error);
-      setSaveMessage(`Error: ${error.response?.data?.message || 'Failed to publish template'}`);
-      setTimeout(() => setSaveMessage(''), 5000);
+      setSaveError(error.response?.data?.error?.message || error.message || 'Failed to publish template');
+      setSaveMessage('');
       setLoading(false);
     }
   };
@@ -4076,6 +4182,18 @@ const InspectionLevelForm = () => {
     <PageContainer>
       {loading && <SkeletonLoader />}
       
+      {saveMessage && (
+        <Alert severity="success" sx={{ position: 'fixed', top: '16px', right: '16px', zIndex: 9999 }}>
+          {saveMessage}
+        </Alert>
+      )}
+      
+      {saveError && (
+        <Alert severity="error" sx={{ position: 'fixed', top: '16px', right: '16px', zIndex: 9999 }}>
+          {saveError}
+        </Alert>
+      )}
+      
       <Header>
         <BackButton onClick={handleBack}>
           <ChevronLeft size={20} />
@@ -4108,8 +4226,6 @@ const InspectionLevelForm = () => {
           </InspectionPublishButton>
         </div>
       </Header>
-      
-      {saveMessage && <InspectionSaveMessage>{saveMessage}</InspectionSaveMessage>}
       
       {templateComplexity.isComplex && (
         <div style={{

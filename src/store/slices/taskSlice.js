@@ -38,10 +38,30 @@ export const getTaskById = createAsyncThunk(
   'tasks/getTaskById',
   async (id, { rejectWithValue }) => {
     try {
+      if (!id || id === 'undefined') {
+        return rejectWithValue('Invalid task ID');
+      }
+      
+      console.log('Getting task with ID:', id);
       const response = await api.get(`/tasks/${id}`);
+      
+      // Log the response for debugging
+      console.log('API response for task by ID:', response.data);
+      
+      // Check if the response data is an array with at least one item
+      if (Array.isArray(response.data.data) && response.data.data.length > 0) {
+        console.log('Returning first task from array');
+        // Add the array to the response for completeness
+        return {
+          ...response.data,
+          firstTask: response.data.data[0]  // Add a convenience property
+        };
+      }
+      
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || 'Error fetching task');
+      console.error('Error fetching task by ID:', error);
+      return rejectWithValue(error.response?.data || { message: 'Failed to fetch task details' });
     }
   }
 );
@@ -117,7 +137,15 @@ export const createTask = createAsyncThunk(
   'tasks/createTask',
   async (taskData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/tasks', taskData);
+      // Ensure assignedTo is an array
+      const processedData = {
+        ...taskData,
+        assignedTo: Array.isArray(taskData.assignedTo) ? taskData.assignedTo : [taskData.assignedTo]
+      };
+      
+      console.log('Creating task with data:', processedData);
+      
+      const response = await api.post('/tasks', processedData);
       
       toast.success('Task created successfully');
       return response.data;
@@ -133,7 +161,15 @@ export const updateTask = createAsyncThunk(
   'tasks/updateTask',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/tasks/${id}`, data);
+      // Ensure assignedTo is an array
+      const processedData = {
+        ...data,
+        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo]
+      };
+      
+      console.log('Updating task with data:', processedData);
+      
+      const response = await api.put(`/tasks/${id}`, processedData);
       
       toast.success('Task updated successfully');
       return response.data;

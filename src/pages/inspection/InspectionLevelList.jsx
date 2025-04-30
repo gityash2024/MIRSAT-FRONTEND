@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
@@ -457,7 +457,9 @@ const InspectionLevelList = ({
   const [showFilters, setShowFilters] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [publishModalVisible, setPublishModalVisible] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
+  const [levelToPublish, setLevelToPublish] = useState(null);
   const exportDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -509,12 +511,13 @@ const InspectionLevelList = ({
   const handleDelete = async (id) => {
     try {
       setLoading(true);
+      
       await inspectionService.deleteInspectionLevel(id);
       
       setDeleteModalVisible(false);
       setLevelToDelete(null);
       
-      toast.success('Inspection level deleted successfully');
+      toast.success('Template deleted successfully');
       
       // Refresh data after deletion
       if (fetchData) {
@@ -522,7 +525,7 @@ const InspectionLevelList = ({
       }
     } catch (error) {
       console.error('Error deleting template:', error);
-      toast.error('Failed to delete template');
+      toast.error(`Failed to delete template: ${error.message}`);
       setLoading(false);
     }
   };
@@ -533,22 +536,45 @@ const InspectionLevelList = ({
     setShowExportDropdown(!showExportDropdown);
   };
 
-  const handleExport = (format) => {
+  const handleExport = async (format) => {
     setShowExportDropdown(false);
     
-    const params = {
-      format,
-      ids: inspectionLevels.map(level => level._id)
-    };
-    
-    inspectionService.exportInspectionLevels(params)
-      .then(() => {
-        toast.success(`Export as ${format.toUpperCase()} successful`);
-      })
-      .catch(error => {
-        console.error('Export failed', error);
-        toast.error(`Failed to export as ${format.toUpperCase()}`);
-      });
+    try {
+      setLoading(true);
+      
+      // Get authentication token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      const params = {
+        format,
+        ids: inspectionLevels.map(level => level._id)
+      };
+      
+      await inspectionService.exportInspectionLevels(params);
+      toast.success(`Export as ${format.toUpperCase()} successful`);
+      setLoading(false);
+    } catch (error) {
+      console.error('Export failed', error);
+      
+      let errorMessage = 'Failed to export';
+      if (error.response && error.response.data) {
+        try {
+          const errorData = error.response.data;
+          errorMessage = errorData.message || `Failed to export as ${format.toUpperCase()}`;
+        } catch (parseError) {
+          errorMessage = `Failed to export as ${format.toUpperCase()}`;
+        }
+      } else {
+        errorMessage = error.message || `Failed to export as ${format.toUpperCase()}`;
+      }
+      
+      toast.error(errorMessage);
+      setLoading(false);
+    }
   };
 
   // Helper function to count subLevels recursively
@@ -616,6 +642,45 @@ const InspectionLevelList = ({
     };
   }, []);
 
+  // Add a function to handle publish click
+  const onPublishClick = (level) => {
+    setLevelToPublish(level);
+    setPublishModalVisible(true);
+  };
+
+  // Add a function to handle publishing the template
+  const handlePublish = async () => {
+    if (!levelToPublish) return;
+    
+    try {
+      setLoading(true);
+      
+      // Create publish data with status set to active
+      const publishData = {
+        ...levelToPublish,
+        status: 'active'
+      };
+      
+      await inspectionService.updateInspectionLevel(levelToPublish._id || levelToPublish.id, publishData);
+      
+      // Close the modal and refresh the data
+      setPublishModalVisible(false);
+      setLevelToPublish(null);
+      toast.success('Template published successfully');
+      
+      // Refresh the data
+      if (fetchData) {
+        fetchData();
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error publishing template:', error);
+      toast.error(`Failed to publish template: ${error.message}`);
+      setLoading(false);
+    }
+  };
+
   return (
     <PageContainer>
      {deleteModalVisible && levelToDelete && (
@@ -646,6 +711,39 @@ const InspectionLevelList = ({
                 style={{ background: '#dc2626' }}
               >
                 {loading ? 'Deleting...' : 'Delete'}
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {publishModalVisible && levelToPublish && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Publish Template</ModalTitle>
+              <ModalCloseButton 
+                onClick={() => setPublishModalVisible(false)}
+                disabled={loading}
+              >
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <p>Are you sure you want to publish <strong>{levelToPublish.name}</strong>?</p>
+            <p>This action cannot be undone.</p>
+            <ModalActions>
+              <Button 
+                onClick={() => setPublishModalVisible(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handlePublish}
+                disabled={loading}
+              >
+                {loading ? 'Publishing...' : 'Publish'}
               </Button>
             </ModalActions>
           </ModalContent>
@@ -813,6 +911,17 @@ const InspectionLevelList = ({
                           >
                             <Trash2 size={16} />
                             Delete
+                          </Button>
+                          <Button 
+                            variant="secondary"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onPublishClick(level);
+                            }}
+                          >
+                            <Upload size={16} />
+                            Publish
                           </Button>
                         </LevelActions>
                       </AccordionItemContent>

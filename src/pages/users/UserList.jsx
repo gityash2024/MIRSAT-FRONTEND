@@ -930,13 +930,13 @@ const UserList = () => {
                 <td>
                   <ActionMenu>
                     {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
-                      <ActionButton as={Link} to={`/users/${user._id}`}>
+                      <ActionButton as={Link} to={`/users/${user.id}`}>
                         <EyeIcon size={16} />
                       </ActionButton>
                     )}
                     
                     {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
-                      <ActionButton as={Link} to={`/users/${user._id}/edit`}>
+                      <ActionButton as={Link} to={`/users/${user.id}/edit`}>
                         <Edit size={16} />
                       </ActionButton>
                     )}

@@ -82,6 +82,28 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Ensure assignedTo is always an array in task API calls
+    if (config.url?.includes('/tasks') && config.method?.toLowerCase() !== 'get' && config.data) {
+      try {
+        // If data is a string (already stringified), parse it first
+        let data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+        
+        // Ensure assignedTo is always an array if it exists
+        if (data.assignedTo !== undefined) {
+          // Convert to array if it's not already
+          if (!Array.isArray(data.assignedTo)) {
+            data.assignedTo = [data.assignedTo];
+            console.log('Transformed assignedTo to array:', data.assignedTo);
+          }
+          
+          // Update the config data
+          config.data = typeof config.data === 'string' ? JSON.stringify(data) : data;
+        }
+      } catch (error) {
+        console.error('Error transforming request data:', error);
+      }
+    }
+    
     // Enforce global cooldown if active
     if (isInCooldown) {
       console.log('Request blocked due to global cooldown:', config.url);

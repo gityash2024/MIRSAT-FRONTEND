@@ -473,8 +473,9 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
 
   const handleConfirmDelete = async () => {
     try {
-      await dispatch(deleteTask(deleteConfirm._id)).unwrap();
+      await dispatch(deleteTask(deleteConfirm.id)).unwrap();
       setDeleteConfirm(null);
+      
     } catch (error) {
       toast.error('Failed to delete task');
     }
@@ -682,13 +683,13 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 <td>
                   <ActionsMenu>
                     {hasPermission(PERMISSIONS.VIEW_TASKS) && (
-                      <ActionButton onClick={() => handleViewTask(task._id)}>
+                      <ActionButton onClick={() => handleViewTask(task.id)}>
                         <Eye size={16} />
                       </ActionButton>
                     )}
                     
                     {hasPermission(PERMISSIONS.EDIT_TASKS) && (
-                      <ActionButton onClick={() => handleEditTask(task._id)}>
+                      <ActionButton onClick={() => handleEditTask(task.id)}>
                         <Edit size={16} />
                       </ActionButton>
                     )}
