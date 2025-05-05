@@ -1795,7 +1795,7 @@ const UserTaskDetail = () => {
             <PreInspectionStepForm task={currentTask} />
             
             {/* Display scoring summary if task is in progress or completed */}
-            {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
+            {/* {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
               <ScoreSummary>
                 <ScoreTitle>
                   <Award size={20} color="var(--color-navy)" />
@@ -1837,7 +1837,7 @@ const UserTaskDetail = () => {
                   </div>
                 )}
               </ScoreSummary>
-            )}
+            )} */}
             
             {(currentTask.status === 'pending' || !currentTask.status) && (
               <ButtonContainer>
@@ -2015,7 +2015,7 @@ const UserTaskDetail = () => {
               <PreInspectionStepForm task={currentTask} />
               
               {/* Display scoring summary if task is in progress or completed */}
-              {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
+              {/* {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
                 <ScoreSummary>
                   <ScoreTitle>
                     <Award size={20} color="var(--color-navy)" />
@@ -2057,7 +2057,7 @@ const UserTaskDetail = () => {
                     </div>
                   )}
                 </ScoreSummary>
-              )}
+              )} */}
               
               {(currentTask.status === 'pending' || !currentTask.status) && (
                 <ButtonContainer>
