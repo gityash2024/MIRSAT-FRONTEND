@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { X, Check, Tag, ToggleLeft, Flag, Filter, ArrowRight, RefreshCw } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 const FilterContainer = styled.div`
   display: flex;
@@ -278,37 +279,6 @@ const CategoryBadge = styled.span`
   margin-right: 6px;
 `;
 
-const filterOptions = {
-  type: [
-    { value: 'marina_operator', label: 'Marina Operator' },
-    { value: 'yacht_chartering', label: 'Yacht Chartering' },
-    { value: 'tourism_agent', label: 'Tourism Agent' }
-  ],
-  status: [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'archived', label: 'Archived' }
-  ],
-  priority: [
-    { value: 'high', label: 'High Priority' },
-    { value: 'medium', label: 'Medium Priority' },
-    { value: 'low', label: 'Low Priority' }
-  ]
-};
-
-const filterIcons = {
-  type: <Tag size={16} />,
-  status: <ToggleLeft size={16} />,
-  priority: <Flag size={16} />
-};
-
-const categoryLabels = {
-  type: 'Type',
-  status: 'Status',
-  priority: 'Priority'
-};
-
 const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) => {
   // Use local state to track changes before applying
   const [localFilters, setLocalFilters] = useState({ ...filters });
@@ -316,6 +286,40 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
   const initialRenderRef = useRef(true);
   // Ref for the apply changes timeout
   const applyTimeoutRef = useRef(null);
+  // Use template types from the API/redux
+  const [filterOptions, setFilterOptions] = useState({
+    type: [],
+    status: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+      { value: 'draft', label: 'Draft' },
+      { value: 'archived', label: 'Archived' }
+    ],
+    priority: [
+      { value: 'high', label: 'High Priority' },
+      { value: 'medium', label: 'Medium Priority' },
+      { value: 'low', label: 'Low Priority' }
+    ]
+  });
+
+  // Get type options from redux store
+  const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
+
+  // Initialize filter options from API data
+  useEffect(() => {
+    // Convert assetTypes to the format needed for filter dropdowns
+    if (assetTypes && assetTypes.length > 0) {
+      const typeOptions = assetTypes.map(type => ({
+        value: type.value || type.name.toLowerCase().replace(/\s+/g, '_'),
+        label: type.name || type.label
+      }));
+      
+      setFilterOptions(prev => ({
+        ...prev,
+        type: typeOptions
+      }));
+    }
+  }, [assetTypes]);
 
   // Initialize local filters when props change, but only on first render
   useEffect(() => {
@@ -380,6 +384,18 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
 
   const hasActiveFilters = Object.values(localFilters || {}).some(arr => arr?.length > 0);
   const activeFilterCount = Object.values(localFilters || {}).flat().length;
+
+  const filterIcons = {
+    type: <Tag size={16} />,
+    status: <ToggleLeft size={16} />,
+    priority: <Flag size={16} />
+  };
+  
+  const categoryLabels = {
+    type: 'Type',
+    status: 'Status',
+    priority: 'Priority'
+  };
 
   return (
     <FilterContainer>

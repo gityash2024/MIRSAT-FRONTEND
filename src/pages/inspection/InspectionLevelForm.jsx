@@ -47,7 +47,9 @@ import {
   Smartphone,
   ArrowUpRight,
   History,
-  Award
+  Award,
+  ToggleLeft,
+  Download
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
@@ -562,10 +564,31 @@ const Tab = styled.div`
   background-color: ${props => props.$active ? 'rgba(59, 73, 223, 0.05)' : 'transparent'};
   transition: all 0.2s;
   white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   
   &:hover {
     color: var(--color-navy);
     background-color: rgba(59, 73, 223, 0.03);
+    
+    .delete-icon {
+      opacity: 1;
+    }
+  }
+  
+  .delete-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #ef4444;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 4px;
+    
+    &:hover {
+      color: #b91c1c;
+    }
   }
 `;
 
@@ -1354,16 +1377,16 @@ const QuestionItemComponent = ({
     } else if (newType === 'radio' || newType === 'dropdown' || newType === 'select') {
       updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
     } else if (newType === 'yesno' || newType === 'yes_no') {
-      // Add default scores for Yes/No
+      // Add default scores for Yes/No - fixing the issue with Yes/No
       updatedQuestion.options = ['Yes', 'No', 'N/A'];
       updatedQuestion.scoring = {
         enabled: true,
-        max: 1
+        max: 2 // Change default max score to 2
       };
       updatedQuestion.scores = {
-        'Yes': 1,
+        'Yes': 2, // Default Yes score is 2
         'No': 0,
-        'N/A': 0
+        'N/A': 0 // N/A should have 0 score
       };
     } else {
       // Reset options if changing to a type that doesn't need them
@@ -1372,7 +1395,7 @@ const QuestionItemComponent = ({
       if (!updatedQuestion.scoring) {
         updatedQuestion.scoring = {
           enabled: false,
-          max: 1
+          max: 2 // Change default max score to 2
         };
       }
     }
@@ -1508,8 +1531,8 @@ const QuestionItemComponent = ({
               padding: '6px 12px', 
               backgroundColor: '#f1f5f9', 
               borderRadius: '4px',
-                display: 'inline-flex',
-                alignItems: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
               gap: '6px',
               fontSize: '13px',
               color: '#334155',
@@ -1541,10 +1564,20 @@ const QuestionItemComponent = ({
             
             <IconButton
               onClick={() => setShowDeleteModal(true)}
-              title="Remove Question"
-              style={{ color: '#ef4444' }}
+              title="Delete Question"
+              style={{ 
+                color: '#ef4444',
+                padding: '4px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: '#fee2e2',
+                border: '1px solid #fecaca',
+                borderRadius: '4px'
+              }}
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
+              <span style={{ fontSize: '12px', fontWeight: '500' }}>Delete</span>
             </IconButton>
           </QuestionActionsMenu>
         </QuestionTableRow>
@@ -1599,6 +1632,28 @@ const QuestionItemComponent = ({
                   <option value="date">Date</option>
                   <option value="file">File Upload</option>
                 </Select>
+              </FormGroup>
+              
+              {/* Add weight input field after answer type */}
+              <FormGroup style={{ marginTop: '16px' }}>
+                <Label>Question Weight</Label>
+                <Input
+                  type="number"
+                  value={question.weight !== undefined ? question.weight : 1}
+                  onChange={(e) => {
+                    const weight = parseInt(e.target.value);
+                    // Allow zero or positive values
+                    updateQuestion({ 
+                      ...question, 
+                      weight: isNaN(weight) ? 0 : Math.max(0, weight) 
+                    });
+                  }}
+                  min="0"
+                  placeholder="Question weight"
+                />
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  Set to 0 for non-scored questions
+                </div>
               </FormGroup>
               
               {/* Options editor for multiple choice or compliance questions */}
@@ -1672,23 +1727,30 @@ const QuestionItemComponent = ({
                       <Label style={{ fontSize: '13px' }}>Yes Score</Label>
                       <Input
                         type="number"
-                        value={question.scores?.yes || 1}
+                        value={question.scores?.Yes || 2} // Default to 2
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
-                          scores.yes = parseInt(e.target.value) || 0;
-                          updateQuestion({ ...question, scores });
+                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
+                          scores.Yes = parseInt(e.target.value) || 0;
+                          updateQuestion({ 
+                            ...question, 
+                            scores,
+                            scoring: {
+                              ...(question.scoring || {}),
+                              max: parseInt(e.target.value) || 2 // Update max score to match Yes value
+                            }
+                          });
                         }}
                         min="0"
                       />
-              </div>
+                    </div>
                     <div>
                       <Label style={{ fontSize: '13px' }}>No Score</Label>
                       <Input
                         type="number"
-                        value={question.scores?.no || 0}
+                        value={question.scores?.No || 0}
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
-                          scores.no = parseInt(e.target.value) || 0;
+                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
+                          scores.No = parseInt(e.target.value) || 0;
                           updateQuestion({ ...question, scores });
                         }}
                         min="0"
@@ -1698,10 +1760,10 @@ const QuestionItemComponent = ({
                       <Label style={{ fontSize: '13px' }}>N/A Score</Label>
                       <Input
                         type="number"
-                        value={question.scores?.na || 0}
+                        value={question.scores?.['N/A'] || 0}
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { yes: 1, no: 0, na: 0 }) };
-                          scores.na = parseInt(e.target.value) || 0;
+                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
+                          scores['N/A'] = parseInt(e.target.value) || 0;
                           updateQuestion({ ...question, scores });
                         }}
                         min="0"
@@ -1792,7 +1854,7 @@ const QuestionItemComponent = ({
                           <Input
                             type="number"
                             min="0"
-                            value={question.scores?.Yes || 1}
+                            value={question.scores?.Yes || 2}
                             onChange={(e) => {
                               const newScores = { ...(question.scores || {}) };
                               newScores.Yes = parseInt(e.target.value) || 0;
@@ -2530,659 +2592,626 @@ const MobilePreviewPanel = ({
   isOpen = true,
   onClose
 }) => {
-  const [activePage, setActivePage] = useState(activeSetIndex || 0);
-  const totalPages = formData?.pages?.length || 0;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [expandedSections, setExpandedSections] = useState({});
+  const [expandedQuestions, setExpandedQuestions] = useState({});
+  const currentPageRef = useRef(null);
   
-  // Handle next and previous page navigation
+  // Use effect to reset scroll position when page changes
+  useEffect(() => {
+    if (currentPageRef.current) {
+      currentPageRef.current.scrollTop = 0;
+    }
+    // Reset expanded sections when changing page
+    setExpandedSections({});
+    setExpandedQuestions({});
+  }, [currentPage]);
+
   const nextPage = () => {
-    if (activePage < totalPages - 1) {
-      setActivePage(activePage + 1);
+    if (currentPage < (formData.pages.length - 1)) {
+      setCurrentPage(currentPage + 1);
     }
   };
-  
+
   const prevPage = () => {
-    if (activePage > 0) {
-      setActivePage(activePage - 1);
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
     }
   };
   
-  // Get the current page data safely
   const getCurrentPageData = () => {
-    if (!formData?.pages || formData.pages.length === 0) {
-      return {
-        name: 'No pages available',
-    description: '',
-        sections: []
-      };
-    }
-    
-    const safeIndex = Math.min(activePage, formData.pages.length - 1);
-    return formData.pages[safeIndex] || {
-      name: 'Page not found',
-      description: '',
-      sections: []
-    };
+    return formData.pages[currentPage] || { name: '', sections: [] };
   };
   
-  // Get all questions for display
-  const getDisplayQuestions = () => {
-    const page = getCurrentPageData();
-    
-    if (!page.sections || page.sections.length === 0) {
-      return [];
-    }
-    
-    return page.sections.flatMap(section => 
-      section.questions.map(q => ({
-        ...q,
-        sectionName: section.name
-      }))
-    );
+  // Toggle section accordion
+  const toggleSection = (sectionId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
   };
   
-  // Calculate scoring information
-  const getScoreInfo = () => {
-    const questions = getDisplayQuestions();
-    const scoringQuestions = questions.filter(q => q.scoring && q.scoring.enabled);
-    const totalMax = scoringQuestions.reduce((sum, q) => sum + (q.scoring?.max || 0), 0);
-    
-    return {
-      totalQuestions: questions.length,
-      scoringQuestions: scoringQuestions.length,
-      totalMaxScore: totalMax
-    };
+  // Toggle question accordion
+  const toggleQuestion = (questionId) => {
+    setExpandedQuestions(prev => ({
+      ...prev,
+      [questionId]: !prev[questionId]
+    }));
   };
-
-  // Helper to get a user-friendly type name
-  const getTypeName = (type) => {
-    const typeMap = {
-      'text': 'Text',
-      'number': 'Number',
-      'yesno': 'Yes/No',
-      'yes_no': 'Yes/No',
-      'dropdown': 'Dropdown',
-      'select': 'Dropdown',
-      'checkbox': 'Checkbox',
-      'multiple': 'Multiple Choice',
-      'radio': 'Radio Buttons',
-      'compliance': 'Compliance',
-      'signature': 'Signature',
-      'date': 'Date',
-      'file': 'File Upload',
-      'upload': 'File Upload'
-    };
+  
+  // Calculate total score for a section
+  const calculateSectionScore = (section) => {
+    if (!section.questions || section.questions.length === 0) return 0;
     
-    return typeMap[type] || type;
+    let totalScore = 0;
+    section.questions.forEach(question => {
+      const questionWeight = question.weight || 1;
+      let maxScore = 0;
+      
+      if (question.answerType === 'yesno' && question.scores?.Yes) {
+        maxScore = question.scores.Yes;
+      } else if (question.scores) {
+        // Find highest possible score
+        const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
+        maxScore = Math.max(...scoreValues);
+      }
+      
+      totalScore += questionWeight * maxScore;
+    });
+    
+    return totalScore;
   };
-
-  // Render appropriate input field based on question type
+  
+  // Add renderQuestionInput function to handle different question types
   const renderQuestionInput = (question) => {
-    // Use either type or answerType, whichever is available
-    const type = question.type || question.answerType || 'text';
-    
-    switch(type) {
+    switch (question.answerType || question.type) {
+      case 'yesno':
+        return (
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>Yes</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>No</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>N/A</span>
+            </label>
+          </div>
+        );
       case 'text':
         return (
-          <div style={{
-            padding: '8px 12px',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white'
-          }}>
-            Text input field
-          </div>
+          <input
+            type="text"
+            placeholder="Enter answer"
+            disabled
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px'
+            }}
+          />
         );
-      
-      case 'number':
-        return (
-          <div style={{
-            padding: '8px 12px',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white'
-          }}>
-            Number input field
-          </div>
-        );
-      
-      case 'yesno':
-      case 'yes_no':
-        return (
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            fontSize: '12px'
-          }}>
-            {(question.options?.length > 0 ? question.options : ['Yes', 'No', 'N/A']).map((option, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '50%',
-                  background: 'white'
-                }} />
-                <span>{option}</span>
-              </div>
-            ))}
-          </div>
-        );
-      
-      case 'dropdown':
-      case 'select':
-        return (
-          <div style={{
-            padding: '8px 12px',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>Select an option</span>
-            <span>▼</span>
-          </div>
-        );
-      
-      case 'checkbox':
-      case 'multiple':
-        return (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            fontSize: '12px'
-          }}>
-            {question.options && question.options.length > 0 ? (
-              question.options.map((option, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <div style={{
-                    width: '14px',
-                    height: '14px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '2px',
-                    background: 'white'
-                  }} />
-                  <span>{typeof option === 'string' ? option : option.text || 'Option'}</span>
-                </div>
-              ))
-            ) : (
-              <div>No options defined</div>
-            )}
-          </div>
-        );
-      
-      case 'radio':
-        return (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            fontSize: '12px'
-          }}>
-            {question.options && question.options.length > 0 ? (
-              question.options.map((option, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <div style={{
-                    width: '14px',
-                    height: '14px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '50%',
-                    background: 'white'
-                  }} />
-                  <span>{typeof option === 'string' ? option : option.text || 'Option'}</span>
-                </div>
-              ))
-            ) : (
-              <div>No options defined</div>
-            )}
-          </div>
-        );
-      
       case 'compliance':
         return (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            fontSize: '12px'
-          }}>
-            {['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'].map((option, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '50%',
-                  background: 'white'
-                }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>Full Compliance</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>Partial Compliance</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>Non-Compliance</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled />
+              <span>Not Applicable</span>
+            </label>
+          </div>
+        );
+      case 'multiple':
+      case 'dropdown':
+        return (
+          <select 
+            disabled 
+            style={{ 
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="">Select an option</option>
+            {(question.options || []).map((option, i) => (
+              <option key={i} value={option}>{option}</option>
+            ))}
+          </select>
+        );
+      case 'checkbox':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(question.options || ['Option 1', 'Option 2']).map((option, i) => (
+              <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input type="checkbox" disabled />
                 <span>{option}</span>
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: '10px',
-                  color: '#64748b',
-                  background: '#f1f5f9',
-                  padding: '1px 4px',
-                  borderRadius: '2px'
-                }}>
-                  {index === 0 ? '2' : index === 1 ? '1' : '0'}
-                </span>
-              </div>
+              </label>
             ))}
           </div>
         );
-      
-      case 'signature':
-        return (
-          <div style={{
-            padding: '12px',
-            border: '1px dashed #94a3b8',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white',
-            height: '60px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            Signature field (tap to sign)
-          </div>
-        );
-      
       case 'date':
         return (
-          <div style={{
-            padding: '8px 12px',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>Select date</span>
-            <span>📅</span>
-          </div>
+          <input
+            type="date"
+            disabled
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px'
+            }}
+          />
         );
-      
-      case 'file':
-      case 'upload':
-        return (
-          <div style={{
-            padding: '10px 12px',
-            border: '1px dashed #94a3b8',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}>
-            <span>📎</span>
-            <span>Upload file/photo</span>
-          </div>
-        );
-      
       default:
         return (
-          <div style={{
-            padding: '8px 12px',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#94a3b8',
-            background: 'white'
-          }}>
-            Input field for {type || 'unknown'} type
-          </div>
+          <input
+            type="text"
+            placeholder="Enter answer"
+            disabled
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px'
+            }}
+          />
         );
     }
   };
   
-  const currentPage = getCurrentPageData();
-  const displayQuestions = getDisplayQuestions();
-  const scoreInfo = getScoreInfo();
+  // Calculate max score for question
+  const calculateQuestionScore = (question) => {
+    const weight = question.weight || 1;
+    let maxScore = 0;
+    
+    if (question.answerType === 'yesno' && question.scores?.Yes) {
+      maxScore = question.scores.Yes;
+    } else if (question.scores) {
+      // Find highest possible score
+      const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
+      maxScore = Math.max(...scoreValues);
+    }
+    
+    return weight * maxScore;
+  };
+  
+  const currentPageData = getCurrentPageData();
   
   if (!isOpen) return null;
-
+  
   return (
     <div style={{
-      width: '320px',
-      height: '100%',
-      borderLeft: '1px solid #e2e8f0',
-      background: '#ffffff',
+      position: 'fixed',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: '375px',
+      backgroundColor: '#f1f5f9',
+      boxShadow: '-2px 0 10px rgba(0, 0, 0, 0.1)',
       display: 'flex',
       flexDirection: 'column',
-      position: 'fixed',
-      right: 0,
-      top: 0,
-      bottom: 0,
       zIndex: 100,
-      boxShadow: '-5px 0 15px rgba(0,0,0,0.05)'
+      borderLeft: '1px solid #e2e8f0'
     }}>
+      {/* Mobile emulator header */}
       <div style={{
+        backgroundColor: '#1e293b',
+        padding: '12px',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '16px',
-        borderBottom: '1px solid #e2e8f0'
+        alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Smartphone size={18} />
-          <span style={{ fontWeight: '500' }}>Mobile Preview</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
         </div>
+        <div style={{ color: 'white', fontSize: '12px' }}>Mobile Preview</div>
         <button
           onClick={onClose}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#64748b'
+            color: 'white'
           }}
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
       
+      {/* App header */}
       <div style={{
-        flex: 1,
-        overflow: 'auto',
-        padding: '16px',
+        padding: '12px 16px',
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e2e8f0',
         display: 'flex',
-        flexDirection: 'column',
+        justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{
-          width: '280px',
-          minHeight: '500px',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#f8fafc'
-        }}>
-          {/* Header */}
-          <div style={{
-            padding: '12px 16px',
-            borderBottom: '1px solid #e2e8f0',
-            background: '#fff',
+        <div style={{ fontWeight: '600', fontSize: '18px' }}>MIRSAT</div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <User size={16} />
+          <div style={{ 
+            width: '8px', 
+            height: '8px', 
+            borderRadius: '50%', 
+            backgroundColor: '#10b981' 
+          }}></div>
+        </div>
+      </div>
+      
+      {/* Template header */}
+      <div style={{
+        padding: '16px',
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e2e8f0',
+      }}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+          {formData.name || 'Untitled Template'}
+        </h2>
+        <div style={{ fontSize: '13px', color: '#64748b' }}>
+          {formData.description || 'No description provided'}
+        </div>
+      </div>
+      
+      {/* Page navigation */}
+      <div style={{
+        padding: '12px 16px',
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <button
+          onClick={prevPage}
+          disabled={currentPage === 0}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: currentPage === 0 ? '#cbd5e1' : '#1e40af',
+            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+            padding: '4px 8px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '4px'
-          }}>
-            <h3 style={{
-              margin: 0,
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#0f172a'
-            }}>
-              {formData?.name || 'Untitled Inspection'}
-            </h3>
-            <div style={{
-              fontSize: '12px',
-              color: '#64748b',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <span>Type: {formData?.type || 'Not specified'}</span>
-              <span>Priority: {formData?.priority || 'Not set'}</span>
-            </div>
-          </div>
-          
-          {/* Page Navigation */}
-          {totalPages > 1 && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '8px 16px',
-              borderBottom: '1px solid #e2e8f0',
-              background: '#fff'
-            }}>
-              <button
-                onClick={prevPage}
-                disabled={activePage === 0}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: activePage === 0 ? 'not-allowed' : 'pointer',
-                  opacity: activePage === 0 ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <ChevronLeft size={16} />
-                Prev
-              </button>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>
-                Page {activePage + 1} of {totalPages}
-              </span>
-              <button
-                onClick={nextPage}
-                disabled={activePage === totalPages - 1}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: activePage === totalPages - 1 ? 'not-allowed' : 'pointer',
-                  opacity: activePage === totalPages - 1 ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                Next
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            alignItems: 'center'
+          }}
+        >
+          <ChevronLeft size={20} />
+        </button>
+        
+        <div style={{ fontWeight: '500' }}>
+          {formData.pages.length > 0 ? `Page ${currentPage + 1} of ${formData.pages.length}` : 'No Pages'}
+        </div>
+        
+        <button
+          onClick={nextPage}
+          disabled={currentPage >= formData.pages.length - 1}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: currentPage >= formData.pages.length - 1 ? '#cbd5e1' : '#1e40af',
+            cursor: currentPage >= formData.pages.length - 1 ? 'not-allowed' : 'pointer',
+            padding: '4px 8px',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+      
+      {/* Page content */}
+      <div 
+        ref={currentPageRef}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '16px',
+          height: 'calc(100vh - 180px)' // Set explicit height for scrolling
+        }}
+      >
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '16px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
+            {currentPageData.name || `Page ${currentPage + 1}`}
+          </h3>
+          {currentPageData.description && (
+            <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px' }}>
+              {currentPageData.description}
+            </p>
           )}
+        </div>
+        
+        {/* Sections as accordions */}
+        {currentPageData.sections && currentPageData.sections.map((section, sectionIndex) => {
+          const sectionId = `section-${currentPage}-${sectionIndex}`;
+          const sectionScore = calculateSectionScore(section);
+          const isExpanded = expandedSections[sectionId] || false;
           
-          {/* Page Content */}
-          <div style={{ padding: '16px', flex: 1 }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600 }}>
-              {currentPage.name || `Page ${activePage + 1}`}
-            </h4>
-            
-            {currentPage.description && (
-              <p style={{ 
-                margin: '0 0 16px 0', 
-                fontSize: '12px', 
-                color: '#64748b' 
-              }}>
-                {currentPage.description}
-              </p>
-            )}
-            
-            {currentPage.sections && currentPage.sections.length > 0 ? (
-              <>
-                {currentPage.sections.map((section, sectionIndex) => (
-                  <div key={sectionIndex} style={{ 
-                    marginBottom: '16px',
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0'
+          return (
+            <div key={sectionId} style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden'
+            }}>
+              {/* Section header */}
+              <div 
+                onClick={() => toggleSection(sectionId)}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: isExpanded ? '#f8fafc' : 'white',
+                  borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <div>
+                  <div style={{ 
+                    fontWeight: '600', 
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
-                    <h5 style={{ 
-                      margin: '0 0 8px 0', 
-                      fontSize: '13px',
-                      fontWeight: 600
+                    {section.name || `Section ${sectionIndex + 1}`}
+                    <span style={{ 
+                      fontSize: '12px', 
+                      padding: '2px 8px', 
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      borderRadius: '12px',
+                      fontWeight: 'normal'
                     }}>
-                      {section.name || `Section ${sectionIndex + 1}`}
-                    </h5>
+                      {section.questions?.length || 0} Q
+                    </span>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Section score */}
+                  <div style={{
+                    fontWeight: '600',
+                    color: '#1e40af',
+                    backgroundColor: '#eff6ff',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '13px'
+                  }}>
+                    {sectionScore} pts
+                  </div>
+                  
+                  {/* Accordion toggle */}
+                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </div>
+              </div>
+              
+              {/* Section content (only visible when expanded) */}
+              {isExpanded && (
+                <div style={{ padding: '16px' }}>
+                  {section.description && (
+                    <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px' }}>
+                      {section.description}
+                    </p>
+                  )}
+                  
+                  {/* Questions as sub-accordions */}
+                  {section.questions && section.questions.map((question, questionIndex) => {
+                    const questionId = `question-${currentPage}-${sectionIndex}-${questionIndex}`;
+                    const isQuestionExpanded = expandedQuestions[questionId] || false;
+                    const questionScore = calculateQuestionScore(question);
                     
-                    {section.description && (
-                      <p style={{ 
-                        margin: '0 0 12px 0', 
-                        fontSize: '12px', 
-                        color: '#64748b' 
+                    return (
+                      <div key={questionId} style={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '6px',
+                        marginBottom: questionIndex < section.questions.length - 1 ? '12px' : '0',
+                        overflow: 'hidden'
                       }}>
-                        {section.description}
-                      </p>
-                    )}
-                    
-                    {section.questions && section.questions.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {section.questions.map((question, questionIndex) => (
-                          <div key={questionIndex} style={{
-                            padding: '10px',
-                            background: '#f8fafc',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            border: '1px solid #e2e8f0'
+                        {/* Question header */}
+                        <div 
+                          onClick={() => toggleQuestion(questionId)}
+                          style={{
+                            padding: '12px',
+                            backgroundColor: isQuestionExpanded ? '#f8fafc' : 'white',
+                            borderBottom: isQuestionExpanded ? '1px solid #e2e8f0' : 'none',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <div style={{ 
+                            fontWeight: '500', 
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            flex: 1
                           }}>
-                            <div style={{ fontWeight: '500', marginBottom: '8px' }}>
-                              {questionIndex + 1}. {question.text || 'Untitled Question'}
-                              {question.required && <span style={{ color: 'red' }}> *</span>}
+                            <span style={{ 
+                              minWidth: '24px', 
+                              height: '24px', 
+                              backgroundColor: '#f1f5f9',
+                              color: '#475569',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: '600'
+                            }}>
+                              {questionIndex + 1}
+                            </span>
+                            <span style={{ flex: 1 }}>
+                              {question.text || 'Untitled Question'}
+                            </span>
+                          </div>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                              fontWeight: '500',
+                              color: '#0e7490',
+                              backgroundColor: '#ecfeff',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}>
+                              {questionScore} pts
                             </div>
-                            
+                            {isQuestionExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </div>
+                        </div>
+                        
+                        {/* Question content */}
+                        {isQuestionExpanded && (
+                          <div style={{ padding: '12px' }}>
                             {question.description && (
-                              <div style={{ 
-                                fontSize: '11px', 
-                                color: '#64748b', 
-                                marginBottom: '8px' 
-                              }}>
+                              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>
                                 {question.description}
                               </div>
                             )}
                             
-                            {/* Render appropriate input based on question type */}
-                            <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+                            {/* Answer input */}
+                            <div style={{ marginBottom: '12px' }}>
                               {renderQuestionInput(question)}
                             </div>
                             
-                            <div style={{ 
-                              fontSize: '11px', 
-                              color: '#64748b',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginTop: '8px' 
+                            {/* Scoring details */}
+                            <div style={{
+                              backgroundColor: '#f8fafc',
+                              padding: '10px',
+                              borderRadius: '6px',
+                              fontSize: '12px'
                             }}>
-                              <span>Type: {getTypeName(question.type || question.answerType) || 'Text'}</span>
-                              {question.scoring && question.scoring.enabled && (
-                                <span style={{ 
-                                  background: '#e8f5e9', 
-                                  color: '#2e7d32',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  fontSize: '10px'
+                              <div style={{ fontWeight: '600', marginBottom: '4px', color: '#334155' }}>
+                                Scoring
+                              </div>
+                              
+                              {question.answerType === 'yesno' && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  <div style={{ 
+                                    backgroundColor: '#dcfce7', 
+                                    color: '#166534',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    Yes: {question.scores?.Yes || 0} pts
+                                  </div>
+                                  <div style={{ 
+                                    backgroundColor: '#fee2e2', 
+                                    color: '#991b1b',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    No: {question.scores?.No || 0} pts
+                                  </div>
+                                  <div style={{ 
+                                    backgroundColor: '#f1f5f9', 
+                                    color: '#475569',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    N/A: {question.scores?.['N/A'] || 0} pts
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {question.answerType === 'compliance' && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  <div style={{ 
+                                    backgroundColor: '#dcfce7', 
+                                    color: '#166534',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    Full: {question.scores?.['Full compliance'] || 0} pts
+                                  </div>
+                                  <div style={{ 
+                                    backgroundColor: '#fef9c3', 
+                                    color: '#854d0e',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    Partial: {question.scores?.['Partial compliance'] || 0} pts
+                                  </div>
+                                  <div style={{ 
+                                    backgroundColor: '#fee2e2', 
+                                    color: '#991b1b',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    Non: {question.scores?.['Non-compliant'] || 0} pts
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {question.weight && question.weight > 1 && (
+                                <div style={{ 
+                                  marginTop: '8px', 
+                                  borderTop: '1px dashed #e2e8f0',
+                                  paddingTop: '8px',
+                                  fontSize: '12px',
+                                  color: '#475569'
                                 }}>
-                                  Score: {question.scoring.max || 1}
-                                </span>
+                                  Weight multiplier: {question.weight}x
+                                </div>
                               )}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    ) : (
-                      <div style={{ 
-                        fontSize: '12px', 
-                        color: '#94a3b8',
-                        textAlign: 'center',
-                        padding: '8px'
-                      }}>
-                        No questions in this section
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            ) : (
-              <div style={{ 
-                padding: '16px', 
-                textAlign: 'center',
-                color: '#94a3b8',
-                fontSize: '12px',
-                background: 'white',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0'
-              }}>
-                No sections have been added to this page yet
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Footer with summary */}
-      <div style={{ 
-        padding: '16px',
-        borderTop: '1px solid #e2e8f0',
-        background: '#f8fafc'
-      }}>
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
-          Summary:
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        
+        {currentPageData.sections && currentPageData.sections.length === 0 && (
           <div style={{ 
-            padding: '8px',
-            background: 'white',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            flex: 1,
+            padding: '32px 16px', 
             textAlign: 'center',
-            fontSize: '12px'
-          }}>
-            <div style={{ color: '#64748b' }}>Questions</div>
-            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.totalQuestions}</div>
-          </div>
-          <div style={{ 
-            padding: '8px',
-            background: 'white',
+            backgroundColor: 'white',
             borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            flex: 1,
-            textAlign: 'center',
-            fontSize: '12px'
+            color: '#94a3b8'
           }}>
-            <div style={{ color: '#64748b' }}>Scoring</div>
-            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.scoringQuestions}/{scoreInfo.totalQuestions}</div>
+            <div style={{ marginBottom: '8px' }}>
+              <FileText size={36} style={{ color: '#cbd5e1', margin: '0 auto 12px' }} />
+              <div>No sections found on this page</div>
+            </div>
           </div>
-          <div style={{ 
-            padding: '8px',
-            background: 'white',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            flex: 1,
-            textAlign: 'center',
-            fontSize: '12px'
-          }}>
-            <div style={{ color: '#64748b' }}>Max Score</div>
-            <div style={{ fontWeight: '600', fontSize: '14px' }}>{scoreInfo.totalMaxScore}</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -3511,6 +3540,28 @@ const SectionTab = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  
+  &:hover {
+    color: var(--color-navy);
+    
+    .delete-icon {
+      opacity: 1;
+    }
+  }
+  
+  .delete-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #ef4444;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 4px;
+    
+    &:hover {
+      color: #b91c1c;
+    }
+  }
 `;
 
 const SectionAddButton = styled.button`
@@ -3590,6 +3641,19 @@ const InspectionLevelForm = () => {
     isComplex: false
   });
   const [saveError, setSaveError] = useState('');
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  
+  // Refs
+  const autoSaveToLocalStorage = useRef(
+    debounce((data) => {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        console.log('Template auto-saved to local storage');
+    } catch (error) {
+        console.error('Error auto-saving to local storage:', error);
+      }
+    }, 2000)
+  ).current;
   
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -3615,7 +3679,7 @@ const InspectionLevelForm = () => {
       setLoading(true);
       
       // Use the correct API endpoint with proper headers
-      const response = await axios.get(`https://mirsat-backend.onrender.com/api/v1/inspection/${id}`, {
+      const response = await axios.get(`http://localhost:5001/api/v1/inspection/${id}`, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -3763,14 +3827,14 @@ const InspectionLevelForm = () => {
       let response;
       
       if (id) {
-        response = await axios.put(`https://mirsat-backend.onrender.com/api/v1/inspection/${id}`, templateData, {
+        response = await axios.put(`http://localhost:5001/api/v1/inspection/${id}`, templateData, {
           timeout: 60000, // Increase timeout for large templates
           headers: {
             'Content-Type': 'application/json'
           }
         });
       } else {
-        response = await axios.post('https://mirsat-backend.onrender.com/api/v1/inspection', templateData, {
+        response = await axios.post('http://localhost:5001/api/v1/inspection', templateData, {
           timeout: 60000, // Increase timeout for large templates
           headers: {
             'Content-Type': 'application/json'
@@ -3800,13 +3864,24 @@ const InspectionLevelForm = () => {
   };
 
   const handlePublish = async () => {
+    // If the template is already published, set modal to unpublish mode
+    const isPublished = formData.status === 'active';
     setIsConfirmModalOpen(true);
+  };
+
+  // Add a conditional title for the confirm modal
+  const getPublishModalText = () => {
+    return formData.status === 'active' 
+      ? { title: 'Unpublish Template', message: 'Are you sure you want to unpublish this template?' } 
+      : { title: 'Publish Template', message: 'Are you sure you want to publish this template?' };
   };
 
   const confirmPublish = async () => {
     try {
       setLoading(true);
-      setSaveMessage('Saving and publishing template...');
+      // Determine if we're publishing or unpublishing
+      const isPublishing = formData.status !== 'active';
+      setSaveMessage(isPublishing ? 'Saving and publishing template...' : 'Unpublishing template...');
       
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -3815,15 +3890,16 @@ const InspectionLevelForm = () => {
       const savedData = await handleSave();
       
       if (savedData) {
-        // Update the status to 'active' instead of 'draft'
-        const publishData = {
+        // Update the status based on the current status
+        const newStatus = isPublishing ? 'active' : 'draft';
+        const updateData = {
           ...savedData,
-          status: 'active'
+          status: newStatus
         };
         
         // Use the correct API endpoint
-        await axios.put(`https://mirsat-backend.onrender.com/api/v1/inspection/${savedData._id || savedData.id}`, publishData, {
-          timeout: 30000, // 30s timeout for publish operation
+        await axios.put(`http://localhost:5001/api/v1/inspection/${savedData._id || savedData.id}`, updateData, {
+          timeout: 30000, // 30s timeout for operation
           headers: {
             'Content-Type': 'application/json'
           }
@@ -3831,22 +3907,24 @@ const InspectionLevelForm = () => {
         
         setFormData({
           ...formData,
-          status: 'active'
+          status: newStatus
         });
         
-        setSaveMessage('Template published successfully');
+        setSaveMessage(isPublishing ? 'Template published successfully' : 'Template unpublished successfully');
         
         // Redirect to template listing after publishing
-        setTimeout(() => {
-          navigate('/inspection');
-        }, 1500);
+        if (isPublishing) {
+          setTimeout(() => {
+            navigate('/inspection');
+          }, 1500);
+        }
       }
       
       setIsConfirmModalOpen(false);
       setLoading(false);
     } catch (error) {
-      console.error('Error publishing template:', error);
-      setSaveError(error.response?.data?.error?.message || error.message || 'Failed to publish template');
+      console.error('Error updating template status:', error);
+      setSaveError(error.response?.data?.error?.message || error.message || 'Failed to update template status');
       setSaveMessage('');
       setLoading(false);
     }
@@ -3928,27 +4006,36 @@ const InspectionLevelForm = () => {
   };
 
   const addQuestion = (sectionIndex) => {
-    const newPages = [...formData.pages];
-    const activePage = newPages[activePageIndex];
-    const section = activePage.sections[sectionIndex];
-    
-    section.questions.push({
+    const newQuestion = {
+      id: uuidv4(),
       text: '',
       description: '',
-      type: 'text',
-      required: false,
-      options: [],
+      answerType: 'yesno',
+      type: 'yesno',
+      required: true,
+      mandatory: true,
+      requirementType: 'mandatory',
+      options: ['Yes', 'No', 'N/A'],
       scoring: {
-        enabled: false,
-        max: 1,
-        weights: {}
+        enabled: true,
+        max: 2
+      },
+      scores: {
+        'Yes': 2,
+        'No': 0,
+        'N/A': 0
       }
-    });
+    };
+
+    const updatedPages = [...formData.pages];
+    updatedPages[activePageIndex].sections[sectionIndex].questions.push(newQuestion);
     
     setFormData({
       ...formData,
-      pages: newPages
+      pages: updatedPages
     });
+    
+    setUnsavedChanges(true);
   };
 
   const updateQuestion = (sectionIndex, questionIndex, data) => {
@@ -4140,18 +4227,6 @@ const InspectionLevelForm = () => {
   // Add local storage key and functions
   const LOCAL_STORAGE_KEY = 'inspection_template_draft';
   
-  // Create a debounced auto-save function
-  const autoSaveToLocalStorage = useRef(
-    debounce((data) => {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-        console.log('Template auto-saved to local storage');
-    } catch (error) {
-        console.error('Error auto-saving to local storage:', error);
-      }
-    }, 2000)
-  ).current;
-  
   // Load template from local storage on initial render
   useEffect(() => {
     if (!id) {
@@ -4177,6 +4252,561 @@ const InspectionLevelForm = () => {
       autoSaveToLocalStorage(formData);
     }
   }, [formData, id, autoSaveToLocalStorage]);
+
+  const removePage = (index) => {
+    if (formData.pages.length <= 1) {
+      toast.error('Templates must have at least one page');
+      return;
+    }
+
+    const updatedPages = [...formData.pages];
+    updatedPages.splice(index, 1);
+    
+    // If the current activePageIndex is beyond the new array length, set it to the last valid index
+    const newActivePageIndex = activePageIndex >= updatedPages.length ? updatedPages.length - 1 : activePageIndex;
+    
+    setFormData(prev => ({
+      ...prev,
+      pages: updatedPages
+    }));
+    setActivePageIndex(newActivePageIndex);
+    setUnsavedChanges(true);
+  };
+
+  const removeSection = (pageIndex, sectionIndex) => {
+    const updatedPages = [...formData.pages];
+    updatedPages[pageIndex].sections.splice(sectionIndex, 1);
+    
+    setFormData(prev => ({
+      ...prev,
+      pages: updatedPages
+    }));
+    setUnsavedChanges(true);
+  };
+
+  // Add remove button in page header
+  // ... existing code ...
+
+  const renderPages = () => {
+    const pageList = formData.pages.map((page, pageIndex) => (
+      <div
+        key={page.id || pageIndex}
+        style={{
+          padding: '20px',
+          backgroundColor: activePageIndex === pageIndex ? '#f8fafc' : 'white',
+          borderBottom: '1px solid #e2e8f0',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s'
+        }}
+      >
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div 
+            onClick={() => setActivePageIndex(pageIndex)}
+            style={{ flex: '1' }}
+          >
+            <div style={{ 
+              fontSize: '16px', 
+              fontWeight: activePageIndex === pageIndex ? '600' : '500',
+              color: activePageIndex === pageIndex ? 'var(--color-navy)' : '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>{pageIndex + 1}.</span>
+              <span>{page.name || `Unnamed Page ${pageIndex + 1}`}</span>
+              {page.sections && page.sections.length > 0 && (
+                <span style={{ 
+                  marginLeft: '8px', 
+                  fontSize: '13px', 
+                  color: '#64748b', 
+                  fontWeight: 'normal'
+                }}>
+                  ({page.sections.length} section{page.sections.length !== 1 ? 's' : ''})
+                </span>
+              )}
+            </div>
+            
+            {page.description && (
+              <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+                {page.description}
+              </div>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setActivePageIndex(pageIndex)}
+              style={{
+                background: 'none',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#64748b'
+              }}
+              title="Edit Page"
+            >
+              <Edit size={18} />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete this page: "${page.name || `Page ${pageIndex + 1}`}"? This action cannot be undone.`)) {
+                  removePage(pageIndex);
+                }
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#ef4444'
+              }}
+              title="Delete Page"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
+
+    // Add the "Add Page" button to the end of the page list
+    return (
+      <>
+        {pageList}
+        <div style={{
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <Button 
+            onClick={addPage}
+            style={{
+              backgroundColor: '#f0f9ff',
+              color: '#0284c7',
+              margin: '0 auto'
+            }}
+          >
+            <Plus size={16} />
+            Add Page
+          </Button>
+        </div>
+      </>
+    );
+  };
+
+  // ... existing code ...
+
+  // Update SectionHeader to include remove button
+  const SectionHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h4 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .section-header-actions {
+      display: flex;
+      gap: 8px;
+    }
+  `;
+
+  // In the template where sections are rendered, add the remove section button
+  const renderSections = (pageIndex) => {
+    const page = formData.pages[pageIndex];
+    if (!page || !page.sections) return null;
+    
+    const sectionList = page.sections.map((section, sectionIndex) => (
+      <div 
+        key={section.id || sectionIndex}
+        style={{
+          backgroundColor: 'white',
+          marginBottom: '16px',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 16px',
+          backgroundColor: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0'
+        }}>
+          <div style={{
+            fontSize: '16px',
+            fontWeight: '500',
+            color: 'var(--color-navy)'
+          }}>
+            {section.name || `Section ${sectionIndex + 1}`}
+            
+            {section.questions && section.questions.length > 0 && (
+              <span style={{ 
+                marginLeft: '8px', 
+                fontSize: '13px', 
+                color: '#64748b', 
+                fontWeight: 'normal'
+              }}>
+                ({section.questions.length} question{section.questions.length !== 1 ? 's' : ''})
+              </span>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => addQuestion(sectionIndex)}
+              style={{
+                background: 'none',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#3b82f6'
+              }}
+              title="Add Question"
+            >
+              <Plus size={18} />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete this section: "${section.name || `Section ${sectionIndex + 1}`}"? This action cannot be undone.`)) {
+                  removeSection(pageIndex, sectionIndex);
+                }
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#ef4444'
+              }}
+              title="Delete Section"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+        
+        <div style={{ padding: '16px' }}>
+          {section.description && (
+            <div style={{ 
+              marginBottom: '16px', 
+              fontSize: '14px', 
+              color: '#64748b'
+            }}>
+              {section.description}
+            </div>
+          )}
+          
+          {section.questions && section.questions.length > 0 ? (
+            <div>
+              <div style={{ marginBottom: '12px', fontSize: '14px', color: '#334155', fontWeight: '500' }}>
+                Questions
+              </div>
+              
+              {section.questions.map((question, questionIndex) => (
+                <QuestionItemComponent
+                  key={question.id || questionIndex}
+                  question={question}
+                  questionIndex={questionIndex}
+                  loading={loading}
+                  updateQuestion={(updatedQuestion) => updateQuestion(sectionIndex, questionIndex, updatedQuestion)}
+                  removeQuestion={() => removeQuestion(sectionIndex, questionIndex)}
+                  onMoveQuestion={() => openMoveQuestionModal(sectionIndex, questionIndex)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={{ 
+              padding: '20px', 
+              textAlign: 'center', 
+              color: '#94a3b8',
+              backgroundColor: '#f8fafc',
+              borderRadius: '6px' 
+            }}>
+              <div style={{ marginBottom: '12px' }}>
+                <HelpCircle size={24} style={{ marginBottom: '8px' }} />
+                <div>No questions in this section</div>
+              </div>
+              <Button 
+                onClick={() => addQuestion(sectionIndex)}
+                variant="primary"
+                style={{ margin: '0 auto' }}
+              >
+                <Plus size={16} />
+                Add Question
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    ));
+
+    // Add the "Add Section" button at the end
+    return (
+      <>
+        {sectionList}
+        <div style={{
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <Button 
+            onClick={addSection}
+            style={{
+              backgroundColor: '#f0f9ff',
+              color: '#0284c7',
+              margin: '0 auto'
+            }}
+          >
+            <Plus size={16} />
+            Add Section
+          </Button>
+        </div>
+      </>
+    );
+  };
+
+  // ... existing code ...
+
+  // Update the tabs to include delete buttons
+  const renderPageTabs = () => {
+    return (
+      <div style={{ display: 'flex', overflow: 'auto', borderBottom: '1px solid #e2e8f0' }}>
+        {formData.pages.map((page, index) => (
+          <Tab
+            key={index}
+            $active={index === activePageIndex}
+            onClick={() => setActivePageIndex(index)}
+          >
+            {page.name || `Page ${index + 1}`}
+            <div 
+              className="delete-icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete this page: "${page.name || `Page ${index + 1}`}"? This action cannot be undone.`)) {
+                  removePage(index);
+                }
+              }}
+              title="Delete Page"
+            >
+              <X size={14} />
+            </div>
+          </Tab>
+        ))}
+        <button
+          onClick={addPage}
+          style={{
+            padding: '12px 16px',
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'var(--color-navy)',
+            cursor: 'pointer'
+          }}
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+    );
+  };
+
+  // Update renderSectionTabs to include delete buttons
+  const renderSectionTabs = (pageIndex) => {
+    const page = formData.pages[pageIndex];
+    if (!page || !page.sections) return null;
+    
+    return (
+      <div style={{ display: 'flex', overflow: 'auto', borderBottom: '1px solid #e2e8f0', marginBottom: '16px' }}>
+        {page.sections.map((section, index) => (
+          <SectionTab 
+            key={index} 
+            $active={index === activeSectionTab}
+            onClick={() => setActiveSectionTab(index)}
+          >
+            {section.name || `Inspection Level ${index + 1}`}
+            <div 
+              className="delete-icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete this section: "${section.name || `Section ${index + 1}`}"? This action cannot be undone.`)) {
+                  removeSection(activePageIndex, index);
+                }
+              }}
+              title="Delete Section"
+            >
+              <X size={14} />
+            </div>
+            <TabCount $active={index === activeSectionTab}>
+              {section.questions?.length || 0}
+            </TabCount>
+          </SectionTab>
+        ))}
+        <button
+          onClick={addSection}
+          style={{
+            padding: '10px 16px',
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'var(--color-navy)',
+            cursor: 'pointer'
+          }}
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+    );
+  };
+
+  // Replace the tabs container in the pages section
+  {formData.pages.length > 0 && (
+    <>
+      {renderPageTabs()}
+      
+      <div style={{ padding: '24px' }}>
+        <InspectionFormRow>
+          <InspectionFormGroup>
+            <Label>Page Name</Label>
+            <Input
+              value={formData.pages[activePageIndex].name}
+              onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
+              placeholder="Enter page name"
+            />
+          </InspectionFormGroup>
+          <InspectionFormGroup>
+            <Label>Page Description</Label>
+            <TextArea
+              value={formData.pages[activePageIndex].description}
+              onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
+              placeholder="Enter page description"
+              rows={2}
+            />
+          </InspectionFormGroup>
+        </InspectionFormRow>
+        
+        <SectionsWrapper>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h4>Inspection Levels</h4>
+            <Button onClick={addSection}>
+              <Plus size={16} style={{ marginRight: '4px' }} />
+              Add Inspection Level
+            </Button>
+          </div>
+          
+          {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
+            <>
+              {renderSectionTabs(activePageIndex)}
+              
+              {formData.pages[activePageIndex].sections[activeSectionTab] && (
+                <div>
+                  <InspectionFormRow>
+                    <InspectionFormGroup>
+                      <Label>Inspection Level Name</Label>
+                      <Input
+                        value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
+                        onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
+                        placeholder="Enter inspection level name"
+                      />
+                    </InspectionFormGroup>
+                    <InspectionFormGroup>
+                      <Label>Inspection Level Description</Label>
+                      <TextArea
+                        value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
+                        onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
+                        placeholder="Enter inspection level description"
+                        rows={2}
+                      />
+                    </InspectionFormGroup>
+                  </InspectionFormRow>
+                  
+                  <div style={{ marginTop: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h5>Questions</h5>
+                      <Button onClick={() => addQuestion(activeSectionTab)}>
+                        <Plus size={16} style={{ marginRight: '4px' }} />
+                        Add Question
+                      </Button>
+                    </div>
+                    
+                    {formData.pages[activePageIndex].sections[activeSectionTab].questions && 
+                    formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
+                      <QuestionTable>
+                        <QuestionTableHeader>
+                          <div style={{ width: '40px' }}>#</div>
+                          <div>Question</div>
+                          <div>Type</div>
+                          <div>Actions</div>
+                        </QuestionTableHeader>
+                        
+                        {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
+                          <QuestionItemComponent
+                            key={questionIndex}
+                            question={question}
+                            questionIndex={questionIndex}
+                            loading={loading}
+                            updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
+                            removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
+                            onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
+                          />
+                        ))}
+                      </QuestionTable>
+                    ) : (
+                      <TabEmptyState>
+                        <FileText size={32} />
+                        <p>No questions added yet</p>
+                        <Button onClick={() => addQuestion(activeSectionTab)}>
+                          <Plus size={16} style={{ marginRight: '4px' }} />
+                          Add Question
+                        </Button>
+                      </TabEmptyState>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <TabEmptyState>
+              <Layers size={32} />
+              <p>No inspection levels added yet</p>
+              <Button onClick={addSection}>
+                <Plus size={16} style={{ marginRight: '4px' }} />
+                Add Inspection Level
+              </Button>
+            </TabEmptyState>
+          )}
+        </SectionsWrapper>
+      </div>
+    </>
+  )}
 
   return (
     <PageContainer>
@@ -4215,14 +4845,23 @@ const InspectionLevelForm = () => {
           </Button>
           <InspectionSaveButton onClick={handleSave} disabled={loading}>
             <Save size={16} />
-            Save
+            {id ? 'Update Template' : 'Save'}
           </InspectionSaveButton>
           <InspectionPublishButton
             onClick={handlePublish}
             disabled={loading || !formData.name}
           >
-            <Upload size={16} />
-            Publish
+            {formData.status === 'active' ? (
+              <>
+                <Download size={16} />
+                Unpublish Template
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Publish
+              </>
+            )}
           </InspectionPublishButton>
         </div>
       </Header>
@@ -4589,154 +5228,125 @@ const InspectionLevelForm = () => {
           <h3 style={{ marginBottom: "20px" }}>Pages and Questions</h3>
           
           {formData.pages.length > 0 && (
-            <TabsContainer>
-              {formData.pages.map((page, index) => (
-                <Tab
-                  key={index}
-                  $active={index === activePageIndex}
-                  onClick={() => setActivePageIndex(index)}
-                >
-                  {page.name || `Page ${index + 1}`}
-                </Tab>
-              ))}
-              <InspectionAddTabButton onClick={addPage}>
-                <Plus size={16} />
-              </InspectionAddTabButton>
-            </TabsContainer>
-          )}
-          
-          {formData.pages.length > 0 && (
-            <div>
-              <InspectionFormRow>
-                <InspectionFormGroup>
-                  <Label>Page Name</Label>
-                            <Input
-                    value={formData.pages[activePageIndex].name}
-                    onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
-                    placeholder="Enter page name"
-                  />
-                </InspectionFormGroup>
-                <InspectionFormGroup>
-                  <Label>Page Description</Label>
-                            <TextArea
-                    value={formData.pages[activePageIndex].description}
-                    onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
-                    placeholder="Enter page description"
-                    rows={2}
-                  />
-                </InspectionFormGroup>
-              </InspectionFormRow>
+            <>
+              {renderPageTabs()}
               
-              <SectionsWrapper>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h4>Inspection Levels</h4>
-                  <Button onClick={addSection}>
-                    <Plus size={16} style={{ marginRight: '4px' }} />
-                    Add Inspection Level
-                  </Button>
-                </div>
+              <div style={{ padding: '24px' }}>
+                <InspectionFormRow>
+                  <InspectionFormGroup>
+                    <Label>Page Name</Label>
+                    <Input
+                      value={formData.pages[activePageIndex].name}
+                      onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
+                      placeholder="Enter page name"
+                    />
+                  </InspectionFormGroup>
+                  <InspectionFormGroup>
+                    <Label>Page Description</Label>
+                    <TextArea
+                      value={formData.pages[activePageIndex].description}
+                      onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
+                      placeholder="Enter page description"
+                      rows={2}
+                    />
+                  </InspectionFormGroup>
+                </InspectionFormRow>
                 
-                {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
-                  <>
-                    <SectionTabsContainer>
-                      {formData.pages[activePageIndex].sections.map((section, index) => (
-                        <SectionTab 
-                          key={index} 
-                          $active={index === activeSectionTab}
-                          onClick={() => setActiveSectionTab(index)}
-                        >
-                          {section.name || `Inspection Level ${index + 1}`}
-                          <TabCount $active={index === activeSectionTab}>
-                            {section.questions?.length || 0}
-                          </TabCount>
-                        </SectionTab>
-                      ))}
-                      <SectionAddButton onClick={addSection}>
-                        <Plus size={16} />
-                      </SectionAddButton>
-                    </SectionTabsContainer>
-                    
-                    {formData.pages[activePageIndex].sections[activeSectionTab] && (
-                      <div>
-                        <InspectionFormRow>
-                          <InspectionFormGroup>
-                            <Label>Inspection Level Name</Label>
-                            <Input
-                              value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
-                              onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                              placeholder="Enter inspection level name"
-                            />
-                          </InspectionFormGroup>
-                          <InspectionFormGroup>
-                            <Label>Inspection Level Description</Label>
-                            <TextArea
-                              value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
-                              onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                              placeholder="Enter inspection level description"
-                              rows={2}
-                            />
-                          </InspectionFormGroup>
-                        </InspectionFormRow>
-                        
-                        <div style={{ marginTop: '24px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h5>Questions</h5>
-                            <Button onClick={() => addQuestion(activeSectionTab)}>
-                              <Plus size={16} style={{ marginRight: '4px' }} />
-                              Add Question
-                            </Button>
-                          </div>
-                          
-                          {formData.pages[activePageIndex].sections[activeSectionTab].questions && 
-                           formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
-                            <QuestionTable>
-                              <QuestionTableHeader>
-                                <div style={{ width: '40px' }}>#</div>
-                                <div>Question</div>
-                                <div>Type</div>
-                                <div>Actions</div>
-                              </QuestionTableHeader>
-                              
-                              {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
-                                <QuestionItemComponent
-                                  key={questionIndex}
-                                  question={question}
-                                  questionIndex={questionIndex}
-                                  loading={loading}
-                                  updateQuestion={(data) => updateQuestion(activeSectionTab, questionIndex, data)}
-                                  removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
-                                  onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
-                                />
-                              ))}
-                            </QuestionTable>
-                          ) : (
-                            <TabEmptyState>
-                              <FileText size={32} />
-                              <p>No questions added yet</p>
-                              <Button onClick={() => addQuestion(activeSectionTab)}>
-                                <Plus size={16} style={{ marginRight: '4px' }} />
-                                Add Question
-                              </Button>
-                            </TabEmptyState>
-                          )}
-                        </div>
-                            </div>
-                          )}
-                        </>
-                ) : (
-                  <TabEmptyState>
-                    <Layers size={32} />
-                    <p>No inspection levels added yet</p>
+                <SectionsWrapper>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4>Inspection Levels</h4>
                     <Button onClick={addSection}>
                       <Plus size={16} style={{ marginRight: '4px' }} />
                       Add Inspection Level
                     </Button>
-                  </TabEmptyState>
-                )}
-              </SectionsWrapper>
                   </div>
-                )}
-                
+                  
+                  {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
+                    <>
+                      {renderSectionTabs(activePageIndex)}
+                      
+                      {formData.pages[activePageIndex].sections[activeSectionTab] && (
+                        <div>
+                          <InspectionFormRow>
+                            <InspectionFormGroup>
+                              <Label>Inspection Level Name</Label>
+                              <Input
+                                value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
+                                onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
+                                placeholder="Enter inspection level name"
+                              />
+                            </InspectionFormGroup>
+                            <InspectionFormGroup>
+                              <Label>Inspection Level Description</Label>
+                              <TextArea
+                                value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
+                                onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
+                                placeholder="Enter inspection level description"
+                                rows={2}
+                              />
+                            </InspectionFormGroup>
+                          </InspectionFormRow>
+                          
+                          <div style={{ marginTop: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                              <h5>Questions</h5>
+                              <Button onClick={() => addQuestion(activeSectionTab)}>
+                                <Plus size={16} style={{ marginRight: '4px' }} />
+                                Add Question
+                              </Button>
+                            </div>
+                            
+                            {formData.pages[activePageIndex].sections[activeSectionTab].questions && 
+                            formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
+                              <QuestionTable>
+                                <QuestionTableHeader>
+                                  <div style={{ width: '40px' }}>#</div>
+                                  <div>Question</div>
+                                  <div>Type</div>
+                                  <div>Actions</div>
+                                </QuestionTableHeader>
+                                
+                                {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
+                                  <QuestionItemComponent
+                                    key={questionIndex}
+                                    question={question}
+                                    questionIndex={questionIndex}
+                                    loading={loading}
+                                    updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
+                                    removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
+                                    onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
+                                  />
+                                ))}
+                              </QuestionTable>
+                            ) : (
+                              <TabEmptyState>
+                                <FileText size={32} />
+                                <p>No questions added yet</p>
+                                <Button onClick={() => addQuestion(activeSectionTab)}>
+                                  <Plus size={16} style={{ marginRight: '4px' }} />
+                                  Add Question
+                                </Button>
+                              </TabEmptyState>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <TabEmptyState>
+                      <Layers size={32} />
+                      <p>No inspection levels added yet</p>
+                      <Button onClick={addSection}>
+                        <Plus size={16} style={{ marginRight: '4px' }} />
+                        Add Inspection Level
+                      </Button>
+                    </TabEmptyState>
+                  )}
+                </SectionsWrapper>
+              </div>
+            </>
+          )}
+          
           {formData.pages.length === 0 && (
             <TabEmptyState>
               <FileText size={32} />
@@ -4784,9 +5394,9 @@ const InspectionLevelForm = () => {
           isOpen={isConfirmModalOpen}
           onClose={() => setIsConfirmModalOpen(false)}
           onConfirm={confirmPublish}
-          title="Publish Template"
-          message="Are you sure you want to publish this template? Once published, it will be available for use in inspections."
-          confirmText="Publish"
+          title={getPublishModalText().title}
+          message={getPublishModalText().message}
+          confirmText={formData.status === 'active' ? 'Unpublish' : 'Publish'}
         />
       )}
       
@@ -4808,9 +5418,9 @@ const InspectionLevelForm = () => {
       )}
       
       {isActivityHistoryOpen && (
-      <ActivityHistoryCard 
-        formData={formData} 
-        activities={activities}
+        <ActivityHistoryCard 
+          formData={formData} 
+          activities={activities}
           isOpen={isActivityHistoryOpen}
           onClose={() => setIsActivityHistoryOpen(false)}
         />

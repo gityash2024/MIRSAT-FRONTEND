@@ -9,6 +9,8 @@ import { FileText } from 'lucide-react';
 import { DownloadDone } from '@mui/icons-material';
 import LevelListSkeleton from './LevelListSkeleton';
 import { ListChecks, Calendar } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -461,8 +463,12 @@ const InspectionLevelList = ({
   const [levelToDelete, setLevelToDelete] = useState(null);
   const [levelToPublish, setLevelToPublish] = useState(null);
   const exportDropdownRef = useRef(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
+    // Fetch asset types for the filter dropdown
+    dispatch(fetchAssetTypes());
+    
     // Preprocess data to ensure consistent format
     if (data && Array.isArray(data)) {
       const processedData = data.map(item => {
@@ -489,7 +495,7 @@ const InspectionLevelList = ({
     } else {
       setInspectionLevels([]);
     }
-  }, [data]);
+  }, [data, dispatch]);
 
   const handleSearch = (e) => {
     if (onSearchChange) {
@@ -681,6 +687,42 @@ const InspectionLevelList = ({
     }
   };
 
+  // Add an unpublish handler function after the handlePublish function
+  const handleUnpublish = async () => {
+    if (!levelToPublish) return;
+    
+    try {
+      setLoading(true);
+      
+      // Create unpublish data with status set to draft
+      const unpublishData = {
+        ...levelToPublish,
+        status: 'draft'
+      };
+      
+      await inspectionService.updateInspectionLevel(levelToPublish._id || levelToPublish.id, unpublishData);
+      
+      // Close the modal and refresh the data
+      setPublishModalVisible(false);
+      setLevelToPublish(null);
+      toast.success('Template unpublished successfully');
+      
+      // Refresh the data
+      if (fetchData) {
+        fetchData();
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error unpublishing template:', error);
+      toast.error(`Failed to unpublish template: ${error.message}`);
+      setLoading(false);
+    }
+  };
+
+  // Update the publish modal title and message conditionally
+  const isPublishing = levelToPublish && levelToPublish.status !== 'active';
+
   return (
     <PageContainer>
      {deleteModalVisible && levelToDelete && (
@@ -721,7 +763,7 @@ const InspectionLevelList = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Publish Template</ModalTitle>
+              <ModalTitle>{isPublishing ? 'Publish Template' : 'Unpublish Template'}</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setPublishModalVisible(false)}
                 disabled={loading}
@@ -729,8 +771,8 @@ const InspectionLevelList = ({
                 <X size={20} />
               </ModalCloseButton>
             </ModalHeader>
-            <p>Are you sure you want to publish <strong>{levelToPublish.name}</strong>?</p>
-            <p>This action cannot be undone.</p>
+            <p>Are you sure you want to {isPublishing ? 'publish' : 'unpublish'} <strong>{levelToPublish.name}</strong>?</p>
+            <p>This action can be reverted later.</p>
             <ModalActions>
               <Button 
                 onClick={() => setPublishModalVisible(false)}
@@ -740,10 +782,10 @@ const InspectionLevelList = ({
               </Button>
               <Button 
                 variant="primary" 
-                onClick={handlePublish}
+                onClick={isPublishing ? handlePublish : handleUnpublish}
                 disabled={loading}
               >
-                {loading ? 'Publishing...' : 'Publish'}
+                {loading ? (isPublishing ? 'Publishing...' : 'Unpublishing...') : (isPublishing ? 'Publish' : 'Unpublish')}
               </Button>
             </ModalActions>
           </ModalContent>
@@ -920,8 +962,17 @@ const InspectionLevelList = ({
                               onPublishClick(level);
                             }}
                           >
-                            <Upload size={16} />
-                            Publish
+                            {level.status === 'active' ? (
+                              <>
+                                <Download size={16} />
+                                Unpublish
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={16} />
+                                Publish
+                              </>
+                            )}
                           </Button>
                         </LevelActions>
                       </AccordionItemContent>

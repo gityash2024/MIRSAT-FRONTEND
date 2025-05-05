@@ -642,81 +642,137 @@ const UserList = () => {
   const generatePDF = (users) => {
     const doc = new jsPDF();
     
-    // Add title
-    doc.setFontSize(20);
-    doc.setTextColor(26, 35, 126); // var(--color-navy)
-    doc.text('User Management Report', 15, 15);
+    // Set document properties for better identification
+    doc.setProperties({
+      title: 'User Management Report',
+      subject: 'MIRSAT System User Report',
+      creator: 'MIRSAT System'
+    });
     
-    // Add subtitle and date
-    doc.setFontSize(11);
-    doc.setTextColor(102, 102, 102); // #666666
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 25);
-  
-    // Prepare table data
+    // Add proper header with background
+    doc.setFillColor(26, 35, 126); // var(--color-navy)
+    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+    
+    // Add title with proper positioning
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255); // White color
+    doc.text('User Management Report', doc.internal.pageSize.width / 2, 25, { align: 'center' });
+    
+    // Add subtitle and date with proper spacing
+    doc.setFontSize(10);
+    doc.setTextColor(200, 200, 200); // Light gray for subtitle in header
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 35, { align: 'center' });
+    
+    // Add organization logo or name if available
+    // doc.addImage('path-to-logo', 'PNG', 15, 10, 20, 20);
+
+    // Space after header
+    const contentStartY = 55;
+    
+    // Add summary section
+    doc.setFontSize(14);
+    doc.setTextColor(26, 35, 126); // var(--color-navy)
+    doc.text('Summary', 15, contentStartY);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Total Users: ${users.length}`, 15, contentStartY + 10);
+    
+    // Count active and inactive users
+    const activeUsers = users.filter(user => user.isActive).length;
+    const inactiveUsers = users.length - activeUsers;
+    
+    doc.text(`Active Users: ${activeUsers}`, 15, contentStartY + 20);
+    doc.text(`Inactive Users: ${inactiveUsers}`, 15, contentStartY + 30);
+    
+    // Prepare table data with better structure
     const tableColumn = [
-      "User Details", 
+      "Name", 
+      "Email",
       "Role",
       "Status",
-      "Last Active",
-      "Assigned Tasks"
+      "Last Active"
     ];
-  
+    
+    // Process data for better presentation
     const tableRows = users.map(user => [
-      `${user.name}\n${user.email}\n${user.phone}`,
-      user.role,
+      user.name || 'Not specified',
+      user.email || 'Not specified',
+      user.role || 'N/A',
       user.isActive ? 'Active' : 'Inactive',
-      formatTimestamp(user.lastLogin),
-      user.assignedTasks || 0
+      formatTimestamp(user.lastLogin) || 'Never'
     ]);
-  
-    // Add table
+    
+    // Add table with improved styling
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
-      startY: 35,
+      startY: contentStartY + 45,
       styles: { 
         fontSize: 9,
-        cellPadding: 3
-      },
-      columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 30 }
+        cellPadding: 3,
+        overflow: 'linebreak', // Handle text overflow with line breaks
+        lineWidth: 0.1
       },
       headStyles: {
         fillColor: [26, 35, 126],
-        textColor: 255,
+        textColor: [255, 255, 255],
         fontSize: 10,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        halign: 'center',
+        lineWidth: 0.5,
+        lineColor: [200, 200, 200]
+      },
+      columnStyles: {
+        0: { cellWidth: 40 }, // Name
+        1: { cellWidth: 50 }, // Email
+        2: { cellWidth: 30 }, // Role
+        3: { cellWidth: 25 }, // Status
+        4: { cellWidth: 35 }  // Last Active
       },
       alternateRowStyles: {
         fillColor: [245, 247, 251]
       },
       didDrawCell: (data) => {
-        // Add special formatting for status column
-        if (data.section === 'body' && data.column.index === 2) {
+        // Customize status column appearance
+        if (data.section === 'body' && data.column.index === 3) {
           const status = data.cell.raw;
-          doc.setFillColor(status === 'Active' ? '#e8f5e9' : '#ffebee');
-          doc.setTextColor(status === 'Active' ? '#2e7d32' : '#c62828');
+          if (status === 'Active') {
+            doc.setFillColor(232, 245, 233); // Light green for active
+            doc.setTextColor(46, 125, 50);   // Dark green text
+          } else {
+            doc.setFillColor(255, 235, 238); // Light red for inactive
+            doc.setTextColor(198, 40, 40);   // Dark red text
+          }
         }
+      },
+      // Reset colors after cell is drawn
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          doc.setTextColor(60, 60, 60); // Default text color
+        }
+      },
+      // Ensure proper word wrapping for long fields
+      didDrawPage: (data) => {
+        // Any page-specific footer or header elements can be added here
       }
     });
-  
-    // Add footer
+    
+    // Add footer with page numbers
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
-    doc.setTextColor(128);
+    doc.setTextColor(100, 100, 100);
+    
     for(let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.text(
-        `Page ${i} of ${pageCount}`, 
-        doc.internal.pageSize.width - 20, 
-        doc.internal.pageSize.height - 10
+        `Page ${i} of ${pageCount} | MIRSAT User Management Report`, 
+        doc.internal.pageSize.width / 2, 
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
       );
     }
-  
+    
     return doc;
   };
   

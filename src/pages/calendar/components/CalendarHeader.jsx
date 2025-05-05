@@ -168,40 +168,149 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
   const handleExportPDF = () => {
     const doc = new jsPDF();
     
-    // Add title
-    doc.setFontSize(18);
-    doc.setTextColor(26, 35, 126); // var(--color-navy)
-    doc.text('Calendar Events Report', 14, 22);
+    // Set document properties
+    doc.setProperties({
+      title: 'Calendar Events Report',
+      subject: 'MIRSAT System Calendar Events',
+      creator: 'MIRSAT System'
+    });
     
-    // Add date
-    doc.setFontSize(11);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+    // Create a professional header
+    doc.setFillColor(26, 35, 126); // Navy blue header background
+    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
     
-    // Prepare table data
-    const tableColumn = ["Title", "Status", "Priority", "Assigned To", "Deadline"];
+    // Add title with proper positioning
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255); // White text
+    doc.text('Calendar Events Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
+    
+    // Add date subtitle
+    doc.setFontSize(10);
+    doc.setTextColor(200, 200, 200); // Light gray for subtitle
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 32, { align: 'center' });
+    
+    // Content starting position
+    const contentStartY = 50;
+    
+    // Add summary section
+    doc.setFontSize(14);
+    doc.setTextColor(26, 35, 126); // Navy blue for section headers
+    doc.text('Events Summary', 14, contentStartY);
+    
+    // Prepare summary info
+    const pendingEvents = tasks.filter(task => task.status === 'pending').length;
+    const completedEvents = tasks.filter(task => task.status === 'completed').length;
+    const highPriorityEvents = tasks.filter(task => task.priority === 'high').length;
+    
+    // Display summary data
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80); // Dark gray for content
+    doc.text(`Total Events: ${tasks.length}`, 14, contentStartY + 10);
+    doc.text(`Pending Events: ${pendingEvents}`, 14, contentStartY + 20);
+    doc.text(`Completed Events: ${completedEvents}`, 14, contentStartY + 30);
+    doc.text(`High Priority Events: ${highPriorityEvents}`, 14, contentStartY + 40);
+    
+    // Add events table with improved styling
+    const tableColumn = [
+      "Title", 
+      "Status", 
+      "Priority", 
+      "Assigned To",
+      "Deadline"
+    ];
+    
+    // Process data for better presentation
     const tableRows = tasks.map(task => [
-      task.title,
-      task.status,
-      task.priority,
-      task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned',
-      formatDate(task.deadline)
+      task.title || 'Untitled',
+      task.status || 'N/A',
+      task.priority || 'N/A',
+      (task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned'),
+      formatDate(task.deadline) || 'No deadline'
     ]);
     
-    // Add table
+    // Add events table with better styling
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
-      startY: 40,
-      theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { 
+      startY: contentStartY + 55,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 5,
+        overflow: 'linebreak', // Prevent text overlap
+        lineWidth: 0.1
+      },
+      headStyles: {
         fillColor: [26, 35, 126],
         textColor: [255, 255, 255],
-        fontStyle: 'bold'
+        fontSize: 10,
+        fontStyle: 'bold',
+        halign: 'center'
       },
-      alternateRowStyles: { fillColor: [240, 240, 245] }
+      columnStyles: {
+        0: { cellWidth: 50 }, // Title
+        1: { cellWidth: 30 }, // Status
+        2: { cellWidth: 25 }, // Priority
+        3: { cellWidth: 40 }, // Assigned To
+        4: { cellWidth: 35 }  // Deadline
+      },
+      alternateRowStyles: {
+        fillColor: [240, 247, 255]
+      },
+      // Customize status and priority columns
+      didDrawCell: (data) => {
+        if (data.section === 'body') {
+          // Customize status column
+          if (data.column.index === 1) {
+            const status = data.cell.raw;
+            if (status === 'completed') {
+              doc.setFillColor(232, 245, 233); // Light green
+              doc.setTextColor(46, 125, 50);   // Dark green
+            } else if (status === 'in_progress') {
+              doc.setFillColor(225, 245, 254); // Light blue
+              doc.setTextColor(2, 136, 209);   // Dark blue
+            } else if (status === 'pending') {
+              doc.setFillColor(255, 243, 224); // Light orange
+              doc.setTextColor(230, 81, 0);    // Dark orange
+            }
+          }
+          
+          // Customize priority column
+          if (data.column.index === 2) {
+            const priority = data.cell.raw;
+            if (priority === 'high') {
+              doc.setFillColor(255, 235, 238); // Light red
+              doc.setTextColor(211, 47, 47);   // Dark red
+            } else if (priority === 'medium') {
+              doc.setFillColor(255, 243, 224); // Light orange
+              doc.setTextColor(230, 81, 0);    // Dark orange
+            } else if (priority === 'low') {
+              doc.setFillColor(232, 245, 233); // Light green
+              doc.setTextColor(46, 125, 50);   // Dark green
+            }
+          }
+        }
+      },
+      // Reset colors after processing cells
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          doc.setTextColor(60, 60, 60); // Reset text color
+        }
+      }
     });
+    
+    // Add footer with page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Page ${i} of ${pageCount} | MIRSAT Calendar Events Report`, 
+        doc.internal.pageSize.width / 2, 
+        doc.internal.pageSize.height - 10, 
+        { align: 'center' }
+      );
+    }
     
     // Save the PDF
     doc.save('calendar-events.pdf');

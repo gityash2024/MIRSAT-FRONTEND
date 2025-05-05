@@ -1646,15 +1646,22 @@ const UserTaskDetail = () => {
         if (responseKey) {
           const response = responses[responseKey];
           const weight = question.weight || 1;
+          const maxScore = question.scoring?.max || 2; // Default max score is 2
           
-          totalQuestionPoints += (2 * weight); // Max score is 2 per question
+          // Handle N/A responses properly - they should not affect the score
+          if (response === 'na' || response === 'not_applicable' || response === 'N/A') {
+            // Don't include N/A questions in the total or achieved points
+            return; // Skip to the next question
+          }
           
-          if (response === 'full_compliance' || response === 'yes') {
-            achievedQuestionPoints += (2 * weight);
+          // Add the question's possible points to the total
+          totalQuestionPoints += (maxScore * weight);
+          
+          // Calculate points achieved based on response
+          if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
+            achievedQuestionPoints += (maxScore * weight);
           } else if (response === 'partial_compliance') {
-            achievedQuestionPoints += (1 * weight);
-          } else if (response === 'na' || response === 'not_applicable') {
-            totalQuestionPoints -= (2 * weight); // Don't count NA questions
+            achievedQuestionPoints += (maxScore / 2 * weight); // Half of max score for partial compliance
           }
         }
       });
@@ -1663,17 +1670,20 @@ const UserTaskDetail = () => {
     // Calculate checkpoint scores
     let totalCheckpoints = 0;
     let completedCheckpoints = 0;
+    let notApplicableCheckpoints = 0;
     
     if (currentTask.progress) {
-      totalCheckpoints = currentTask.progress.length;
+      // Count all checkpoints except those marked as "not_applicable"
+      totalCheckpoints = currentTask.progress.filter(p => p.status !== 'not_applicable').length;
       completedCheckpoints = currentTask.progress.filter(p => p.status === 'completed' || p.status === 'full_compliance').length;
+      notApplicableCheckpoints = currentTask.progress.filter(p => p.status === 'not_applicable').length;
     }
     
     // Calculate assessment area scores
     const assessmentAreas = currentTask.assessmentAreas || [];
     
-    // Calculate total score
-    const totalPoints = totalQuestionPoints + (totalCheckpoints * 2); // Each checkpoint is worth 2 points max
+    // Calculate total score - each checkpoint is worth 2 points max
+    const totalPoints = totalQuestionPoints + (totalCheckpoints * 2);
     const achievedPoints = achievedQuestionPoints + (completedCheckpoints * 2);
     const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
     
@@ -1681,7 +1691,8 @@ const UserTaskDetail = () => {
       total: totalPoints,
       achieved: achievedPoints,
       percentage,
-      areas: assessmentAreas
+      areas: assessmentAreas,
+      notApplicable: notApplicableCheckpoints // Track N/A checkpoints for reference
     };
   };
 
