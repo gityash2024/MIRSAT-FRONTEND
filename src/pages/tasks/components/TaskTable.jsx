@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
@@ -335,6 +335,142 @@ const TreeItemDescription = styled.div`
   color: var(--color-gray-medium);
 `;
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #f1f5f9;
+    color: #334155;
+  }
+`;
+
+const QuestionListItem = styled.div`
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+`;
+
+const QuestionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const QuestionText = styled.div`
+  font-weight: 500;
+  color: #334155;
+  font-size: 16px;
+`;
+
+const QuestionType = styled.div`
+  background: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+`;
+
+const QuestionOptions = styled.div`
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const QuestionOption = styled.div`
+  background: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #475569;
+`;
+
+const ComplianceOption = styled(QuestionOption)`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  ${props => {
+    if (props.variant === 'Full compliance') {
+      return `background: #dcfce7; color: #166534;`;
+    } else if (props.variant === 'Partial compliance') {
+      return `background: #fef9c3; color: #854d0e;`;
+    } else if (props.variant === 'Non-compliant') {
+      return `background: #fee2e2; color: #b91c1c;`;
+    } else {
+      return `background: #e2e8f0; color: #475569;`;
+    }
+  }}
+`;
+
+const RequiredTag = styled.span`
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+`;
+
+const NoQuestionsMessage = styled.div`
+  text-align: center;
+  padding: 32px 16px;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+`;
+
 const TaskTableSkeleton = () => {
   return (
     <TableContainer>
@@ -401,6 +537,79 @@ const TaskTableSkeleton = () => {
   );
 };
 
+const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
+  if (!isOpen) return null;
+  
+  const hasQuestions = task.preInspectionQuestions && task.preInspectionQuestions.length > 0;
+  
+  const getTypeLabel = (type) => {
+    switch(type) {
+      case 'yesno': return 'Yes/No';
+      case 'text': return 'Text';
+      case 'number': return 'Number';
+      case 'select': return 'Select';
+      case 'multiple_choice': return 'Multiple Choice';
+      case 'compliance': return 'Compliance';
+      case 'date': return 'Date';
+      default: return type;
+    }
+  };
+  
+  return (
+    <Modal>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Database size={18} /> 
+            Pre-Inspection Questions for: {task.title}
+          </ModalTitle>
+          <CloseButton onClick={onClose}>
+            <X size={20} />
+          </CloseButton>
+        </ModalHeader>
+        
+        {!hasQuestions ? (
+          <NoQuestionsMessage>
+            <Database size={24} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+            <p>No pre-inspection questions have been added to this task.</p>
+          </NoQuestionsMessage>
+        ) : (
+          <>
+            {task.preInspectionQuestions.map((question, index) => (
+              <QuestionListItem key={index}>
+                <QuestionHeader>
+                  <QuestionText>
+                    {index + 1}. {question.text}
+                    {question.required && <RequiredTag>Required</RequiredTag>}
+                  </QuestionText>
+                  <QuestionType>{getTypeLabel(question.type)}</QuestionType>
+                </QuestionHeader>
+                
+                {question.options && question.options.length > 0 && (
+                  <QuestionOptions>
+                    {question.type === 'compliance' ? (
+                      question.options.map((option, i) => (
+                        <ComplianceOption key={i} variant={option}>
+                          {option === 'Full compliance' && <CheckCircle size={14} />}
+                          {option}
+                        </ComplianceOption>
+                      ))
+                    ) : (
+                      question.options.map((option, i) => (
+                        <QuestionOption key={i}>{option}</QuestionOption>
+                      ))
+                    )}
+                  </QuestionOptions>
+                )}
+              </QuestionListItem>
+            ))}
+          </>
+        )}
+      </ModalContent>
+    </Modal>
+  );
+};
+
 const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -413,6 +622,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
     direction: 'asc'
   });
   const [sortedTasks, setSortedTasks] = useState([...initialTasks]);
+  const [preInspectionModalOpen, setPreInspectionModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     const sorted = [...initialTasks].sort((a, b) => {
@@ -473,16 +684,28 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
 
   const handleConfirmDelete = async () => {
     try {
-      await dispatch(deleteTask(deleteConfirm.id)).unwrap();
+      const taskId = deleteConfirm._id || deleteConfirm.id;
+      await dispatch(deleteTask(taskId)).unwrap();
       setDeleteConfirm(null);
-      
     } catch (error) {
-      toast.error('Failed to delete task');
+      console.error('Error deleting task:', error);
+      if (!error.message) {
+        toast.error('Failed to delete task');
+      }
     }
   };
 
   const handleViewSublevels = (task) => {
     setSublevelsModal(task);
+  };
+
+  const hasPreInspectionQuestions = (task) => {
+    return task.preInspectionQuestions && task.preInspectionQuestions.length > 0;
+  };
+  
+  const handleShowPreInspectionQuestions = (task) => {
+    setSelectedTask(task);
+    setPreInspectionModalOpen(true);
   };
 
   const renderTreeItems = (subLevels, level = 0) => {
@@ -699,6 +922,20 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                         <Trash size={16} />
                       </ActionButton>
                     )}
+                    
+                   
+                    {hasPreInspectionQuestions(task) && (
+                      <ActionButton 
+                        onClick={() => handleShowPreInspectionQuestions(task)}
+                        title="View pre-inspection questions"
+                        style={{
+                          background: '#e0f2fe',
+                          color: '#0284c7'
+                        }}
+                      >
+                        <Database size={16} />
+                      </ActionButton>
+                    )}
                   </ActionsMenu>
                 </td>
               </tr>
@@ -766,6 +1003,14 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
             </TreeContainer>
           </SublevelsModalContent>
         </SublevelsModalOverlay>
+      )}
+
+      {selectedTask && (
+        <PreInspectionQuestionsModal 
+          isOpen={preInspectionModalOpen}
+          onClose={() => setPreInspectionModalOpen(false)}
+          task={selectedTask}
+        />
       )}
     </>
   );

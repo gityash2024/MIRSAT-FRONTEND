@@ -203,12 +203,22 @@ export const deleteTask = createAsyncThunk(
   'tasks/deleteTask',
   async (id, { rejectWithValue }) => {
     try {
+      if (!id) {
+        throw new Error('Task ID is required for deletion');
+      }
+      
+      console.log('Deleting task with ID:', id);
       await api.delete(`/tasks/${id}`);
       toast.success('Task deleted successfully');
-      return id;
+      return id; // Return the ID for state updates
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error deleting task');
-      return rejectWithValue(error.response?.data);
+      console.error('Error deleting task:', error);
+      const errorMsg = error.response?.data?.message || 'Error deleting task';
+      toast.error(errorMsg);
+      return rejectWithValue({
+        message: errorMsg,
+        statusCode: error.response?.status || 500
+      });
     }
   }
 );
@@ -313,8 +323,14 @@ const taskSlice = createSlice({
       })
       .addCase(deleteTask.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = state.tasks.filter(task => task._id !== action.payload);
-        if (state.currentTask?._id === action.payload) {
+        // Handle both _id and id fields for compatibility
+        const taskId = action.payload;
+        state.tasks = state.tasks.filter(task => 
+          (task._id !== taskId) && (task.id !== taskId)
+        );
+        if (state.currentTask && 
+           (state.currentTask._id === taskId || 
+            state.currentTask.id === taskId)) {
           state.currentTask = null;
         }
       })
