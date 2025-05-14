@@ -280,6 +280,7 @@ const CalendarView = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [cachedEvents, setCachedEvents] = useState([]);
   
   const dispatch = useDispatch();
   const { tasks, loading, filters, pagination } = useSelector((state) => state.tasks);
@@ -289,23 +290,35 @@ const CalendarView = () => {
     dispatch(fetchUsers());
     dispatch(fetchInspectionLevels());
     loadEvents();
-  }, [filters, pagination.page, pagination.limit]);
+  }, [dispatch, filters, pagination.page, pagination.limit]);
+
+  // Ensure the tasks are processed into events and cached to prevent UI flicker
+  useEffect(() => {
+    if (tasks?.length > 0) {
+      const eventsList = transformTasksToEvents(tasks);
+      setCachedEvents(eventsList);
+    }
+  }, [tasks]);
 
   // Transform tasks into events for the calendar
-  const events = tasks?.map(task => ({
-    id: task._id,
-    title: task.title,
-    start: task.deadline ? new Date(task.deadline) : null,
-    end: task.deadline ? new Date(new Date(task.deadline).getTime() + 2 * 60 * 60 * 1000) : null, // Add 2 hours for end time
-    backgroundColor: getStatusColor(task.status),
-    borderColor: getStatusColor(task.status),
-    type: task.inspectionLevel?._id || '',
-    assignee: task.assignedTo?.length > 0 ? task.assignedTo[0]._id : '',
-    description: task.description,
-    status: task.status,
-    priority: task.priority,
-    taskData: task // Keep the original task data
-  })) || [];
+  const transformTasksToEvents = (tasksList) => {
+    if (!tasksList || !Array.isArray(tasksList)) return [];
+    
+    return tasksList.map(task => ({
+      id: task._id || task.id,
+      title: task.title,
+      start: task.deadline ? new Date(task.deadline) : null,
+      end: task.deadline ? new Date(new Date(task.deadline).getTime() + 2 * 60 * 60 * 1000) : null, // Add 2 hours for end time
+      backgroundColor: getStatusColor(task.status),
+      borderColor: getStatusColor(task.status),
+      type: task.inspectionLevel?._id || '',
+      assignee: task.assignedTo?.length > 0 ? task.assignedTo[0]._id : '',
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      taskData: task // Keep the original task data
+    }));
+  };
 
   const loadEvents = () => {
     dispatch(fetchTasks({
@@ -348,12 +361,12 @@ const CalendarView = () => {
 
   const handleEventClick = (clickInfo) => {
     const taskId = clickInfo.event.id;
-    const task = tasks.find(t => t._id === taskId);
+    const task = tasks.find(t => (t._id === taskId) || (t.id === taskId));
     
     if (task) {
       setSelectedEvent({
         ...task,
-        id: task._id,
+        id: task._id || task.id,
         title: task.title,
         type: task.inspectionLevel?._id || '',
         assignee: task.assignedTo?.length > 0 ? task.assignedTo[0]._id : '',
@@ -444,8 +457,8 @@ const CalendarView = () => {
       )}
 
       <CalendarWrapper>
-        {loading ? (
-          <CalendarViewSkeleton />
+        {loading && !cachedEvents.length ? (
+          <LoadingIndicator>Loading calendar events...</LoadingIndicator>
         ) : (
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -455,7 +468,7 @@ const CalendarView = () => {
               center: 'title',
               right: 'dayGridMonth,timeGridWeek,timeGridDay'
             }}
-            events={events}
+            events={cachedEvents.length > 0 ? cachedEvents : transformTasksToEvents(tasks)}
             selectable={true}
             selectMirror={true}
             dayMaxEvents={true}
@@ -470,7 +483,7 @@ const CalendarView = () => {
       
       <PaginationContainer>
         <PageInfo>
-          Showing {tasks?.length || 0} of {pagination.total || 0} events
+          Showing {tasks?.length || 0} of {tasks?.length || pagination.total || 0} events
         </PageInfo>
         
         <PageSelector>
@@ -487,17 +500,17 @@ const CalendarView = () => {
             Previous
           </PageButton>
           
-          <PageInfo>Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit) || 1}</PageInfo>
+          <PageInfo>Page {pagination.page} of {Math.max(Math.ceil((tasks?.length || pagination.total) / pagination.limit) || 1, 1)}</PageInfo>
           
           <PageButton 
             onClick={() => handlePageChange(pagination.page + 1)} 
-            disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+            disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
             Next
           </PageButton>
           <PageButton 
-            onClick={() => handlePageChange(Math.ceil(pagination.total / pagination.limit))} 
-            disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+            onClick={() => handlePageChange(Math.ceil((tasks?.length || pagination.total) / pagination.limit))} 
+            disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
             Last
           </PageButton>
