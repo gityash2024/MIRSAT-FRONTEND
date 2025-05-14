@@ -166,19 +166,98 @@ export const updateTask = createAsyncThunk(
   'tasks/updateTask',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      // Ensure assignedTo is an array
+      // Ensure we have a valid ID
+      if (!id || id === 'undefined') {
+        throw new Error('Invalid task ID for update operation');
+      }
+      
+      // Ensure assignedTo is an array with valid values
+      let assignedToArray = [];
+      if (data.assignedTo) {
+        const toProcess = Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo];
+        
+        // Filter out invalid values and extract IDs
+        assignedToArray = toProcess
+          .filter(user => user != null && user !== 'undefined' && user !== '')
+          .map(user => {
+            // If user is already a string ID
+            if (typeof user === 'string') return user;
+            // If user is an object with id (this is the format from the API response)
+            if (typeof user === 'object' && user.id) return user.id;
+            // If user is an object with _id
+            if (typeof user === 'object' && user._id) return user._id;
+            // Otherwise return as is
+            return user;
+          })
+          .filter(id => id != null && id !== 'undefined' && id !== '');
+      }
+      
+      // Cleanup preInspectionQuestions - ensure format is consistent
+      let preInspectionQuestionsArray = [];
+      if (data.preInspectionQuestions && Array.isArray(data.preInspectionQuestions)) {
+        preInspectionQuestionsArray = data.preInspectionQuestions.map(q => {
+          // Start with a clean question object with only essential properties
+          const cleanQuestion = {
+            text: q.text,
+            type: q.type,
+            options: q.options || [],
+            required: q.required !== undefined ? q.required : true
+          };
+          
+          // Add _id if it exists
+          if (q._id) {
+            cleanQuestion._id = q._id;
+          }
+          
+          // Add scoring if it exists
+          if (q.scoring) {
+            cleanQuestion.scoring = q.scoring;
+          }
+          
+          // Add scores if they exist
+          if (q.scores) {
+            cleanQuestion.scores = q.scores;
+          }
+          
+          return cleanQuestion;
+        });
+      }
+      
+      // Create a clean processed data object
       const processedData = {
         ...data,
-        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo]
+        assignedTo: assignedToArray
       };
       
-      console.log('Updating task with data:', processedData);
+      // Ensure preInspectionQuestions is properly included
+      if (preInspectionQuestionsArray.length > 0) {
+        processedData.preInspectionQuestions = preInspectionQuestionsArray;
+      } else if (data.preInspectionQuestions && Array.isArray(data.preInspectionQuestions)) {
+        // If we have an empty array, still include it to allow clearing questions
+        processedData.preInspectionQuestions = [];
+      }
+      
+      // Make sure inspectionLevel is included
+      if (data.inspectionLevel) {
+        processedData.inspectionLevel = data.inspectionLevel;
+      }
+      
+      // Make sure asset is included
+      if (data.asset) {
+        processedData.asset = data.asset;
+      }
+      
+      console.log('Updating task with ID:', id);
+      console.log('Update payload:', JSON.stringify(processedData));
+      console.log('PreInspectionQuestions:', JSON.stringify(preInspectionQuestionsArray));
       
       const response = await api.put(`/tasks/${id}`, processedData);
       
+      console.log('Update task response:', response.data);
       toast.success('Task updated successfully');
       return response.data;
     } catch (error) {
+      console.error('Error updating task:', error.response?.data || error.message);
       const errorMessage = error.response?.data?.message || 'Error updating task';
       toast.error(errorMessage);
       return rejectWithValue(error.response?.data || { message: errorMessage });

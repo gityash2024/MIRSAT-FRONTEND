@@ -633,7 +633,7 @@ const QuestionnaireList = () => {
           filteredQuestions.map((question) => (
             <QuestionnaireRow 
               key={question.id || question._id} 
-              onClick={() => handleRowClick(question.id || question._id)}
+              // onClick={() => handleRowClick(question.id || question._id)}
             >
               <InfoCell>
                 <NameContainer>

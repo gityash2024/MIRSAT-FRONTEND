@@ -222,10 +222,10 @@ const SortIcon = styled.span`
 `;
 
 const RowNumber = styled.td`
-  width: 50px;
   text-align: center;
+  font-size: 12px;
   color: var(--color-gray-medium);
-  font-size: 13px;
+  width: 50px;
 `;
 
 const ProgressBar = styled.div`
@@ -868,7 +868,11 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
           <tbody>
             {sortedTasks.map((task, index) => (
               <tr key={task._id}>
-                <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
+                <RowNumber>
+                  {pagination && pagination.page && pagination.limit
+                    ? ((pagination.page - 1) * pagination.limit + index + 1)
+                    : (index + 1)}
+                </RowNumber>
                 <td>{task.title}</td>
                 <td>{task.inspectionLevel?.name || '--'}</td>
                 <td>
@@ -945,22 +949,28 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
 
         <PaginationContainer>
           <PaginationInfo>
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} tasks
+            {sortedTasks.length > 0 ? (
+              <>
+                Showing {Math.min(1, sortedTasks.length)} to{' '}
+                {sortedTasks.length} of{' '}
+                {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}
+              </>
+            ) : (
+              <>Showing 0 tasks</>
+            )}
           </PaginationInfo>
           
           <PaginationButtons>
             <PaginationButton 
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={pagination.page === 1}
+              onClick={() => onPageChange((pagination?.page || 1) - 1)}
+              disabled={(pagination?.page || 1) <= 1}
             >
               <ChevronLeft size={16} />
             </PaginationButton>
             
             <PaginationButton
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={pagination.page * pagination.limit >= pagination.total}
+              onClick={() => onPageChange((pagination?.page || 1) + 1)}
+              disabled={(pagination?.page || 1) * (pagination?.limit || 10) >= (sortedTasks.length || 0) || sortedTasks.length === 0}
             >
               <ChevronRight size={16} />
             </PaginationButton>

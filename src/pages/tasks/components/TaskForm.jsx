@@ -629,7 +629,12 @@ const EmptyState = styled.div`
 `;
 
 // Pre-inspection Questions Component
-const PreInspectionQuestions = ({ questions = [], onChange }) => {
+const PreInspectionQuestions = ({ 
+  questions = [], 
+  onChange, 
+  initialQuestions = [],
+  isEditMode = false 
+}) => {
   const dispatch = useDispatch();
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
@@ -646,6 +651,15 @@ const PreInspectionQuestions = ({ questions = [], onChange }) => {
   });
   const [newOption, setNewOption] = useState('');
   const { questions: libraryQuestions, loading } = useSelector(state => state.questionLibrary);
+  
+  // Add useEffect to properly initialize questions from initialQuestions
+  useEffect(() => {
+    console.log('Initializing pre-inspection questions:', initialQuestions);
+    if (initialQuestions && initialQuestions.length > 0 && (!questions || questions.length === 0)) {
+      console.log('Setting pre-inspection questions from initialQuestions');
+      onChange([...initialQuestions]);
+    }
+  }, [initialQuestions, onChange, questions]);
   
   useEffect(() => {
     dispatch(fetchQuestionLibrary());
@@ -806,8 +820,28 @@ const PreInspectionQuestions = ({ questions = [], onChange }) => {
       <QuestionHeader>
         <QuestionTitle>
           <Database size={18} />
-          Pre-Inspection Questions
+          {isEditMode ? 'Add More Pre-Inspection Questions' : 'Pre-Inspection Questions'} ({questions.length})
+          {isEditMode && (
+            <div style={{ 
+              fontSize: '12px', 
+              fontWeight: 'normal', 
+              color: '#666', 
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              Note: Previously filled questions are preserved. Any new questions added here will be included in the update.
+            </div>
+          )}
         </QuestionTitle>
+        {questions.length > 0 && (
+          <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+            {questions.map((q, i) => (
+              <div key={i} style={{ marginBottom: '4px' }}>
+                {i+1}. {q.text} ({q.type}) {q._id ? `ID: ${q._id}` : 'New'}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '8px' }}>
           <LibrarySelector>
             <LibraryButton type="button" onClick={(e) => {
@@ -1183,23 +1217,6 @@ const TaskForm = ({
   const inspectionLevels = inspectionLevelsProp.length > 0 ? inspectionLevelsProp : stateInspectionLevels;
   const assets = assetsProp.length > 0 ? assetsProp : stateAssets;
 
-  // Helper function to extract user IDs from various formats
-  const extractUserIds = (assignedUsers) => {
-    if (!assignedUsers || !Array.isArray(assignedUsers)) return [];
-    
-    return assignedUsers
-      .filter(user => user != null)
-      .map(user => {
-        // Handle if user is directly an ID string
-        if (typeof user === 'string') return user;
-        // Handle if user is an object with _id
-        if (user && user._id) return user._id;
-        // Handle if user is directly an ID
-        return user;
-      })
-      .filter(id => id && id !== 'undefined');
-  };
-
   const [formData, setFormData] = useState({
     title: initialData.title || '',
     description: initialData.description || '',
@@ -1207,13 +1224,9 @@ const TaskForm = ({
     status: initialData.status || 'open',
     dueDate: initialData.dueDate || initialData.deadline ? new Date(initialData.dueDate || initialData.deadline) : null,
     location: initialData.location || '',
-    assignedTo: initialData.assignedTo?.length > 0 ? 
-      (typeof initialData.assignedTo[0] === 'object' ? 
-        [initialData.assignedTo[0].name || initialData.assignedTo[0].id || initialData.assignedTo[0]._id] : 
-        initialData.assignedTo) : 
-      [],
-    inspectionLevel: initialData.inspectionLevel?.id || initialData.inspectionLevel?._id || '',
-    asset: initialData.asset?.id || initialData.asset?._id || '',
+    assignedTo: initialData.assignedTo || [],
+    inspectionLevel: initialData.inspectionLevel?.id || initialData.inspectionLevel?._id || initialData.inspectionLevel || '',
+    asset: initialData.asset?.id || initialData.asset?._id || initialData.asset || '',
     isActive: initialData.isActive !== undefined ? initialData.isActive : true,
     attachments: initialData.attachments || [],
     preInspectionQuestions: initialData.preInspectionQuestions || []
@@ -1223,17 +1236,46 @@ const TaskForm = ({
   const [errors, setErrors] = useState({});
   const [isUploading, setIsUploading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
   
   useEffect(() => {
-    // Debug logging for initialData
-    console.log('Initial data passed to TaskForm:', initialData);
-    if (initialData && initialData._id) {
-      console.log('Task ID for form:', initialData._id);
+    if (!initialData?.assignedTo) return;
+    
+    console.log('Initial assignedTo:', initialData.assignedTo);
+    
+    try {
+      // Extract user ID from initialData.assignedTo
+      if (Array.isArray(initialData.assignedTo) && initialData.assignedTo.length > 0) {
+        const assignedUser = initialData.assignedTo[0];
+        
+        if (typeof assignedUser === 'string') {
+          setSelectedUserId(assignedUser);
+          console.log('Set selectedUserId from string:', assignedUser);
+        } 
+        else if (assignedUser && typeof assignedUser === 'object') {
+          const userId = assignedUser.id || assignedUser._id;
+          if (userId) {
+            setSelectedUserId(userId);
+            console.log('Set selectedUserId from object:', userId);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error extracting user ID:', error);
     }
   }, [initialData]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if user is selected
+    if (!selectedUserId) {
+      setErrors(prev => ({
+        ...prev,
+        assignedTo: 'User assignment is required'
+      }));
+      return;
+    }
     
     if (!validateForm()) return;
     
@@ -1243,43 +1285,69 @@ const TaskForm = ({
       // Get task ID - handle both id and _id formats
       const taskId = initialData?.id || initialData?._id;
       
-      // Find the selected user
-      let selectedUser = null;
-      if (formData.assignedTo.length > 0) {
-        // First, try to find user by name
-        selectedUser = users.find(user => user.name === formData.assignedTo[0]);
-        
-        // If not found by name, try to find by ID
-        if (!selectedUser) {
-          selectedUser = users.find(user => 
-            user.id === formData.assignedTo[0] || 
-            user._id === formData.assignedTo[0]
-          );
-        }
-      }
+      // Check if pre-inspection questions have been added or modified
+      const isQuestionsChanged = !initialData || 
+        !initialData.preInspectionQuestions || 
+        formData.preInspectionQuestions.length !== initialData.preInspectionQuestions.length;
       
-      // Get the user ID
-      const selectedUserId = selectedUser ? 
-        (selectedUser.id || selectedUser._id) : 
-        (formData.assignedTo.length > 0 ? formData.assignedTo[0] : null);
+      let formattedPreInspectionQuestions = [];
+      
+      // Only prepare pre-inspection questions if they're changed in edit mode or it's a new task
+      if (!taskId || isQuestionsChanged) {
+        formattedPreInspectionQuestions = Array.isArray(formData.preInspectionQuestions)
+          ? formData.preInspectionQuestions.map(q => {
+              // Create a clean question object without any undefined/null values
+              const cleanQuestion = {
+                text: q.text,
+                type: q.type,
+                options: q.options || [],
+                required: q.required !== undefined ? q.required : true
+              };
+              
+              // Preserve _id if it exists
+              if (q._id) {
+                cleanQuestion._id = q._id;
+              }
+              
+              // Include scoring if it exists
+              if (q.scoring) {
+                cleanQuestion.scoring = q.scoring;
+              }
+              
+              // Include scores if they exist
+              if (q.scores) {
+                cleanQuestion.scores = q.scores;
+              }
+              
+              return cleanQuestion;
+            })
+          : [];
+        
+        console.log('Formatted pre-inspection questions:', JSON.stringify(formattedPreInspectionQuestions));
+      }
       
       // Prepare task data
       const taskData = {
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
-        status: formData.status,
-        deadline: formData.dueDate, // Map dueDate to deadline for backend compatibility
+        status: formData.status || 'open',
+        deadline: formData.dueDate,
         location: formData.location || '',
-        assignedTo: selectedUserId ? [selectedUserId] : [], // Send as array
-        inspectionLevel: formData.inspectionLevel,
-        asset: formData.asset || undefined, // Include asset ID if selected
+        assignedTo: selectedUserId ? [selectedUserId] : [], // Use selectedUserId
+        inspectionLevel: formData.inspectionLevel || null,
+        asset: formData.asset || null,
         isActive: formData.isActive,
-        attachments: formData.attachments,
-        preInspectionQuestions: formData.preInspectionQuestions || [] // Include pre-inspection questions
+        attachments: formData.attachments || []
       };
       
-      console.log('Task data for submission:', taskData);
+      // Only include preInspectionQuestions in the payload if they've been changed in edit mode 
+      // AND the array is not empty, or if it's a new task with questions
+      if ((!taskId || isQuestionsChanged) && formattedPreInspectionQuestions.length > 0) {
+        taskData.preInspectionQuestions = formattedPreInspectionQuestions;
+      }
+      
+      console.log('Task data for submission:', JSON.stringify(taskData));
       
       // Call API to create or update task
       if (initialData && taskId) {
@@ -1297,6 +1365,7 @@ const TaskForm = ({
         })).unwrap();
         
         if (updateResult) {
+          toast.success('Task updated successfully');
           if (onCancel) onCancel(updateResult); // Pass the updated task back
         }
       } else {
@@ -1328,7 +1397,7 @@ const TaskForm = ({
       newErrors.dueDate = 'Deadline is required';
     }
     
-    if (formData.assignedTo.length === 0 || !formData.assignedTo[0]) {
+    if (!selectedUserId) {
       newErrors.assignedTo = 'User assignment is required';
     }
     
@@ -1473,6 +1542,51 @@ const TaskForm = ({
     }
   }, [usersProp.length, inspectionLevelsProp.length, assetsProp.length, dispatch]);
   
+  // Define a better check for initialData format in useEffect
+  useEffect(() => {
+    console.log('TaskForm initialData updated:', initialData);
+    
+    // Log data.data or data directly depending on structure
+    if (initialData) {
+      // Check for nested data structure (could be data.data pattern)
+      const taskData = initialData.data && typeof initialData.data === 'object' 
+        ? initialData.data 
+        : initialData;
+        
+      console.log('Using task data:', taskData);
+      
+      // Extract preInspectionQuestions from the correct location
+      const questions = taskData.preInspectionQuestions;
+      
+      if (questions) {
+        console.log('Found preInspectionQuestions:', questions);
+        console.log('Type:', typeof questions);
+        console.log('Is array:', Array.isArray(questions));
+        console.log('Length:', questions?.length);
+        
+        if (Array.isArray(questions) && questions.length > 0) {
+          // Create a deep copy to avoid reference issues
+          const questionsCopy = JSON.parse(JSON.stringify(questions));
+          
+          // Update form data with the pre-inspection questions
+          setFormData(prev => ({
+            ...prev,
+            preInspectionQuestions: questionsCopy
+          }));
+          
+          console.log('Updated formData with questions copy');
+        } else {
+          console.log('No questions to update or not in expected format');
+        }
+      } else {
+        console.log('No preInspectionQuestions found in task data');
+      }
+    } else {
+      console.log('initialData is null or undefined');
+    }
+  }, [initialData]);
+
+  // Update the component rendering to check for data in both initialData and initialData.data
   return (
     <Form onSubmit={handleSubmit}>
       <FormRow>
@@ -1549,22 +1663,26 @@ const TaskForm = ({
         <Label>Assigned User</Label>
         <Select
           name="assignedUser"
-          value={formData.assignedTo.length > 0 ? formData.assignedTo[0] : ''}
+          value={selectedUserId}
           onChange={(e) => {
             const userId = e.target.value;
-            setFormData(prev => ({
-              ...prev,
-              assignedTo: userId ? [userId] : []
-            }));
+            console.log('User selection changed to:', userId);
+            setSelectedUserId(userId);
+            
+            // We don't update formData.assignedTo here to avoid re-renders
+            // It will be collected in handleSubmit
           }}
           required
         >
           <option value="">Select User</option>
-          {users?.map(user => (
-            <option key={user._id} value={user._id}>
-              {user.name || user.email || 'Unknown user'}
-            </option>
-          ))}
+          {users?.map(user => {
+            const userIdValue = user.id || user._id;
+            return (
+              <option key={userIdValue} value={userIdValue}>
+                {user.name || user.email || 'Unknown user'}
+              </option>
+            );
+          })}
         </Select>
         {errors.assignedTo && <ErrorMessage>{errors.assignedTo}</ErrorMessage>}
       </FormGroup>
@@ -1597,7 +1715,7 @@ const TaskForm = ({
           >
             <option value="">Select Asset (Optional)</option>
             {assets?.map(asset => (
-              <option key={asset.id} value={asset.id}>
+              <option key={asset._id || asset.id} value={asset._id || asset.id}>
                 {asset.displayName || asset.uniqueId} - {asset.type}
               </option>
             ))}
@@ -1683,9 +1801,104 @@ const TaskForm = ({
         </>
       )}
       
+      {initialData && 
+        ((initialData.preInspectionQuestions && 
+          Array.isArray(initialData.preInspectionQuestions) && 
+          initialData.preInspectionQuestions.length > 0) || 
+        (initialData.data && 
+          initialData.data.preInspectionQuestions && 
+          Array.isArray(initialData.data.preInspectionQuestions) && 
+          initialData.data.preInspectionQuestions.length > 0)) && (
+        <div style={{ 
+          marginBottom: '24px', 
+          padding: '16px',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          background: '#f8fafc'
+        }}>
+          <div style={{ 
+            fontWeight: '500', 
+            marginBottom: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            {(() => {
+              const questions = initialData.preInspectionQuestions || 
+                             (initialData.data && initialData.data.preInspectionQuestions) || 
+                             [];
+              return (
+                <>
+                  <span>Existing Pre-Inspection Questions ({questions.length})</span>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>These questions will be preserved when updating</span>
+                </>
+              );
+            })()}
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(() => {
+              const questions = initialData.preInspectionQuestions || 
+                             (initialData.data && initialData.data.preInspectionQuestions) || 
+                             [];
+              return questions.map((question, index) => (
+                <div 
+                  key={question._id || index} 
+                  style={{
+                    padding: '12px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                    border: '1px solid #edf2f7'
+                  }}
+                >
+                  <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                    {index + 1}. {question.text}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Type: {question.type || 'text'}</span>
+                    {question.options && question.options.length > 0 && (
+                      <span>Options: {question.options.length}</span>
+                    )}
+                    <span>Required: {question.required ? 'Yes' : 'No'}</span>
+                  </div>
+                  {question.options && question.options.length > 0 && (
+                    <div style={{ 
+                      marginTop: '8px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      fontSize: '12px'
+                    }}>
+                      {question.options.map((option, i) => (
+                        <span 
+                          key={i}
+                          style={{
+                            padding: '3px 8px',
+                            background: '#f1f5f9',
+                            borderRadius: '4px',
+                            color: '#475569'
+                          }}
+                        >
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+      
       <PreInspectionQuestions 
         questions={formData.preInspectionQuestions} 
         onChange={handlePreInspectionQuestionsChange}
+        initialQuestions={initialData.preInspectionQuestions || 
+                      (initialData.data && initialData.data.preInspectionQuestions) || 
+                      []}
+        isEditMode={!!initialData && !!initialData._id}
       />
       
       <ButtonGroup>
