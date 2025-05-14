@@ -14,6 +14,7 @@ const applyThemeVariables = () => {
   });
 };
 
+
 // Initialize theme
 applyThemeVariables();
 
