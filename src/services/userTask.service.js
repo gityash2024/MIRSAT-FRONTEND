@@ -30,7 +30,19 @@ export const userTaskService = {
   updateTaskProgress: async (taskId, subLevelId, data) => {
     try {
       console.log('Updating task progress:', { taskId, subLevelId, data });
-      const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, data);
+      
+      // Create a full payload including all metrics
+      const payload = {
+        status: data.status,
+        ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.photos !== undefined && { photos: data.photos }),
+        ...(data.timeSpent !== undefined && { timeSpent: data.timeSpent }),
+        // Add scoring and metrics data
+        ...(data.sectionScore && { sectionScore: data.sectionScore }),
+        ...(data.taskMetrics && { taskMetrics: data.taskMetrics })
+      };
+      
+      const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, payload);
       
       if (response.status >= 200 && response.status < 300) {
         toast.success('Progress updated successfully');

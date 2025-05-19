@@ -1467,13 +1467,36 @@ const InspectionStepForm = ({
     setLoading(prev => ({ ...prev, [subLevelId]: true }));
     
     try {
+      // Calculate current score for this sublevel
+      const sectionScore = calculateSectionScore(subLevelId);
+      
+      // Calculate time spent for analytics
+      const currentTimeSpent = timeSpent[subLevelId] || 0;
+      
+      // Calculate current overall scores to include in the update
+      const currentScores = calculateScores();
+      
+      // Include more data in the update payload
       const updatedTask = await dispatch(updateUserTaskProgress({
         taskId: task._id,
         subLevelId,
         status,
         notes: notes[subLevelId] || '',
         photos: photos[subLevelId] || [],
-        timeSpent: timeSpent[subLevelId] || 0
+        timeSpent: currentTimeSpent,
+        // Include scoring data for analytics and reporting
+        sectionScore: {
+          achieved: sectionScore.achieved,
+          total: sectionScore.total,
+          percentage: sectionScore.percentage
+        },
+        // Include overall task performance metrics
+        taskMetrics: {
+          completionRate: currentScores.percentage,
+          achievedScore: currentScores.achieved,
+          totalScore: currentScores.total,
+          timeSpent: currentTimeSpent
+        }
       })).unwrap();
       
       toast.success(`Checkpoint status updated`);

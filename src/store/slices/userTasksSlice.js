@@ -52,14 +52,25 @@ export const startUserTask = createAsyncThunk(
 
 export const updateUserTaskProgress = createAsyncThunk(
   'userTasks/updateUserTaskProgress',
-  async ({ taskId, subLevelId, status, notes, photos, timeSpent }, { rejectWithValue }) => {
+  async ({ 
+    taskId, 
+    subLevelId, 
+    status, 
+    notes, 
+    photos, 
+    timeSpent,
+    sectionScore,
+    taskMetrics 
+  }, { rejectWithValue }) => {
     try {
       // Create a proper data object with all parameters
       const updateData = {
         status,
         ...(notes !== undefined && { notes }),
         ...(photos !== undefined && { photos }),
-        ...(timeSpent !== undefined && { timeSpent })
+        ...(timeSpent !== undefined && { timeSpent }),
+        ...(sectionScore !== undefined && { sectionScore }),
+        ...(taskMetrics !== undefined && { taskMetrics })
       };
       
       const response = await userTaskService.updateTaskProgress(taskId, subLevelId, updateData);

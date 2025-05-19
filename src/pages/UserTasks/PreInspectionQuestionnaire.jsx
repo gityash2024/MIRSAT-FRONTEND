@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { 
   Clock, Calendar, AlertTriangle, Activity, CheckCircle, 
   XCircle, Database, MapPin, User, Briefcase, Award, Info, 
-  BarChart2, Clipboard, AlertCircle, HelpCircle
+  BarChart2, Clipboard, AlertCircle, HelpCircle, CheckSquare
 } from 'lucide-react';
 
 const Container = styled.div`
@@ -308,15 +308,19 @@ const AssessmentTable = styled.table`
 `;
 
 const StatusIcon = ({ status, size = 18 }) => {
-  switch (status) {
-    case 'pending':
-      return <Clock size={size} color="#f57c00" />;
-    case 'in_progress':
-      return <Activity size={size} color="#0288d1" />;
+  switch(status) {
     case 'completed':
-      return <CheckCircle size={size} color="#388e3c" />;
+    case 'full_compliance':
+      return <CheckCircle size={size} color="#4caf50" />;
+    case 'failed':
     case 'incomplete':
-      return <XCircle size={size} color="#d32f2f" />;
+    case 'non_compliance':
+      return <XCircle size={size} color="#f44336" />;
+    case 'in_progress':
+    case 'partial_compliance':
+      return <Activity size={size} color="#ff9800" />;
+    case 'not_applicable':
+      return <AlertCircle size={size} color="#9e9e9e" />;
     default:
       return <Clock size={size} color="#616161" />;
   }
@@ -325,11 +329,7 @@ const StatusIcon = ({ status, size = 18 }) => {
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
 const PreInspectionStepForm = ({ task }) => {
@@ -360,7 +360,9 @@ const PreInspectionStepForm = ({ task }) => {
   // Check if deadline is overdue
   const isOverdue = () => {
     if (!task.deadline) return false;
-    return new Date(task.deadline) < new Date() && task.status !== 'completed';
+    const deadline = new Date(task.deadline);
+    const today = new Date();
+    return deadline < today;
   };
   
   // Calculate total score
@@ -445,6 +447,44 @@ const PreInspectionStepForm = ({ task }) => {
   
   const scores = calculateTotalScore();
 
+  // Pre-inspection questions section
+  const renderPreInspectionQuestions = () => {
+    if (!task.preInspectionQuestions || task.preInspectionQuestions.length === 0) {
+      return null;
+    }
+    
+    return (
+      <PreInspectionSection>
+        <SectionTitle>
+          <CheckSquare size={18} />
+          Pre-Inspection Questionnaire
+        </SectionTitle>
+        
+        <QuestionsList>
+          {task.preInspectionQuestions.map((question, index) => (
+            <QuestionItem key={index}>
+              <QuestionNumber>{index + 1}</QuestionNumber>
+              <QuestionText>{question.text}</QuestionText>
+              
+              <QuestionOptions>
+                {question.options && question.options.map((option, optIndex) => (
+                  <OptionButton 
+                    key={optIndex}
+                    selected={task.questionnaireResponses && task.questionnaireResponses[question._id] === option}
+                    type="button"
+                    disabled={task.status === 'completed'}
+                  >
+                    {option}
+                  </OptionButton>
+                ))}
+              </QuestionOptions>
+            </QuestionItem>
+          ))}
+        </QuestionsList>
+      </PreInspectionSection>
+    );
+  };
+
   return (
     <Container>
       <Title>
@@ -478,7 +518,9 @@ const PreInspectionStepForm = ({ task }) => {
           <span>Status: 
             <StatusBadge status={task.status}>
               <StatusIcon status={task.status} size={14} />
-              {task.status?.charAt(0).toUpperCase() + task.status?.slice(1).replace('_', ' ') || 'Pending'}
+              {task.status?.replace('_', ' ').split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' ')}
             </StatusBadge>
           </span>
         </MetaItem>
@@ -628,8 +670,84 @@ const PreInspectionStepForm = ({ task }) => {
           )}
         </AssetInfo>
       )}
+      
+      {/* Render Pre-Inspection Questions */}
+      {renderPreInspectionQuestions()}
     </Container>
   );
 };
+
+// Add these new styled components for pre-inspection questions
+const PreInspectionSection = styled.div`
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+`;
+
+const QuestionsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const QuestionItem = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+`;
+
+const QuestionNumber = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--color-navy);
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 12px;
+`;
+
+const QuestionText = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 12px;
+  margin-top: 8px;
+`;
+
+const QuestionOptions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const OptionButton = styled.button`
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid #e2e8f0;
+  background: ${props => props.selected ? 'rgba(63, 81, 181, 0.1)' : 'white'};
+  color: ${props => props.selected ? 'var(--color-navy)' : '#4b5563'};
+  border-color: ${props => props.selected ? 'var(--color-navy)' : '#e2e8f0'};
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover:not(:disabled) {
+    background: rgba(63, 81, 181, 0.05);
+    border-color: #cbd5e1;
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
 
 export default PreInspectionStepForm;
