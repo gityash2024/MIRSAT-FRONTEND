@@ -13,6 +13,7 @@ export const assetService = {
     return response.data;
   },
   
+  
   createAsset: async (data) => {
     const response = await api.post('/assets', data);
     return response.data;
