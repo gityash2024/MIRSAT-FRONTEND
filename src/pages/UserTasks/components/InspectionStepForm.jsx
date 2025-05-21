@@ -10,7 +10,7 @@ import {
   PauseCircle, PlayCircle, Download, Edit, X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { updateUserTaskProgress, uploadTaskAttachment } from '../../../store/slices/userTasksSlice';
+import { updateUserTaskProgress, uploadTaskAttachment, updateTaskQuestionnaire } from '../../../store/slices/userTasksSlice';
 import { CustomTimeInput } from './TimeInput';
 
 const Container = styled.div`
@@ -995,32 +995,88 @@ const InspectionStepForm = ({
   
   // Initialize from existing task data - Add loading of responses from progress
   useEffect(() => {
-    if (task && task.progress && task.progress.length > 0) {
+    if (task) {
       const notesObj = {};
       const timeObj = {};
       const photosObj = {};
       const complianceObj = {};
       const responsesObj = {}; // Add initialization for responses
       
-      task.progress.forEach(p => {
-        if (p && p.subLevelId) {
-          const id = typeof p.subLevelId === 'string' 
-            ? p.subLevelId 
-            : (p.subLevelId._id || p.subLevelId.id || p.subLevelId);
+      // First populate from progress items
+      if (task.progress && task.progress.length > 0) {
+        task.progress.forEach(p => {
+          if (p && p.subLevelId) {
+            const id = typeof p.subLevelId === 'string' 
+              ? p.subLevelId 
+              : (p.subLevelId._id || p.subLevelId.id || p.subLevelId);
+            
+            notesObj[id] = p.notes || '';
+            timeObj[id] = p.timeSpent || 0;
+            photosObj[id] = p.photos || [];
+            complianceObj[id] = p.status || 'pending';
+            
+            // If this progress item has question responses, add them
+            if (p.responses) {
+              Object.entries(p.responses).forEach(([questionId, response]) => {
+                responsesObj[`${id}_${questionId}`] = response;
+              });
+            }
+          }
+        });
+      }
+      
+      // Also get responses from task.questionnaireResponses if available
+      if (task.questionnaireResponses) {
+        // First find all sections and questions
+        const sections = [];
+        
+        // Get sections from subLevels
+        if (task.inspectionLevel?.subLevels) {
+          const collectSections = (subLevels) => {
+            for (const sl of subLevels) {
+              if (sl) {
+                sections.push(sl);
+                if (sl.subLevels && sl.subLevels.length > 0) {
+                  collectSections(sl.subLevels);
+                }
+              }
+            }
+          };
           
-          notesObj[id] = p.notes || '';
-          timeObj[id] = p.timeSpent || 0;
-          photosObj[id] = p.photos || [];
-          complianceObj[id] = p.status || 'pending';
-          
-          // If this progress item has question responses, add them
-          if (p.responses) {
-            Object.entries(p.responses).forEach(([questionId, response]) => {
-              responsesObj[`${id}_${questionId}`] = response;
-            });
+          collectSections(task.inspectionLevel.subLevels);
+        }
+        
+        // Also get sections from pages
+        if (task.inspectionLevel?.pages) {
+          for (const page of task.inspectionLevel.pages) {
+            if (page.sections) {
+              sections.push(...page.sections);
+            }
           }
         }
-      });
+        
+        // Now match each response to the appropriate section
+        Object.entries(task.questionnaireResponses).forEach(([key, value]) => {
+          if (key.includes('-')) {
+            // Format is "sectionId-questionId"
+            const [sectionId, questionId] = key.split('-');
+            if (sectionId && questionId) {
+              responsesObj[`${sectionId}_${questionId}`] = value;
+            }
+          } else {
+            // Format is just "questionId" - need to find the right section
+            for (const section of sections) {
+              if (section.questions) {
+                const question = section.questions.find(q => q && q._id === key);
+                if (question) {
+                  responsesObj[`${section._id}_${key}`] = value;
+                  break;
+                }
+              }
+            }
+          }
+        });
+      }
       
       setNotes(notesObj);
       setTimeSpent(timeObj);
@@ -2132,7 +2188,23 @@ const InspectionStepForm = ({
   // Move these functions here, inside the component
   const getQuestionResponse = (questionId, sectionId) => {
     const key = `${sectionId}_${questionId}`;
-    return questionResponses[key] || null;
+    
+    // First check in local state for immediate feedback
+    if (questionResponses[key]) {
+      return questionResponses[key];
+    }
+    
+    // If not in local state, check in task.questionnaireResponses
+    if (task.questionnaireResponses && task.questionnaireResponses[questionId]) {
+      return task.questionnaireResponses[questionId];
+    }
+    
+    // As a fallback, check if the response is stored with a different key format
+    if (task.questionnaireResponses && task.questionnaireResponses[`${sectionId}-${questionId}`]) {
+      return task.questionnaireResponses[`${sectionId}-${questionId}`];
+    }
+    
+    return null;
   };
   
   // Add calculateQuestionScore inside the component
@@ -2238,7 +2310,8 @@ const InspectionStepForm = ({
     // Save to database
     setLoading(prev => ({ ...prev, [sectionId]: true }));
     
-    dispatch(updateUserTaskProgress({
+    // First update the progress item with the response
+    const updateProgressPromise = dispatch(updateUserTaskProgress({
       taskId: task._id,
       subLevelId: sectionId,
       status: progressItem?.status || 'pending', // Maintain current status
@@ -2246,8 +2319,27 @@ const InspectionStepForm = ({
       photos: photos[sectionId] || progressItem?.photos || [],
       timeSpent: timeSpent[sectionId] || progressItem?.timeSpent || 0,
       responses: responses
-    })).unwrap()
-      .then((updatedTask) => {
+    })).unwrap();
+    
+    // Then update the task questionnaire to ensure the score is updated
+    const currentResponses = { ...(task.questionnaireResponses || {}) };
+    
+    // Update using both key formats to ensure compatibility
+    currentResponses[questionId] = value;
+    currentResponses[`${sectionId}-${questionId}`] = value;
+    
+    const updateQuestionnairePromise = dispatch(updateTaskQuestionnaire({
+      taskId: task._id,
+      questionnaire: {
+        responses: currentResponses,
+        notes: task.questionnaireNotes || '',
+        completed: false // Don't auto-complete the entire questionnaire
+      }
+    })).unwrap();
+    
+    // Execute both updates in parallel
+    Promise.all([updateProgressPromise, updateQuestionnairePromise])
+      .then(([updatedTask]) => {
         if (onUpdateProgress) onUpdateProgress(updatedTask);
         toast.success(`Response recorded: ${value}${scoreMsg}`);
         // Recalculate scores

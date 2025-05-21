@@ -1643,46 +1643,92 @@ const QuestionItem = styled.div`
 // Add scoring utility functions at the top of the file after the imports
 // Function to calculate section score
 const calculateSectionScore = (section, responses) => {
-  if (!section || !section.questions || !responses) return { achieved: 0, total: 0 };
+  if (!section || !section.questions || !responses) {
+    return { total: 0, achieved: 0, percentage: 0 };
+  }
   
-  let totalPoints = 0;
-  let achievedPoints = 0;
+  let totalPossible = 0;
+  let totalAchieved = 0;
   
   section.questions.forEach(question => {
-    const maxScore = question.scoring?.max || 2;
-    // Only count mandatory questions in the total score
-    if (question.required !== false) {
-      totalPoints += maxScore;
+    // Skip optional/non-mandatory questions
+    if (question.mandatory === false) return;
+    
+    const questionId = question._id || question.id;
+    let responseKey = null;
+    
+    // First try direct match
+    if (responses[questionId]) {
+      responseKey = questionId;
+    } else {
+      // Then try to find a key that includes or ends with the question ID
+      responseKey = Object.keys(responses).find(key => 
+        key.includes(questionId) || key.endsWith(questionId)
+      );
+    }
+    
+    if (responseKey) {
+      const response = responses[responseKey];
+      const maxScore = question.scores?.max || question.scoring?.max || 2; // Default max score is 2
+      const weight = question.weight || 1;
       
-      const response = responses[question._id];
-      if (response) {
-        // Calculate achieved points based on response
-        if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
-          achievedPoints += maxScore;
-        } else if (response === 'partial_compliance') {
-          achievedPoints += (maxScore / 2);
-        }
+      // Handle N/A responses properly - they should not affect the score
+      if (response === 'na' || response === 'not_applicable' || response === 'N/A') {
+        // Don't include N/A questions in the total or achieved points
+        return; // Skip to the next question
       }
+      
+      // Add the question's possible points to the total
+      totalPossible += (maxScore * weight);
+      
+      // Calculate points achieved based on response
+      if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
+        totalAchieved += (maxScore * weight);
+      } else if (response === 'partial_compliance') {
+        totalAchieved += (maxScore / 2 * weight); // Half of max score for partial compliance
+      }
+    } else {
+      // No response found, so add to total possible but not to achieved
+      const maxScore = question.scores?.max || question.scoring?.max || 2;
+      const weight = question.weight || 1;
+      totalPossible += (maxScore * weight);
     }
   });
   
-  return { achieved: achievedPoints, total: totalPoints };
+  // Calculate percentage
+  const percentage = totalPossible > 0 ? Math.round((totalAchieved / totalPossible) * 100) : 0;
+  
+  return {
+    total: totalPossible,
+    achieved: totalAchieved,
+    percentage: percentage
+  };
 };
 
 // Function to calculate page score
 const calculatePageScore = (page, responses) => {
-  if (!page || !page.sections) return { achieved: 0, total: 0 };
+  if (!page || !page.sections) {
+    return { total: 0, achieved: 0, percentage: 0 };
+  }
   
-  let totalPoints = 0;
-  let achievedPoints = 0;
+  let pageTotal = 0;
+  let pageAchieved = 0;
   
+  // Sum up scores from all sections in this page
   page.sections.forEach(section => {
     const sectionScore = calculateSectionScore(section, responses);
-    totalPoints += sectionScore.total;
-    achievedPoints += sectionScore.achieved;
+    pageTotal += sectionScore.total;
+    pageAchieved += sectionScore.achieved;
   });
   
-  return { achieved: achievedPoints, total: totalPoints };
+  // Calculate percentage
+  const percentage = pageTotal > 0 ? Math.round((pageAchieved / pageTotal) * 100) : 0;
+  
+  return {
+    total: pageTotal,
+    achieved: pageAchieved,
+    percentage: percentage
+  };
 };
 
 // Function to calculate pre-inspection questionnaire score
@@ -2151,6 +2197,9 @@ const UserTaskDetail = () => {
   const calculateScores = () => {
     if (!currentTask) return { total: 0, achieved: 0, percentage: 0, areas: [] };
     
+    console.log('Calculating scores with task:', currentTask._id);
+    console.log('Questionnaire responses:', currentTask.questionnaireResponses);
+    
     // Calculate questionnaire scores
     let totalQuestionPoints = 0;
     let achievedQuestionPoints = 0;
@@ -2159,19 +2208,32 @@ const UserTaskDetail = () => {
       const responses = currentTask.questionnaireResponses;
       const questions = currentTask.questions.filter(q => q.mandatory !== false);
       
+      console.log('Processing questions for scoring:', questions.length);
+      
       questions.forEach(question => {
         const questionId = question._id || question.id;
-        const responseKey = Object.keys(responses).find(key => 
-          key.includes(questionId) || key.endsWith(questionId)
-        );
+        let responseKey = null;
+        
+        // First try direct match
+        if (responses[questionId]) {
+          responseKey = questionId;
+        } else {
+          // Then try to find a key that includes or ends with the question ID
+          responseKey = Object.keys(responses).find(key => 
+            key.includes(questionId) || key.endsWith(questionId)
+          );
+        }
         
         if (responseKey) {
           const response = responses[responseKey];
           const weight = question.weight || 1;
           const maxScore = question.scoring?.max || 2; // Default max score is 2
           
+          console.log(`Question ${questionId} response: ${response}, weight: ${weight}, maxScore: ${maxScore}`);
+          
           // Handle N/A responses properly - they should not affect the score
           if (response === 'na' || response === 'not_applicable' || response === 'N/A') {
+            console.log(`Question ${questionId} marked as N/A, skipping from score calculation`);
             // Don't include N/A questions in the total or achieved points
             return; // Skip to the next question
           }
@@ -2182,12 +2244,20 @@ const UserTaskDetail = () => {
           // Calculate points achieved based on response
           if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
             achievedQuestionPoints += (maxScore * weight);
+            console.log(`Question ${questionId} full compliance, adding ${maxScore * weight} points`);
           } else if (response === 'partial_compliance') {
             achievedQuestionPoints += (maxScore / 2 * weight); // Half of max score for partial compliance
+            console.log(`Question ${questionId} partial compliance, adding ${maxScore / 2 * weight} points`);
+          } else {
+            console.log(`Question ${questionId} no compliance, adding 0 points`);
           }
+        } else {
+          console.log(`No response found for question ${questionId}`);
         }
       });
     }
+    
+    console.log(`Total question points: ${totalQuestionPoints}, achieved: ${achievedQuestionPoints}`);
     
     // Calculate checkpoint scores
     let totalCheckpoints = 0;
@@ -2199,6 +2269,8 @@ const UserTaskDetail = () => {
       totalCheckpoints = currentTask.progress.filter(p => p.status !== 'not_applicable').length;
       completedCheckpoints = currentTask.progress.filter(p => p.status === 'completed' || p.status === 'full_compliance').length;
       notApplicableCheckpoints = currentTask.progress.filter(p => p.status === 'not_applicable').length;
+      
+      console.log(`Total checkpoints: ${totalCheckpoints}, completed: ${completedCheckpoints}, N/A: ${notApplicableCheckpoints}`);
     }
     
     // Calculate assessment area scores
@@ -2208,6 +2280,8 @@ const UserTaskDetail = () => {
     const totalPoints = totalQuestionPoints + (totalCheckpoints * 2);
     const achievedPoints = achievedQuestionPoints + (completedCheckpoints * 2);
     const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
+    
+    console.log(`Final score calculation - total: ${totalPoints}, achieved: ${achievedPoints}, percentage: ${percentage}%`);
     
     const result = {
       total: totalPoints,
@@ -2272,6 +2346,14 @@ const UserTaskDetail = () => {
       });
     };
   }, []);
+
+  // Add effect to recalculate scores when responses change
+  useEffect(() => {
+    if (currentTask?.questionnaireResponses) {
+      console.log('Questionnaire responses changed, recalculating scores');
+      calculateScores();
+    }
+  }, [currentTask?.questionnaireResponses]);
 
   // Update renderQuestionnaire to show page scores
   const renderQuestionnaire = () => {
@@ -2835,6 +2917,10 @@ const UserTaskDetail = () => {
     console.log('Saving response for question:', questionId, 'Value:', value);
     
     try {
+      // Save current page and section selection before API call
+      const currentPageId = activePage?._id;
+      const currentSectionId = selectedSection;
+      
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
@@ -2843,7 +2929,7 @@ const UserTaskDetail = () => {
       
       console.log('Updated responses:', updatedResponses);
       
-      await dispatch(updateTaskQuestionnaire({
+      const result = await dispatch(updateTaskQuestionnaire({
         taskId: currentTask._id,
         questionnaire: {
           responses: updatedResponses,
@@ -2853,7 +2939,21 @@ const UserTaskDetail = () => {
       })).unwrap();
       
       toast.success('Response saved successfully');
+      
+      // Fetch updated task data
       await dispatch(fetchUserTaskDetails(currentTask._id));
+      
+      // Recalculate scores after updating
+      calculateScores();
+      
+      // Restore page and section selection
+      if (currentPageId && pageData.find(p => p._id === currentPageId)) {
+        setActivePage(pageData.find(p => p._id === currentPageId));
+      }
+      
+      if (currentSectionId) {
+        setSelectedSection(currentSectionId);
+      }
     } catch (error) {
       console.error('Error saving response:', error);
       toast.error(`Failed to save response: ${error.message || 'Unknown error'}`);
@@ -2892,12 +2992,7 @@ const UserTaskDetail = () => {
       return null;
     }
     
-    // Calculate total score for pre-inspection questionnaire
-    const preInspectionScore = calculatePreInspectionScore(
-      currentTask.preInspectionQuestions, 
-      currentTask.questionnaireResponses || {}
-    );
-    
+    // Remove score calculation for pre-inspection questionnaire in overview tab
     return (
       <PreInspectionContainer>
         <PreInspectionHeader>
@@ -2907,17 +3002,7 @@ const UserTaskDetail = () => {
               Pre-Inspection Questionnaire
             </PreInspectionTitle>
             
-            <div style={{ 
-              background: '#f0f9ff', 
-              padding: '4px 12px', 
-              borderRadius: '50px',
-              border: '1px solid #93c5fd',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#1e40af'
-            }}>
-              Score: {preInspectionScore.achieved}/{preInspectionScore.total}
-            </div>
+            {/* Removed score display */}
           </div>
           
           {currentTask.questionnaireCompleted ? (
@@ -2936,17 +3021,6 @@ const UserTaskDetail = () => {
         <PreInspectionContent>
           {currentTask.preInspectionQuestions.map((question, index) => {
             const response = currentTask.questionnaireResponses?.[question._id];
-            const maxScore = question.scoring?.max || 2;
-            
-            // Calculate achieved score
-            let achievedScore = 0;
-            if (response) {
-              if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
-                achievedScore = maxScore;
-              } else if (response === 'partial_compliance') {
-                achievedScore = maxScore / 2;
-              }
-            }
             
             return (
               <QuestionnaireItem key={index}>
@@ -2997,22 +3071,7 @@ const UserTaskDetail = () => {
                       </QuestionText>
                     </div>
                     
-                    {/* Question Score */}
-                    {question.scoring?.enabled !== false && (
-                      <div style={{ 
-                        background: response ? '#f0fdf4' : '#f7fee7', 
-                        padding: '4px 12px', 
-                        borderRadius: '50px',
-                        border: response ? '1px solid #86efac' : '1px solid #d9f99d',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        color: response ? '#166534' : '#3f6212',
-                        whiteSpace: 'nowrap',
-                        marginLeft: '10px'
-                      }}>
-                        {achievedScore}/{maxScore}
-                      </div>
-                    )}
+                    {/* Removed question score display */}
                   </div>
                   
                   <ResponseOptions>
