@@ -1,22 +1,47 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { format, differenceInSeconds } from 'date-fns';
 import { 
-  ArrowLeft, Clock, Calendar, Map, AlertTriangle, Edit,
-  CheckCircle, XCircle, Activity, PaperclipIcon, Send, 
-  Download, Info, CheckSquare, Camera, FileText, Loader,
-  Circle, MoreHorizontal, Timer, PlayCircle, PauseCircle,
-  File, ChevronUp, ChevronDown, MessageSquare, ChevronRight, ChevronLeft,
-  Award, Clipboard, AlertCircle, Layers, HelpCircle
-} from 'lucide-react';
+  Info, 
+  Activity, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle, 
+  Clock, 
+  FileText, 
+  Download, 
+  CheckSquare, 
+  Paperclip, 
+  Send, 
+  Trash2, 
+  Edit, 
+  Plus, 
+  Award, 
+  User, 
+  MapPin, 
+  Calendar, 
+  Clock as ClockIcon, 
+  Edit3, 
+  Upload, 
+  Clipboard,
+  ArrowLeft,
+  ChevronRight,
+  ChevronLeft,
+  X,
+  MessageSquare,
+  AlertTriangle,
+  Map
+} from 'react-feather';
 import { toast } from 'react-hot-toast';
 import { 
   fetchUserTaskDetails, 
   updateUserTaskProgress,
   addUserTaskComment,
   exportTaskReport,
-  updateTaskQuestionnaire
+  updateTaskQuestionnaire,
+  saveTaskSignature
 } from '../../store/slices/userTasksSlice';
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
@@ -1516,6 +1541,172 @@ const TaskMetricsSection = styled.div`
   margin-top: 32px;
 `;
 
+// Signature modal components
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+`;
+
+const ModalContent = styled.div`
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf2f7;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin: 0;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  
+  &:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+  }
+`;
+
+const SignatureCanvas = styled.div`
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 200px;
+  background-color: #f8fafc;
+  position: relative;
+  
+  canvas {
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background-color: white;
+    width: 100%;
+    height: 200px;
+  }
+`;
+
+const SignatureActions = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+`;
+
+const SignatureButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ClearButton = styled(SignatureButton)`
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  
+  &:hover {
+    background-color: #e2e8f0;
+  }
+`;
+
+const SaveButton = styled(SignatureButton)`
+  background-color: var(--color-navy);
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: #0d1186;
+  }
+  
+  &:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const UploadButton = styled(SignatureButton)`
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  
+  &:hover {
+    background-color: #e0f2fe;
+  }
+`;
+
+const SignatureTabs = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+const SignatureTab = styled.button`
+  padding: 8px 16px;
+  border-radius: 6px;
+  background-color: ${props => props.active ? 'var(--color-navy)' : '#f1f5f9'};
+  color: ${props => props.active ? 'white' : '#475569'};
+  border: 1px solid ${props => props.active ? 'var(--color-navy)' : '#cbd5e1'};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.active ? '#0d1186' : '#e2e8f0'};
+  }
+`;
+
 // Add these styled components for pre-inspection questionnaire
 const PreInspectionContainer = styled.div`
   background: white;
@@ -1652,13 +1843,13 @@ const calculateSectionScore = (section, responses) => {
   
   section.questions.forEach(question => {
     // Skip optional/non-mandatory questions
-    if (question.mandatory === false) return;
+    if (question.mandatory === false || question.required === false) return;
     
     const questionId = question._id || question.id;
     let responseKey = null;
     
     // First try direct match
-    if (responses[questionId]) {
+    if (responses[questionId] !== undefined) {
       responseKey = questionId;
     } else {
       // Then try to find a key that includes or ends with the question ID
@@ -1673,7 +1864,7 @@ const calculateSectionScore = (section, responses) => {
       const weight = question.weight || 1;
       
       // Handle N/A responses properly - they should not affect the score
-      if (response === 'na' || response === 'not_applicable' || response === 'N/A') {
+      if (response === 'na' || response === 'not_applicable' || response === 'N/A' || response === 'Not applicable') {
         // Don't include N/A questions in the total or achieved points
         return; // Skip to the next question
       }
@@ -1682,11 +1873,12 @@ const calculateSectionScore = (section, responses) => {
       totalPossible += (maxScore * weight);
       
       // Calculate points achieved based on response
-      if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
+      if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
         totalAchieved += (maxScore * weight);
-      } else if (response === 'partial_compliance') {
+      } else if (response === 'partial_compliance' || response === 'Partial compliance') {
         totalAchieved += (maxScore / 2 * weight); // Half of max score for partial compliance
       }
+      // Non-compliance responses get 0 points
     } else {
       // No response found, so add to total possible but not to achieved
       const maxScore = question.scores?.max || question.scoring?.max || 2;
@@ -1767,6 +1959,8 @@ const UserTaskDetail = () => {
   const { currentUser } = useAuth();
   const commentBoxRef = useRef(null);
   const timerRef = useRef(null);
+  const signatureCanvasRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [expandedSubLevels, setExpandedSubLevels] = useState({});
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
@@ -1775,6 +1969,12 @@ const UserTaskDetail = () => {
   const [userClickedStep, setUserClickedStep] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
+  
+  // Signature states
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signatureImage, setSignatureImage] = useState(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureMethod, setSignatureMethod] = useState('draw'); // 'draw' or 'upload'
   
   const {
     currentTask,
@@ -1809,6 +2009,9 @@ const UserTaskDetail = () => {
   const [inspectionPages, setInspectionPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
+  
+  // Add state to store the local task completion percentage
+  const [taskCompletionPercentage, setTaskCompletionPercentage] = useState(0);
   
   useEffect(() => {
     dispatch(fetchUserTaskDetails(taskId));
@@ -1887,6 +2090,27 @@ const UserTaskDetail = () => {
       calculateScores();
     }
   }, [currentTask]);
+
+  // Set signature image if it exists in the current task
+  useEffect(() => {
+    if (currentTask && currentTask.signature) {
+      setSignatureImage(currentTask.signature);
+    }
+  }, [currentTask]);
+  
+  // Initialize canvas when signature modal is shown
+  useEffect(() => {
+    if (showSignatureModal && signatureMethod === 'draw' && signatureCanvasRef.current) {
+      const canvas = signatureCanvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'black';
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+    }
+  }, [showSignatureModal, signatureMethod]);
 
   // Fix the effect that processes inspection pages
   useEffect(() => {
@@ -2075,31 +2299,149 @@ const UserTaskDetail = () => {
   };
 
   const handleExportReport = async () => {
+    if (!currentTask) return;
+    
+    // Check if signature exists
+    if (!signatureImage && currentTask.status === 'completed') {
+      setShowSignatureModal(true);
+      return;
+    }
+    
     try {
       toast.loading('Generating report...');
-      const result = await dispatch(exportTaskReport(taskId)).unwrap();
       
-      if (result.url) {
-        // Create a temporary link element
-        const link = document.createElement('a');
-        link.href = result.url;
-        link.setAttribute('download', `inspection_report_${taskId}.pdf`);
-        document.body.appendChild(link);
-        
-        // Trigger the download
-        link.click();
-        
-        // Clean up
-        document.body.removeChild(link);
-        toast.dismiss();
-        toast.success('Report downloaded successfully');
-      } else {
-        toast.dismiss();
-        toast.error('Failed to generate report: No URL returned');
+      // Make sure the task has the most up-to-date completion percentage
+      const completionPercentage = calculateTaskCompletionPercentage();
+      
+      // If the completion percentage has changed, update it before exporting
+      if (currentTask.overallProgress !== completionPercentage) {
+        // Update the task's completion percentage
+        await dispatch(updateUserTaskProgress({
+          taskId: currentTask._id,
+          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+          status: currentTask.status,
+          taskMetrics: {
+            ...currentTask.taskMetrics,
+            completionPercentage: completionPercentage,
+            // Ensure subLevelTimeSpent is a proper object, not a Map constructor
+            subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
+          }
+        })).unwrap();
       }
+      
+      // Generate and export the report
+      const result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
+      
+      toast.dismiss();
+      toast.success('Report exported successfully');
+      
+      return result;
     } catch (error) {
       toast.dismiss();
+      console.error('Error exporting report:', error);
       toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
+    }
+  };
+  
+  // Signature methods
+  const handleStartDrawing = (e) => {
+    if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
+    
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+  
+  const handleDrawing = (e) => {
+    if (!isDrawing || !signatureCanvasRef.current || signatureMethod !== 'draw') return;
+    
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+  
+  const handleStopDrawing = () => {
+    if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
+    
+    setIsDrawing(false);
+    
+    // Save the current signature image
+    const canvas = signatureCanvasRef.current;
+    const dataURL = canvas.toDataURL('image/png');
+    setSignatureImage(dataURL);
+  };
+  
+  const handleClearSignature = () => {
+    if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
+    
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setSignatureImage(null);
+  };
+  
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSignatureImage(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleSignatureUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleSaveSignature = async () => {
+    if (!signatureImage) {
+      toast.error('Please provide a signature before saving');
+      return;
+    }
+    
+    try {
+      toast.loading('Saving signature...');
+      
+      // Get the current completion percentage
+      const completionPercentage = calculateTaskCompletionPercentage();
+      
+      // Save both signature and completion percentage
+      await dispatch(saveTaskSignature({
+        taskId: currentTask._id,
+        signature: signatureImage,
+        taskMetrics: {
+          ...currentTask.taskMetrics,
+          completionPercentage: completionPercentage,
+          // Ensure subLevelTimeSpent is a proper object, not a Map constructor
+          subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
+        }
+      })).unwrap();
+      
+      toast.dismiss();
+      toast.success('Signature saved successfully');
+      setShowSignatureModal(false);
+      
+      // After saving signature, we can proceed with the report export
+      handleExportReport();
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Failed to save signature: ${error.message || 'Unknown error'}`);
     }
   };
   
@@ -2194,108 +2536,200 @@ const UserTaskDetail = () => {
   };
   
   // Function to calculate overall score and details
-  const calculateScores = () => {
-    if (!currentTask) return { total: 0, achieved: 0, percentage: 0, areas: [] };
-    
-    console.log('Calculating scores with task:', currentTask._id);
-    console.log('Questionnaire responses:', currentTask.questionnaireResponses);
-    
-    // Calculate questionnaire scores
-    let totalQuestionPoints = 0;
-    let achievedQuestionPoints = 0;
-    
-    if (currentTask.questions && currentTask.questionnaireResponses) {
-      const responses = currentTask.questionnaireResponses;
-      const questions = currentTask.questions.filter(q => q.mandatory !== false);
+  const calculateScores = useCallback(() => {
+    if (!currentTask) return;
+
+    console.log('Calculating scores', {
+      task: currentTask.id,
+      hasResponses: !!currentTask.questionnaireResponses,
+      responseCount: Object.keys(currentTask.questionnaireResponses || {}).length,
+      pages: inspectionPages.length
+    });
+
+    try {
+      let totalPoints = 0;
+      let achievedPoints = 0;
       
-      console.log('Processing questions for scoring:', questions.length);
-      
-      questions.forEach(question => {
-        const questionId = question._id || question.id;
-        let responseKey = null;
+      // Calculate scores based on inspection pages
+      inspectionPages.forEach(page => {
+        if (!page.sections) return;
         
-        // First try direct match
-        if (responses[questionId]) {
-          responseKey = questionId;
-        } else {
-          // Then try to find a key that includes or ends with the question ID
-          responseKey = Object.keys(responses).find(key => 
-            key.includes(questionId) || key.endsWith(questionId)
+        page.sections.forEach(section => {
+          if (!section.questions) return;
+          
+          const pageScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+          totalPoints += pageScore.total;
+          achievedPoints += pageScore.achieved;
+        });
+      });
+      
+      // Handle edge case where there are no scored questions
+      if (totalPoints === 0) {
+        console.log('No scored questions found in inspection pages');
+        setScores({
+          total: 0,
+          achieved: 0,
+          percentage: 0,
+          checkpointScores: {},
+          assessmentAreaScores: {}
+        });
+        return;
+      }
+      
+      // Calculate percentage
+      const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
+      
+      // Calculate checkpoint scores (if applicable)
+      const checkpointScores = {};
+      const assessmentAreaScores = {};
+      
+      // If we have checkpoints, calculate scores per checkpoint
+      if (currentTask.checkpoints && currentTask.checkpoints.length > 0) {
+        currentTask.checkpoints.forEach(checkpoint => {
+          const checkpointPages = inspectionPages.filter(
+            page => page.checkpointId === checkpoint.id || page.checkpointId === checkpoint._id
           );
-        }
-        
-        if (responseKey) {
-          const response = responses[responseKey];
-          const weight = question.weight || 1;
-          const maxScore = question.scoring?.max || 2; // Default max score is 2
           
-          console.log(`Question ${questionId} response: ${response}, weight: ${weight}, maxScore: ${maxScore}`);
+          let cpTotalPoints = 0;
+          let cpAchievedPoints = 0;
           
-          // Handle N/A responses properly - they should not affect the score
-          if (response === 'na' || response === 'not_applicable' || response === 'N/A') {
-            console.log(`Question ${questionId} marked as N/A, skipping from score calculation`);
-            // Don't include N/A questions in the total or achieved points
-            return; // Skip to the next question
+          checkpointPages.forEach(page => {
+            if (!page.sections) return;
+            
+            page.sections.forEach(section => {
+              const sectionScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+              cpTotalPoints += sectionScore.total;
+              cpAchievedPoints += sectionScore.achieved;
+            });
+          });
+          
+          const cpPercentage = cpTotalPoints > 0 ? Math.round((cpAchievedPoints / cpTotalPoints) * 100) : 0;
+          
+          checkpointScores[checkpoint.id || checkpoint._id] = {
+            total: cpTotalPoints,
+            achieved: cpAchievedPoints,
+            percentage: cpPercentage
+          };
+        });
+      }
+      
+      // If we have assessment areas, calculate scores per area
+      if (currentTask.assessmentAreas && currentTask.assessmentAreas.length > 0) {
+        currentTask.assessmentAreas.forEach(area => {
+          const areaPages = inspectionPages.filter(
+            page => page.assessmentAreaId === area.id || page.assessmentAreaId === area._id
+          );
+          
+          let areaTotalPoints = 0;
+          let areaAchievedPoints = 0;
+          
+          areaPages.forEach(page => {
+            if (!page.sections) return;
+            
+            page.sections.forEach(section => {
+              const sectionScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+              areaTotalPoints += sectionScore.total;
+              areaAchievedPoints += sectionScore.achieved;
+            });
+          });
+          
+          const areaPercentage = areaTotalPoints > 0 ? Math.round((areaAchievedPoints / areaTotalPoints) * 100) : 0;
+          
+          assessmentAreaScores[area.id || area._id] = {
+            total: areaTotalPoints,
+            achieved: areaAchievedPoints,
+            percentage: areaPercentage
+          };
+        });
+      }
+      
+      const result = {
+        total: totalPoints,
+        achieved: achievedPoints,
+        percentage,
+        checkpointScores,
+        assessmentAreaScores
+      };
+      
+      console.log('Score calculation result:', result);
+      setScores(result);
+    } catch (error) {
+      console.error('Error calculating scores:', error);
+      setScores({
+        total: 0,
+        achieved: 0,
+        percentage: 0,
+        checkpointScores: {},
+        assessmentAreaScores: {}
+      });
+    }
+  }, [currentTask, inspectionPages, calculateSectionScore]);
+
+  // Function to calculate overall task completion percentage based on answered questions
+  const calculateTaskCompletionPercentage = useCallback(() => {
+    if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
+      return 0;
+    }
+
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+
+    // Count all questions and answered questions across all pages and sections
+    inspectionPages.forEach(page => {
+      if (page.sections) {
+        page.sections.forEach(section => {
+          if (section.questions) {
+            section.questions.forEach(question => {
+              totalQuestions++;
+              
+              // Check if there's a response for this question
+              const questionId = question._id || question.id;
+              let hasResponse = false;
+              
+              if (currentTask.questionnaireResponses) {
+                // First try direct match
+                if (currentTask.questionnaireResponses[questionId] !== undefined) {
+                  hasResponse = true;
+                } else {
+                  // Then try to find a key that includes or ends with the question ID
+                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key => 
+                    key.includes(questionId) || key.endsWith(questionId)
+                  );
+                  
+                  if (responseKey) {
+                    hasResponse = true;
+                  }
+                }
+              }
+              
+              if (hasResponse) {
+                answeredQuestions++;
+              }
+            });
           }
-          
-          // Add the question's possible points to the total
-          totalQuestionPoints += (maxScore * weight);
-          
-          // Calculate points achieved based on response
-          if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
-            achievedQuestionPoints += (maxScore * weight);
-            console.log(`Question ${questionId} full compliance, adding ${maxScore * weight} points`);
-          } else if (response === 'partial_compliance') {
-            achievedQuestionPoints += (maxScore / 2 * weight); // Half of max score for partial compliance
-            console.log(`Question ${questionId} partial compliance, adding ${maxScore / 2 * weight} points`);
-          } else {
-            console.log(`Question ${questionId} no compliance, adding 0 points`);
-          }
-        } else {
-          console.log(`No response found for question ${questionId}`);
+        });
+      }
+    });
+
+    // Add pre-inspection questions if they exist
+    if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
+      currentTask.preInspectionQuestions.forEach(question => {
+        totalQuestions++;
+        if (currentTask.questionnaireResponses && 
+            currentTask.questionnaireResponses[question._id] !== undefined) {
+          answeredQuestions++;
         }
       });
     }
+
+    // Calculate the percentage
+    const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
     
-    console.log(`Total question points: ${totalQuestionPoints}, achieved: ${achievedQuestionPoints}`);
+    // Set the local state
+    setTaskCompletionPercentage(percentage);
     
-    // Calculate checkpoint scores
-    let totalCheckpoints = 0;
-    let completedCheckpoints = 0;
-    let notApplicableCheckpoints = 0;
-    
-    if (currentTask.progress) {
-      // Count all checkpoints except those marked as "not_applicable"
-      totalCheckpoints = currentTask.progress.filter(p => p.status !== 'not_applicable').length;
-      completedCheckpoints = currentTask.progress.filter(p => p.status === 'completed' || p.status === 'full_compliance').length;
-      notApplicableCheckpoints = currentTask.progress.filter(p => p.status === 'not_applicable').length;
-      
-      console.log(`Total checkpoints: ${totalCheckpoints}, completed: ${completedCheckpoints}, N/A: ${notApplicableCheckpoints}`);
-    }
-    
-    // Calculate assessment area scores
-    const assessmentAreas = currentTask.assessmentAreas || [];
-    
-    // Calculate total score - each checkpoint is worth 2 points max
-    const totalPoints = totalQuestionPoints + (totalCheckpoints * 2);
-    const achievedPoints = achievedQuestionPoints + (completedCheckpoints * 2);
-    const percentage = totalPoints > 0 ? Math.round((achievedPoints / totalPoints) * 100) : 0;
-    
-    console.log(`Final score calculation - total: ${totalPoints}, achieved: ${achievedPoints}, percentage: ${percentage}%`);
-    
-    const result = {
-      total: totalPoints,
-      achieved: achievedPoints,
-      percentage,
-      areas: assessmentAreas,
-      notApplicable: notApplicableCheckpoints // Track N/A checkpoints for reference
-    };
-    
-    // Update the scores state
-    setScores(result);
-    
-    return result;
-  };
+    return percentage;
+  }, [currentTask, inspectionPages]);
 
   // Add a useEffect to initialize inspectionPages
   useEffect(() => {
@@ -2347,6 +2781,14 @@ const UserTaskDetail = () => {
     };
   }, []);
 
+  // Add effect to recalculate scores when task data changes
+  useEffect(() => {
+    if (currentTask) {
+      console.log('Current task updated, recalculating scores');
+      calculateScores();
+    }
+  }, [currentTask]);
+
   // Add effect to recalculate scores when responses change
   useEffect(() => {
     if (currentTask?.questionnaireResponses) {
@@ -2354,6 +2796,341 @@ const UserTaskDetail = () => {
       calculateScores();
     }
   }, [currentTask?.questionnaireResponses]);
+
+  // Add effect to update task completion percentage
+  useEffect(() => {
+    // Only run this effect when the component mounts
+    // or when responses change but not on every render or task update
+    const updateCompletionPercentageOnce = () => {
+      if (currentTask?.questionnaireResponses) {
+        // Calculate the completion percentage based on answered questions
+        const completionPercentage = calculateTaskCompletionPercentage();
+        console.log('Task completion percentage:', completionPercentage);
+        
+        // Only dispatch if the percentage is significantly different (avoid minor fluctuations)
+        if (
+          currentTask && 
+          Math.abs(completionPercentage - (currentTask.overallProgress || 0)) > 2 &&
+          !actionLoading
+        ) {
+          console.log('Updating task progress on server due to significant change');
+          // We're deliberately NOT waiting for this promise to avoid triggering re-renders
+          dispatch(updateUserTaskProgress({
+            taskId: currentTask._id,
+            subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+            status: currentTask.status,
+            taskMetrics: {
+              ...currentTask.taskMetrics,
+              completionPercentage: completionPercentage
+            }
+          }));
+        }
+      }
+    };
+    
+    // Set a timeout to ensure this doesn't run too frequently
+    const timerId = setTimeout(updateCompletionPercentageOnce, 2000);
+    
+    // Clean up the timeout if the component unmounts or dependencies change
+    return () => clearTimeout(timerId);
+  }, [
+    // IMPORTANT: We're only depending on the LENGTH of questionnaire responses 
+    // not the entire response object, to avoid triggering on every small change
+    currentTask?.questionnaireResponses ? Object.keys(currentTask.questionnaireResponses).length : 0,
+    calculateTaskCompletionPercentage,
+    dispatch
+  ]);
+
+  // Add effect to update task completion percentage - only on initial load
+  useEffect(() => {
+    if (currentTask?._id) {
+      console.log('Initial task load, calculating completion percentage');
+      // This will just calculate the percentage but not save it to the server
+      calculateTaskCompletionPercentage();
+    }
+  }, [currentTask?._id]);
+
+  // Create a function to manually refresh progress
+  const handleRefreshProgress = () => {
+    if (currentTask?.questionnaireResponses) {
+      const completionPercentage = calculateTaskCompletionPercentage();
+      console.log('Task completion percentage (refresh):', completionPercentage);
+      
+      // Only dispatch if not already loading
+      if (currentTask && !actionLoading) {
+        toast.loading('Updating progress...');
+        dispatch(updateUserTaskProgress({
+          taskId: currentTask._id,
+          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+          status: currentTask.status,
+          taskMetrics: {
+            ...currentTask.taskMetrics,
+            completionPercentage: completionPercentage
+          }
+        })).then(() => {
+          toast.dismiss();
+          toast.success('Progress updated successfully');
+        }).catch(err => {
+          toast.dismiss();
+          toast.error('Failed to update progress');
+        });
+      }
+    }
+  };
+
+  // Create a function to manually refresh page scores
+  const handleRefreshPageScores = () => {
+    console.log('Refreshing page scores');
+    calculateScores();
+    toast.success('Page scores refreshed');
+  };
+
+  // Render Page Scores section with refresh button
+  const renderPageScoresSection = () => {
+    return (
+      <div style={{ 
+        marginTop: '20px', 
+        padding: '16px', 
+        background: 'rgba(249,250,251,0.8)', 
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px'
+        }}>
+          <h4 style={{ 
+            fontSize: '16px', 
+            color: 'var(--color-navy)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: 0
+          }}>
+            <Clipboard size={16} />
+            Page Scores
+          </h4>
+          
+          <button 
+            onClick={handleRefreshPageScores}
+            style={{
+              background: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {inspectionPages.map((page, index) => {
+            const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
+            const hasResponses = pageScore.achieved > 0;
+            const completionPercentage = page.sections && page.sections.length > 0 ? 
+              Math.round(page.sections.reduce((sum, section) => {
+                if (!section.questions) return sum;
+                const answeredQuestions = section.questions.filter(q => {
+                  const qId = q._id || q.id;
+                  return currentTask.questionnaireResponses && 
+                    (currentTask.questionnaireResponses[qId] || 
+                     Object.keys(currentTask.questionnaireResponses).some(k => k.includes(qId)));
+                }).length;
+                return sum + (answeredQuestions / section.questions.length);
+              }, 0) / page.sections.length * 100) : 0;
+            
+            return (
+              <div key={page.id || page._id} style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 14px',
+                background: 'white',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: hasResponses ? '#ecfdf5' : '#f3f4f6',
+                    color: hasResponses ? '#065f46' : '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    border: `1px solid ${hasResponses ? '#10b981' : '#d1d5db'}`
+                  }}>
+                    {index + 1}
+                  </div>
+                  <span style={{ fontWeight: '500' }}>{page.name}</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    gap: '2px'
+                  }}>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                      Completion: {completionPercentage}%
+                    </span>
+                    <div style={{ 
+                      width: '100px', 
+                      height: '6px', 
+                      background: '#e5e7eb', 
+                      borderRadius: '3px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{ 
+                        height: '100%', 
+                        width: `${completionPercentage}%`,
+                        background: completionPercentage >= 100 ? '#10b981' : '#3b82f6',
+                        borderRadius: '3px'
+                      }}></div>
+                    </div>
+                  </div>
+                  <span style={{ 
+                    fontWeight: 'bold',
+                    color: hasResponses ? '#047857' : '#6b7280',
+                    background: hasResponses ? 'rgba(4, 120, 87, 0.1)' : 'rgba(243, 244, 246, 0.8)',
+                    padding: '4px 10px',
+                    borderRadius: '16px',
+                    fontSize: '13px'
+                  }}>
+                    {pageScore.achieved} / {pageScore.total} ({pageScore.percentage}%)
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Add the renderProgressSection function
+  const renderProgressSection = () => {
+    // Use either the server value or our local calculation, whichever is higher
+    const completionPercentage = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+    const isComplete = completionPercentage >= 100;
+    
+    return (
+      <div style={{ 
+        marginBottom: '24px',
+        backgroundColor: '#f8fafc', 
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        border: '1px solid rgba(226, 232, 240, 0.8)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          marginBottom: '12px',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={20} color="#1e40af" />
+            <span style={{ 
+              fontSize: '16px', 
+              fontWeight: '600', 
+              color: '#1e40af'
+            }}>
+              Inspection Progress
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              onClick={handleRefreshProgress}
+              disabled={actionLoading}
+              style={{
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              Refresh
+            </button>
+            
+            <span style={{ 
+              fontSize: '16px', 
+              fontWeight: '700', 
+              color: isComplete ? '#047857' : '#1e40af',
+              background: isComplete ? 'rgba(4, 120, 87, 0.1)' : 'rgba(30, 64, 175, 0.1)',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              {isComplete && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              )}
+              {completionPercentage}% Complete
+              {isComplete && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              )}
+            </span>
+          </div>
+        </div>
+        
+        <div style={{ 
+          height: '12px', 
+          backgroundColor: '#e5e7eb',
+          borderRadius: '6px',
+          overflow: 'hidden',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ 
+            height: '100%', 
+            width: `${completionPercentage}%`,
+            background: isComplete 
+              ? 'linear-gradient(90deg, #10b981, #047857)' 
+              : 'linear-gradient(90deg, #3b82f6, #1e40af)',
+            borderRadius: '6px',
+            transition: 'width 0.5s ease'
+          }} />
+        </div>
+      </div>
+    );
+  };
 
   // Update renderQuestionnaire to show page scores
   const renderQuestionnaire = () => {
@@ -2444,28 +3221,6 @@ const UserTaskDetail = () => {
               task={currentTask}
               onSaveResponse={handleSaveInspectionResponse}
             />
-            
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => {
-                  const pageId = page.id || page._id;
-                  console.log('Marking page as complete:', pageId);
-                  handleCompletePage(pageId);
-                }}
-                disabled={currentTask.status === 'completed'}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#4299e1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: currentTask.status === 'completed' ? 'default' : 'pointer',
-                  opacity: currentTask.status === 'completed' ? 0.7 : 1,
-                }}
-              >
-                Mark Page as Complete
-              </button>
-            </div>
           </div>
         ) : (
           <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -2480,7 +3235,9 @@ const UserTaskDetail = () => {
   const InspectionSection = ({ page, selectedSection, setSelectedSection, task, onSaveResponse }) => {
     console.log('InspectionSection props:', { 
       page: page ? { id: page.id, _id: page._id, name: page.name, sections: page.sections?.length } : null, 
-      selectedSection 
+      selectedSection,
+      taskId: task?._id,
+      responses: Object.keys(task?.questionnaireResponses || {}).length
     });
     
     const handleSelectSection = (sectionId) => {
@@ -2498,6 +3255,7 @@ const UserTaskDetail = () => {
     
     // Calculate page score
     const pageScore = calculatePageScore(page, task.questionnaireResponses || {});
+    console.log('Page score:', pageScore);
     
     // Find the selected section - check both id and _id properties
     const section = page.sections.find(s => 
@@ -2516,6 +3274,8 @@ const UserTaskDetail = () => {
     const sectionScore = section 
       ? calculateSectionScore(section, task.questionnaireResponses || {})
       : { achieved: 0, total: 0 };
+    
+    console.log('Section score:', sectionScore);
     
     // Find the index of the selected section for numbering
     const sectionIndex = section 
@@ -2622,11 +3382,12 @@ const UserTaskDetail = () => {
                 {section.questions && section.questions.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {section.questions.map((question, qIndex) => {
-                      const response = task.questionnaireResponses && task.questionnaireResponses[question._id];
-                      const maxScore = question.scoring?.max || 2;
+                      const response = task.questionnaireResponses?.[question._id];
                       
-                      // Calculate achieved score
+                      // Calculate question score
+                      const maxScore = question.scoring?.max || 2;
                       let achievedScore = 0;
+                      
                       if (response) {
                         if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
                           achievedScore = maxScore;
@@ -2691,22 +3452,20 @@ const UserTaskDetail = () => {
                               )}
                             </div>
                             
-                            {/* Question Score */}
-                            {question.scoring?.enabled !== false && (
-                              <div style={{ 
-                                background: response ? '#f0fdf4' : '#f7fee7', 
-                                padding: '4px 12px', 
-                                borderRadius: '50px',
-                                border: response ? '1px solid #86efac' : '1px solid #d9f99d',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                color: response ? '#166534' : '#3f6212',
-                                whiteSpace: 'nowrap',
-                                marginLeft: '10px'
-                              }}>
-                                {achievedScore}/{maxScore}
-                              </div>
-                            )}
+                            {/* Question Score - always show the score badge */}
+                            <div style={{ 
+                              background: response ? '#f0fdf4' : '#f7fee7', 
+                              padding: '4px 12px', 
+                              borderRadius: '50px',
+                              border: response ? '1px solid #86efac' : '1px solid #d9f99d',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              color: response ? '#166534' : '#3f6212',
+                              whiteSpace: 'nowrap',
+                              marginLeft: '10px'
+                            }}>
+                              {achievedScore}/{maxScore}
+                            </div>
                           </div>
                           
                           {renderQuestionInput(question, task, onSaveResponse)}
@@ -2734,9 +3493,24 @@ const UserTaskDetail = () => {
   // Update the renderQuestionInput function to properly handle all question types
   const renderQuestionInput = (question, task, onSaveResponse) => {
     console.log('Rendering question input for:', question);
-    console.log('Response:', task.questionnaireResponses?.[question._id]);
     
+    // Get response directly from questionnaire responses
     const response = task.questionnaireResponses?.[question._id];
+    console.log('Response:', response);
+    
+    // Calculate score for display
+    const maxScore = question.scoring?.max || 2; // Default max score is 2
+    let achievedScore = 0;
+    
+    if (response) {
+      if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
+        achievedScore = maxScore;
+      } else if (response === 'partial_compliance') {
+        achievedScore = maxScore / 2;
+      }
+      console.log(`Question ${question._id} score: ${achievedScore}/${maxScore}`);
+    }
+    
     const isDisabled = task.status === 'completed';
     const questionType = question.type || question.answerType;
     
@@ -2752,7 +3526,10 @@ const UserTaskDetail = () => {
                 selected={response === option}
                 disabled={isDisabled}
                 onClick={() => !isDisabled && onSaveResponse(question._id, option)}
-                style={{ cursor: isDisabled ? 'default' : 'pointer' }}
+                style={{ 
+                  cursor: isDisabled ? 'default' : 'pointer',
+                  position: 'relative'
+                }}
               >
                 {option}
               </ResponseOption>
@@ -2918,8 +3695,10 @@ const UserTaskDetail = () => {
     
     try {
       // Save current page and section selection before API call
-      const currentPageId = activePage?._id;
+      const currentPageId = selectedPage;
       const currentSectionId = selectedSection;
+      
+      console.log('Preserving state - Page ID:', currentPageId, 'Section ID:', currentSectionId);
       
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
@@ -2947,13 +3726,18 @@ const UserTaskDetail = () => {
       calculateScores();
       
       // Restore page and section selection
-      if (currentPageId && pageData.find(p => p._id === currentPageId)) {
-        setActivePage(pageData.find(p => p._id === currentPageId));
-      }
-      
-      if (currentSectionId) {
-        setSelectedSection(currentSectionId);
-      }
+      setTimeout(() => {
+        // Ensure the inspectionPages state is updated before we try to select a page
+        if (currentPageId) {
+          console.log('Restoring page selection to:', currentPageId);
+          setSelectedPage(currentPageId);
+        }
+        
+        if (currentSectionId) {
+          console.log('Restoring section selection to:', currentSectionId);
+          setSelectedSection(currentSectionId);
+        }
+      }, 100); // Small delay to ensure state is properly updated
     } catch (error) {
       console.error('Error saving response:', error);
       toast.error(`Failed to save response: ${error.message || 'Unknown error'}`);
@@ -3333,15 +4117,6 @@ const UserTaskDetail = () => {
                           <Clipboard size={20} />
                           Inspection Task
                         </span>
-                        {currentTask.status !== 'completed' && (
-                          <ActionButton 
-                            onClick={() => handleCompleteTask()}
-                            style={{ marginLeft: 'auto' }}
-                          >
-                            <CheckCircle size={16} />
-                            Mark Inspection as Complete
-                          </ActionButton>
-                        )}
                       </SectionTitle>
                       <p style={{
                         color: '#64748b',
@@ -3353,6 +4128,9 @@ const UserTaskDetail = () => {
                     </TaskDetailSection>
                     
                     <div style={{ marginBottom: '24px' }}>
+                      {/* Add progress bar */}
+                      {renderProgressSection()}
+
                       <h3 style={{ 
                         fontSize: '18px', 
                         fontWeight: '600', 
@@ -3360,31 +4138,12 @@ const UserTaskDetail = () => {
                         color: 'var(--color-navy)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
                         gap: '8px' 
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <CheckSquare size={20} />
                           Inspection Questionnaire
                         </div>
-                        {currentTask.status !== 'completed' && selectedCategory && (
-                          <ActionButton 
-                            onClick={() => {
-                              // Find the page in the inspectionPages state using selectedCategory
-                              const page = inspectionPages.find(p => p.name === selectedCategory);
-                              console.log('Found page for completion:', page);
-                              if (page) {
-                                handleCompletePage(page._id || page.id);
-                              } else {
-                                toast.error('Could not find the selected page');
-                              }
-                            }}
-                            style={{ fontSize: '14px' }}
-                          >
-                            <CheckCircle size={16} />
-                            Mark Page as Complete
-                          </ActionButton>
-                        )}
                       </h3>
                       
                       {renderQuestionnaire()}
@@ -3408,6 +4167,18 @@ const UserTaskDetail = () => {
                           </ScoreItem>
                           
                           <ScoreItem>
+                            <div className="score-label">Pages Scored</div>
+                            <div className="score-value">
+                              {inspectionPages.length > 0 ? 
+                                inspectionPages.reduce((sum, page) => {
+                                  const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
+                                  return sum + (pageScore.achieved > 0 ? 1 : 0);
+                                }, 0) 
+                                : 0} / {inspectionPages.length}
+                            </div>
+                          </ScoreItem>
+                          
+                          <ScoreItem>
                             <div className="score-label">Completion Rate</div>
                             <div className="score-value">
                               {currentTask.overallProgress || 0}%
@@ -3422,6 +4193,9 @@ const UserTaskDetail = () => {
                             </div>
                           </ScoreItem>
                         </ScoreGrid>
+                        
+                        {/* Replace the existing Page Scores section with our new renderPageScoresSection function */}
+                        {inspectionPages.length > 0 && renderPageScoresSection()}
                       </ScoreSummary>
                     )}
                   </>
@@ -3446,59 +4220,7 @@ const UserTaskDetail = () => {
                         </ActionButton>
                       </ReportHeader>
                       
-                      <PerformanceGrid>
-                        <PerformanceCard background="linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)">
-                          <MetricTitle>
-                            <Activity size={16} />
-                            Overall Completion Rate
-                          </MetricTitle>
-                          <MetricValue>{currentTask?.overallProgress || 0}%</MetricValue>
-                          <ScoreProgress value={currentTask?.overallProgress || 0} />
-                        </PerformanceCard>
-                        
-                        <PerformanceCard background="linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)">
-                          <MetricTitle>
-                            <Clock size={16} />
-                            Total Time Spent
-                          </MetricTitle>
-                          <MetricValue>
-                            {reportData.timeSpent ? Math.round(reportData.timeSpent) : 0}
-                            <span style={{ fontSize: '16px', opacity: 0.7 }}> min</span>
-                          </MetricValue>
-                          <MetricSubValue>
-                            {reportData.timeSpent ? (reportData.timeSpent / 60).toFixed(1) : 0} hours
-                          </MetricSubValue>
-                        </PerformanceCard>
-                        
-                        <PerformanceCard background="linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)">
-                          <MetricTitle>
-                            <CheckSquare size={16} />
-                            Items Completed
-                          </MetricTitle>
-                          <MetricValue>
-                            {reportData.completedSubTasks}
-                            <span style={{ fontSize: '16px', opacity: 0.7 }}>/{reportData.totalSubTasks}</span>
-                          </MetricValue>
-                          <MetricSubValue>
-                            {reportData.totalSubTasks > 0 
-                              ? Math.round((reportData.completedSubTasks / reportData.totalSubTasks) * 100) 
-                              : 0}% complete
-                          </MetricSubValue>
-                        </PerformanceCard>
-                        
-                        <PerformanceCard background="linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)">
-                          <MetricTitle>
-                            <Award size={16} />
-                            Compliance Score
-                          </MetricTitle>
-                          <MetricValue>
-                            {scores.achieved}
-                            <span style={{ fontSize: '16px', opacity: 0.7 }}>/{scores.total}</span>
-                          </MetricValue>
-                          <MetricSubValue>{scores.percentage}% compliance</MetricSubValue>
-                          <ScoreProgress value={scores.percentage} />
-                        </PerformanceCard>
-                      </PerformanceGrid>
+                   
                       
                       {/* Show Pre-Inspection Questionnaire in the Report */}
                       {currentTask?.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0 && (
@@ -3531,6 +4253,65 @@ const UserTaskDetail = () => {
                       )}
                       
                       {/* Include other report sections like assessment areas, etc. */}
+                    </FinalReportSection>
+                    
+                    {/* Signature Section */}
+                    <FinalReportSection>
+                      <AreaTitle>
+                        <Edit size={18} />
+                        Inspector Signature
+                      </AreaTitle>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        marginTop: '16px',
+                        padding: '20px',
+                        border: '1px dashed #cbd5e1',
+                        borderRadius: '8px',
+                        backgroundColor: '#f8fafc'
+                      }}>
+                        {signatureImage ? (
+                          <div style={{ textAlign: 'center' }}>
+                            <img 
+                              src={signatureImage} 
+                              alt="Inspector signature" 
+                              style={{ 
+                                maxHeight: '100px', 
+                                border: '1px solid #e2e8f0',
+                                padding: '10px',
+                                backgroundColor: 'white',
+                                borderRadius: '4px'
+                              }} 
+                            />
+                            <p style={{ 
+                              marginTop: '8px', 
+                              fontSize: '14px', 
+                              color: '#4b5563' 
+                            }}>
+                              Signed by: {currentUser?.name || 'Inspector'} on {formatDate(new Date())}
+                            </p>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center' }}>
+                            <p style={{ 
+                              color: '#64748b',
+                              fontSize: '14px',
+                              marginBottom: '12px'
+                            }}>
+                              No signature has been added yet.
+                            </p>
+                            <Button 
+                              onClick={() => setShowSignatureModal(true)}
+                              style={{ display: 'inline-flex' }}
+                            >
+                              <Edit size={16} />
+                              Add Signature
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </FinalReportSection>
                     
                     <div style={{ textAlign: 'center', marginTop: '16px', marginBottom: '32px' }}>
@@ -3598,6 +4379,109 @@ const UserTaskDetail = () => {
           <p>The task you're looking for doesn't exist or you don't have permission to view it.</p>
           <Button onClick={() => navigate('/tasks')}>Back to Tasks</Button>
         </EmptyState>
+      )}
+      
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Sign Final Report</ModalTitle>
+              <CloseButton onClick={() => setShowSignatureModal(false)}>
+                <X size={20} />
+              </CloseButton>
+            </ModalHeader>
+            
+            <div>
+              <p style={{ marginBottom: '16px', color: '#4b5563' }}>
+                Please provide your signature to complete the inspection report.
+              </p>
+              
+              <SignatureTabs>
+                <SignatureTab 
+                  active={signatureMethod === 'draw'} 
+                  onClick={() => setSignatureMethod('draw')}
+                >
+                  Draw Signature
+                </SignatureTab>
+                <SignatureTab 
+                  active={signatureMethod === 'upload'} 
+                  onClick={() => setSignatureMethod('upload')}
+                >
+                  Upload Signature
+                </SignatureTab>
+              </SignatureTabs>
+              
+              {signatureMethod === 'draw' ? (
+                <SignatureCanvas>
+                  <canvas 
+                    ref={signatureCanvasRef}
+                    width="500" 
+                    height="200"
+                    onMouseDown={handleStartDrawing}
+                    onMouseMove={handleDrawing}
+                    onMouseUp={handleStopDrawing}
+                    onMouseLeave={handleStopDrawing}
+                  />
+                </SignatureCanvas>
+              ) : (
+                <>
+                  <SignatureCanvas onClick={handleSignatureUpload} style={{ cursor: 'pointer' }}>
+                    {signatureImage ? (
+                      <img 
+                        src={signatureImage} 
+                        alt="Uploaded signature" 
+                        style={{ maxWidth: '100%', maxHeight: '200px' }} 
+                      />
+                    ) : (
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: '12px',
+                        color: '#64748b'
+                      }}>
+                        <Upload size={40} />
+                        <span>Click to upload signature image</span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                    />
+                  </SignatureCanvas>
+                </>
+              )}
+            </div>
+            
+            <SignatureActions>
+              {signatureMethod === 'draw' && (
+                <ClearButton onClick={handleClearSignature}>
+                  <X size={16} />
+                  Clear
+                </ClearButton>
+              )}
+              
+              {signatureMethod === 'upload' && (
+                <UploadButton onClick={handleSignatureUpload}>
+                  <Upload size={16} />
+                  Upload Image
+                </UploadButton>
+              )}
+              
+              <SaveButton 
+                onClick={handleSaveSignature}
+                disabled={!signatureImage}
+              >
+                <CheckCircle size={16} />
+                Save & Continue
+              </SaveButton>
+            </SignatureActions>
+          </ModalContent>
+        </ModalOverlay>
       )}
     </PageContainer>
   );

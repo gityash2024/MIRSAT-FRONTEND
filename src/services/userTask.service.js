@@ -45,7 +45,7 @@ export const userTaskService = {
       const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, payload);
       
       if (response.status >= 200 && response.status < 300) {
-        toast.success('Progress updated successfully');
+        // toast.success('Progress updated successfully');
       }
       
       return response.data;
@@ -103,6 +103,23 @@ export const userTaskService = {
       
       return { success: true };
     } catch (error) {
+      throw error;
+    }
+  },
+  
+  // Save task signature
+  saveTaskSignature: async (taskId, data) => {
+    try {
+      // Create payload with signature and optional taskMetrics
+      const payload = {
+        signature: data.signature,
+        ...(data.taskMetrics && { taskMetrics: data.taskMetrics })
+      };
+      
+      const response = await api.post(`/user-tasks/${taskId}/signature`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error saving task signature:', error);
       throw error;
     }
   }

@@ -1159,19 +1159,7 @@ const UserTasks = () => {
                   <Activity size={16} />
                   Inspection: {task.inspectionLevel?.name || 'N/A'}
                 </TaskDetailRow>
-                
-                <TaskProgress progress={task.overallProgress || 0}>
-                  <div className="progress-header">
-                    <span className="progress-label">Completion</span>
-                    <span className="progress-percentage">{task.overallProgress || 0}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ width: `${task.overallProgress || 0}%` }}
-                    ></div>
-                  </div>
-                </TaskProgress>
+               
               </TaskBody>
               
               <TaskActions>

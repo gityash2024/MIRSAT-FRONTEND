@@ -124,6 +124,20 @@ export const exportTaskReport = createAsyncThunk(
   }
 );
 
+export const saveTaskSignature = createAsyncThunk(
+  'userTasks/saveTaskSignature',
+  async ({ taskId, signature, taskMetrics }, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.saveTaskSignature(taskId, { 
+        signature,
+        ...(taskMetrics && { taskMetrics })
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
 
 export const uploadTaskAttachment = createAsyncThunk(
   'userTasks/uploadTaskAttachment',
@@ -268,7 +282,7 @@ const userTasksSlice = createSlice({
           task._id === updatedTask._id ? updatedTask : task
         );
         
-        toast.success('Progress updated successfully');
+        // toast.success('Progress updated successfully');
       })
       .addCase(updateUserTaskProgress.rejected, (state, action) => {
         state.actionLoading = false;
@@ -331,6 +345,20 @@ const userTasksSlice = createSlice({
       .addCase(exportTaskReport.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload?.message || 'Failed to export report';
+        toast.error(state.error);
+      })
+
+      .addCase(saveTaskSignature.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(saveTaskSignature.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        toast.success('Task signature saved successfully');
+      })
+      .addCase(saveTaskSignature.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload?.message || 'Failed to save task signature';
         toast.error(state.error);
       })
 
