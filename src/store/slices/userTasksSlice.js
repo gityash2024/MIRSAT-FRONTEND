@@ -43,6 +43,7 @@ export const startUserTask = createAsyncThunk(
   async (taskId, { rejectWithValue }) => {
     try {
       const response = await userTaskService.startTask(taskId);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });

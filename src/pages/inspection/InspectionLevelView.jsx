@@ -69,7 +69,7 @@ const SummaryDescription = styled.div`
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  // grid-template-columns: 3fr 2fr;
   gap: 24px;
 
   @media (max-width: 1200px) {
@@ -1024,7 +1024,7 @@ const InspectionLevelView = () => {
               {level.priority ? ` ${level.priority.charAt(0).toUpperCase() + level.priority.slice(1)} Priority` : ''}
             </SummaryDescription>
           </SummaryCard>
-          
+{/*           
           <SummaryCard color="var(--color-teal)">
             <SummaryLabel color="var(--color-teal)">
               <ListChecks size={16} />
@@ -1066,7 +1066,7 @@ const InspectionLevelView = () => {
             <SummaryDescription>
               {level.metrics?.completedTasks || 0} completed tasks
             </SummaryDescription>
-          </SummaryCard>
+          </SummaryCard> */}
         </SummarySection>
 
         <ButtonGroup>
@@ -1227,7 +1227,7 @@ const InspectionLevelView = () => {
             </QuestionnaireCard>
           </div>
           
-          <div>
+          {/* <div>
             <Card>
               <CardTitle>
                 <Activity size={18} />
@@ -1275,7 +1275,7 @@ const InspectionLevelView = () => {
                 </Button>
               </div>
             </Card>
-          </div>
+          </div> */}
         </ContentGrid>
       </PageContainer>
 

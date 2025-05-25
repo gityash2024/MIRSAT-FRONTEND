@@ -1621,11 +1621,11 @@ const QuestionItemComponent = ({
                   disabled={loading}
                 >
                   <option value="text">Text</option>
-                  <option value="number">Number</option>
+                  {/* <option value="number">Number</option> */}
                   <option value="yesno">Yes/No</option>
-                  <option value="dropdown">Dropdown</option>
-                  <option value="radio">Radio Buttons</option>
-                  <option value="checkbox">Checkbox</option>
+                  {/* <option value="dropdown">Dropdown</option> */}
+                  {/* <option value="radio">Radio Buttons</option> */}
+                  {/* <option value="checkbox">Checkbox</option> */}
                   <option value="multiple">Multiple Choice</option>
                   <option value="compliance">Compliance</option>
                   <option value="signature">Signature</option>

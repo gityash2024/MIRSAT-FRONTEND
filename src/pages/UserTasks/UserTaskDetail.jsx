@@ -1858,33 +1858,63 @@ const calculateSectionScore = (section, responses) => {
       );
     }
     
+    // Get max score and weight
+    const maxScore = question.scores?.max || question.scoring?.max || 2; // Default max score is 2
+    const weight = question.weight || 1;
+    
+    // Add to total possible points
+    totalPossible += (maxScore * weight);
+    
     if (responseKey) {
       const response = responses[responseKey];
-      const maxScore = question.scores?.max || question.scoring?.max || 2; // Default max score is 2
-      const weight = question.weight || 1;
       
       // Handle N/A responses properly - they should not affect the score
       if (response === 'na' || response === 'not_applicable' || response === 'N/A' || response === 'Not applicable') {
-        // Don't include N/A questions in the total or achieved points
+        // Remove from total points since it's N/A
+        totalPossible -= (maxScore * weight);
         return; // Skip to the next question
       }
       
-      // Add the question's possible points to the total
-      totalPossible += (maxScore * weight);
+      // Handle different response types
+      const questionType = question.type || question.answerType;
       
-      // Calculate points achieved based on response
-      if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-        totalAchieved += (maxScore * weight);
-      } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-        totalAchieved += (maxScore / 2 * weight); // Half of max score for partial compliance
+      // Calculate points achieved based on response and question type
+      if (questionType === 'compliance' || questionType === 'yesno') {
+        // For compliance or yes/no questions
+        if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+          totalAchieved += (maxScore * weight);
+        } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+          totalAchieved += (maxScore / 2 * weight); // Half of max score for partial compliance
+        }
+        // Non-compliance responses get 0 points
+      } else if (questionType === 'checkbox' || questionType === 'multiple') {
+        // For checkbox/multiple questions, assume any non-empty response gets full score
+        if (Array.isArray(response) && response.length > 0) {
+          totalAchieved += (maxScore * weight);
+        }
+      } else if (questionType === 'file') {
+        // For file uploads, any non-empty response means full score
+        if (response && response.trim() !== '') {
+          totalAchieved += (maxScore * weight);
+        }
+      } else if (questionType === 'text' || questionType === 'signature') {
+        // For text and signature inputs, any non-empty response means full score
+        if (response && response.trim() !== '') {
+          totalAchieved += (maxScore * weight);
+        }
+      } else if (questionType === 'number' || questionType === 'date') {
+        // For number and date inputs, any valid response means full score
+        if (response) {
+          totalAchieved += (maxScore * weight);
+        }
+      } else {
+        // For any other type, assume any non-empty response means full score
+        if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+          totalAchieved += (maxScore * weight);
+        }
       }
-      // Non-compliance responses get 0 points
-    } else {
-      // No response found, so add to total possible but not to achieved
-      const maxScore = question.scores?.max || question.scoring?.max || 2;
-      const weight = question.weight || 1;
-      totalPossible += (maxScore * weight);
     }
+    // No response found means 0 points achieved (already handled by not adding to totalAchieved)
   });
   
   // Calculate percentage
@@ -2302,8 +2332,10 @@ const UserTaskDetail = () => {
     if (!currentTask) return;
     
     // Check if signature exists
-    if (!signatureImage && currentTask.status === 'completed') {
+    if (!currentTask.signature) {
+      // Show the signature modal if there's no signature
       setShowSignatureModal(true);
+      toast.info('Please provide your signature before downloading the report.');
       return;
     }
     
@@ -2332,12 +2364,12 @@ const UserTaskDetail = () => {
       // Generate and export the report
       const result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
       
-        toast.dismiss();
+      toast.dismiss();
       toast.success('Report exported successfully');
       
       return result;
     } catch (error) {
-        toast.dismiss();
+      toast.dismiss();
       console.error('Error exporting report:', error);
       toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
     }
@@ -2797,58 +2829,32 @@ const UserTaskDetail = () => {
     }
   }, [currentTask?.questionnaireResponses]);
 
-  // Add effect to update task completion percentage
+  // Replace the periodic API call that's causing reset issues with a version that doesn't make API calls
   useEffect(() => {
-    // Only run this effect when the component mounts
-    // or when responses change but not on every render or task update
-    const updateCompletionPercentageOnce = () => {
-      if (currentTask?.questionnaireResponses) {
-        // Calculate the completion percentage based on answered questions
-        const completionPercentage = calculateTaskCompletionPercentage();
-        console.log('Task completion percentage:', completionPercentage);
-        
-        // Only dispatch if the percentage is significantly different (avoid minor fluctuations)
-        if (
-          currentTask && 
-          Math.abs(completionPercentage - (currentTask.overallProgress || 0)) > 2 &&
-          !actionLoading
-        ) {
-          console.log('Updating task progress on server due to significant change');
-          // We're deliberately NOT waiting for this promise to avoid triggering re-renders
-          dispatch(updateUserTaskProgress({
-            taskId: currentTask._id,
-            subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-            status: currentTask.status,
-            taskMetrics: {
-              ...currentTask.taskMetrics,
-              completionPercentage: completionPercentage
-            }
-          }));
-        }
-      }
-    };
-    
-    // Set a timeout to ensure this doesn't run too frequently
-    const timerId = setTimeout(updateCompletionPercentageOnce, 2000);
-    
-    // Clean up the timeout if the component unmounts or dependencies change
-    return () => clearTimeout(timerId);
+    // Only run this calculation once when responses change, but don't make API calls
+    if (currentTask?.questionnaireResponses) {
+      // Just calculate and update local state without API call
+      const completionPercentage = calculateTaskCompletionPercentage();
+      console.log('Task completion percentage (calculated):', completionPercentage);
+      
+      // Don't make any API calls here - this prevents the reset issues
+      // The API call will only happen in handleSaveInspectionResponse now
+    }
   }, [
-    // IMPORTANT: We're only depending on the LENGTH of questionnaire responses 
-    // not the entire response object, to avoid triggering on every small change
     currentTask?.questionnaireResponses ? Object.keys(currentTask.questionnaireResponses).length : 0,
     calculateTaskCompletionPercentage,
-    dispatch
+    // Don't include selectedPage or selectedSection here to avoid unnecessary recalculations
   ]);
 
-  // Add effect to update task completion percentage - only on initial load
+  // Keep the effect for initial calculation, but remove API calls
   useEffect(() => {
     if (currentTask?._id) {
       console.log('Initial task load, calculating completion percentage');
       // This will just calculate the percentage but not save it to the server
       calculateTaskCompletionPercentage();
+      // No API call here
     }
-  }, [currentTask?._id]);
+  }, [currentTask?._id, calculateTaskCompletionPercentage]);
 
   // Create a function to manually refresh progress
   const handleRefreshProgress = () => {
@@ -3490,7 +3496,7 @@ const UserTaskDetail = () => {
     );
   };
 
-  // Update the renderQuestionInput function to properly handle all question types
+  // Fix renderQuestionInput to correctly handle different question types
   const renderQuestionInput = (question, task, onSaveResponse) => {
     console.log('Rendering question input for:', question);
     
@@ -3503,24 +3509,76 @@ const UserTaskDetail = () => {
     let achievedScore = 0;
     
     if (response) {
-      if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
-        achievedScore = maxScore;
-      } else if (response === 'partial_compliance') {
-        achievedScore = maxScore / 2;
+      // Calculate score based on question type and response
+      const questionType = question.type || question.answerType;
+      
+      if (questionType === 'compliance' || questionType === 'yesno') {
+        // Handle compliance/yesno responses
+        if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+          achievedScore = maxScore;
+        } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+          achievedScore = maxScore / 2;
+        }
+        // Non-compliance responses get 0 points
+      } else if (questionType === 'checkbox' || questionType === 'multiple') {
+        // For checkbox/multiple questions, assume any non-empty response gets full score
+        if (Array.isArray(response) && response.length > 0) {
+          achievedScore = maxScore;
+        }
+      } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
+        // For these input types, any non-empty response means full score
+        if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+          achievedScore = maxScore;
+        }
+      } else {
+        // For any other type, assume any non-empty response means full score
+        if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+          achievedScore = maxScore;
+        }
       }
-      console.log(`Question ${question._id} score: ${achievedScore}/${maxScore}`);
     }
     
-    const isDisabled = task.status === 'completed';
-    const questionType = question.type || question.answerType;
+    console.log(`Question ${question._id} score: ${achievedScore}/${maxScore}`);
     
-    console.log('Question type:', questionType);
+    const isDisabled = task.status === 'completed';
+    
+    // Properly determine question type by checking both type and answerType
+    let questionType = question.type || question.answerType;
+    
+    // Handle special cases
+    if (questionType === 'yesno' && question.answerType === 'compliance') {
+      questionType = 'compliance';
+    } else if (questionType === 'yesno' && (question.options?.includes('Yes') || question.options?.includes('No'))) {
+      questionType = 'yesno';
+    } else if (questionType === 'multiple_choice') {
+      questionType = 'radio';
+    } else if (questionType === 'multiple') {
+      questionType = 'checkbox';
+    }
+    
+    console.log('Determined question type:', questionType, 'Original:', question.type, question.answerType);
+    
+    // Common input style for all form elements
+    const inputStyle = {
+      width: '100%',
+      padding: '8px 12px',
+      borderRadius: '6px',
+      border: '1px solid #e2e8f0',
+      backgroundColor: 'white',
+      fontSize: '14px',
+      cursor: isDisabled ? 'default' : 'pointer'
+    };
     
     switch (questionType) {
       case 'compliance':
+        // Always use the specific compliance options if available
+        const complianceOptions = question.options?.length > 0 
+          ? question.options 
+          : ['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'];
+        
         return (
           <ResponseOptions>
-            {question.options && question.options.map((option, optIndex) => (
+            {complianceOptions.map((option, optIndex) => (
               <ResponseOption 
                 key={optIndex}
                 selected={response === option}
@@ -3537,10 +3595,15 @@ const UserTaskDetail = () => {
           </ResponseOptions>
         );
         
-      case 'radio':
+      case 'yesno':
+        // Always use Yes/No/N/A options for yesno type
+        const yesNoOptions = question.options?.length > 0 
+          ? question.options 
+          : ['Yes', 'No', 'N/A'];
+        
         return (
           <ResponseOptions>
-            {question.options && question.options.map((option, optIndex) => (
+            {yesNoOptions.map((option, optIndex) => (
               <ResponseOption 
                 key={optIndex}
                 selected={response === option}
@@ -3554,6 +3617,25 @@ const UserTaskDetail = () => {
           </ResponseOptions>
         );
         
+      case 'radio':
+        return (
+          <ResponseOptions>
+            {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
+              <ResponseOption 
+                key={optIndex}
+                selected={response === option}
+                disabled={isDisabled}
+                onClick={() => !isDisabled && onSaveResponse(question._id, option)}
+                style={{ cursor: isDisabled ? 'default' : 'pointer' }}
+              >
+                {option}
+              </ResponseOption>
+            )) : (
+              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+            )}
+          </ResponseOptions>
+        );
+        
       case 'checkbox':
         // For checkboxes, responses should be an array
         const selectedOptions = Array.isArray(response) ? response : response ? [response] : [];
@@ -3561,7 +3643,7 @@ const UserTaskDetail = () => {
         
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {question.options && question.options.map((option, optIndex) => (
+            {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
               <label 
                 key={optIndex} 
                 style={{ 
@@ -3589,7 +3671,9 @@ const UserTaskDetail = () => {
                 />
                 {option}
               </label>
-            ))}
+            )) : (
+              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+            )}
           </div>
         );
         
@@ -3600,14 +3684,7 @@ const UserTaskDetail = () => {
               value={response || ''}
               onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
               disabled={isDisabled}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                fontSize: '14px'
-              }}
+              style={inputStyle}
             >
               <option value="">Select an option</option>
               {question.options && question.options.map((option, optIndex) => (
@@ -3619,6 +3696,56 @@ const UserTaskDetail = () => {
           </div>
         );
         
+      case 'file':
+        return (
+          <div>
+            <input
+              type="file"
+              disabled={isDisabled}
+              style={inputStyle}
+              onChange={(e) => {
+                if (isDisabled || !e.target.files || !e.target.files[0]) return;
+                // Handle file upload logic here
+                // For now, just save the file name as response
+                onSaveResponse(question._id, e.target.files[0].name);
+              }}
+            />
+            {response && (
+              <div style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
+                Uploaded: {response}
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'text':
+        return (
+          <div>
+            <input
+              type="text"
+              placeholder="Enter your response"
+              value={response || ''}
+              onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
+              disabled={isDisabled}
+              style={inputStyle}
+            />
+          </div>
+        );
+        
+      case 'number':
+        return (
+          <div>
+            <input
+              type="number"
+              placeholder="Enter a number"
+              value={response || ''}
+              onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
+              disabled={isDisabled}
+              style={inputStyle}
+            />
+          </div>
+        );
+        
       case 'date':
         return (
           <div>
@@ -3627,13 +3754,7 @@ const UserTaskDetail = () => {
               value={response || ''}
               onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
               disabled={isDisabled}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                fontSize: '14px'
-              }}
+              style={inputStyle}
             />
           </div>
         );
@@ -3648,36 +3769,23 @@ const UserTaskDetail = () => {
               value={response || ''}
               onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
               disabled={isDisabled}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                fontSize: '14px'
-              }}
+              style={inputStyle}
             />
           </div>
         );
         
       default:
-        console.log('Unknown question type:', questionType);
+        // Default to text input for any unknown types
+        console.log('Using default text input for type:', questionType);
         return (
           <div>
             <input
-              type="text"
-              placeholder="Enter your response"
+              type={questionType === 'number' ? 'number' : questionType === 'date' ? 'date' : 'text'}
+              placeholder={`Enter your ${questionType || 'text'} response`}
               value={response || ''}
               onChange={(e) => !isDisabled && onSaveResponse(question._id, e.target.value)}
               disabled={isDisabled}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                fontSize: '14px'
-              }}
+              style={inputStyle}
             />
           </div>
         );
@@ -3700,6 +3808,7 @@ const UserTaskDetail = () => {
       
       console.log('Preserving state - Page ID:', currentPageId, 'Section ID:', currentSectionId);
       
+      // Create updated responses object with the new response
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
@@ -3708,6 +3817,7 @@ const UserTaskDetail = () => {
       
       console.log('Updated responses:', updatedResponses);
       
+      // Update the questionnaire
       const result = await dispatch(updateTaskQuestionnaire({
         taskId: currentTask._id,
         questionnaire: {
@@ -3718,6 +3828,23 @@ const UserTaskDetail = () => {
       })).unwrap();
       
       toast.success('Response saved successfully');
+      
+      // Calculate the completion percentage based on the updated responses
+      const completionPercentage = calculateTaskCompletionPercentage();
+      
+      // Update the task progress once (not periodically) with the new percentage
+      if (Math.abs(completionPercentage - (currentTask.overallProgress || 0)) > 2) {
+        console.log('Updating task progress on server with new completion percentage:', completionPercentage);
+        await dispatch(updateUserTaskProgress({
+          taskId: currentTask._id,
+          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+          status: currentTask.status,
+          taskMetrics: {
+            ...currentTask.taskMetrics,
+            completionPercentage: completionPercentage
+          }
+        })).unwrap();
+      }
       
       // Fetch updated task data
       await dispatch(fetchUserTaskDetails(currentTask._id));
@@ -3858,19 +3985,8 @@ const UserTaskDetail = () => {
                     {/* Removed question score display */}
                   </div>
                   
-                  <ResponseOptions>
-                    {question.options && question.options.map((option, optIndex) => (
-                      <ResponseOption 
-                        key={optIndex}
-                        selected={response === option}
-                        disabled={currentTask.status === 'completed'}
-                        onClick={() => handleSaveInspectionResponse(question._id, option)}
-                        style={{ cursor: currentTask.status === 'completed' ? 'default' : 'pointer' }}
-                      >
-                        {option}
-                      </ResponseOption>
-                    ))}
-                  </ResponseOptions>
+                  {/* Render the appropriate input type based on question type */}
+                  {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
                 </QuestionContent>
               </QuestionnaireItem>
             );

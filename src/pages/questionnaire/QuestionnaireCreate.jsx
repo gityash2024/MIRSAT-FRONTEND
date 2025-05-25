@@ -444,19 +444,13 @@ const QuestionCreate = () => {
             >
               <option value="yesno">Yes/No</option>
               <option value="text">Text</option>
-              <option value="number">Number</option>
-              <option value="select">Dropdown/Select</option>
               <option value="multiple_choice">Multiple Choice</option>
-              <option value="radio">Radio Buttons</option>
-              <option value="checkbox">Checkbox</option>
-              <option value="dropdown">Dropdown</option>
+          
               <option value="compliance">Compliance</option>
               <option value="date">Date</option>
               <option value="file">File Upload</option>
-              <option value="location">Location</option>
               <option value="signature">Signature</option>
               <option value="media">Media Upload</option>
-              <option value="slider">Slider</option>
             </Select>
           </FormGroup>
           
