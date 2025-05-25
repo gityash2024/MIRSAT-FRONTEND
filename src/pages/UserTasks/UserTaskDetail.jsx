@@ -3388,22 +3388,69 @@ const UserTaskDetail = () => {
                 {section.questions && section.questions.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {section.questions.map((question, qIndex) => {
-                      const response = task.questionnaireResponses?.[question._id];
+                      const questionId = question._id || question.id;
+                      // First try direct match for response
+                      let response = task.questionnaireResponses?.[questionId];
                       
-                      // Calculate question score
-                      const maxScore = question.scoring?.max || 2;
+                      // If no direct match, try to find in all responses
+                      if (response === undefined) {
+                        const responseKey = Object.keys(task.questionnaireResponses || {}).find(key => 
+                          key.includes(questionId) || key.endsWith(questionId)
+                        );
+                        if (responseKey) {
+                          response = task.questionnaireResponses[responseKey];
+                        }
+                      }
+                      
+                      // Calculate question score based on response
+                      const maxScore = question.scoring?.max || 2; // Default max score is 2
                       let achievedScore = 0;
                       
-                      if (response) {
-                        if (response === 'full_compliance' || response === 'yes' || response === 'Yes') {
+                      // Fixed score calculation - handle all question types
+                      if (response !== undefined && response !== null) {
+                        const questionType = question.type || question.answerType;
+                        
+                        if (questionType === 'compliance' || questionType === 'yesno') {
+                          // Handle compliance/yesno responses
+                          if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+                            achievedScore = maxScore;
+                          } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+                            achievedScore = maxScore / 2;
+                          }
+                          // Non-compliance responses get 0 points
+                        } else if (questionType === 'checkbox' || questionType === 'multiple') {
+                          // For checkbox/multiple questions
+                          if (Array.isArray(response) && response.length > 0) {
+                            achievedScore = maxScore;
+                          }
+                        } else if (questionType === 'file') {
+                          // For file uploads, any response means full score
                           achievedScore = maxScore;
-                        } else if (response === 'partial_compliance') {
-                          achievedScore = maxScore / 2;
+                        } else if (questionType === 'text' || questionType === 'signature') {
+                          // For text and signature inputs
+                          if (response && response.trim() !== '') {
+                            achievedScore = maxScore;
+                          }
+                        } else if (questionType === 'number') {
+                          // For number inputs
+                          if (response !== '' && !isNaN(response)) {
+                            achievedScore = maxScore;
+                          }
+                        } else if (questionType === 'date') {
+                          // For date inputs
+                          if (response && response !== '') {
+                            achievedScore = maxScore;
+                          }
+                        } else {
+                          // For any other type, assume valid response means full score
+                          if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+                            achievedScore = maxScore;
+                          }
                         }
                       }
                       
                       return (
-                        <div key={question._id || qIndex} style={{ 
+                        <div key={questionId || qIndex} style={{ 
                           padding: '15px', 
                           borderRadius: '8px', 
                           border: '1px solid #e2e8f0',
