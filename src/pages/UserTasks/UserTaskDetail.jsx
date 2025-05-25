@@ -2332,12 +2332,12 @@ const UserTaskDetail = () => {
       // Generate and export the report
       const result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
       
-      toast.dismiss();
+        toast.dismiss();
       toast.success('Report exported successfully');
       
       return result;
     } catch (error) {
-      toast.dismiss();
+        toast.dismiss();
       console.error('Error exporting report:', error);
       toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
     }
@@ -2642,17 +2642,17 @@ const UserTaskDetail = () => {
           };
         });
       }
-      
-      const result = {
-        total: totalPoints,
-        achieved: achievedPoints,
-        percentage,
+    
+    const result = {
+      total: totalPoints,
+      achieved: achievedPoints,
+      percentage,
         checkpointScores,
         assessmentAreaScores
-      };
-      
+    };
+    
       console.log('Score calculation result:', result);
-      setScores(result);
+    setScores(result);
     } catch (error) {
       console.error('Error calculating scores:', error);
       setScores({
@@ -3453,19 +3453,19 @@ const UserTaskDetail = () => {
                             </div>
                             
                             {/* Question Score - always show the score badge */}
-                            <div style={{ 
-                              background: response ? '#f0fdf4' : '#f7fee7', 
-                              padding: '4px 12px', 
-                              borderRadius: '50px',
-                              border: response ? '1px solid #86efac' : '1px solid #d9f99d',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              color: response ? '#166534' : '#3f6212',
-                              whiteSpace: 'nowrap',
-                              marginLeft: '10px'
-                            }}>
-                              {achievedScore}/{maxScore}
-                            </div>
+                              <div style={{ 
+                                background: response ? '#f0fdf4' : '#f7fee7', 
+                                padding: '4px 12px', 
+                                borderRadius: '50px',
+                                border: response ? '1px solid #86efac' : '1px solid #d9f99d',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                color: response ? '#166534' : '#3f6212',
+                                whiteSpace: 'nowrap',
+                                marginLeft: '10px'
+                              }}>
+                                {achievedScore}/{maxScore}
+                              </div>
                           </div>
                           
                           {renderQuestionInput(question, task, onSaveResponse)}
