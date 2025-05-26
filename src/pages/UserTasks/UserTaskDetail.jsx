@@ -72,6 +72,7 @@ import Skeleton from '../../components/ui/Skeleton';
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
 import InspectionStepForm from './components/InspectionStepForm';
+import { Rotate3dIcon } from 'lucide-react';
 
 const fadeIn = keyframes`
   from {
@@ -3761,7 +3762,7 @@ const UserTaskDetail = () => {
             <SignatureActions>
               {signatureMethod === 'draw' && (
                 <ClearButton onClick={handleClearSignature}>
-                  <RotateCcw size={16} />
+                  {/* <Rotate3dIcon size={16} /> */}
                   Clear
                 </ClearButton>
               )}
