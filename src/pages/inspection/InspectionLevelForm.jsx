@@ -3681,7 +3681,9 @@ const InspectionLevelForm = () => {
       // Use the correct API endpoint with proper headers
       const response = await axios.get(`https://mirsat-backend.onrender.com/api/v1/inspection/${id}`, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
         }
       });
       
@@ -3830,14 +3832,18 @@ const InspectionLevelForm = () => {
         response = await axios.put(`https://mirsat-backend.onrender.com/api/v1/inspection/${id}`, templateData, {
           timeout: 60000, // Increase timeout for large templates
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
           }
         });
       } else {
         response = await axios.post('https://mirsat-backend.onrender.com/api/v1/inspection', templateData, {
           timeout: 60000, // Increase timeout for large templates
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
           }
         });
         
@@ -3901,7 +3907,9 @@ const InspectionLevelForm = () => {
         await axios.put(`https://mirsat-backend.onrender.com/api/v1/inspection/${savedData._id || savedData.id}`, updateData, {
           timeout: 30000, // 30s timeout for operation
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
           }
         });
         
