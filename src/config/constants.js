@@ -3,7 +3,8 @@
  */
 
 // API configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mirsat-backend.onrender.com/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api';
+// export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mirsat-backend.onrender.com/api';
 
 // Other application constants
 export const APP_NAME = 'MIRSAT';
