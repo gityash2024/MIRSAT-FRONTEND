@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
@@ -702,6 +702,59 @@ const DropdownItem = styled.div`
   }
 `;
 
+const NavigationButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid rgba(55, 136, 216, 0.3);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(55, 136, 216, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 20px rgba(55, 136, 216, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 
+      0 2px 10px rgba(55, 136, 216, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  &:disabled {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+    box-shadow: none;
+    border-color: rgba(148, 163, 184, 0.3);
+    
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 
+      0 4px 15px rgba(55, 136, 216, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 3px rgba(55, 136, 216, 0.2);
+  }
+`;
+
 const InspectionLayout = styled.div`
   display: flex;
   height: calc(80vh - 80px);
@@ -745,6 +798,29 @@ const NavigationTitle = styled.h4`
   gap: 8px;
 `;
 
+const KeyboardShortcutsBadge = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(55, 136, 216, 0.1);
+  border: 1px solid rgba(55, 136, 216, 0.3);
+  border-radius: 50%;
+  cursor: help;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(55, 136, 216, 0.2);
+    border-color: rgba(55, 136, 216, 0.5);
+    transform: scale(1.1);
+  }
+  
+  svg {
+    color: #3788d8;
+  }
+`;
+
 const ProgressSummary = styled.div`
   display: flex;
   justify-content: space-between;
@@ -754,6 +830,82 @@ const ProgressSummary = styled.div`
   border-radius: 8px;
   font-size: 12px;
   border: 1px solid rgba(55, 136, 216, 0.2);
+`;
+
+const SectionNavigationControls = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  gap: 8px;
+`;
+
+const SectionNavigationButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(55, 136, 216, 0.3);
+  border-radius: 6px;
+  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 8px rgba(55, 136, 216, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 
+      0 4px 12px rgba(55, 136, 216, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 
+      0 1px 6px rgba(55, 136, 216, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  &:disabled {
+    background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+    box-shadow: none;
+    border-color: rgba(203, 213, 224, 0.3);
+    
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 
+      0 2px 8px rgba(55, 136, 216, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 2px rgba(55, 136, 216, 0.2);
+  }
+`;
+
+const SectionCounter = styled.div`
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a202c;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;
 
 const SectionsNavigation = styled.div`
@@ -1925,6 +2077,22 @@ const UserTaskDetail = () => {
   // Track user interactions to prevent auto-update interference
   const userActiveRef = useRef(false);
   
+  // Refs for focus management
+  const sectionNavigationRef = useRef(null);
+  const pageNavigationRef = useRef(null);
+  
+  // Derive currentPage from inspectionPages and selectedPage
+  const currentPage = useMemo(() => {
+    if (!inspectionPages || !selectedPage) return null;
+    return inspectionPages.find(p => (p.id || p._id) === selectedPage);
+  }, [inspectionPages, selectedPage]);
+
+  // Derive currentSection from currentPage and selectedSection
+  const currentSection = useMemo(() => {
+    if (!currentPage || !selectedSection) return null;
+    return currentPage.sections?.find(s => (s.id || s._id) === selectedSection);
+  }, [currentPage, selectedSection]);
+  
   // Log auto-update status
   useEffect(() => {
     console.log('Auto-update enabled:', autoUpdateEnabled);
@@ -1938,9 +2106,11 @@ const UserTaskDetail = () => {
   } = useSelector((state) => state.userTasks);
 
   // Define calculateTaskCompletionPercentage BEFORE all useEffects that use it
-  const calculateTaskCompletionPercentage = useCallback(() => {
-    if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
-      setTaskCompletionPercentage(0);
+  const calculateTaskCompletionPercentage = useCallback((taskData = null) => {
+    const taskToUse = taskData || currentTask;
+    
+    if (!taskToUse || !inspectionPages || inspectionPages.length === 0) {
+      if (!taskData) setTaskCompletionPercentage(0); // Only update state if using current task
       return 0;
     }
 
@@ -1957,11 +2127,11 @@ const UserTaskDetail = () => {
               const questionId = question._id || question.id;
               let hasResponse = false;
               
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
+              if (taskToUse.questionnaireResponses) {
+                if (taskToUse.questionnaireResponses[questionId] !== undefined) {
                   hasResponse = true;
                 } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key => 
+                  const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key => 
                     key.includes(questionId) || key.endsWith(questionId)
                   );
                   
@@ -1980,11 +2150,11 @@ const UserTaskDetail = () => {
       }
     });
 
-    if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
-      currentTask.preInspectionQuestions.forEach(question => {
+    if (taskToUse.preInspectionQuestions && taskToUse.preInspectionQuestions.length > 0) {
+      taskToUse.preInspectionQuestions.forEach(question => {
         totalQuestions++;
-        if (currentTask.questionnaireResponses && 
-            currentTask.questionnaireResponses[question._id] !== undefined) {
+        if (taskToUse.questionnaireResponses && 
+            taskToUse.questionnaireResponses[question._id] !== undefined) {
           answeredQuestions++;
         }
       });
@@ -1992,9 +2162,12 @@ const UserTaskDetail = () => {
 
     const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
     
-    console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}%`);
-    setTaskCompletionPercentage(percentage);
-    setLastUpdateTime(Date.now()); // Force re-render
+    console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}% (using ${taskData ? 'fresh data' : 'current state'})`);
+    
+    if (!taskData) {
+      setTaskCompletionPercentage(percentage);
+      setLastUpdateTime(Date.now()); // Force re-render
+    }
     
     return percentage;
   }, [currentTask, inspectionPages]);
@@ -2052,8 +2225,9 @@ const UserTaskDetail = () => {
          }
    }, [pauseScreenTimer, currentTask, accumulatedTime, sessionStartTime, dispatch]);
 
-   const calculateScores = useCallback(() => {
-     if (!currentTask) return;
+   const calculateScores = useCallback((taskData = null) => {
+     const taskToUse = taskData || currentTask;
+     if (!taskToUse) return;
 
      try {
        let totalPoints = 0;
@@ -2065,20 +2239,22 @@ const UserTaskDetail = () => {
          page.sections.forEach(section => {
            if (!section.questions) return;
            
-           const pageScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+           const pageScore = calculateSectionScore(section, taskToUse.questionnaireResponses || {});
            totalPoints += pageScore.total;
            achievedPoints += pageScore.achieved;
          });
        });
        
        if (totalPoints === 0) {
-         setScores({
-           total: 0,
-           achieved: 0,
-           percentage: 0,
-           checkpointScores: {},
-           assessmentAreaScores: {}
-         });
+         if (!taskData) { // Only update state if using current task
+           setScores({
+             total: 0,
+             achieved: 0,
+             percentage: 0,
+             checkpointScores: {},
+             assessmentAreaScores: {}
+           });
+         }
          return;
        }
        
@@ -2092,16 +2268,22 @@ const UserTaskDetail = () => {
          assessmentAreaScores: {}
        };
        
-       setScores(result);
+       if (!taskData) { // Only update state if using current task
+         setScores(result);
+       }
+       
+       return result;
      } catch (error) {
        console.error('Error calculating scores:', error);
-       setScores({
-         total: 0,
-         achieved: 0,
-         percentage: 0,
-         checkpointScores: {},
-         assessmentAreaScores: {}
-       });
+       if (!taskData) { // Only update state if using current task
+         setScores({
+           total: 0,
+           achieved: 0,
+           percentage: 0,
+           checkpointScores: {},
+           assessmentAreaScores: {}
+         });
+       }
      }
    }, [currentTask, inspectionPages]);
 
@@ -2112,6 +2294,76 @@ const UserTaskDetail = () => {
       setActiveTab('inspection');
     }
   }, [dispatch, taskId, location.state]);
+
+  // Add keyboard navigation for sections and pages
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only enable keyboard navigation when in inspection tab and not typing in inputs
+      if (activeTab !== 'inspection' || 
+          e.target.tagName === 'INPUT' || 
+          e.target.tagName === 'TEXTAREA' || 
+          e.target.tagName === 'SELECT') {
+        return;
+      }
+
+      // Alt + Arrow keys for page navigation
+      if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          // Navigate to previous page
+          const currentPageIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
+          if (currentPageIndex > 0) {
+            const prevPage = inspectionPages[currentPageIndex - 1];
+            const prevPageId = prevPage.id || prevPage._id;
+            setSelectedPage(prevPageId);
+            if (prevPage.sections && prevPage.sections.length > 0) {
+              const firstSectionId = prevPage.sections[0].id || prevPage.sections[0]._id;
+              setSelectedSection(firstSectionId);
+            }
+          }
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          // Navigate to next page
+          const currentPageIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
+          if (currentPageIndex < inspectionPages.length - 1) {
+            const nextPage = inspectionPages[currentPageIndex + 1];
+            const nextPageId = nextPage.id || nextPage._id;
+            setSelectedPage(nextPageId);
+            if (nextPage.sections && nextPage.sections.length > 0) {
+              const firstSectionId = nextPage.sections[0].id || nextPage.sections[0]._id;
+              setSelectedSection(firstSectionId);
+            }
+          }
+        }
+      }
+
+      // Ctrl + Arrow keys for section navigation
+      if (e.ctrlKey && !e.altKey && !e.shiftKey && currentPage && currentPage.sections) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          // Navigate to previous section
+          const currentSectionIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+          if (currentSectionIndex > 0) {
+            const prevSection = currentPage.sections[currentSectionIndex - 1];
+            const prevSectionId = prevSection.id || prevSection._id;
+            setSelectedSection(prevSectionId);
+          }
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          // Navigate to next section
+          const currentSectionIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+          if (currentSectionIndex < currentPage.sections.length - 1) {
+            const nextSection = currentPage.sections[currentSectionIndex + 1];
+            const nextSectionId = nextSection.id || nextSection._id;
+            setSelectedSection(nextSectionId);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, inspectionPages, selectedPage, selectedSection, currentPage]);
 
   // Initialize timer and setup screen visibility tracking
   useEffect(() => {
@@ -2280,10 +2532,11 @@ const UserTaskDetail = () => {
           // Fetch latest task data silently
           const updatedTask = await dispatch(fetchUserTaskDetails(currentTask._id));
           console.log('Updated task progress:', updatedTask?.payload?.overallProgress);
+          console.log('Fresh task data has', Object.keys(updatedTask?.payload?.questionnaireResponses || {}).length, 'responses');
           
-          // Force recalculate completion percentage
-          const newCompletionPercentage = calculateTaskCompletionPercentage();
-          console.log('Recalculated completion percentage:', newCompletionPercentage);
+          // Force recalculate completion percentage using fresh task data
+          const newCompletionPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
+          console.log('Recalculated completion percentage with fresh data:', newCompletionPercentage);
           
           // Always update if there's any difference, even small ones
           if (updatedTask?.payload && newCompletionPercentage !== (updatedTask.payload.overallProgress || 0)) {
@@ -2300,9 +2553,8 @@ const UserTaskDetail = () => {
                 }
               }));
               
-              console.log('Progress update successful - fetching latest data');
-              // Fetch again to get the updated progress
-              await dispatch(fetchUserTaskDetails(currentTask._id));
+              console.log('Progress update successful');
+              // DO NOT fetch task details again immediately to prevent progress reset
               
             } catch (error) {
               console.error('Failed to update progress:', error);
@@ -2324,11 +2576,11 @@ const UserTaskDetail = () => {
                 setSelectedSection(currentSectionId);
               }
               
-              // Update scores and recalculate everything
-              calculateScores();
+              // Update scores and recalculate everything using fresh data
+              calculateScores(updatedTask?.payload);
               
               // Force recalculate completion percentage with updated data
-              const refreshedPercentage = calculateTaskCompletionPercentage();
+              const refreshedPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
               console.log('Auto-update: Refreshed completion percentage:', refreshedPercentage);
             }
           }, 100);
@@ -3182,15 +3434,7 @@ const UserTaskDetail = () => {
       );
     }
 
-    const currentPage = inspectionPages.find(p => 
-      (p.id && p.id === selectedPage) || 
-      (p._id && p._id === selectedPage)
-    );
-    
-    const currentSection = currentPage?.sections?.find(s => 
-      (s.id && s.id === selectedSection) || 
-      (s._id && s._id === selectedSection)
-    );
+    // Use the currentPage and currentSection defined with useMemo above
 
     const totalQuestions = currentSection?.questions?.length || 0;
     const answeredQuestions = currentSection?.questions?.filter(q => {
@@ -3213,6 +3457,26 @@ const UserTaskDetail = () => {
           </div>
           
           <InspectionControls>
+            {/* Previous Button */}
+            <NavigationButton 
+              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
+              onClick={() => {
+                const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
+                if (currentIndex > 0) {
+                  const prevPage = inspectionPages[currentIndex - 1];
+                  const prevPageId = prevPage.id || prevPage._id;
+                  setSelectedPage(prevPageId);
+                  if (prevPage.sections && prevPage.sections.length > 0) {
+                    const firstSectionId = prevPage.sections[0].id || prevPage.sections[0]._id;
+                    setSelectedSection(firstSectionId);
+                  }
+                }
+              }}
+            >
+              <ChevronLeft size={16} />
+              Previous
+            </NavigationButton>
+
             <DropdownContainer>
               <DropdownButton 
                 onClick={(e) => {
@@ -3221,7 +3485,7 @@ const UserTaskDetail = () => {
                 }}
               >
                 <span>
-                  {currentPage ? currentPage.name : 'Select Page'}
+                  {currentPage ? `Page ${inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) + 1}: ${currentPage.name}` : 'Select Page'}
                 </span>
                 <ChevronDown size={16} />
               </DropdownButton>
@@ -3261,6 +3525,26 @@ const UserTaskDetail = () => {
                 </DropdownMenu>
               )}
             </DropdownContainer>
+
+            {/* Next Button */}
+            <NavigationButton 
+              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
+              onClick={() => {
+                const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
+                if (currentIndex < inspectionPages.length - 1) {
+                  const nextPage = inspectionPages[currentIndex + 1];
+                  const nextPageId = nextPage.id || nextPage._id;
+                  setSelectedPage(nextPageId);
+                  if (nextPage.sections && nextPage.sections.length > 0) {
+                    const firstSectionId = nextPage.sections[0].id || nextPage.sections[0]._id;
+                    setSelectedSection(firstSectionId);
+                  }
+                }
+              }}
+            >
+              Next
+              <ChevronRight size={16} />
+            </NavigationButton>
           </InspectionControls>
         </InspectionHeader>
         
@@ -3270,6 +3554,9 @@ const UserTaskDetail = () => {
               <NavigationTitle>
                 <Navigation size={16} />
                 Sections
+                <KeyboardShortcutsBadge title="Keyboard Shortcuts: Alt+← → for pages, Ctrl+← → for sections">
+                  <Info size={12} />
+                </KeyboardShortcutsBadge>
               </NavigationTitle>
               <ProgressSummary>
                 <span style={{ fontWeight: '600', color: '#3788d8' }}>
@@ -3280,6 +3567,58 @@ const UserTaskDetail = () => {
                 </span>
               </ProgressSummary>
             </NavigationHeader>
+            
+            {/* Section Navigation Controls */}
+            {currentPage && currentPage.sections && currentPage.sections.length > 1 && (
+              <SectionNavigationControls ref={sectionNavigationRef}>
+                {/* Previous Section Button */}
+                <SectionNavigationButton 
+                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
+                  onClick={() => {
+                    const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+                    if (currentIndex > 0) {
+                      const prevSection = currentPage.sections[currentIndex - 1];
+                      const prevSectionId = prevSection.id || prevSection._id;
+                      setSelectedSection(prevSectionId);
+                      // Announce navigation for screen readers
+                      setTimeout(() => {
+                        console.log(`Navigated to section: ${prevSection.name}`);
+                      }, 100);
+                    }
+                  }}
+                  aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
+                >
+                  <ChevronLeft size={14} />
+                  Previous Section
+                </SectionNavigationButton>
+
+                {/* Section Counter */}
+                <SectionCounter aria-live="polite">
+                  Section {currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1} of {currentPage.sections.length}
+                </SectionCounter>
+
+                {/* Next Section Button */}
+                <SectionNavigationButton 
+                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
+                  onClick={() => {
+                    const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+                    if (currentIndex < currentPage.sections.length - 1) {
+                      const nextSection = currentPage.sections[currentIndex + 1];
+                      const nextSectionId = nextSection.id || nextSection._id;
+                      setSelectedSection(nextSectionId);
+                      // Announce navigation for screen readers
+                      setTimeout(() => {
+                        console.log(`Navigated to section: ${nextSection.name}`);
+                      }, 100);
+                    }
+                  }}
+                  aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
+                >
+                  Next Section
+                  <ChevronRight size={14} />
+                </SectionNavigationButton>
+              </SectionNavigationControls>
+            )}
             
             <SectionsNavigation>
               {currentPage && currentPage.sections && currentPage.sections.length > 0 ? (
