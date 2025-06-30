@@ -1722,6 +1722,20 @@ const CompletionBadge = styled.div`
   `}
 `;
 
+const formatTimeSpent = (timeInHours) => {
+  if (!timeInHours || timeInHours === 0) return '0:00';
+  
+  const totalMinutes = Math.round(timeInHours * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  } else {
+    return `0:${minutes.toString().padStart(2, '0')}`;
+  }
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -1892,10 +1906,29 @@ const UserTaskDetail = () => {
     assessmentAreaScores: {}
   });
   const [taskCompletionPercentage, setTaskCompletionPercentage] = useState(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [showPageDropdown, setShowPageDropdown] = useState(false);
   const [responseLoading, setResponseLoading] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
+  
+  // Enhanced time tracking state
+  const [isScreenActive, setIsScreenActive] = useState(true);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
+  const [accumulatedTime, setAccumulatedTime] = useState(0);
+  const sessionTimerRef = useRef(null);
+  
+  // Auto-update functionality
+  const autoUpdateRef = useRef(null);
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
+  
+  // Track user interactions to prevent auto-update interference
+  const userActiveRef = useRef(false);
+  
+  // Log auto-update status
+  useEffect(() => {
+    console.log('Auto-update enabled:', autoUpdateEnabled);
+  }, [autoUpdateEnabled]);
 
   const {
     currentTask,
@@ -1904,144 +1937,10 @@ const UserTaskDetail = () => {
     actionLoading
   } = useSelector((state) => state.userTasks);
 
-  useEffect(() => {
-    dispatch(fetchUserTaskDetails(taskId));
-    
-    if (location.state?.questionnaireCompleted) {
-      setActiveTab('inspection');
-    }
-  }, [dispatch, taskId, location.state]);
-
-  useEffect(() => {
-    if (currentTask?.taskMetrics?.timeSpent) {
-      setTimer(currentTask.taskMetrics.timeSpent * 3600);
-    }
-    
-    if (currentTask?.status === 'in_progress') {
-      startTimer();
-    }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (currentTask) {
-      calculateScores();
-      
-      let pagesToUse = [];
-      
-      if (currentTask.inspectionLevel && currentTask.inspectionLevel.pages) {
-        pagesToUse = currentTask.inspectionLevel.pages.map(page => ({
-          _id: page._id,
-          id: page._id,
-          name: page.name,
-          description: page.description,
-          order: page.order,
-          isCompleted: page.isCompleted,
-          sections: Array.isArray(page.sections) ? page.sections.map(section => ({
-            _id: section._id,
-            id: section._id,
-            name: section.name,
-            description: section.description,
-            order: section.order,
-            isCompleted: section.isCompleted,
-            questions: section.questions || []
-          })) : []
-        }));
-      }
-      
-      setInspectionPages(pagesToUse);
-      
-      if (pagesToUse.length > 0) {
-        const firstPageId = pagesToUse[0]._id || pagesToUse[0].id;
-        setSelectedPage(firstPageId);
-        
-        if (pagesToUse[0].sections && pagesToUse[0].sections.length > 0) {
-          const firstSectionId = pagesToUse[0].sections[0]._id || pagesToUse[0].sections[0].id;
-          setSelectedSection(firstSectionId);
-        }
-      }
-    }
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (currentTask && currentTask.signature) {
-      setSignatureImage(currentTask.signature);
-    }
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (showSignatureModal && signatureMethod === 'draw' && signatureCanvasRef.current) {
-      const canvas = signatureCanvasRef.current;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'black';
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-    }
-  }, [showSignatureModal, signatureMethod]);
-
-  const calculateScores = useCallback(() => {
-    if (!currentTask) return;
-
-    try {
-      let totalPoints = 0;
-      let achievedPoints = 0;
-      
-      inspectionPages.forEach(page => {
-        if (!page.sections) return;
-        
-        page.sections.forEach(section => {
-          if (!section.questions) return;
-          
-          const pageScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
-          totalPoints += pageScore.total;
-          achievedPoints += pageScore.achieved;
-        });
-      });
-      
-      if (totalPoints === 0) {
-        setScores({
-          total: 0,
-          achieved: 0,
-          percentage: 0,
-          checkpointScores: {},
-          assessmentAreaScores: {}
-        });
-        return;
-      }
-      
-      const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
-      
-      const result = {
-        total: totalPoints,
-        achieved: achievedPoints,
-        percentage,
-        checkpointScores: {},
-        assessmentAreaScores: {}
-      };
-      
-      setScores(result);
-    } catch (error) {
-      console.error('Error calculating scores:', error);
-      setScores({
-        total: 0,
-        achieved: 0,
-        percentage: 0,
-        checkpointScores: {},
-        assessmentAreaScores: {}
-      });
-    }
-  }, [currentTask, inspectionPages]);
-
+  // Define calculateTaskCompletionPercentage BEFORE all useEffects that use it
   const calculateTaskCompletionPercentage = useCallback(() => {
     if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
+      setTaskCompletionPercentage(0);
       return 0;
     }
 
@@ -2093,10 +1992,378 @@ const UserTaskDetail = () => {
 
     const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
     
+    console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}%`);
     setTaskCompletionPercentage(percentage);
+    setLastUpdateTime(Date.now()); // Force re-render
     
     return percentage;
   }, [currentTask, inspectionPages]);
+
+  // Define timer functions BEFORE useEffects that use them
+  const startScreenTimer = useCallback(() => {
+    if (currentTask?.status === 'completed' || currentTask?.signature) {
+      return; // Don't start timer for completed tasks
+    }
+    
+    if (!isScreenActive && currentTask?.status === 'in_progress') {
+      setIsScreenActive(true);
+      setSessionStartTime(Date.now());
+      
+      sessionTimerRef.current = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
+    }
+  }, [currentTask, isScreenActive]);
+  
+  const pauseScreenTimer = useCallback(() => {
+    if (isScreenActive) {
+      setIsScreenActive(false);
+      
+      if (sessionStartTime) {
+        const sessionDuration = (Date.now() - sessionStartTime) / 1000; // in seconds
+        setAccumulatedTime(prev => prev + sessionDuration);
+        setSessionStartTime(null);
+      }
+      
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current);
+        sessionTimerRef.current = null;
+      }
+    }
+  }, [isScreenActive, sessionStartTime]);
+
+  const stopTimerPermanently = useCallback(() => {
+    pauseScreenTimer();
+    // Save final time to backend when task is completed
+    if (currentTask && (accumulatedTime > 0 || sessionStartTime)) {
+      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
+      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+      
+      // Update task metrics with final time
+      dispatch(updateUserTaskProgress({
+        taskId: currentTask._id,
+        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+        status: currentTask.status,
+        taskMetrics: {
+          ...currentTask.taskMetrics,
+          timeSpent: totalActiveTime
+        }
+      }));
+         }
+   }, [pauseScreenTimer, currentTask, accumulatedTime, sessionStartTime, dispatch]);
+
+   const calculateScores = useCallback(() => {
+     if (!currentTask) return;
+
+     try {
+       let totalPoints = 0;
+       let achievedPoints = 0;
+       
+       inspectionPages.forEach(page => {
+         if (!page.sections) return;
+         
+         page.sections.forEach(section => {
+           if (!section.questions) return;
+           
+           const pageScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+           totalPoints += pageScore.total;
+           achievedPoints += pageScore.achieved;
+         });
+       });
+       
+       if (totalPoints === 0) {
+         setScores({
+           total: 0,
+           achieved: 0,
+           percentage: 0,
+           checkpointScores: {},
+           assessmentAreaScores: {}
+         });
+         return;
+       }
+       
+       const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
+       
+       const result = {
+         total: totalPoints,
+         achieved: achievedPoints,
+         percentage,
+         checkpointScores: {},
+         assessmentAreaScores: {}
+       };
+       
+       setScores(result);
+     } catch (error) {
+       console.error('Error calculating scores:', error);
+       setScores({
+         total: 0,
+         achieved: 0,
+         percentage: 0,
+         checkpointScores: {},
+         assessmentAreaScores: {}
+       });
+     }
+   }, [currentTask, inspectionPages]);
+
+  useEffect(() => {
+    dispatch(fetchUserTaskDetails(taskId));
+    
+    if (location.state?.questionnaireCompleted) {
+      setActiveTab('inspection');
+    }
+  }, [dispatch, taskId, location.state]);
+
+  // Initialize timer and setup screen visibility tracking
+  useEffect(() => {
+    if (currentTask?.taskMetrics?.timeSpent) {
+      setTimer(currentTask.taskMetrics.timeSpent * 3600);
+      setAccumulatedTime(currentTask.taskMetrics.timeSpent * 3600); // Convert hours to seconds
+    }
+    
+    // Start timer for in-progress tasks
+    if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
+      startScreenTimer();
+    }
+    
+    // Add page visibility listeners
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        pauseScreenTimer();
+      } else if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
+        startScreenTimer();
+      }
+    };
+    
+    const handleBeforeUnload = () => {
+      pauseScreenTimer();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      pauseScreenTimer();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentTask]);
+
+  useEffect(() => {
+    if (currentTask) {
+      calculateScores();
+      
+      let pagesToUse = [];
+      
+      if (currentTask.inspectionLevel && currentTask.inspectionLevel.pages) {
+        pagesToUse = currentTask.inspectionLevel.pages.map(page => ({
+          _id: page._id,
+          id: page._id,
+          name: page.name,
+          description: page.description,
+          order: page.order,
+          isCompleted: page.isCompleted,
+          sections: Array.isArray(page.sections) ? page.sections.map(section => ({
+            _id: section._id,
+            id: section._id,
+            name: section.name,
+            description: section.description,
+            order: section.order,
+            isCompleted: section.isCompleted,
+            questions: section.questions || []
+          })) : []
+        }));
+      }
+      
+      setInspectionPages(pagesToUse);
+      
+      // Only set default page/section if not already set (prevents overriding during auto-updates)
+      if (pagesToUse.length > 0 && !selectedPage) {
+        const firstPageId = pagesToUse[0]._id || pagesToUse[0].id;
+        setSelectedPage(firstPageId);
+        
+        if (pagesToUse[0].sections && pagesToUse[0].sections.length > 0 && !selectedSection) {
+          const firstSectionId = pagesToUse[0].sections[0]._id || pagesToUse[0].sections[0].id;
+          setSelectedSection(firstSectionId);
+        }
+      }
+      
+      // Recalculate completion percentage when task data changes
+      setTimeout(() => {
+        const newPercentage = calculateTaskCompletionPercentage();
+        console.log('Task data updated - new completion percentage:', newPercentage);
+      }, 50);
+    }
+  }, [currentTask]); // Remove calculateTaskCompletionPercentage from dependencies to prevent infinite loop
+
+  useEffect(() => {
+    if (currentTask && currentTask.signature) {
+      setSignatureImage(currentTask.signature);
+    }
+  }, [currentTask]);
+
+  useEffect(() => {
+    if (showSignatureModal && signatureMethod === 'draw' && signatureCanvasRef.current) {
+      const canvas = signatureCanvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'black';
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+    }
+  }, [showSignatureModal, signatureMethod]);
+  
+  // Periodic save function to backup time data (define BEFORE useEffect)
+  const saveTimeToBackend = useCallback(async () => {
+    if (!currentTask || currentTask.status === 'completed' || currentTask.signature) {
+      return;
+    }
+    
+    const currentSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
+    const totalActiveTime = (accumulatedTime + currentSessionTime) / 3600; // Convert to hours
+    
+    if (totalActiveTime > 0) {
+      try {
+        await dispatch(updateUserTaskProgress({
+          taskId: currentTask._id,
+          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+          status: currentTask.status,
+          taskMetrics: {
+            ...currentTask.taskMetrics,
+            timeSpent: totalActiveTime
+          }
+        }));
+      } catch (error) {
+        console.error('Failed to save time to backend:', error);
+      }
+    }
+  }, [currentTask, accumulatedTime, sessionStartTime, dispatch]);
+  
+  // Set up periodic time saving (every 2 minutes)
+  useEffect(() => {
+    if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
+      const saveInterval = setInterval(() => {
+        saveTimeToBackend();
+      }, 120000); // Save every 2 minutes
+      
+      return () => clearInterval(saveInterval);
+    }
+  }, [currentTask, saveTimeToBackend]);
+
+  // Auto-update functionality - update progress and scores every 5 seconds
+  useEffect(() => {
+    // Cleanup any existing interval first
+    if (autoUpdateRef.current) {
+      clearInterval(autoUpdateRef.current);
+      autoUpdateRef.current = null;
+    }
+
+    if (autoUpdateEnabled && currentTask && currentTask._id) {
+      console.log('Setting up progress auto-update every 5 seconds for task:', currentTask._id);
+      
+      autoUpdateRef.current = setInterval(async () => {
+        try {
+          // Skip update if user is actively interacting
+          if (userActiveRef.current) {
+            console.log('Skipping auto-update - user is active');
+            return;
+          }
+          
+          console.log('Auto-updating progress and scores... Current progress:', currentTask.overallProgress);
+          
+          // Store current UI state BEFORE any updates
+          const currentPageId = selectedPage;
+          const currentSectionId = selectedSection;
+          const currentActiveTab = activeTab;
+          
+          // Fetch latest task data silently
+          const updatedTask = await dispatch(fetchUserTaskDetails(currentTask._id));
+          console.log('Updated task progress:', updatedTask?.payload?.overallProgress);
+          
+          // Force recalculate completion percentage
+          const newCompletionPercentage = calculateTaskCompletionPercentage();
+          console.log('Recalculated completion percentage:', newCompletionPercentage);
+          
+          // Always update if there's any difference, even small ones
+          if (updatedTask?.payload && newCompletionPercentage !== (updatedTask.payload.overallProgress || 0)) {
+            console.log('Updating task progress from', updatedTask.payload.overallProgress, 'to', newCompletionPercentage);
+            
+            try {
+              await dispatch(updateUserTaskProgress({
+                taskId: currentTask._id,
+                subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+                status: currentTask.status,
+                taskMetrics: {
+                  ...currentTask.taskMetrics,
+                  completionPercentage: newCompletionPercentage
+                }
+              }));
+              
+              console.log('Progress update successful - fetching latest data');
+              // Fetch again to get the updated progress
+              await dispatch(fetchUserTaskDetails(currentTask._id));
+              
+            } catch (error) {
+              console.error('Failed to update progress:', error);
+            }
+          } else {
+            console.log('No progress update needed - values match');
+          }
+          
+          // Restore UI state to prevent tab switching (only if user hasn't changed it)
+          setTimeout(() => {
+            if (!userActiveRef.current) {
+              if (currentActiveTab && currentActiveTab !== activeTab) {
+                setActiveTab(currentActiveTab);
+              }
+              if (currentPageId && currentPageId !== selectedPage) {
+                setSelectedPage(currentPageId);
+              }
+              if (currentSectionId && currentSectionId !== selectedSection) {
+                setSelectedSection(currentSectionId);
+              }
+              
+              // Update scores and recalculate everything
+              calculateScores();
+              
+              // Force recalculate completion percentage with updated data
+              const refreshedPercentage = calculateTaskCompletionPercentage();
+              console.log('Auto-update: Refreshed completion percentage:', refreshedPercentage);
+            }
+          }, 100);
+          
+        } catch (error) {
+          console.error('Auto-update failed:', error);
+        }
+      }, 5000); // Update every 5 seconds
+    }
+
+    // Cleanup function to clear interval
+    return () => {
+      if (autoUpdateRef.current) {
+        console.log('Clearing auto-update interval on cleanup');
+        clearInterval(autoUpdateRef.current);
+        autoUpdateRef.current = null;
+      }
+    };
+      }, [autoUpdateEnabled, currentTask?._id]); // Keep dependencies minimal
+
+  // Component cleanup effect
+  useEffect(() => {
+    return () => {
+      // Clear all intervals and timers on unmount
+      if (autoUpdateRef.current) {
+        clearInterval(autoUpdateRef.current);
+        autoUpdateRef.current = null;
+      }
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current);
+        sessionTimerRef.current = null;
+      }
+      console.log('UserTaskDetail component unmounted - all timers cleared');
+    };
+  }, []);
 
   const isPreInspectionCompleted = () => {
     if (!currentTask?.preInspectionQuestions || currentTask.preInspectionQuestions.length === 0) {
@@ -2112,21 +2379,7 @@ const UserTaskDetail = () => {
     return answeredQuestions === totalQuestions;
   };
 
-  const startTimer = () => {
-    if (!timerRunning) {
-      setTimerRunning(true);
-      timerRef.current = setInterval(() => {
-        setTimer(prev => prev + 1);
-      }, 1000);
-    }
-  };
 
-  const stopTimer = () => {
-    if (timerRunning) {
-      setTimerRunning(false);
-      clearInterval(timerRef.current);
-    }
-  };
 
   const handleStartTask = async () => {
     try {
@@ -2134,6 +2387,10 @@ const UserTaskDetail = () => {
       toast.success('Task started successfully!');
       dispatch(fetchUserTaskDetails(taskId));
       setActiveTab('inspection');
+      
+      // Initialize timer for newly started task
+      setAccumulatedTime(0);
+      startScreenTimer();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to start task');
     }
@@ -2238,8 +2495,10 @@ const UserTaskDetail = () => {
     try {
       setResponseLoading(true);
       
+      // Store current state before API calls
       const currentPageId = selectedPage;
       const currentSectionId = selectedSection;
+      const currentActiveTab = activeTab;
       
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
@@ -2272,18 +2531,23 @@ const UserTaskDetail = () => {
         })).unwrap();
       }
       
+      // Refresh task details while preserving UI state
       await dispatch(fetchUserTaskDetails(currentTask._id));
       calculateScores();
       
-      setTimeout(() => {
-        if (currentPageId) {
-          setSelectedPage(currentPageId);
-        }
-        
-        if (currentSectionId) {
-          setSelectedSection(currentSectionId);
-        }
-      }, 100);
+      // Restore state immediately to prevent UI jumping
+      if (currentActiveTab) {
+        setActiveTab(currentActiveTab);
+      }
+      
+      if (currentPageId) {
+        setSelectedPage(currentPageId);
+      }
+      
+      if (currentSectionId) {
+        setSelectedSection(currentSectionId);
+      }
+      
     } catch (error) {
       toast.error(`Failed to save response: ${error.message || 'Unknown error'}`);
     } finally {
@@ -2364,6 +2628,10 @@ const UserTaskDetail = () => {
     try {
       toast.loading('Saving signature...');
       
+      // Stop timer permanently when task is signed
+      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
+      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+      
       const completionPercentage = calculateTaskCompletionPercentage();
       
       await dispatch(saveTaskSignature({
@@ -2372,9 +2640,13 @@ const UserTaskDetail = () => {
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: completionPercentage,
+          timeSpent: totalActiveTime, // Save final active time
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
       })).unwrap();
+      
+      // Stop timer permanently
+      stopTimerPermanently();
       
       await dispatch(fetchUserTaskDetails(currentTask._id));
       
@@ -2388,6 +2660,68 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.dismiss();
       toast.error(`Failed to save signature: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  // New Save and Submit functionality for compliance completion
+  const handleSaveAndSubmit = async () => {
+    if (!signatureImage) {
+      toast.error('Please provide a signature before submitting');
+      return;
+    }
+    
+    try {
+      toast.loading('Saving and submitting compliance data...');
+      
+      // Stop timer permanently when task is submitted
+      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
+      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+      
+      const completionPercentage = calculateTaskCompletionPercentage();
+      
+      // First save signature
+      await dispatch(saveTaskSignature({
+        taskId: currentTask._id,
+        signature: signatureImage,
+        taskMetrics: {
+          ...currentTask.taskMetrics,
+          completionPercentage: completionPercentage,
+          timeSpent: totalActiveTime,
+          subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
+        }
+      })).unwrap();
+      
+      // Then update task status to completed
+      await dispatch(updateUserTaskProgress({
+        taskId: currentTask._id,
+        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+        status: 'completed',
+        taskMetrics: {
+          ...currentTask.taskMetrics,
+          completionPercentage: 100,
+          timeSpent: totalActiveTime,
+          completedAt: new Date().toISOString()
+        }
+      })).unwrap();
+      
+      // Stop timer permanently
+      stopTimerPermanently();
+      
+      // Refresh task data
+      await dispatch(fetchUserTaskDetails(currentTask._id));
+      
+      toast.dismiss();
+      toast.success('Compliance data submitted successfully! Inspection completed.');
+      setShowSignatureModal(false);
+      
+      // Auto-export report after successful submission
+      setTimeout(() => {
+        handleExportReport();
+      }, 1000);
+      
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Failed to submit compliance data: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -2526,19 +2860,179 @@ const UserTaskDetail = () => {
         return (
           <InputContainer>
             <InputGroup>
-              <input
-                type="file"
-                disabled={isDisabled}
-                onChange={(e) => {
-                  if (isDisabled || !e.target.files || !e.target.files[0]) return;
-                  onSaveResponse(questionId, e.target.files[0].name);
-                }}
-              />
-              {response && (
-                <div style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-                  Uploaded: {response}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '12px' 
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  flexWrap: 'wrap' 
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.pdf,.doc,.docx"
+                    disabled={isDisabled}
+                    onChange={(e) => {
+                      if (isDisabled || !e.target.files || !e.target.files[0]) return;
+                      const file = e.target.files[0];
+                      onSaveResponse(questionId, file.name);
+                      toast.success('File uploaded successfully!');
+                    }}
+                    style={{ flex: 1, minWidth: '200px' }}
+                  />
+                  
+                  <button
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => {
+                      if (isDisabled) return;
+                      
+                      // Camera capture functionality
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ 
+                          video: { 
+                            facingMode: { ideal: 'environment' } // Prefer back camera
+                          } 
+                        })
+                        .then(stream => {
+                          const video = document.createElement('video');
+                          const canvas = document.createElement('canvas');
+                          const ctx = canvas.getContext('2d');
+                          
+                          // Create modal for camera preview
+                          const modal = document.createElement('div');
+                          modal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.9);
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 10000;
+                          `;
+                          
+                          video.style.cssText = `
+                            max-width: 90%;
+                            max-height: 70%;
+                            border-radius: 8px;
+                          `;
+                          
+                          const buttonContainer = document.createElement('div');
+                          buttonContainer.style.cssText = `
+                            display: flex;
+                            gap: 16px;
+                            margin-top: 20px;
+                          `;
+                          
+                          const captureBtn = document.createElement('button');
+                          captureBtn.textContent = '📸 Capture';
+                          captureBtn.style.cssText = `
+                            padding: 12px 24px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            cursor: pointer;
+                          `;
+                          
+                          const cancelBtn = document.createElement('button');
+                          cancelBtn.textContent = '❌ Cancel';
+                          cancelBtn.style.cssText = `
+                            padding: 12px 24px;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            cursor: pointer;
+                          `;
+                          
+                          video.srcObject = stream;
+                          video.play();
+                          
+                          captureBtn.onclick = () => {
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            ctx.drawImage(video, 0, 0);
+                            
+                            canvas.toBlob(blob => {
+                              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                              const filename = `inspection-photo-${timestamp}.jpg`;
+                              
+                              onSaveResponse(questionId, filename);
+                              stream.getTracks().forEach(track => track.stop());
+                              document.body.removeChild(modal);
+                              
+                              toast.success('Photo captured successfully!');
+                            }, 'image/jpeg', 0.8);
+                          };
+                          
+                          cancelBtn.onclick = () => {
+                            stream.getTracks().forEach(track => track.stop());
+                            document.body.removeChild(modal);
+                          };
+                          
+                          buttonContainer.appendChild(captureBtn);
+                          buttonContainer.appendChild(cancelBtn);
+                          modal.appendChild(video);
+                          modal.appendChild(buttonContainer);
+                          document.body.appendChild(modal);
+                        })
+                        .catch(err => {
+                          console.error('Camera access denied:', err);
+                          toast.error('Camera access denied. Please allow camera permissions.');
+                        });
+                      } else {
+                        toast.error('Camera not supported on this device');
+                      }
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#16a34a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      opacity: isDisabled ? 0.5 : 1
+                    }}
+                  >
+                    📷 Camera
+                  </button>
                 </div>
-              )}
+                
+                {response && (
+                  <div style={{ 
+                    marginTop: '8px', 
+                    padding: '8px 12px',
+                    background: '#f8fafc',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      color: '#16a34a',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      ✅ Uploaded: {response}
+                    </div>
+                  </div>
+                )}
+              </div>
             </InputGroup>
           </InputContainer>
         );
@@ -3011,21 +3505,61 @@ const UserTaskDetail = () => {
           </BackButton>
           
           <QuickActions>
-            <QuickActionButton 
-              onClick={handleRefreshProgress}
-              disabled={refreshLoading}
-            >
-              <RefreshCcw size={16} className={refreshLoading ? 'rotating' : ''} />
-              Refresh
-            </QuickActionButton>
-            <QuickActionButton 
-              primary
-              onClick={handleExportReport}
-              disabled={currentTask.status === 'pending'}
-            >
-              <Download size={16} />
-              Export Report
-            </QuickActionButton>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {autoUpdateEnabled ? (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '8px 12px',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#16a34a',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
+                title="Click to toggle auto-update"
+                >
+                  <div style={{ 
+                    width: '6px', 
+                    height: '6px', 
+                    borderRadius: '50%', 
+                    background: '#16a34a',
+                    animation: 'pulse 2s infinite'
+                  }}></div>
+                  Live (5s)
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '8px 12px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#dc2626',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
+                title="Click to enable auto-update"
+                >
+                  ⏸ Paused
+                </div>
+              )}
+              
+              <QuickActionButton 
+                primary
+                onClick={handleExportReport}
+                disabled={currentTask.status === 'pending'}
+              >
+                <Download size={16} />
+                Export Report
+              </QuickActionButton>
+            </div>
           </QuickActions>
         </TopBar>
         
@@ -3098,14 +3632,22 @@ const UserTaskDetail = () => {
           <TabsWrapper>
             <Tab 
               active={activeTab === 'overview'} 
-              onClick={() => setActiveTab('overview')}
+              onClick={() => {
+                userActiveRef.current = true;
+                setActiveTab('overview');
+                setTimeout(() => userActiveRef.current = false, 1000);
+              }}
             >
               <Info size={16} />
               Overview
             </Tab>
             <Tab 
               active={activeTab === 'inspection'} 
-              onClick={() => setActiveTab('inspection')}
+              onClick={() => {
+                userActiveRef.current = true;
+                setActiveTab('inspection');
+                setTimeout(() => userActiveRef.current = false, 1000);
+              }}
               disabled={currentTask?.status === 'pending'}
             >
               <CheckSquare size={16} />
@@ -3113,7 +3655,11 @@ const UserTaskDetail = () => {
             </Tab>
             <Tab 
               active={activeTab === 'report'} 
-              onClick={() => setActiveTab('report')}
+              onClick={() => {
+                userActiveRef.current = true;
+                setActiveTab('report');
+                setTimeout(() => userActiveRef.current = false, 1000);
+              }}
               disabled={currentTask?.status === 'pending'}
             >
               <FileText size={16} />
@@ -3190,19 +3736,38 @@ const UserTaskDetail = () => {
                       Inspection Progress
                     </ProgressTitle>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <RefreshButton 
-                        onClick={handleRefreshProgress}
-                        loading={refreshLoading}
-                        disabled={actionLoading}
-                      >
-                        <RotateCw size={14} />
-                        Refresh
-                      </RefreshButton>
-                      
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <ProgressValue>
                         {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                        {/* Debug info in development */}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
+                            DB: {currentTask?.overallProgress || 0}% | Calc: {taskCompletionPercentage}%
+                          </div>
+                        )}
                       </ProgressValue>
+                      
+                      {autoUpdateEnabled && (
+                        <div style={{ 
+                          fontSize: '10px', 
+                          color: '#16a34a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'rgba(34, 197, 94, 0.1)',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>
+                          <div style={{ 
+                            width: '3px', 
+                            height: '3px', 
+                            borderRadius: '50%', 
+                            background: '#16a34a',
+                            animation: 'pulse 2s infinite'
+                          }}></div>
+                          Live
+                        </div>
+                      )}
                     </div>
                   </ProgressHeader>
                   
@@ -3277,15 +3842,27 @@ const UserTaskDetail = () => {
                             Page Scores
                           </h4>
                           
-                          <RefreshButton 
-                            onClick={() => {
-                              calculateScores();
-                              toast.success('Page scores refreshed');
-                            }}
-                          >
-                            <RotateCw size={14} />
-                            Refresh
-                          </RefreshButton>
+                          {autoUpdateEnabled && (
+                            <div style={{ 
+                              fontSize: '10px', 
+                              color: '#16a34a',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '2px 6px',
+                              background: 'rgba(34, 197, 94, 0.1)',
+                              borderRadius: '4px'
+                            }}>
+                              <div style={{ 
+                                width: '3px', 
+                                height: '3px', 
+                                borderRadius: '50%', 
+                                background: '#16a34a',
+                                animation: 'pulse 2s infinite'
+                              }}></div>
+                              Live
+                            </div>
+                          )}
                         </div>
                         
                         {inspectionPages.map((page, index) => {
@@ -3386,7 +3963,7 @@ const UserTaskDetail = () => {
                       disabled={currentTask?.status === 'pending'}
                     >
                       <Download size={16} />
-                      Export PDF
+                      Export Excel
                     </QuickActionButton>
                   </ReportHeader>
                   
@@ -3414,7 +3991,7 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>TIME SPENT</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
-                        {(currentTask.taskMetrics?.timeSpent || 0).toFixed(1)}h
+                        {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
                         Total duration
@@ -3559,7 +4136,7 @@ const UserTaskDetail = () => {
                     style={{ padding: '16px 32px', fontSize: '16px' }}
                   >
                     <Download size={20} />
-                    Download Full Report (PDF)
+                    Download Full Report (Excel)
                   </QuickActionButton>
                 </div>
               </>
@@ -3612,7 +4189,7 @@ const UserTaskDetail = () => {
                 }}>
                   <span style={{ fontSize: '14px', color: '#64748b' }}>Time</span>
                   <span style={{ fontWeight: '700', color: '#f39c12' }}>
-                    {(currentTask.taskMetrics?.timeSpent || 0).toFixed(1)}h
+                    {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                   </span>
                 </div>
                 
@@ -3777,9 +4354,23 @@ const UserTaskDetail = () => {
               <SaveButton 
                 onClick={handleSaveSignature}
                 disabled={!signatureImage}
+                style={{ background: '#64748b' }}
               >
                 <Save size={16} />
                 Save & Continue
+              </SaveButton>
+              
+              <SaveButton 
+                onClick={handleSaveAndSubmit}
+                disabled={!signatureImage}
+                style={{ 
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  marginLeft: '8px',
+                  fontWeight: '600'
+                }}
+              >
+                <CheckCircle size={16} />
+                Save & Submit
               </SaveButton>
             </SignatureActions>
           </ModalContent>

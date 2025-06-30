@@ -790,6 +790,8 @@ const UserTasks = () => {
   
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  
+
   const headerRef = useRef(null);
   const filterBarRef = useRef(null);
   const tasksGridRef = useRef(null);
@@ -826,6 +828,8 @@ const UserTasks = () => {
       sparklesTimeouts.current.forEach(timeout => clearTimeout(timeout));
     };
   }, [tasks]);
+
+  // Auto-update functionality disabled for task list - only enabled in task details
   
   const animateElements = () => {
     gsap.to(headerRef.current, {
@@ -969,7 +973,10 @@ const UserTasks = () => {
     setSearch(e.target.value);
   };
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = (e) => {
+    if (e) {
+      e.preventDefault();
+    }
     dispatch(setFilters({ search }));
     dispatch(setPagination({ page: 1 }));
   };
@@ -980,7 +987,12 @@ const UserTasks = () => {
     }
   };
 
-  const handleFilterClick = (status) => {
+  const handleFilterClick = (status, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setActiveFilter(status);
     
     if (status === 'all') {
@@ -997,7 +1009,11 @@ const UserTasks = () => {
   };
 
   const handleStartTask = (taskId) => {
-    dispatch(startUserTask(taskId));
+    dispatch(startUserTask(taskId)).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        navigate(`/user-tasks/${taskId}`);
+      }
+    });
   };
   
   const viewTaskDetails = (taskId) => {
@@ -1057,7 +1073,7 @@ const UserTasks = () => {
       <GlassMorphismBlur style={{ top: '50%', left: '10%' }} />
       <GlassMorphismBlur style={{ bottom: '20%', right: '20%', left: 'auto' }} />
       
-      <PageHeader ref={headerRef}>
+            <PageHeader ref={headerRef}>
         <Title>My Tasks</Title>
         <Description>View and manage all your assigned tasks</Description>
       </PageHeader>
@@ -1065,18 +1081,21 @@ const UserTasks = () => {
       <FilterBar ref={filterBarRef}>
         <SearchInput>
           <Search size={18} />
-          <input 
-            type="text" 
-            placeholder="Search tasks..." 
-            value={search}
-            onChange={handleSearchChange}
-            onKeyPress={handleKeyPress}
-          />
+          <form onSubmit={handleSearchSubmit} style={{ width: '100%' }}>
+            <input 
+              type="text" 
+              placeholder="Search tasks..." 
+              value={search}
+              onChange={handleSearchChange}
+              onKeyPress={handleKeyPress}
+              style={{ width: '100%' }}
+            />
+          </form>
         </SearchInput>
         
         <ButtonGroup>
           <FilterButton 
-            onClick={() => handleFilterClick('all')} 
+            onClick={(e) => handleFilterClick('all', e)} 
             style={{
               background: activeFilter === 'all' 
                 ? 'rgba(227, 242, 253, 0.7)' 
@@ -1087,7 +1106,7 @@ const UserTasks = () => {
             All
           </FilterButton>
           <FilterButton 
-            onClick={() => handleFilterClick('pending')}
+            onClick={(e) => handleFilterClick('pending', e)}
             style={{
               background: activeFilter === 'pending' 
                 ? 'rgba(255, 248, 225, 0.7)' 
@@ -1098,7 +1117,7 @@ const UserTasks = () => {
             Pending
           </FilterButton>
           <FilterButton 
-            onClick={() => handleFilterClick('in_progress')}
+            onClick={(e) => handleFilterClick('in_progress', e)}
             style={{
               background: activeFilter === 'in_progress' 
                 ? 'rgba(225, 245, 254, 0.7)' 
@@ -1109,7 +1128,7 @@ const UserTasks = () => {
             In Progress
           </FilterButton>
           <FilterButton 
-            onClick={() => handleFilterClick('completed')}
+            onClick={(e) => handleFilterClick('completed', e)}
             style={{
               background: activeFilter === 'completed' 
                 ? 'rgba(232, 245, 233, 0.7)' 

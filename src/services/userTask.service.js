@@ -89,14 +89,14 @@ export const userTaskService = {
   
   exportTaskReport: async (taskId) => {
     try {
-      const response = await api.get(`/user-tasks/${taskId}/export`, {
+      const response = await api.get(`/user-tasks/${taskId}/export?format=excel`, {
         responseType: 'blob'
       });
       
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `task_report_${taskId}.pdf`;
+      link.download = `inspection_report_${taskId}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

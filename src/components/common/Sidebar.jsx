@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Home,
   User,
-  FileBarChart,
   ListChecks,
   Database,
   FileText,
@@ -203,7 +202,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/users',
       icon: Users,
       permission: 'view_users',
-      roles: ['admin']
+      roles: ['admin']  // Only admin can access users
     },
     {
       title: 'Template',
@@ -217,7 +216,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/assets',
       icon: Database,
       permission: 'view_assets',
-      roles: ['admin']
+      roles: ['admin']  // Only admin can access assets
     },
     {
       title: 'Questionnaires',
@@ -233,44 +232,48 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       permission: 'view_calendar',
       roles: ['admin', 'manager']
     },
-    {
-      title: 'Settings',
-      path: '/settings',
-      icon: Settings,
-      permission: 'view_settings',
-      roles: ['admin']
-    },
+
     {
       title: 'Profile',
       path: '/profile',
       icon: User,
       permission: null, // No permission required for profile
-      roles: ['manager', 'inspector']
+      roles: ['admin', 'manager', 'inspector']  // All roles use /profile
     }
   ];
 
 
   // Get menu items based on role and permissions
   const getMenuItems = () => {
-    // For admin and inspector, show all items designated for their role
-    if (userRole === 'admin' || userRole === 'inspector') {
-      return navigationItems.filter(item => item.roles.includes(userRole));
-    }
-    
-    // For manager, check permissions
-    if (userRole === 'manager') {
-      return navigationItems.filter(item => {
-        // Include the item if it's for manager role and either has no permission requirement
-        // or the user has the required permission
-        return (
-          item.roles.includes('manager') && 
-          (item.permission === null || hasPermission(item.permission))
-        );
-      });
-    }
-    
-    // Default: show nothing if role doesn't match
-    return [];
+    return navigationItems.filter(item => {
+      // Check if the user's role is allowed for this item
+      if (!item.roles.includes(userRole)) {
+        return false;
+      }
+
+      // For admin role, show all items designated for admin (no permission check needed)
+      if (userRole === 'admin') {
+        return true;
+      }
+
+      // For inspector role, show all items designated for inspector (no permission check needed)
+      if (userRole === 'inspector') {
+        return true;
+      }
+
+      // For manager role, check permissions if required
+      if (userRole === 'manager') {
+        // If no permission is required, include the item
+        if (item.permission === null) {
+          return true;
+        }
+        // Check if the user has the required permission
+        return hasPermission(item.permission);
+      }
+
+      // Default: exclude the item
+      return false;
+    });
   };
 
   const menuItems = getMenuItems();

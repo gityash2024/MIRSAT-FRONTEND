@@ -3,10 +3,20 @@ import { authService } from '../../services/auth.service';
 
 const getInitialState = () => {
   const token = localStorage.getItem('token');
-  const user = localStorage.getItem('user');
+  let user = null;
+  
+  try {
+    const userData = localStorage.getItem('user');
+    user = userData ? JSON.parse(userData) : null;
+  } catch (error) {
+    console.warn('Error parsing user data from localStorage:', error);
+    localStorage.removeItem('user'); // Clear invalid data
+    user = null;
+  }
+  
   return {
     isAuthenticated: !!token,
-    user: user ? JSON.parse(user) : null,
+    user,
     loading: false,
     error: null
   };

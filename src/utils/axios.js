@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
+  // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
   baseURL: import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api',
   // baseURL: import.meta.env.VITE_API_URL || 'https://mirsat-backend.onrender.com/api',
   headers: {
@@ -34,8 +35,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 errors
     if (error.response?.status === 401) {
+      // Don't logout for profile update errors (incorrect current password is expected)
+      const isProfileUpdate = error.config?.url?.includes('/users/profile');
+      const isPasswordError = error.response?.data?.message?.toLowerCase().includes('password');
+      
+      if (isProfileUpdate && isPasswordError) {
+        // Let the component handle the password error, don't logout
+        return Promise.reject(error);
+      }
+      
+      // For other 401 errors, logout the user
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     

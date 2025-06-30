@@ -256,8 +256,10 @@ const userTasksSlice = createSlice({
       .addCase(startUserTask.fulfilled, (state, action) => {
         state.actionLoading = false;
         const updatedTask = action.payload;
+        // Update the task in the results array with proper status
         state.tasks.results = state.tasks.results.map(task => 
-          task._id === updatedTask._id ? updatedTask : task
+          task._id === updatedTask._id || task.id === updatedTask._id ? 
+            { ...task, ...updatedTask, status: 'in_progress' } : task
         );
         toast.success('Task started successfully');
       })

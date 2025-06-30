@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login as loginAction, logout as logoutAction } from '../store/slices/authSlice';
+import { login as loginAction, logout as logoutAction, restoreUser } from '../store/slices/authSlice';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -23,11 +23,19 @@ export const useAuth = () => {
     navigate('/login');
   }, [dispatch, navigate]);
 
+  const updateUser = useCallback((updatedUserData) => {
+    // Update user data in localStorage
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
+    // Restore user from localStorage to update the Redux state
+    dispatch(restoreUser());
+  }, [dispatch]);
+
   return {
     isAuthenticated,
     user,
     loading,
     login,
-    logout
+    logout,
+    updateUser
   };
 };

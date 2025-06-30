@@ -153,7 +153,7 @@ const Sidebar = ({ isOpen, width }) => {
       {
         icon: ClipboardList, 
         label: 'Tasks', 
-        path: '/user-task',
+        path: '/user-tasks',
         permissions: ['view_tasks']
       }
     ];
