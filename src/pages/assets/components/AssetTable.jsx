@@ -251,7 +251,18 @@ const AssetTable = ({
                     <ActionButton onClick={() => onEdit(asset)}>
                       <Edit size={16} />
                     </ActionButton>
-                    <ActionButton danger onClick={() => onDelete(asset._id)}>
+                    <ActionButton danger onClick={() => {
+                      // Use fallback for asset ID
+                      const assetId = asset._id || asset.id;
+                      
+                      if (!assetId) {
+                        console.error('No valid asset ID found for delete:', asset);
+                        alert('Error: Cannot delete asset - no valid ID found');
+                        return;
+                      }
+                      
+                      onDelete(assetId);
+                    }}>
                       <Trash size={16} />
                     </ActionButton>
                   </ActionButtonGroup>

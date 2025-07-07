@@ -410,9 +410,9 @@ const Dashboard = () => {
     });
   };
 
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
+  // if (loading) {
+  //   return <DashboardSkeleton />;
+  // }
 
   return (
     <DashboardContainer>

@@ -169,9 +169,17 @@ const AssetList = () => {
   };
 
   const handleDelete = (id) => {
+    if (!id) {
+      console.error('No ID provided for delete operation');
+      alert('Error: Cannot delete asset - no ID provided');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this asset?')) {
       dispatch(deleteAsset(id)).then(() => {
         loadAssets();
+      }).catch((error) => {
+        console.error('Delete failed:', error);
       });
     }
   };

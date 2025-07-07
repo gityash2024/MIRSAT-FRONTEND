@@ -12,6 +12,7 @@ import CalendarHeader from './components/CalendarHeader';
 import { fetchTasks, createTask, updateTask, setPagination } from '../../store/slices/taskSlice';
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
+import { fetchAssets } from '../../store/slices/assetSlice';
 import { toast } from 'react-hot-toast';
 import Skeleton from '../../components/ui/Skeleton';
 
@@ -284,11 +285,15 @@ const CalendarView = () => {
   
   const dispatch = useDispatch();
   const { tasks, loading, filters, pagination } = useSelector((state) => state.tasks);
+  const { users } = useSelector((state) => state.users || { users: [] });
+  const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
+  const { assets } = useSelector((state) => state.assets || { assets: [] });
   
   useEffect(() => {
     // Fetch necessary data when component mounts
     dispatch(fetchUsers());
     dispatch(fetchInspectionLevels());
+    dispatch(fetchAssets());
     loadEvents();
   }, [dispatch, filters, pagination.page, pagination.limit]);
 
@@ -363,18 +368,90 @@ const CalendarView = () => {
     const taskId = clickInfo.event.id;
     const task = tasks.find(t => (t._id === taskId) || (t.id === taskId));
     
+    console.log('Event clicked, task found:', task);
+    console.log('Available data when clicking event:', {
+      usersCount: users?.length || 0,
+      levelsCount: levels?.results?.length || 0,
+      assetsCount: assets?.length || 0
+    });
+    
+    // If required data is not available, fetch it before opening the modal
+    if (!users?.length || !levels?.results?.length) {
+      console.log('Required data not available, fetching...');
+      if (!users?.length) dispatch(fetchUsers());
+      if (!levels?.results?.length) dispatch(fetchInspectionLevels());
+      if (!assets?.length) dispatch(fetchAssets());
+      
+      // Set a timeout to try again after data should be loaded
+      setTimeout(() => {
+        handleEventClick(clickInfo);
+      }, 1000);
+      return;
+    }
+    
     if (task) {
+      // Properly extract user ID from assignedTo
+      let assignedUserId = '';
+      if (task.assignedTo && task.assignedTo.length > 0) {
+        const firstAssignedUser = task.assignedTo[0];
+        // Handle both populated and non-populated user objects
+        if (typeof firstAssignedUser === 'string') {
+          assignedUserId = firstAssignedUser;
+        } else if (firstAssignedUser && firstAssignedUser._id) {
+          assignedUserId = firstAssignedUser._id;
+        } else if (firstAssignedUser && firstAssignedUser.id) {
+          assignedUserId = firstAssignedUser.id;
+        }
+      }
+      
+      // Properly extract inspection level ID
+      let inspectionLevelId = '';
+      if (task.inspectionLevel) {
+        if (typeof task.inspectionLevel === 'string') {
+          inspectionLevelId = task.inspectionLevel;
+        } else if (task.inspectionLevel._id) {
+          inspectionLevelId = task.inspectionLevel._id;
+        } else if (task.inspectionLevel.id) {
+          inspectionLevelId = task.inspectionLevel.id;
+        }
+      }
+      
+      // Properly extract asset ID
+      let assetId = '';
+      if (task.asset) {
+        if (typeof task.asset === 'string') {
+          assetId = task.asset;
+        } else if (task.asset._id) {
+          assetId = task.asset._id;
+        } else if (task.asset.id) {
+          assetId = task.asset.id;
+        }
+      }
+      
+      console.log('Extracted IDs:', {
+        assignedUserId,
+        inspectionLevelId,
+        assetId
+      });
+      
+      // Check if the extracted IDs exist in the available options
+      console.log('Validation checks:', {
+        userExists: users?.some(u => (u._id === assignedUserId || u.id === assignedUserId)),
+        levelExists: levels?.results?.some(l => l._id === inspectionLevelId),
+        assetExists: assets?.some(a => (a._id === assetId || a.id === assetId))
+      });
+      
       setSelectedEvent({
-        ...task,
         id: task._id || task.id,
         title: task.title,
-        type: task.inspectionLevel?._id || '',
-        assignee: task.assignedTo?.length > 0 ? task.assignedTo[0]._id : '',
+        description: task.description || '',
         status: task.status,
         priority: task.priority,
-        start: task.deadline,
-        end: task.deadline ? new Date(new Date(task.deadline).getTime() + 2 * 60 * 60 * 1000).toISOString() : null,
-        description: task.description || ''
+        assignedTo: assignedUserId,
+        inspectionLevel: inspectionLevelId,
+        asset: assetId,
+        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+        location: task.location || ''
       });
       setShowEventModal(true);
     }
@@ -382,45 +459,97 @@ const CalendarView = () => {
 
   const handleEventAdd = async (eventData) => {
     try {
-      // Convert the event data to task format
+      console.log('Adding event with data:', eventData);
+      
+      // Validate and process assignedTo field
+      let assignedToArray = [];
+      if (eventData.assignedTo) {
+        // Ensure we have a valid user ID (should be a MongoDB ObjectId format)
+        const userId = eventData.assignedTo.trim();
+        if (userId && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
+          assignedToArray = [userId];
+        } else if (userId) {
+          console.error('Invalid user ID format:', userId);
+          toast.error('Invalid user selected. Please select a valid user.');
+          return;
+        }
+      }
+      
+      if (assignedToArray.length === 0) {
+        toast.error('Please select at least one user to assign the task to.');
+        return;
+      }
+      
+      // Convert the event data to task format that matches the working tasks module
       const taskData = {
         title: eventData.title,
         description: eventData.description,
         status: eventData.status || 'pending',
         priority: eventData.priority || 'medium',
-        deadline: eventData.start,
-        assignedTo: eventData.assignee ? [eventData.assignee] : [],
-        inspectionLevel: eventData.type || null,
-        // Add other task fields as needed
+        deadline: eventData.deadline ? new Date(eventData.deadline).toISOString() : new Date().toISOString(),
+        assignedTo: assignedToArray,
+        inspectionLevel: eventData.inspectionLevel || null,
+        asset: eventData.asset || null,
+        location: eventData.location || '',
+        isActive: true
       };
+      
+      console.log('Converted task data:', taskData);
+      console.log('AssignedTo array:', assignedToArray);
       
       await dispatch(createTask(taskData)).unwrap();
       loadEvents(); // Reload events after adding
       toast.success('Event added successfully');
     } catch (error) {
-      toast.error('Failed to add event');
+      console.error('Failed to add event:', error);
+      toast.error(`Failed to add event: ${error.message || 'Unknown error'}`);
     }
   };
 
   const handleEventUpdate = async (eventData) => {
     try {
+      console.log('Updating event with data:', eventData);
+      
+      // Validate and process assignedTo field (same as in handleEventAdd)
+      let assignedToArray = [];
+      if (eventData.assignedTo) {
+        const userId = eventData.assignedTo.trim();
+        if (userId && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
+          assignedToArray = [userId];
+        } else if (userId) {
+          console.error('Invalid user ID format for update:', userId);
+          toast.error('Invalid user selected. Please select a valid user.');
+          return;
+        }
+      }
+      
+      if (assignedToArray.length === 0) {
+        toast.error('Please select at least one user to assign the task to.');
+        return;
+      }
+      
       // Convert the event data to task format for update
       const taskData = {
         title: eventData.title,
         description: eventData.description,
         status: eventData.status,
         priority: eventData.priority || 'medium',
-        deadline: eventData.start,
-        assignedTo: eventData.assignee ? [eventData.assignee] : [],
-        inspectionLevel: eventData.type || null,
-        // Add other task fields as needed
+        deadline: eventData.deadline ? new Date(eventData.deadline).toISOString() : new Date().toISOString(),
+        assignedTo: assignedToArray,
+        inspectionLevel: eventData.inspectionLevel || null,
+        asset: eventData.asset || null,
+        location: eventData.location || ''
       };
+      
+      console.log('Converted task data for update:', taskData);
+      console.log('Update AssignedTo array:', assignedToArray);
       
       await dispatch(updateTask({ id: eventData.id, data: taskData })).unwrap();
       loadEvents(); // Reload events after updating
       toast.success('Event updated successfully');
     } catch (error) {
-      toast.error('Failed to update event');
+      console.error('Failed to update event:', error);
+      toast.error(`Failed to update event: ${error.message || 'Unknown error'}`);
     }
   };
 

@@ -21,7 +21,7 @@ const ModalContent = styled.div`
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   position: relative;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
@@ -198,18 +198,18 @@ const EventModal = ({
   // Get data from Redux store
   const { users } = useSelector((state) => state.users || { users: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
+  const { assets } = useSelector((state) => state.assets || { assets: [] });
 
   const [formData, setFormData] = useState({
     title: '',
-    type: '',
-    assignee: '',
+    description: '',
     status: 'pending',
     priority: 'medium',
-    startDate: '',
-    startTime: '',
-    endDate: '',
-    endTime: '',
-    description: ''
+    assignedTo: '',
+    inspectionLevel: '',
+    asset: '',
+    deadline: '',
+    location: ''
   });
 
   // Available statuses and priorities
@@ -229,52 +229,94 @@ const EventModal = ({
 
   useEffect(() => {
     if (event) {
-      const startDateTime = new Date(event.start);
-      const endDateTime = event.end ? new Date(event.end) : new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
-
+      console.log('EventModal editing event:', event);
+      console.log('Available levels:', levels?.results);
+      console.log('Available assets:', assets);
+      console.log('Available users:', users);
+      
       setFormData({
         title: event.title || '',
-        type: event.type || '',
-        assignee: event.assignee || '',
+        description: event.description || '',
         status: event.status || 'pending',
         priority: event.priority || 'medium',
-        startDate: startDateTime.toISOString().split('T')[0],
-        startTime: startDateTime.toTimeString().slice(0, 5),
-        endDate: endDateTime.toISOString().split('T')[0],
-        endTime: endDateTime.toTimeString().slice(0, 5),
-        description: event.description || ''
+        assignedTo: event.assignedTo || '',
+        inspectionLevel: event.inspectionLevel || '',
+        asset: event.asset || '',
+        deadline: event.deadline || '',
+        location: event.location || ''
+      });
+      
+      console.log('Form data set to:', {
+        title: event.title || '',
+        description: event.description || '',
+        status: event.status || 'pending',
+        priority: event.priority || 'medium',
+        assignedTo: event.assignedTo || '',
+        inspectionLevel: event.inspectionLevel || '',
+        asset: event.asset || '',
+        deadline: event.deadline || '',
+        location: event.location || ''
       });
     } else if (selectedDate) {
-      const defaultEndTime = new Date(selectedDate);
-      defaultEndTime.setHours(defaultEndTime.getHours() + 2);
-
+      console.log('EventModal creating new event for date:', selectedDate);
+      
       setFormData({
         title: '',
-        type: '',
-        assignee: '',
+        description: '',
         status: 'pending',
         priority: 'medium',
-        startDate: selectedDate.toISOString().split('T')[0],
-        startTime: selectedDate.toTimeString().slice(0, 5),
-        endDate: defaultEndTime.toISOString().split('T')[0],
-        endTime: defaultEndTime.toTimeString().slice(0, 5),
-        description: ''
+        assignedTo: '',
+        inspectionLevel: '',
+        asset: '',
+        deadline: selectedDate.toISOString().split('T')[0],
+        location: ''
       });
     }
-  }, [event, selectedDate]);
+  }, [event, selectedDate, levels, assets, users]);
+
+  const handleDelete = () => {
+    if (event && event.id) {
+      onDelete(event.id);
+      onClose();
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      alert('Title is required');
+      return false;
+    }
+    if (!formData.deadline) {
+      alert('Deadline is required');
+      return false;
+    }
+    if (!formData.assignedTo) {
+      alert('Please select a user to assign this task to');
+      return false;
+    }
+    // Validate user ID format (MongoDB ObjectId)
+    if (formData.assignedTo && !/^[0-9a-fA-F]{24}$/.test(formData.assignedTo)) {
+      alert('Invalid user selection. Please select a valid user.');
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    if (!validateForm()) return;
+    
     const eventData = {
       title: formData.title,
-      type: formData.type,
-      assignee: formData.assignee,
+      description: formData.description,
       status: formData.status,
       priority: formData.priority,
-      start: new Date(`${formData.startDate}T${formData.startTime}`).toISOString(),
-      end: new Date(`${formData.endDate}T${formData.endTime}`).toISOString(),
-      description: formData.description
+      assignedTo: formData.assignedTo,
+      inspectionLevel: formData.inspectionLevel,
+      asset: formData.asset,
+      deadline: formData.deadline,
+      location: formData.location
     };
 
     if (event) {
@@ -286,14 +328,30 @@ const EventModal = ({
     onClose();
   };
 
-  const handleDelete = () => {
-    if (event && event.id) {
-      onDelete(event.id);
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
+
+  // Check if required data is loaded for editing mode
+  const isDataLoading = event && (!users?.length || !levels?.results?.length);
+  
+  if (isDataLoading) {
+    return (
+      <ModalOverlay onClick={onClose}>
+        <ModalContent onClick={e => e.stopPropagation()}>
+          <ModalHeader>
+            <ModalTitle>Loading...</ModalTitle>
+            <CloseButton onClick={onClose}>
+              <X size={20} />
+            </CloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+              <div>Loading form data...</div>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </ModalOverlay>
+    );
+  }
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -324,27 +382,40 @@ const EventModal = ({
               <FormGroup>
                 <Label>Template</Label>
                 <Select
-                  value={formData.type}
-                  onChange={e => setFormData({ ...formData, type: e.target.value })}
+                  value={formData.inspectionLevel}
+                  onChange={e => {
+                    console.log('Template changed to:', e.target.value);
+                    setFormData({ ...formData, inspectionLevel: e.target.value });
+                  }}
                 >
                   <option value="">Select Template</option>
-                  {levels?.results?.map(level => (
-                    <option key={level._id} value={level._id}>
-                      {level.name}
-                    </option>
-                  ))}
+                  {levels?.results?.map(level => {
+                    const isSelected = level._id === formData.inspectionLevel;
+                    console.log(`Template option: ${level.name} (${level._id}) - Selected: ${isSelected}`);
+                    return (
+                      <option key={level._id} value={level._id}>
+                        {level.name}
+                      </option>
+                    );
+                  })}
                 </Select>
+                {/* Debug info */}
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Current value: {formData.inspectionLevel || 'None'} | 
+                  Options: {levels?.results?.length || 0}
+                </small>
               </FormGroup>
 
               <FormGroup>
-                <Label>Assignee</Label>
+                <Label>Assignee *</Label>
                 <Select
-                  value={formData.assignee}
-                  onChange={e => setFormData({ ...formData, assignee: e.target.value })}
+                  value={formData.assignedTo}
+                  onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
+                  required
                 >
-                  <option value="">Select Assignee</option>
+                  <option value="">Select Assignee (Required)</option>
                   {users?.map(user => (
-                    <option key={user._id} value={user._id}>
+                    <option key={user._id || user.id} value={user._id || user.id}>
                       {user.name}
                     </option>
                   ))}
@@ -386,47 +457,53 @@ const EventModal = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <FormGroup>
-                <Label>Start Date</Label>
+                <Label>Deadline</Label>
                 <Input
                   type="date"
-                  value={formData.startDate}
-                  onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                  value={formData.deadline}
+                  onChange={e => setFormData({ ...formData, deadline: e.target.value })}
                   required
                 />
               </FormGroup>
 
               <FormGroup>
-                <Label>Start Time</Label>
-                <Input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                  required
-                />
+                <Label>Asset</Label>
+                <Select
+                  value={formData.asset}
+                  onChange={e => {
+                    console.log('Asset changed to:', e.target.value);
+                    setFormData({ ...formData, asset: e.target.value });
+                  }}
+                >
+                  <option value="">Select Asset (Optional)</option>
+                  {assets?.map(asset => {
+                    const assetId = asset._id || asset.id;
+                    const isSelected = assetId === formData.asset;
+                    console.log(`Asset option: ${asset.displayName || asset.uniqueId} (${assetId}) - Selected: ${isSelected}`);
+                    return (
+                      <option key={assetId} value={assetId}>
+                        {asset.displayName || asset.uniqueId} - {asset.type}
+                      </option>
+                    );
+                  })}
+                </Select>
+                {/* Debug info */}
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Current value: {formData.asset || 'None'} | 
+                  Options: {assets?.length || 0}
+                </small>
               </FormGroup>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <FormGroup>
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                  required
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <Label>End Time</Label>
-                <Input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                  required
-                />
-              </FormGroup>
-            </div>
+            <FormGroup>
+              <Label>Location</Label>
+              <Input
+                type="text"
+                value={formData.location}
+                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Enter location"
+              />
+            </FormGroup>
 
             <FormGroup>
               <Label>Description</Label>

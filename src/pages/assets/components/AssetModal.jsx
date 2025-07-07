@@ -235,9 +235,16 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     
     try {
       if (asset) {
+        // Check if asset._id exists, if not, use asset.id as fallback
+        const assetId = asset._id || asset.id;
+        if (!assetId) {
+          console.error('No valid asset ID found:', asset);
+          throw new Error('Asset ID is missing');
+        }
+        
         // Update existing asset
         await dispatch(updateAsset({ 
-          id: asset._id, 
+          id: assetId, 
           data: formData 
         })).unwrap();
       } else {
