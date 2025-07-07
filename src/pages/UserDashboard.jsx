@@ -243,12 +243,13 @@ const EmptyState = styled.div`
   }
 `;
 
-// Create UserDashboardSkeleton component
+// Create UserDashboardSkeleton component - COMMENTED OUT
+/*
 const UserDashboardSkeleton = () => (
   <DashboardContainer>
     <Skeleton.Base width="250px" height="28px" margin="0 0 32px 0" />
     
-    {/* Stats Grid Section */}
+    {/* Stats Grid Section *//*
     <StatsGrid>
       {Array(4).fill().map((_, i) => (
         <div key={i}>
@@ -263,13 +264,13 @@ const UserDashboardSkeleton = () => (
       ))}
     </StatsGrid>
     
-    {/* Content Grid Section */}
+    {/* Content Grid Section *//*
     <div style={{ 
       display: 'grid', 
       gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
       gap: '24px' 
     }}>
-      {/* First card - Tasks Progress */}
+      {/* First card - Tasks Progress *//*
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
           <Skeleton.Base width="160px" height="24px" />
@@ -288,7 +289,7 @@ const UserDashboardSkeleton = () => (
         </div>
       </Skeleton.Card.Wrapper>
       
-      {/* Second card - Performance */}
+      {/* Second card - Performance *//*
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
           <Skeleton.Base width="160px" height="24px" />
@@ -308,7 +309,7 @@ const UserDashboardSkeleton = () => (
       </Skeleton.Card.Wrapper>
     </div>
     
-    {/* Recent tasks section */}
+    {/* Recent tasks section *//*
     <div style={{ marginTop: '24px' }}>
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
@@ -337,6 +338,7 @@ const UserDashboardSkeleton = () => (
     </div>
   </DashboardContainer>
 );
+*/
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -394,7 +396,18 @@ const UserDashboard = () => {
   };
 
   if (dashboardLoading) {
-    return <UserDashboardSkeleton />;
+    return (
+      <DashboardContainer>
+        <LoadingContainer>
+          <div style={{ textAlign: 'center' }}>
+            <Loader size={40} color="var(--color-navy)" />
+            <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
+              User dashboard loading...
+            </p>
+          </div>
+        </LoadingContainer>
+      </DashboardContainer>
+    );
   }
 
   if (error) {

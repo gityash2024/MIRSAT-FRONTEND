@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { Plus, Filter, Search, Download, RefreshCw } from 'lucide-react';
+import { Plus, Filter, Search, Download, RefreshCw, Loader } from 'lucide-react';
 import TaskFilter from './components/TaskFilter';
 import TaskTable from './components/TaskTable';
 import { fetchTasks, setFilters, setPagination } from '../../store/slices/taskSlice';
@@ -240,6 +240,27 @@ const ErrorContainer = styled.div`
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   text-align: center;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 60px 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const TaskList = () => {
@@ -623,8 +644,17 @@ const TaskList = () => {
       )}
 
       {loading ? (
-        // Show skeleton loading
-        <TaskTable loading={true} tasks={[]} pagination={{}} />
+        // Show spinner with loading text
+        <LoadingContainer>
+          <Loader size={40} color="var(--color-navy)" />
+          <p style={{ 
+            marginTop: '16px', 
+            color: 'var(--color-navy)', 
+            fontSize: '16px' 
+          }}>
+            Tasks loading...
+          </p>
+        </LoadingContainer>
       ) : error ? (
         // Show error state
         <ErrorContainer>

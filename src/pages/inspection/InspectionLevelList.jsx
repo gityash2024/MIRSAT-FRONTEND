@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X, Upload } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X, Upload, Loader } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
 import { FileText } from 'lucide-react';
 import { DownloadDone } from '@mui/icons-material';
-import LevelListSkeleton from './LevelListSkeleton';
+// import LevelListSkeleton from './LevelListSkeleton'; // COMMENTED OUT
 import { ListChecks, Calendar } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
@@ -339,6 +339,27 @@ const ChevronIcon = styled(ChevronDown)`
 
 const AccordionRoot = styled(Accordion.Root)`
   width: 100%;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const ModalOverlay = styled.div`
@@ -864,7 +885,16 @@ const InspectionLevelList = ({
       )}
 
       {loading ? (
-        <LevelListSkeleton />
+        <LoadingContainer>
+          <Loader size={40} color="var(--color-navy)" />
+          <p style={{ 
+            marginTop: '16px', 
+            color: 'var(--color-navy)', 
+            fontSize: '16px' 
+          }}>
+            Templates loading...
+          </p>
+        </LoadingContainer>
       ) : inspectionLevels.length === 0 ? (
         <EmptyState>
           <h3>No Template Found</h3>

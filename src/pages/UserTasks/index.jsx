@@ -723,6 +723,8 @@ const formatDate = (dateString) => {
   });
 };
 
+// UserTasksListSkeleton component - COMMENTED OUT
+/*
 const UserTasksListSkeleton = () => (
   <TasksContainer>
     <HeaderContainer>
@@ -786,6 +788,7 @@ const UserTasksListSkeleton = () => (
     </Card>
   </TasksContainer>
 );
+*/
 
 const UserTasks = () => {
   const dispatch = useDispatch();
@@ -1052,7 +1055,18 @@ const UserTasks = () => {
   }, [tasks]);
 
   if (loading) {
-    return <UserTasksListSkeleton />;
+    return (
+      <TasksContainer>
+        <LoadingContainer>
+          <div style={{ textAlign: 'center' }}>
+            <Loader size={40} color="var(--color-navy)" />
+            <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
+              Task loading...
+            </p>
+          </div>
+        </LoadingContainer>
+      </TasksContainer>
+    );
   }
 
   if (error) {

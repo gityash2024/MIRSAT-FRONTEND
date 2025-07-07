@@ -2,12 +2,31 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
+import { Loader } from 'lucide-react';
 import InspectionLevelList from './InspectionLevelList';
 import { inspectionService } from '../../services/inspection.service';
-import LevelListSkeleton from './LevelListSkeleton';
+// import LevelListSkeleton from './LevelListSkeleton'; // COMMENTED OUT
 
 const Container = styled.div`
   width: 100%;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 24px;
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const InspectionLevel = () => {
@@ -171,7 +190,18 @@ const InspectionLevel = () => {
     };
 
     if (loading) {
-      return <LevelListSkeleton />;
+      return (
+        <LoadingContainer>
+          <Loader size={40} color="var(--color-navy)" />
+          <p style={{ 
+            marginTop: '16px', 
+            color: 'var(--color-navy)', 
+            fontSize: '16px' 
+          }}>
+            Templates loading...
+          </p>
+        </LoadingContainer>
+      );
     }
 
     return <InspectionLevelList {...sharedProps} />;

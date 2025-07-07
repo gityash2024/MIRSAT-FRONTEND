@@ -16,7 +16,9 @@ export const questionLibraryService = {
       // Check if we're updating an existing question
       if (data.id || data._id) {
         const id = data.id || data._id;
-        const response = await api.put(`/question-library/${id}`, data);
+        // Remove id and _id from the body data to avoid validation issues
+        const { id: bodyId, _id, ...bodyData } = data;
+        const response = await api.put(`/question-library/${id}`, bodyData);
         return response.data;
       } else {
         // Creating a new question

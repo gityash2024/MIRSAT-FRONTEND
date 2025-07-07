@@ -4,7 +4,8 @@ import {
   Calendar, 
   CheckSquare, 
   Clock, 
-  ShieldCheck
+  ShieldCheck,
+  Loader
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
@@ -172,6 +173,24 @@ const LoadingSpinner = styled.div`
   color: var(--color-navy);
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const EmptyState = styled.div`
   padding: 16px;
   text-align: center;
@@ -226,12 +245,13 @@ const TestNotificationButton = () => {
   );
 };
 
-// Create DashboardSkeleton component
+// Create DashboardSkeleton component - COMMENTED OUT
+/*
 const DashboardSkeleton = () => (
   <DashboardContainer>
     <Skeleton.Base width="250px" height="28px" margin="0 0 32px 0" />
     
-    {/* Stats Grid Section */}
+    {/* Stats Grid Section *//*
     <StatsGrid>
       {Array(4).fill().map((_, i) => (
         <div key={i}>
@@ -246,9 +266,9 @@ const DashboardSkeleton = () => (
       ))}
     </StatsGrid>
     
-    {/* Content Grid Section */}
+    {/* Content Grid Section *//*
     <ContentGrid>
-      {/* Task Progress Card */}
+      {/* Task Progress Card *//*
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
           <Skeleton.Base width="160px" height="24px" />
@@ -267,7 +287,7 @@ const DashboardSkeleton = () => (
         </div>
       </Skeleton.Card.Wrapper>
       
-      {/* Inspector Performance Card */}
+      {/* Inspector Performance Card *//*
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
           <Skeleton.Base width="160px" height="24px" />
@@ -287,7 +307,7 @@ const DashboardSkeleton = () => (
       </Skeleton.Card.Wrapper>
     </ContentGrid>
     
-    {/* Reports Section */}
+    {/* Reports Section *//*
     <div style={{ marginTop: '24px' }}>
       <Skeleton.Card.Wrapper>
         <Skeleton.Card.Header>
@@ -301,6 +321,7 @@ const DashboardSkeleton = () => (
     </div>
   </DashboardContainer>
 );
+*/
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -410,9 +431,18 @@ const Dashboard = () => {
     });
   };
 
-  // if (loading) {
-  //   return <DashboardSkeleton />;
-  // }
+  if (loading && dashboardData.stats.length === 0 && dashboardData.taskProgress.length === 0 && dashboardData.teamPerformance.length === 0) {
+    return (
+      <DashboardContainer>
+        <LoadingContainer>
+          <Loader size={40} color="var(--color-navy)" />
+          <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
+            Dashboard loading...
+          </p>
+        </LoadingContainer>
+      </DashboardContainer>
+    );
+  }
 
   return (
     <DashboardContainer>

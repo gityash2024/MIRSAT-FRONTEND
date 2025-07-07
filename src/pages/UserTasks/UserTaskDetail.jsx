@@ -2067,6 +2067,11 @@ const UserTaskDetail = () => {
   const [responseLoading, setResponseLoading] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
   
+  // Section comments state
+  const [sectionComments, setSectionComments] = useState({});
+  const [sectionCommentTexts, setSectionCommentTexts] = useState({});
+  const [commentLoadingStates, setCommentLoadingStates] = useState({});
+  
   // Enhanced time tracking state
   const [isScreenActive, setIsScreenActive] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -2459,6 +2464,13 @@ const UserTaskDetail = () => {
     }
   }, [currentTask]);
 
+  // Fetch section comments when section changes
+  useEffect(() => {
+    if (selectedSection && currentTask?._id) {
+      fetchSectionComments(selectedSection);
+    }
+  }, [selectedSection, currentTask?._id]);
+
   useEffect(() => {
     if (showSignatureModal && signatureMethod === 'draw' && signatureCanvasRef.current) {
       const canvas = signatureCanvasRef.current;
@@ -2671,6 +2683,50 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.error(error.message || 'Failed to add comment');
     }
+  };
+
+  // Section comment functions
+  const fetchSectionComments = async (sectionId) => {
+    try {
+      const data = await userTaskService.getSectionComments(currentTask._id, sectionId);
+      setSectionComments(prev => ({
+        ...prev,
+        [sectionId]: data.data.comments || []
+      }));
+    } catch (error) {
+      console.error('Error fetching section comments:', error);
+    }
+  };
+
+  const handleSectionCommentSubmit = async (sectionId) => {
+    const commentText = sectionCommentTexts[sectionId];
+    if (!commentText?.trim()) return;
+    
+    setCommentLoadingStates(prev => ({ ...prev, [sectionId]: true }));
+    
+    try {
+      const data = await userTaskService.addSectionComment(currentTask._id, sectionId, commentText.trim());
+      
+      // Add the new comment to the section comments
+      setSectionComments(prev => ({
+        ...prev,
+        [sectionId]: [...(prev[sectionId] || []), data.data.comment]
+      }));
+      
+      // Clear the comment text
+      setSectionCommentTexts(prev => ({ ...prev, [sectionId]: '' }));
+      
+      toast.success('Comment added successfully');
+    } catch (error) {
+      console.error('Error adding section comment:', error);
+      toast.error('Failed to add comment');
+    } finally {
+      setCommentLoadingStates(prev => ({ ...prev, [sectionId]: false }));
+    }
+  };
+
+  const handleSectionCommentTextChange = (sectionId, text) => {
+    setSectionCommentTexts(prev => ({ ...prev, [sectionId]: text }));
   };
 
   const handleRefreshProgress = async () => {
@@ -3785,77 +3841,222 @@ const UserTaskDetail = () => {
             
             <QuestionsContent>
               {currentSection ? (
-                currentSection.questions && currentSection.questions.length > 0 ? (
-                  currentSection.questions.map((question, qIndex) => {
-                    const questionId = question._id || question.id;
-                    let response = currentTask.questionnaireResponses?.[questionId];
-                    
-                    if (response === undefined) {
-                      const responseKey = Object.keys(currentTask.questionnaireResponses || {}).find(key => 
-                        key.includes(questionId) || key.endsWith(questionId)
-                      );
-                      if (responseKey) {
-                        response = currentTask.questionnaireResponses[responseKey];
-                      }
-                    }
-                    
-                    const maxScore = question.scoring?.max || 2;
-                    let achievedScore = 0;
-                    
-                    if (response !== undefined && response !== null) {
-                      const questionType = question.type || question.answerType;
+                <>
+                  {currentSection.questions && currentSection.questions.length > 0 ? (
+                    currentSection.questions.map((question, qIndex) => {
+                      const questionId = question._id || question.id;
+                      let response = currentTask.questionnaireResponses?.[questionId];
                       
-                      if (questionType === 'compliance' || questionType === 'yesno') {
-                        if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-                          achievedScore = maxScore;
-                        } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-                          achievedScore = maxScore / 2;
-                        }
-                      } else if (questionType === 'checkbox' || questionType === 'multiple') {
-                        if (Array.isArray(response) && response.length > 0) {
-                          achievedScore = maxScore;
-                        }
-                      } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
-                        if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-                          achievedScore = maxScore;
-                        }
-                      } else {
-                        if (response && (typeof response === 'string'? response.trim() !== '' : true)) {
-                          achievedScore = maxScore;
+                      if (response === undefined) {
+                        const responseKey = Object.keys(currentTask.questionnaireResponses || {}).find(key => 
+                          key.includes(questionId) || key.endsWith(questionId)
+                        );
+                        if (responseKey) {
+                          response = currentTask.questionnaireResponses[responseKey];
                         }
                       }
-                    }
-                    
-                    return (
-                      <QuestionCard key={questionId || qIndex}>
-                        <QuestionHeader>
-                          <QuestionNumber>{qIndex + 1}</QuestionNumber>
-                          <QuestionText>
-                            {question.text}
-                          </QuestionText>
-                          
-                          <QuestionBadges>
-                            <QuestionBadge type={question.required !== false ? 'mandatory' : 'recommended'}>
-                              {question.required !== false ? 'Mandatory' : 'Recommended'}
-                            </QuestionBadge>
-                            <ScoreBadge hasResponse={achievedScore > 0}>
-                              <Star size={14} />
-                              {achievedScore}/{maxScore}
-                            </ScoreBadge>
-                          </QuestionBadges>
-                        </QuestionHeader>
+                      
+                      const maxScore = question.scoring?.max || 2;
+                      let achievedScore = 0;
+                      
+                      if (response !== undefined && response !== null) {
+                        const questionType = question.type || question.answerType;
                         
-                        {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
-                      </QuestionCard>
-                    );
-                  })
-                ) : (
-                  <EmptyState>
-                    <AlertCircle size={32} />
-                    <h3>No Questions Found</h3>
-                    <p>This section doesn't contain any questions.</p>
-                  </EmptyState>
-                )
+                        if (questionType === 'compliance' || questionType === 'yesno') {
+                          if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+                            achievedScore = maxScore;
+                          } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+                            achievedScore = maxScore / 2;
+                          }
+                        } else if (questionType === 'checkbox' || questionType === 'multiple') {
+                          if (Array.isArray(response) && response.length > 0) {
+                            achievedScore = maxScore;
+                          }
+                        } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
+                          if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+                            achievedScore = maxScore;
+                          }
+                        } else {
+                          if (response && (typeof response === 'string'? response.trim() !== '' : true)) {
+                            achievedScore = maxScore;
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <QuestionCard key={questionId || qIndex}>
+                          <QuestionHeader>
+                            <QuestionNumber>{qIndex + 1}</QuestionNumber>
+                            <QuestionText>
+                              {question.text}
+                            </QuestionText>
+                            
+                            <QuestionBadges>
+                              <QuestionBadge type={question.required !== false ? 'mandatory' : 'recommended'}>
+                                {question.required !== false ? 'Mandatory' : 'Recommended'}
+                              </QuestionBadge>
+                              <ScoreBadge hasResponse={achievedScore > 0}>
+                                <Star size={14} />
+                                {achievedScore}/{maxScore}
+                              </ScoreBadge>
+                            </QuestionBadges>
+                          </QuestionHeader>
+                          
+                          {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
+                        </QuestionCard>
+                      );
+                    })
+                  ) : (
+                    <EmptyState>
+                      <AlertCircle size={32} />
+                      <h3>No Questions Found</h3>
+                      <p>This section doesn't contain any questions.</p>
+                    </EmptyState>
+                  )}
+                  
+                  {/* Section Comments - Always show when section is selected */}
+                  <div style={{ 
+                    marginTop: '32px',
+                    padding: '20px',
+                    background: 'rgba(55, 136, 216, 0.02)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(55, 136, 216, 0.1)'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      marginBottom: '16px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1a202c'
+                    }}>
+                      <MessageSquare size={18} />
+                      Section Comments
+                    </div>
+                    
+                    {/* Existing Comments */}
+                    {sectionComments[selectedSection] && sectionComments[selectedSection].length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        {sectionComments[selectedSection].map((comment, index) => (
+                          <div key={comment._id || index} style={{
+                            marginBottom: '12px',
+                            padding: '12px',
+                            background: 'white',
+                            borderRadius: '8px',
+                            border: '1px solid #e5e7eb'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '8px'
+                            }}>
+                              <span style={{ 
+                                fontWeight: '600', 
+                                color: '#374151',
+                                fontSize: '14px'
+                              }}>
+                                {comment.user?.name || 'Unknown User'}
+                              </span>
+                              <span style={{ 
+                                fontSize: '12px', 
+                                color: '#6b7280'
+                              }}>
+                                {formatDateTime(comment.createdAt)}
+                              </span>
+                            </div>
+                            <div style={{ 
+                              color: '#374151',
+                              lineHeight: '1.5'
+                            }}>
+                              {comment.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Add Comment */}
+                    {!isArchivedTask && (
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                        <div style={{ flex: 1 }}>
+                          <textarea
+                            placeholder="Add a comment for this section..."
+                            value={sectionCommentTexts[selectedSection] || ''}
+                            onChange={(e) => handleSectionCommentTextChange(selectedSection, e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              minHeight: '80px'
+                            }}
+                            disabled={commentLoadingStates[selectedSection]}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleSectionCommentSubmit(selectedSection)}
+                          disabled={!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]}
+                          style={{
+                            padding: '12px 20px',
+                            background: (!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]) 
+                              ? '#9ca3af' 
+                              : 'linear-gradient(135deg, #3788d8, #2980b9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: (!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]) 
+                              ? 'not-allowed' 
+                              : 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            minWidth: '100px',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {commentLoadingStates[selectedSection] ? (
+                            <>
+                              <div style={{
+                                width: '14px',
+                                height: '14px',
+                                border: '2px solid transparent',
+                                borderTop: '2px solid white',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                              }} />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Send size={16} />
+                              Comment
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Archived State Message */}
+                    {isArchivedTask && (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '16px',
+                        color: '#6b7280',
+                        fontStyle: 'italic',
+                        fontSize: '14px'
+                      }}>
+                        Comments are disabled for archived tasks
+                      </div>
+                    )}
+                                      </div>
+                  </>
               ) : (
                 <EmptyState>
                   <Info size={48} />
@@ -4449,14 +4650,14 @@ const UserTaskDetail = () => {
                       Inspection Final Report
                     </ReportTitle>
                     
-                    <QuickActionButton 
+                    {/* <QuickActionButton 
                       primary
                       onClick={handleExportReport}
                       disabled={currentTask?.status === 'pending'}
                     >
                       <Download size={16} />
                       Export Excel
-                    </QuickActionButton>
+                    </QuickActionButton> */}
                   </ReportHeader>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
@@ -4840,63 +5041,7 @@ const UserTaskDetail = () => {
               </div>
             </Card>
             
-            <CommentSection>
-              <SectionTitle>
-                <MessageSquare size={20} />
-                Comments
-              </SectionTitle>
-              
-              <CommentsContainer>
-                {currentTask.comments && currentTask.comments.length > 0 ? (
-                  currentTask.comments.map((comment, index) => (
-                    <CommentItem key={index}>
-                      <CommentHeader>
-                        <CommentAuthor>
-                          {comment.user?.name || 'Unknown User'}
-                        </CommentAuthor>
-                        <CommentTime>
-                          {formatDateTime(comment.createdAt)}
-                        </CommentTime>
-                      </CommentHeader>
-                      <CommentText>{comment.text}</CommentText>
-                    </CommentItem>
-                  ))
-                ) : (
-                  <EmptyState>
-                    <MessageSquare size={32} />
-                    <p>No comments yet. Be the first to comment!</p>
-                  </EmptyState>
-                )}
-              </CommentsContainer>
-              
-              {!isArchivedTask && (
-                <CommentForm onSubmit={(e) => {
-                  e.preventDefault();
-                  handleCommentSubmit();
-                }}>
-                  <CommentInput
-                    placeholder="Add a comment..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                  />
-                  <SendButton type="submit" disabled={!commentText.trim()}>
-                    <Send size={18} />
-                  </SendButton>
-                </CommentForm>
-              )}
-              
-              {isArchivedTask && (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '20px',
-                  color: '#64748b',
-                  fontStyle: 'italic',
-                  fontSize: '14px'
-                }}>
-                  Comments are disabled for archived tasks
-                </div>
-              )}
-            </CommentSection>
+
           </SidePanel>
         </ContentContainer>
       </MainContent>

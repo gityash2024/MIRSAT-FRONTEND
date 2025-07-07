@@ -25,7 +25,8 @@ import {
   ChevronDown,
   FileText,
   Database,
-  CheckCircle
+  CheckCircle,
+  Loader
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -443,6 +444,26 @@ const PageNumberButton = styled.button`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// UserListSkeleton component - COMMENTED OUT
+/*
 const UserListSkeleton = () => (
   <PageContainer>
     <Header>
@@ -524,6 +545,7 @@ const UserListSkeleton = () => (
     </UserTable>
   </PageContainer>
 );
+*/
 
 const UserStatus = ({ status }) => {
   const getStatusColor = () => {
@@ -864,7 +886,20 @@ const UserList = () => {
   };
 
   if (isLoading) {
-    return <UserListSkeleton />;
+    return (
+      <PageContainer>
+        <LoadingContainer>
+          <Loader size={40} color="var(--color-navy)" />
+          <p style={{ 
+            marginTop: '16px', 
+            color: 'var(--color-navy)', 
+            fontSize: '16px' 
+          }}>
+            Users loading...
+          </p>
+        </LoadingContainer>
+      </PageContainer>
+    );
   }
 
   return (

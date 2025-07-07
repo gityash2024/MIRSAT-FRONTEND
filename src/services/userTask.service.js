@@ -135,6 +135,28 @@ export const userTaskService = {
       toast.error(errorMessage);
       throw error;
     }
+  },
+
+  // Get section comments
+  getSectionComments: async (taskId, sectionId) => {
+    try {
+      const response = await api.get(`/user-tasks/${taskId}/sections/${sectionId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching section comments:', error);
+      throw error;
+    }
+  },
+
+  // Add section comment
+  addSectionComment: async (taskId, sectionId, comment) => {
+    try {
+      const response = await api.post(`/user-tasks/${taskId}/sections/${sectionId}/comments`, { comment });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding section comment:', error);
+      throw error;
+    }
   }
   
 };

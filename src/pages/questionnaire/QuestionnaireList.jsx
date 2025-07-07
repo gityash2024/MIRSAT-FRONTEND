@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Filter, Search, FileText, Plus, MoreHorizontal, Trash2, Edit, Copy } from 'react-feather';
+import { Filter, Search, FileText, Plus, MoreHorizontal, Trash2, Edit, Copy, Loader } from 'react-feather';
 import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from '../../config/constants';
 import { useDispatch, useSelector } from 'react-redux';
@@ -417,6 +417,30 @@ const PageButton = styled.button`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  p {
+    margin-top: 16px;
+    color: var(--color-navy);
+    font-size: 16px;
+  }
+`;
+
 const QuestionnaireList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -617,9 +641,10 @@ const QuestionnaireList = () => {
         </TableHeader>
 
         {loading || libraryLoading ? (
-          <LoadingWrapper>
-            Loading questions...
-          </LoadingWrapper>
+          <LoadingContainer>
+            <Loader size={40} color="var(--color-navy)" />
+            <p>Questions loading...</p>
+          </LoadingContainer>
         ) : filteredQuestions.length === 0 ? (
           <NoResultsWrapper>
             <h3>No questions found</h3>

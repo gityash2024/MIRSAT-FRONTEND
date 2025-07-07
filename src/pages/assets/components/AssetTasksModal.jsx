@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { X, ChevronDown, ChevronUp, Calendar, Clock, AlertTriangle, CheckCircle, User, Layers } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { fetchTasks } from '../../../store/slices/taskSlice';
-import Skeleton from '../../../components/ui/Skeleton';
+// import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 import { Link } from 'react-router-dom';
 
 const ModalOverlay = styled.div`
@@ -313,13 +313,19 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
           </TasksHeader>
           
           {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[1, 2, 3].map((_, index) => (
-                <div key={index} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                  <Skeleton.Base width="80%" height={20} style={{ marginBottom: '8px' }} />
-                  <Skeleton.Base width="40%" height={16} />
-                </div>
-              ))}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              padding: '40px 0',
+              textAlign: 'center' 
+            }}>
+              <div style={{ 
+                color: 'var(--color-navy)', 
+                fontSize: '16px' 
+              }}>
+                Tasks loading...
+              </div>
             </div>
           ) : tasks.length > 0 ? (
             <TaskList>

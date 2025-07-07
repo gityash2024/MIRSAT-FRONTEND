@@ -1,8 +1,8 @@
 // pages/assets/components/AssetTable.jsx
 import React from 'react';
 import styled from 'styled-components';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
-import Skeleton from '../../../components/ui/Skeleton';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Loader } from 'lucide-react';
+// import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 
 const TableContainer = styled.div`
   background: white;
@@ -145,7 +145,21 @@ const EmptyState = styled.div`
 `;
 
 const LoadingContainer = styled.div`
-  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  flex-direction: column;
+  
+  svg {
+    animation: spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const LoadingRow = styled.div`
@@ -217,17 +231,20 @@ const AssetTable = ({
         </thead>
         <tbody>
           {loading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <tr key={`skeleton-${index}`}>
-                <RowNumber><Skeleton.Base width={20} height={20} /></RowNumber>
-                <td><Skeleton.Base width={80} height={20} /></td>
-                <td><Skeleton.Base width={120} height={20} /></td>
-                <td><Skeleton.Base width={180} height={20} /></td>
-                <td><Skeleton.Base width={120} height={20} /></td>
-                <td><Skeleton.Base width={120} height={20} /></td>
-                <td><Skeleton.Base width={80} height={20} /></td>
-              </tr>
-            ))
+            <tr>
+              <td colSpan={7}>
+                <LoadingContainer>
+                  <Loader size={40} color="var(--color-navy)" />
+                  <p style={{ 
+                    marginTop: '16px', 
+                    color: 'var(--color-navy)', 
+                    fontSize: '16px' 
+                  }}>
+                    Assets loading...
+                  </p>
+                </LoadingContainer>
+              </td>
+            </tr>
           ) : assets.length === 0 ? (
             <tr>
               <td colSpan={7}>
