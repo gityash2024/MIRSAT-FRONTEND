@@ -157,6 +157,18 @@ export const uploadTaskAttachment = createAsyncThunk(
   }
 );
 
+export const archiveTask = createAsyncThunk(
+  'userTasks/archiveTask',
+  async (taskId, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.archiveTask(taskId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 const userTasksSlice = createSlice({
   name: 'userTasks',
   initialState: {
@@ -378,6 +390,31 @@ const userTasksSlice = createSlice({
       .addCase(uploadTaskAttachment.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload?.message || 'Failed to upload attachment';
+        toast.error(state.error);
+      })
+
+      .addCase(archiveTask.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(archiveTask.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const updatedTask = action.payload;
+        
+        if (state.currentTask && state.currentTask._id === updatedTask._id) {
+          state.currentTask = updatedTask;
+        }
+        
+        // Update the task in the results array
+        state.tasks.results = state.tasks.results.map(task => 
+          task._id === updatedTask._id ? updatedTask : task
+        );
+        
+        toast.success('Task archived successfully');
+      })
+      .addCase(archiveTask.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload?.message || 'Failed to archive task';
         toast.error(state.error);
       });
   }

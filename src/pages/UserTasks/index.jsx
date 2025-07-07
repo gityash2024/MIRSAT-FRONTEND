@@ -259,6 +259,8 @@ const StatusBadge = styled.span`
         return 'background-color: rgba(225, 245, 254, 0.8); color: #0288d1;';
       case 'completed':
         return 'background-color: rgba(232, 245, 233, 0.8); color: #388e3c;';
+      case 'archived':
+        return 'background-color: rgba(243, 232, 255, 0.8); color: #8b5cf6;';
       case 'incomplete':
         return 'background-color: rgba(255, 235, 238, 0.8); color: #d32f2f;';
       default:
@@ -703,6 +705,8 @@ const StatusIcon = ({ status, size = 18 }) => {
       return <Activity size={size} color="#0288d1" />;
     case 'completed':
       return <CheckCircle size={size} color="#388e3c" />;
+    case 'archived':
+      return <CheckCircle size={size} color="#8b5cf6" />;
     case 'incomplete':
       return <XCircle size={size} color="#d32f2f" />;
     default:
@@ -1128,15 +1132,15 @@ const UserTasks = () => {
             In Progress
           </FilterButton>
           <FilterButton 
-            onClick={(e) => handleFilterClick('completed', e)}
+            onClick={(e) => handleFilterClick('archived', e)}
             style={{
-              background: activeFilter === 'completed' 
-                ? 'rgba(232, 245, 233, 0.7)' 
+              background: activeFilter === 'archived' 
+                ? 'rgba(243, 232, 255, 0.7)' 
                 : 'rgba(255, 255, 255, 0.5)'
             }}
           >
             <CheckCircle size={16} />
-            Completed
+            Archive
           </FilterButton>
         </ButtonGroup>
       </FilterBar>

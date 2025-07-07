@@ -63,7 +63,8 @@ import {
   addUserTaskComment,
   exportTaskReport,
   updateTaskQuestionnaire,
-  saveTaskSignature
+  saveTaskSignature,
+  archiveTask
 } from '../../store/slices/userTasksSlice';
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
@@ -2049,6 +2050,8 @@ const UserTaskDetail = () => {
   const [signatureImage, setSignatureImage] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState('draw');
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [inspectionPages, setInspectionPages] = useState([]);
   const [scores, setScores] = useState({
     total: 0,
@@ -2171,6 +2174,9 @@ const UserTaskDetail = () => {
     
     return percentage;
   }, [currentTask, inspectionPages]);
+
+  // Add readonly mode check for archived tasks
+  const isArchivedTask = currentTask?.status === 'archived';
 
   // Define timer functions BEFORE useEffects that use them
   const startScreenTimer = useCallback(() => {
@@ -2977,12 +2983,93 @@ const UserTaskDetail = () => {
     }
   };
 
+  // Handle Complete & Archive functionality
+  const handleCompleteAndArchive = async () => {
+    // Check task completion percentage first - use the same calculation as the UI
+    const dbProgress = currentTask?.overallProgress || 0;
+    const calculatedProgress = calculateTaskCompletionPercentage();
+    const actualProgress = Math.max(dbProgress, calculatedProgress);
+    
+    if (actualProgress < 100) {
+      toast.error(
+        `⚠️ Task must be 100% completed before archiving.\n\nCurrent progress: ${actualProgress}%\n\nPlease complete all inspection sections to proceed.`,
+        {
+          duration: 8000,
+          style: {
+            maxWidth: '500px',
+            whiteSpace: 'pre-line'
+          }
+        }
+      );
+      return;
+    }
+
+    // Check if task has signature
+    if (!currentTask?.signature && !signatureImage) {
+      setShowSignatureModal(true);
+      return;
+    }
+
+    // Show confirmation modal
+    setShowArchiveModal(true);
+  };
+
+  const handleConfirmArchive = async () => {
+    try {
+      setIsArchiving(true);
+      toast.loading('Completing and archiving inspection...');
+
+      // Archive the task
+      await dispatch(archiveTask(currentTask._id)).unwrap();
+
+      // Refresh task data
+      await dispatch(fetchUserTaskDetails(currentTask._id));
+
+      toast.dismiss();
+      toast.success('🎉 Inspection completed and archived successfully!');
+      setShowArchiveModal(false);
+
+      // Navigate back to tasks list after a short delay
+      setTimeout(() => {
+        navigate('/user-tasks');
+      }, 2000);
+
+    } catch (error) {
+      toast.dismiss();
+      
+      // Handle specific error types with user-friendly messages
+      let errorMessage = 'Failed to archive task';
+      
+      if (error.message) {
+        if (error.message.includes('100% completed')) {
+          errorMessage = `⚠️ ${error.message}`;
+        } else if (error.message.includes('signed before archiving')) {
+          errorMessage = '🖊️ Please add your signature before archiving the inspection';
+        } else if (error.message.includes('must be started')) {
+          errorMessage = '🚀 Please start the inspection before archiving';
+        } else {
+          errorMessage = `❌ ${error.message}`;
+        }
+      }
+      
+      toast.error(errorMessage, {
+        duration: 6000,
+        style: {
+          maxWidth: '500px',
+        }
+      });
+      
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   const renderQuestionInput = (question, task, onSaveResponse) => {
     const questionId = question._id;
     const response = task.questionnaireResponses?.[questionId];
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
-    const isDisabled = task.status === 'completed';
+    const isDisabled = task.status === 'completed' || task.status === 'archived';
     
     let questionType = question.type || question.answerType;
     
@@ -3459,8 +3546,9 @@ const UserTaskDetail = () => {
           <InspectionControls>
             {/* Previous Button */}
             <NavigationButton 
-              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
+              disabled={isArchivedTask || inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
               onClick={() => {
+                if (isArchivedTask) return;
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
                 if (currentIndex > 0) {
                   const prevPage = inspectionPages[currentIndex - 1];
@@ -3480,8 +3568,14 @@ const UserTaskDetail = () => {
             <DropdownContainer>
               <DropdownButton 
                 onClick={(e) => {
+                  if (isArchivedTask) return;
                   e.stopPropagation();
                   setShowPageDropdown(!showPageDropdown);
+                }}
+                disabled={isArchivedTask}
+                style={{ 
+                  cursor: isArchivedTask ? 'default' : 'pointer',
+                  opacity: isArchivedTask ? 0.7 : 1
                 }}
               >
                 <span>
@@ -3490,7 +3584,7 @@ const UserTaskDetail = () => {
                 <ChevronDown size={16} />
               </DropdownButton>
               
-              {showPageDropdown && (
+              {showPageDropdown && !isArchivedTask && (
                 <DropdownMenu>
                   {inspectionPages.map((page, index) => {
                     const pageId = page.id || page._id;
@@ -3500,6 +3594,7 @@ const UserTaskDetail = () => {
                       <DropdownItem
                         key={pageId}
                         onClick={(e) => {
+                          if (isArchivedTask) return;
                           e.stopPropagation();
                           setSelectedPage(pageId);
                           setShowPageDropdown(false);
@@ -3528,8 +3623,9 @@ const UserTaskDetail = () => {
 
             {/* Next Button */}
             <NavigationButton 
-              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
+              disabled={isArchivedTask || inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
               onClick={() => {
+                if (isArchivedTask) return;
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
                 if (currentIndex < inspectionPages.length - 1) {
                   const nextPage = inspectionPages[currentIndex + 1];
@@ -3573,8 +3669,9 @@ const UserTaskDetail = () => {
               <SectionNavigationControls ref={sectionNavigationRef}>
                 {/* Previous Section Button */}
                 <SectionNavigationButton 
-                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
+                  disabled={isArchivedTask || currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
                   onClick={() => {
+                    if (isArchivedTask) return;
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
                     if (currentIndex > 0) {
                       const prevSection = currentPage.sections[currentIndex - 1];
@@ -3599,8 +3696,9 @@ const UserTaskDetail = () => {
 
                 {/* Next Section Button */}
                 <SectionNavigationButton 
-                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
+                  disabled={isArchivedTask || currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
                   onClick={() => {
+                    if (isArchivedTask) return;
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
                     if (currentIndex < currentPage.sections.length - 1) {
                       const nextSection = currentPage.sections[currentIndex + 1];
@@ -3631,7 +3729,11 @@ const UserTaskDetail = () => {
                     <SectionNavItem
                       key={sectionId}
                       active={isActive}
-                      onClick={() => setSelectedSection(sectionId)}
+                      onClick={() => !isArchivedTask && setSelectedSection(sectionId)}
+                      style={{ 
+                        cursor: isArchivedTask ? 'default' : 'pointer',
+                        opacity: isArchivedTask ? 0.7 : 1
+                      }}
                     >
                       <SectionTitle2>{`${idx + 1}. ${section.name}`}</SectionTitle2>
                       <SectionScore active={isActive}>
@@ -3890,14 +3992,14 @@ const UserTaskDetail = () => {
                 </div>
               )}
               
-              <QuickActionButton 
+              {/* <QuickActionButton 
                 primary
                 onClick={handleExportReport}
                 disabled={currentTask.status === 'pending'}
               >
                 <Download size={16} />
                 Export Report
-              </QuickActionButton>
+              </QuickActionButton> */}
             </div>
           </QuickActions>
         </TopBar>
@@ -3916,7 +4018,26 @@ const UserTaskDetail = () => {
               {currentTask.status === 'pending' && 'Pending'}
               {currentTask.status === 'in_progress' && 'In Progress'}
               {currentTask.status === 'completed' && 'Completed'}
+              {currentTask.status === 'archived' && 'Archived'}
             </StatusBadge>
+            
+            {isArchivedTask && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: 'rgba(55, 136, 216, 0.1)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#3788d8',
+                fontWeight: '600',
+                border: '1px solid rgba(55, 136, 216, 0.2)'
+              }}>
+                <CheckCircle size={14} />
+                READ-ONLY MODE
+              </div>
+            )}
             
             {currentTask.priority && (
               <PriorityBadge priority={currentTask.priority}>
@@ -4046,7 +4167,7 @@ const UserTaskDetail = () => {
                 
                 {renderPreInspectionQuestionnaire()}
                 
-                {(currentTask.status === 'pending' || !currentTask.status) && (
+                {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <StartTaskButton onClick={handleStartTask} disabled={actionLoading}>
                       <Play size={20} />
@@ -4055,12 +4176,44 @@ const UserTaskDetail = () => {
                   </div>
                 )}
                 
-                {currentTask.status === 'in_progress' && (
+                {currentTask.status === 'in_progress' && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <ContinueButton onClick={() => setActiveTab('inspection')} disabled={actionLoading}>
                       <Activity size={20} />
                       Continue Inspection
                     </ContinueButton>
+                  </div>
+                )}
+                
+                {isArchivedTask && (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    margin: '32px 0',
+                    padding: '24px',
+                    background: 'rgba(55, 136, 216, 0.05)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(55, 136, 216, 0.2)'
+                  }}>
+                    <div style={{ 
+                      fontSize: '18px', 
+                      fontWeight: '600', 
+                      color: '#3788d8',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      justifyContent: 'center'
+                    }}>
+                      <CheckCircle size={20} />
+                      Task Completed & Archived
+                    </div>
+                    <p style={{ 
+                      fontSize: '14px', 
+                      color: '#64748b',
+                      margin: 0
+                    }}>
+                      This inspection has been completed and archived. All data is now in read-only mode.
+                    </p>
                   </div>
                 )}
               </>
@@ -4467,16 +4620,155 @@ const UserTaskDetail = () => {
                   </SignatureSection>
                 </ReportSection>
                 
-                <div style={{ textAlign: 'center', marginTop: '32px' }}>
-                  <QuickActionButton 
-                    primary
-                    onClick={handleExportReport}
-                    disabled={currentTask?.status === 'pending'}
-                    style={{ padding: '16px 32px', fontSize: '16px' }}
-                  >
-                    <Download size={20} />
-                    Download Full Report (Excel)
-                  </QuickActionButton>
+                {/* Action Buttons Section */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '20px',
+                  marginTop: '32px',
+                  padding: '24px',
+                  background: 'rgba(248, 250, 252, 0.6)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(226, 232, 240, 0.8)'
+                }}>
+                  
+                  {/* Button Row */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '16px',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}>
+                    
+                    {/* Complete & Archive Button */}
+                    {currentTask?.status !== 'archived' && (() => {
+                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const isProgressComplete = actualProgress >= 100;
+                      const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete;
+                      
+                      return (
+                        <QuickActionButton 
+                          primary
+                          onClick={handleCompleteAndArchive}
+                          disabled={isButtonDisabled}
+                          style={{ 
+                            padding: '16px 32px', 
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            background: isProgressComplete 
+                              ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+                              : 'linear-gradient(135deg, #94a3b8, #64748b)',
+                            boxShadow: isProgressComplete 
+                              ? '0 4px 15px rgba(22, 163, 74, 0.4)' 
+                              : '0 2px 8px rgba(100, 116, 139, 0.2)',
+                            border: isProgressComplete 
+                              ? '1px solid rgba(22, 163, 74, 0.3)' 
+                              : '1px solid rgba(100, 116, 139, 0.3)',
+                            minWidth: '240px',
+                            height: '56px',
+                            cursor: !isButtonDisabled ? 'pointer' : 'not-allowed'
+                          }}
+                        >
+                          {isArchiving ? (
+                            <>
+                              <Loader size={20} />
+                              Archiving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle size={20} />
+                              Complete & Archive
+                            </>
+                          )}
+                        </QuickActionButton>
+                      );
+                    })()}
+                    
+                    {/* Download Report Button */}
+                    <QuickActionButton 
+                      primary
+                      onClick={handleExportReport}
+                      disabled={currentTask?.status !== 'archived'}
+                      style={{ 
+                        padding: '16px 32px', 
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        background: currentTask?.status === 'archived' 
+                          ? 'linear-gradient(135deg, #3788d8, #2c3e50)' 
+                          : 'linear-gradient(135deg, #94a3b8, #64748b)',
+                        boxShadow: currentTask?.status === 'archived' 
+                          ? '0 4px 15px rgba(55, 136, 216, 0.4)' 
+                          : '0 2px 8px rgba(100, 116, 139, 0.2)',
+                        border: currentTask?.status === 'archived' 
+                          ? '1px solid rgba(55, 136, 216, 0.3)' 
+                          : '1px solid rgba(100, 116, 139, 0.3)',
+                        minWidth: '240px',
+                        height: '56px',
+                        cursor: currentTask?.status === 'archived' ? 'pointer' : 'not-allowed'
+                      }}
+                    >
+                      <Download size={20} />
+                      Download Report
+                    </QuickActionButton>
+                  </div>
+                  
+                  {/* Status Message */}
+                  <div style={{ textAlign: 'center' }}>
+                    {currentTask?.status === 'archived' ? (
+                      <p style={{ 
+                        fontSize: '14px', 
+                        color: '#16a34a', 
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'center'
+                      }}>
+                        <CheckCircle size={16} />
+                        Inspection completed and archived - Report is ready for download
+                      </p>
+                    ) : (() => {
+                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const isComplete = actualProgress >= 100;
+                      
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                          <p style={{ 
+                            fontSize: '14px', 
+                            color: isComplete ? '#16a34a' : '#f59e0b', 
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            justifyContent: 'center'
+                          }}>
+                            {isComplete ? (
+                              <>
+                                <CheckCircle size={16} />
+                                Inspection completed ({actualProgress}%) - Ready to archive
+                              </>
+                            ) : (
+                              <>
+                                <Clock size={16} />
+                                Progress: {actualProgress}% - Complete all sections to archive
+                              </>
+                            )}
+                          </p>
+                          {!isComplete && (
+                            <p style={{ 
+                              fontSize: '12px', 
+                              color: '#64748b', 
+                              fontStyle: 'italic'
+                            }}>
+                              Complete all inspection sections to enable archiving
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </>
             )}
@@ -4577,19 +4869,33 @@ const UserTaskDetail = () => {
                 )}
               </CommentsContainer>
               
-              <CommentForm onSubmit={(e) => {
-                e.preventDefault();
-                handleCommentSubmit();
-              }}>
-                <CommentInput
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                />
-                <SendButton type="submit" disabled={!commentText.trim()}>
-                  <Send size={18} />
-                </SendButton>
-              </CommentForm>
+              {!isArchivedTask && (
+                <CommentForm onSubmit={(e) => {
+                  e.preventDefault();
+                  handleCommentSubmit();
+                }}>
+                  <CommentInput
+                    placeholder="Add a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                  />
+                  <SendButton type="submit" disabled={!commentText.trim()}>
+                    <Send size={18} />
+                  </SendButton>
+                </CommentForm>
+              )}
+              
+              {isArchivedTask && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '20px',
+                  color: '#64748b',
+                  fontStyle: 'italic',
+                  fontSize: '14px'
+                }}>
+                  Comments are disabled for archived tasks
+                </div>
+              )}
             </CommentSection>
           </SidePanel>
         </ContentContainer>
@@ -4602,7 +4908,7 @@ const UserTaskDetail = () => {
         </LoadingIndicator>
       )}
       
-      {showSignatureModal && (
+      {showSignatureModal && !isArchivedTask && (
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
@@ -4712,6 +5018,122 @@ const UserTaskDetail = () => {
                 Save & Submit
               </SaveButton>
             </SignatureActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Archive Confirmation Modal */}
+      {showArchiveModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Complete & Archive Inspection</ModalTitle>
+              <CloseButton onClick={() => setShowArchiveModal(false)}>
+                <X size={20} />
+              </CloseButton>
+            </ModalHeader>
+            
+            <div style={{ padding: '20px 0' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '16px',
+                marginBottom: '20px',
+                padding: '16px',
+                background: 'rgba(22, 163, 74, 0.1)',
+                borderRadius: '8px',
+                border: '1px solid rgba(22, 163, 74, 0.2)'
+              }}>
+                <CheckCircle size={48} color="#16a34a" />
+                <div>
+                  <h3 style={{ 
+                    margin: 0, 
+                    fontSize: '18px', 
+                    fontWeight: '600', 
+                    color: '#16a34a' 
+                  }}>
+                    Ready to Complete
+                  </h3>
+                  <p style={{ 
+                    margin: '4px 0 0 0', 
+                    color: '#64748b', 
+                    fontSize: '14px' 
+                  }}>
+                    This inspection has been signed and is ready to be archived.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ color: '#374151', lineHeight: '1.6' }}>
+                  By clicking "Complete & Archive", this inspection will be:
+                </p>
+                <ul style={{ 
+                  marginTop: '12px', 
+                  paddingLeft: '24px', 
+                  color: '#64748b',
+                  lineHeight: '1.6'
+                }}>
+                  <li>Marked as completed and archived</li>
+                  <li>Made available for report download</li>
+                  <li>Moved to the Archive section in your tasks list</li>
+                  <li>No longer editable</li>
+                </ul>
+              </div>
+
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(245, 158, 11, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                marginBottom: '20px'
+              }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: '14px', 
+                  color: '#92400e',
+                  fontWeight: '500'
+                }}>
+                  ⚠️ This action cannot be undone. Please ensure all inspection work is complete.
+                </p>
+              </div>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              justifyContent: 'flex-end',
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '20px'
+            }}>
+              <QuickActionButton 
+                onClick={() => setShowArchiveModal(false)}
+                disabled={isArchiving}
+              >
+                Cancel
+              </QuickActionButton>
+              <QuickActionButton 
+                primary
+                onClick={handleConfirmArchive}
+                disabled={isArchiving}
+                style={{ 
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  minWidth: '160px'
+                }}
+              >
+                {isArchiving ? (
+                  <>
+                    <Loader size={16} />
+                    Archiving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={16} />
+                    Complete & Archive
+                  </>
+                )}
+              </QuickActionButton>
+            </div>
           </ModalContent>
         </ModalOverlay>
       )}

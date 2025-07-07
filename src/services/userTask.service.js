@@ -122,6 +122,19 @@ export const userTaskService = {
       console.error('Error saving task signature:', error);
       throw error;
     }
+  },
+
+  // Complete and archive a task
+  archiveTask: async (taskId) => {
+    try {
+      const response = await api.post(`/user-tasks/${taskId}/archive`);
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to archive task';
+      toast.error(errorMessage);
+      throw error;
+    }
   }
   
 };
