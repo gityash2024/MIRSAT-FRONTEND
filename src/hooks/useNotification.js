@@ -14,8 +14,8 @@ const useNotification = () => {
   // Initialize socket connection
   useEffect(() => {
     if (user && token) {
-      // const socketInstance = io(process.env.REACT_APP_API_URL || 'http://localhost:5001', {
-      const socketInstance = io(process.env.REACT_APP_API_URL || 'https://mirsat.mymultimeds.com', {
+      const socketInstance = io(process.env.REACT_APP_API_URL || 'http://localhost:5001', {
+      // const socketInstance = io(process.env.REACT_APP_API_URL || 'https://mirsat.mymultimeds.com', {
         auth: { token },
         withCredentials: true,
         transports: ['websocket', 'polling']

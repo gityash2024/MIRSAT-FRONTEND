@@ -247,9 +247,19 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
   const [editingTypeId, setEditingTypeId] = useState(null);
   const [editingTypeName, setEditingTypeName] = useState('');
 
+  // Helper function to get asset type ID (handles both 'id' and '_id' fields)
+  const getAssetTypeId = (assetType) => {
+    return assetType._id || assetType.id;
+  };
+
   useEffect(() => {
     if (isOpen) {
       dispatch(fetchAssetTypes());
+      // Reset form states when modal opens
+      setNewTypeName('');
+      setError('');
+      setEditingTypeId(null);
+      setEditingTypeName('');
     }
   }, [dispatch, isOpen]);
 
@@ -258,6 +268,16 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
       setError('Type name is required');
       return false;
     }
+    
+    // Check if type name already exists
+    const existingType = assetTypes.find(type => 
+      type.name.toLowerCase() === newTypeName.trim().toLowerCase()
+    );
+    if (existingType) {
+      setError('Asset type already exists');
+      return false;
+    }
+    
     setError('');
     return true;
   };
@@ -273,9 +293,10 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
     setIsSubmitting(true);
     
     try {
-      await dispatch(createAssetType({ name: newTypeName })).unwrap();
+      await dispatch(createAssetType({ name: newTypeName.trim() })).unwrap();
       setNewTypeName('');
-      dispatch(fetchAssetTypes());
+      // Refresh the list
+      await dispatch(fetchAssetTypes());
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error creating asset type:', error);
@@ -286,7 +307,9 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const handleEditClick = (assetType) => {
-    setEditingTypeId(assetType._id);
+    // Cancel any existing edit first
+    const assetTypeId = getAssetTypeId(assetType);
+    setEditingTypeId(assetTypeId);
     setEditingTypeName(assetType.name);
   };
 
@@ -295,34 +318,58 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
     setEditingTypeName('');
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = async (assetType) => {
     if (!editingTypeName.trim()) {
+      return;
+    }
+    
+    const assetTypeId = getAssetTypeId(assetType);
+    
+    // Check if the new name conflicts with existing types (excluding current one)
+    const existingType = assetTypes.find(type => {
+      const typeId = getAssetTypeId(type);
+      return typeId !== assetTypeId && type.name.toLowerCase() === editingTypeName.trim().toLowerCase();
+    });
+    if (existingType) {
+      alert('Asset type name already exists');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      await dispatch(updateAssetType({ id, data: { name: editingTypeName } })).unwrap();
+      await dispatch(updateAssetType({ id: assetTypeId, data: { name: editingTypeName.trim() } })).unwrap();
       setEditingTypeId(null);
       setEditingTypeName('');
-      dispatch(fetchAssetTypes());
+      // Refresh the list
+      await dispatch(fetchAssetTypes());
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error updating asset type:', error);
+      alert('Failed to update asset type');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteType = async (id) => {
-    if (window.confirm('Are you sure you want to delete this asset type?')) {
+  const handleDeleteType = async (assetType) => {
+    const assetTypeId = getAssetTypeId(assetType);
+    
+    if (!assetTypeId) {
+      console.error('No ID found for asset type deletion:', assetType);
+      alert('Error: Cannot delete asset type - no ID found');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this asset type? This action cannot be undone.')) {
       try {
-        await dispatch(deleteAssetType(id)).unwrap();
-        dispatch(fetchAssetTypes());
+        await dispatch(deleteAssetType(assetTypeId)).unwrap();
+        // Refresh the list
+        await dispatch(fetchAssetTypes());
         if (onSuccess) onSuccess();
       } catch (error) {
         console.error('Error deleting asset type:', error);
+        alert('Failed to delete asset type. It may be in use by existing assets.');
       }
     }
   };
@@ -360,13 +407,14 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                     value={newTypeName}
                     onChange={handleInputChange}
                     placeholder="Enter asset type name"
+                    disabled={isSubmitting}
                   />
                   <Button 
                     variant="primary" 
                     onClick={handleAddType} 
                     disabled={isSubmitting || !newTypeName.trim()}
                   >
-                    Add
+                    {isSubmitting ? 'Adding...' : 'Add'}
                   </Button>
                 </div>
                 {error && <ErrorText>{error}</ErrorText>}
@@ -382,47 +430,73 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                 ) : assetTypes.length === 0 ? (
                   <EmptyState>No asset types found. Add one above.</EmptyState>
                 ) : (
-                  assetTypes.map(assetType => (
-                    <TypeItem key={assetType._id}>
-                      {editingTypeId === assetType._id ? (
-                        <EditableRow>
-                          <EditInput
-                            type="text"
-                            value={editingTypeName}
-                            onChange={(e) => setEditingTypeName(e.target.value)}
-                            autoFocus
-                          />
-                          <IconButton 
-                            onClick={() => handleSaveEdit(assetType._id)}
-                            disabled={isSubmitting || !editingTypeName.trim()}
-                          >
-                            <Check size={16} />
-                          </IconButton>
-                          <IconButton danger onClick={handleCancelEdit}>
-                            <XIcon size={16} />
-                          </IconButton>
-                        </EditableRow>
-                      ) : (
-                        <>
-                          <TypeName>{assetType.name}</TypeName>
-                          <TypeActions>
-                            <IconButton onClick={() => handleEditClick(assetType)}>
-                              <Edit size={16} />
+                  assetTypes.map(assetType => {
+                    const assetTypeId = getAssetTypeId(assetType);
+                    return (
+                      <TypeItem key={assetTypeId}>
+                        {editingTypeId === assetTypeId ? (
+                          <EditableRow>
+                            <EditInput
+                              type="text"
+                              value={editingTypeName}
+                              onChange={(e) => setEditingTypeName(e.target.value)}
+                              autoFocus
+                              disabled={isSubmitting}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveEdit(assetType);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelEdit();
+                                }
+                              }}
+                            />
+                            <IconButton 
+                              onClick={() => handleSaveEdit(assetType)}
+                              disabled={isSubmitting || !editingTypeName.trim()}
+                              title="Save changes"
+                            >
+                              <Check size={16} />
                             </IconButton>
-                            <IconButton danger onClick={() => handleDeleteType(assetType._id)}>
-                              <Trash size={16} />
+                            <IconButton 
+                              danger 
+                              onClick={handleCancelEdit}
+                              disabled={isSubmitting}
+                              title="Cancel editing"
+                            >
+                              <XIcon size={16} />
                             </IconButton>
-                          </TypeActions>
-                        </>
-                      )}
-                    </TypeItem>
-                  ))
+                          </EditableRow>
+                        ) : (
+                          <>
+                            <TypeName>{assetType.name}</TypeName>
+                            <TypeActions>
+                              <IconButton 
+                                onClick={() => handleEditClick(assetType)}
+                                disabled={isSubmitting}
+                                title="Edit asset type"
+                              >
+                                <Edit size={16} />
+                              </IconButton>
+                              <IconButton 
+                                danger 
+                                onClick={() => handleDeleteType(assetType)}
+                                disabled={isSubmitting}
+                                title="Delete asset type"
+                              >
+                                <Trash size={16} />
+                              </IconButton>
+                            </TypeActions>
+                          </>
+                        )}
+                      </TypeItem>
+                    );
+                  })
                 )}
               </TypesList>
             </ModalBody>
             
             <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
+              <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
                 Close
               </Button>
             </ModalFooter>

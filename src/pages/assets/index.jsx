@@ -136,7 +136,20 @@ const LoadingContainer = styled.div`
 const AssetList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
-  const { assets, loading, pagination } = useSelector(state => state.assets);
+  
+  // Safe selector with fallback values to prevent crashes on refresh
+  const { assets, loading, pagination, error } = useSelector(state => ({
+    assets: state.assets?.assets || [],
+    loading: state.assets?.loading || false,
+    pagination: state.assets?.pagination || {
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      limit: 10
+    },
+    error: state.assets?.error || null
+  }));
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
@@ -144,32 +157,73 @@ const AssetList = () => {
   const [currentAsset, setCurrentAsset] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [filters, setFilters] = useState({});
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   useEffect(() => {
+    // Load initial data
     loadAssets();
-    dispatch(fetchAssetTypes());
-  }, [pagination.page, searchTerm]);
+    loadAssetTypes();
+  }, []);
 
-  const loadAssets = () => {
-    const params = {
-      page: pagination.page,
-      limit: pagination.limit,
-      search: searchTerm,
-      ...filters
+  useEffect(() => {
+    // Debounced search effect
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      loadAssets();
+    }, 500); // 500ms debounce
+    
+    setSearchTimeout(timeout);
+    
+    return () => {
+      if (timeout) clearTimeout(timeout);
     };
-    dispatch(fetchAssets(params));
+  }, [searchTerm, pagination.page, filters]);
+
+  const loadAssets = async () => {
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchTerm,
+        ...filters
+      };
+      await dispatch(fetchAssets(params)).unwrap();
+    } catch (error) {
+      console.error('Error loading assets:', error);
+    }
+  };
+
+  const loadAssetTypes = async () => {
+    try {
+      await dispatch(fetchAssetTypes()).unwrap();
+    } catch (error) {
+      console.error('Error loading asset types:', error);
+    }
   };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    // Reset to page 1 when searching
+    if (pagination.page !== 1) {
+      dispatch(setPage(1));
+    }
   };
 
   const handlePageChange = (newPage) => {
-    dispatch(setPage(newPage));
+    if (newPage !== pagination.page && newPage >= 1 && newPage <= pagination.totalPages) {
+      dispatch(setPage(newPage));
+    }
   };
 
-  const handleExport = () => {
-    dispatch(exportAssets());
+  const handleExport = async () => {
+    try {
+      await dispatch(exportAssets()).unwrap();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
   };
 
   const handleOpenModal = (asset = null) => {
@@ -190,26 +244,81 @@ const AssetList = () => {
     setIsTypeModalOpen(false);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!id) {
       console.error('No ID provided for delete operation');
       alert('Error: Cannot delete asset - no ID provided');
       return;
     }
     
-    if (window.confirm('Are you sure you want to delete this asset?')) {
-      dispatch(deleteAsset(id)).then(() => {
-        loadAssets();
-      }).catch((error) => {
+    if (window.confirm('Are you sure you want to delete this asset? This action cannot be undone.')) {
+      try {
+        await dispatch(deleteAsset(id)).unwrap();
+        // Reload assets after successful deletion
+        await loadAssets();
+      } catch (error) {
         console.error('Delete failed:', error);
-      });
+        alert('Failed to delete asset. Please try again.');
+      }
     }
   };
 
   const handleViewTasks = (asset) => {
+    if (!asset || (!asset._id && !asset.id)) {
+      console.error('Invalid asset for viewing tasks:', asset);
+      alert('Error: Cannot view tasks for this asset');
+      return;
+    }
     setSelectedAsset(asset);
     setIsTasksModalOpen(true);
   };
+
+  const handleAssetSuccess = async () => {
+    // Reload data after successful asset operations
+    await loadAssets();
+    await loadAssetTypes();
+  };
+
+  const handleTypeModalSuccess = async () => {
+    // Reload asset types after successful operations
+    await loadAssetTypes();
+  };
+
+  // Error boundary-like error handling
+  if (error) {
+    return (
+      <PageContainer>
+        <Header>
+          <PageTitle>Asset Management</PageTitle>
+          <SubTitle>Manage your assets efficiently</SubTitle>
+        </Header>
+        <div style={{ 
+          padding: '40px', 
+          textAlign: 'center', 
+          background: '#fef2f2', 
+          border: '1px solid #fecaca', 
+          borderRadius: '8px',
+          color: '#b91c1c'
+        }}>
+          <p><strong>Error loading assets:</strong> {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{
+              padding: '8px 16px',
+              background: 'var(--color-navy)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '16px'
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -233,6 +342,7 @@ const AssetList = () => {
           <Button 
             variant="secondary" 
             onClick={handleOpenTypeModal}
+            disabled={loading}
           >
             <Plus size={18} />
             Add Asset Type
@@ -241,6 +351,7 @@ const AssetList = () => {
           <Button 
             variant="secondary" 
             onClick={handleExport}
+            disabled={loading || assets.length === 0}
           >
             <Download size={18} />
             Export
@@ -249,6 +360,7 @@ const AssetList = () => {
           <Button 
             variant="primary" 
             onClick={() => handleOpenModal()}
+            disabled={loading}
           >
             <Plus size={18} />
             Add Asset
@@ -271,7 +383,7 @@ const AssetList = () => {
           isOpen={isModalOpen} 
           onClose={handleCloseModal} 
           asset={currentAsset}
-          onSuccess={loadAssets}
+          onSuccess={handleAssetSuccess}
         />
       )}
       
@@ -279,14 +391,17 @@ const AssetList = () => {
         <AssetTypeModal 
           isOpen={isTypeModalOpen} 
           onClose={handleCloseTypeModal} 
-          onSuccess={() => dispatch(fetchAssetTypes())}
+          onSuccess={handleTypeModalSuccess}
         />
       )}
 
       {isTasksModalOpen && selectedAsset && (
         <AssetTasksModal
           isOpen={isTasksModalOpen}
-          onClose={() => setIsTasksModalOpen(false)}
+          onClose={() => {
+            setIsTasksModalOpen(false);
+            setSelectedAsset(null);
+          }}
           asset={selectedAsset}
         />
       )}

@@ -23,8 +23,9 @@ export const createAssetType = createAsyncThunk(
       toast.success('Asset type created successfully');
       return response;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create asset type');
-      return rejectWithValue(error.response?.data?.message || 'Failed to create asset type');
+      const errorMessage = error.response?.data?.message || 'Failed to create asset type';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -37,8 +38,9 @@ export const updateAssetType = createAsyncThunk(
       toast.success('Asset type updated successfully');
       return response;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update asset type');
-      return rejectWithValue(error.response?.data?.message || 'Failed to update asset type');
+      const errorMessage = error.response?.data?.message || 'Failed to update asset type';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -51,13 +53,14 @@ export const deleteAssetType = createAsyncThunk(
       toast.success('Asset type deleted successfully');
       return { id, ...response };
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete asset type');
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete asset type');
+      const errorMessage = error.response?.data?.message || 'Failed to delete asset type';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Initial state
+// Initial state with better defaults
 const initialState = {
   assetTypes: [],
   loading: false,
@@ -71,6 +74,9 @@ const assetTypeSlice = createSlice({
   reducers: {
     clearAssetTypeError: (state) => {
       state.error = null;
+    },
+    resetAssetTypeState: (state) => {
+      return initialState;
     }
   },
   extraReducers: (builder) => {
@@ -82,11 +88,13 @@ const assetTypeSlice = createSlice({
       })
       .addCase(fetchAssetTypes.fulfilled, (state, action) => {
         state.loading = false;
-        state.assetTypes = action.payload.data;
+        state.error = null;
+        state.assetTypes = action.payload.data || [];
       })
       .addCase(fetchAssetTypes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        // Don't clear assetTypes array on error to maintain existing data
       })
       
       // createAssetType
@@ -96,7 +104,13 @@ const assetTypeSlice = createSlice({
       })
       .addCase(createAssetType.fulfilled, (state, action) => {
         state.loading = false;
-        state.assetTypes.push(action.payload.data);
+        state.error = null;
+        // Add the new asset type to the array if it doesn't already exist
+        const newType = action.payload.data;
+        const existingIndex = state.assetTypes.findIndex(type => type._id === newType._id);
+        if (existingIndex === -1) {
+          state.assetTypes.push(newType);
+        }
       })
       .addCase(createAssetType.rejected, (state, action) => {
         state.loading = false;
@@ -110,9 +124,11 @@ const assetTypeSlice = createSlice({
       })
       .addCase(updateAssetType.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.assetTypes.findIndex(type => type._id === action.payload.data._id);
+        state.error = null;
+        const updatedType = action.payload.data;
+        const index = state.assetTypes.findIndex(type => type._id === updatedType._id);
         if (index !== -1) {
-          state.assetTypes[index] = action.payload.data;
+          state.assetTypes[index] = updatedType;
         }
       })
       .addCase(updateAssetType.rejected, (state, action) => {
@@ -127,6 +143,7 @@ const assetTypeSlice = createSlice({
       })
       .addCase(deleteAssetType.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         state.assetTypes = state.assetTypes.filter(type => type._id !== action.payload.id);
       })
       .addCase(deleteAssetType.rejected, (state, action) => {
@@ -136,6 +153,6 @@ const assetTypeSlice = createSlice({
   }
 });
 
-export const { clearAssetTypeError } = assetTypeSlice.actions;
+export const { clearAssetTypeError, resetAssetTypeState } = assetTypeSlice.actions;
 
 export default assetTypeSlice.reducer;

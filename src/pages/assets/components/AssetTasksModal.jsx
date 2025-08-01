@@ -247,10 +247,29 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
   const loadTasks = async () => {
     setLoading(true);
     try {
-      const response = await dispatch(fetchTasks({ asset: asset._id })).unwrap();
-      setTasks(response.data || []);
+      // Properly filter tasks by asset ID - ensure we're passing the correct parameter format
+      const params = { 
+        asset: asset._id || asset.id,
+        limit: 100 // Get all tasks for this asset
+      };
+      
+      console.log('Loading tasks for asset:', params);
+      const response = await dispatch(fetchTasks(params)).unwrap();
+      
+      // Filter tasks to ensure they are actually related to this asset
+      const filteredTasks = (response.data || []).filter(task => {
+        // Check multiple possible ways the asset might be referenced in the task
+        const taskAssetId = task.asset?._id || task.asset?.id || task.asset;
+        const currentAssetId = asset._id || asset.id;
+        
+        return taskAssetId === currentAssetId;
+      });
+      
+      console.log('Filtered tasks for asset:', filteredTasks);
+      setTasks(filteredTasks);
     } catch (error) {
       console.error('Error loading tasks:', error);
+      setTasks([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -324,8 +343,8 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                 color: 'var(--color-navy)', 
                 fontSize: '16px' 
               }}>
-                Tasks loading...
-              </div>
+                Loading tasks...
+                </div>
             </div>
           ) : tasks.length > 0 ? (
             <TaskList>
@@ -336,11 +355,11 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                     isExpanded={expandedTasks[task._id]}
                   >
                     <TaskItemTitle>
-                      {task.title}
+                      {task.title || 'Untitled Task'}
                     </TaskItemTitle>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <StatusBadge status={task.status}>
-                        {getStatusIcon(task.status)} {task.status}
+                        {getStatusIcon(task.status)} {task.status || 'pending'}
                       </StatusBadge>
                       {expandedTasks[task._id] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </div>
@@ -364,13 +383,13 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                         <User size={16} />
                         <div>
                           Assigned to: {task.assignedTo?.length > 0 
-                            ? task.assignedTo.map(user => user.name).join(', ') 
+                            ? task.assignedTo.map(user => user.name || user.username || 'Unknown').join(', ') 
                             : 'Unassigned'}
                         </div>
                       </TaskDetail>
                       
                       <TaskActions>
-                        <TaskButton to={`/tasks/${task._id}`}>
+                        <TaskButton to={`/tasks/${task._id}`} key={`task-link-${task._id}`}>
                           View Task Details
                         </TaskButton>
                       </TaskActions>

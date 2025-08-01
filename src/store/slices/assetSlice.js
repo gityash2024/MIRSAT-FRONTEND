@@ -33,8 +33,9 @@ export const createAsset = createAsyncThunk(
       toast.success('Asset created successfully');
       return response;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create asset');
-      return rejectWithValue(error.response?.data?.message || 'Failed to create asset');
+      const errorMessage = error.response?.data?.message || 'Failed to create asset';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -47,8 +48,9 @@ export const updateAsset = createAsyncThunk(
       toast.success('Asset updated successfully');
       return response;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update asset');
-      return rejectWithValue(error.response?.data?.message || 'Failed to update asset');
+      const errorMessage = error.response?.data?.message || 'Failed to update asset';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -61,8 +63,9 @@ export const deleteAsset = createAsyncThunk(
       toast.success('Asset deleted successfully');
       return { id, ...response };
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete asset');
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete asset');
+      const errorMessage = error.response?.data?.message || 'Failed to delete asset';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -86,13 +89,14 @@ export const exportAssets = createAsyncThunk(
       toast.success('Assets exported successfully');
       return true;
     } catch (error) {
-      toast.error('Failed to export assets');
-      return rejectWithValue('Failed to export assets');
+      const errorMessage = 'Failed to export assets';
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Initial state
+// Initial state with better defaults
 const initialState = {
   assets: [],
   asset: null,
@@ -118,7 +122,13 @@ const assetSlice = createSlice({
       state.asset = null;
     },
     setPage: (state, action) => {
-      state.pagination.page = action.payload;
+      const newPage = action.payload;
+      if (newPage >= 1 && newPage <= state.pagination.totalPages) {
+        state.pagination.page = newPage;
+      }
+    },
+    resetAssetState: (state) => {
+      return initialState;
     }
   },
   extraReducers: (builder) => {
@@ -130,17 +140,19 @@ const assetSlice = createSlice({
       })
       .addCase(fetchAssets.fulfilled, (state, action) => {
         state.loading = false;
-        state.assets = action.payload.data;
+        state.error = null;
+        state.assets = action.payload.data || [];
         state.pagination = {
-          total: action.payload.total,
-          page: action.payload.page,
-          totalPages: action.payload.totalPages,
-          limit: state.pagination.limit
+          total: action.payload.total || 0,
+          page: action.payload.page || 1,
+          totalPages: action.payload.totalPages || 1,
+          limit: action.payload.limit || state.pagination.limit
         };
       })
       .addCase(fetchAssets.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.assets = [];
       })
       
       // fetchAsset
@@ -150,11 +162,13 @@ const assetSlice = createSlice({
       })
       .addCase(fetchAsset.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         state.asset = action.payload.data;
       })
       .addCase(fetchAsset.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.asset = null;
       })
       
       // createAsset
@@ -164,6 +178,8 @@ const assetSlice = createSlice({
       })
       .addCase(createAsset.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
+        // Don't modify the assets array here since we'll refetch
       })
       .addCase(createAsset.rejected, (state, action) => {
         state.loading = false;
@@ -177,6 +193,7 @@ const assetSlice = createSlice({
       })
       .addCase(updateAsset.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         // If the updated asset is currently selected, update it
         if (state.asset && state.asset._id === action.payload.data._id) {
           state.asset = action.payload.data;
@@ -199,11 +216,17 @@ const assetSlice = createSlice({
       })
       .addCase(deleteAsset.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         // Remove the deleted asset from the list
         state.assets = state.assets.filter(asset => asset._id !== action.payload.id);
         // If the deleted asset is currently selected, clear it
         if (state.asset && state.asset._id === action.payload.id) {
           state.asset = null;
+        }
+        // Update pagination total
+        if (state.pagination.total > 0) {
+          state.pagination.total -= 1;
+          state.pagination.totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
         }
       })
       .addCase(deleteAsset.rejected, (state, action) => {
@@ -218,6 +241,7 @@ const assetSlice = createSlice({
       })
       .addCase(exportAssets.fulfilled, (state) => {
         state.loading = false;
+        state.error = null;
       })
       .addCase(exportAssets.rejected, (state, action) => {
         state.loading = false;
@@ -226,6 +250,6 @@ const assetSlice = createSlice({
   }
 });
 
-export const { clearAssetError, clearAsset, setPage } = assetSlice.actions;
+export const { clearAssetError, clearAsset, setPage, resetAssetState } = assetSlice.actions;
 
 export default assetSlice.reducer; 

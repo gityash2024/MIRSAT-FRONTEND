@@ -233,7 +233,7 @@ const EventModal = ({
       console.log('Available levels:', levels?.results);
       console.log('Available assets:', assets);
       console.log('Available users:', users);
-      
+
       setFormData({
         title: event.title || '',
         description: event.description || '',
@@ -259,7 +259,7 @@ const EventModal = ({
       });
     } else if (selectedDate) {
       console.log('EventModal creating new event for date:', selectedDate);
-      
+
       setFormData({
         title: '',
         description: '',
@@ -393,9 +393,9 @@ const EventModal = ({
                     const isSelected = level._id === formData.inspectionLevel;
                     console.log(`Template option: ${level.name} (${level._id}) - Selected: ${isSelected}`);
                     return (
-                      <option key={level._id} value={level._id}>
-                        {level.name}
-                      </option>
+                    <option key={level._id} value={level._id}>
+                      {level.name}
+                    </option>
                     );
                   })}
                 </Select>
@@ -495,15 +495,15 @@ const EventModal = ({
               </FormGroup>
             </div>
 
-            <FormGroup>
+              <FormGroup>
               <Label>Location</Label>
-              <Input
+                <Input
                 type="text"
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Enter location"
-              />
-            </FormGroup>
+                />
+              </FormGroup>
 
             <FormGroup>
               <Label>Description</Label>

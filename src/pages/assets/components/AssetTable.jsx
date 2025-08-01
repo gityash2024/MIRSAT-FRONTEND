@@ -175,6 +175,11 @@ const AssetTable = ({
   onDelete,
   onViewTasks
 }) => {
+  // Helper function to get asset ID (handles both 'id' and '_id' fields)
+  const getAssetId = (asset) => {
+    return asset._id || asset.id;
+  };
+
   // Generate array of page numbers to show
   const getPageNumbers = () => {
     const totalPages = pagination.totalPages;
@@ -244,7 +249,7 @@ const AssetTable = ({
                   </p>
                 </LoadingContainer>
               </td>
-            </tr>
+              </tr>
           ) : assets.length === 0 ? (
             <tr>
               <td colSpan={7}>
@@ -252,40 +257,49 @@ const AssetTable = ({
               </td>
             </tr>
           ) : (
-            assets.map((asset, index) => (
-              <tr key={asset._id}>
-                <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
-                <td>{asset.uniqueId||'--'}</td>
-                <td>{asset.type||'--'}</td>
-                <td>{asset.displayName||'--'}</td>
-                <td>{asset.city||'--'}</td>
-                <td>{asset.location||'--'}</td>
-                <ActionsCell>
-                  <ActionButtonGroup>
-                    <ActionButton onClick={() => onViewTasks(asset)}>
-                      <Eye size={16} />
-                    </ActionButton>
-                    <ActionButton onClick={() => onEdit(asset)}>
-                      <Edit size={16} />
-                    </ActionButton>
-                    <ActionButton danger onClick={() => {
-                      // Use fallback for asset ID
-                      const assetId = asset._id || asset.id;
-                      
-                      if (!assetId) {
-                        console.error('No valid asset ID found for delete:', asset);
-                        alert('Error: Cannot delete asset - no valid ID found');
-                        return;
-                      }
-                      
-                      onDelete(assetId);
-                    }}>
-                      <Trash size={16} />
-                    </ActionButton>
-                  </ActionButtonGroup>
-                </ActionsCell>
-              </tr>
-            ))
+            assets.map((asset, index) => {
+              const assetId = getAssetId(asset);
+              return (
+                <tr key={assetId || `asset-${index}`}>
+                  <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
+                  <td>{asset.uniqueId || '--'}</td>
+                  <td>{asset.type || '--'}</td>
+                  <td>{asset.displayName || '--'}</td>
+                  <td>{asset.city || '--'}</td>
+                  <td>{asset.location || '--'}</td>
+                  <ActionsCell>
+                    <ActionButtonGroup>
+                      <ActionButton 
+                        onClick={() => onViewTasks(asset)}
+                        title="View tasks"
+                      >
+                        <Eye size={16} />
+                      </ActionButton>
+                      <ActionButton 
+                        onClick={() => onEdit(asset)}
+                        title="Edit asset"
+                      >
+                        <Edit size={16} />
+                      </ActionButton>
+                      <ActionButton 
+                        danger 
+                        onClick={() => {
+                          if (!assetId) {
+                            console.error('No valid asset ID found for delete:', asset);
+                            alert('Error: Cannot delete asset - no valid ID found');
+                            return;
+                          }
+                          onDelete(assetId);
+                        }}
+                        title="Delete asset"
+                      >
+                        <Trash size={16} />
+                      </ActionButton>
+                    </ActionButtonGroup>
+                  </ActionsCell>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </Table>
