@@ -91,7 +91,7 @@ const CustomTooltip = ({ active, payload }) => {
           {payload[0].name}
         </p>
         <p style={{ margin: '4px 0 0', color: '#64748b' }}>
-          {payload[0].value} inspections
+          {payload[0].value} templates
         </p>
         <p style={{ margin: '4px 0 0', color: '#64748b' }}>
           {payload[0].payload.percentage}%
@@ -159,8 +159,8 @@ const InspectionStatusChart = ({ dateRange, filters }) => {
       transition={{ duration: 0.5 }}
     >
       <ChartHeader>
-        <Title>Inspection Status Distribution</Title>
-        <Subtitle>Current status breakdown of all inspections</Subtitle>
+        <Title>Template Status Distribution</Title>
+        <Subtitle>Current status breakdown of all templates</Subtitle>
       </ChartHeader>
 
       {statusData.loading ? (

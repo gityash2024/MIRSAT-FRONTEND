@@ -1402,7 +1402,7 @@ const TaskForm = ({
     }
     
     if (!formData.inspectionLevel) {
-      newErrors.inspectionLevel = 'An inspection level must be selected';
+      newErrors.inspectionLevel = 'A template must be selected';
     }
     
     setErrors(newErrors);
@@ -1689,14 +1689,14 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
-          <Label>Inspection Level</Label>
+          <Label>Template</Label>
           <Select
             name="inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
             required
           >
-            <option value="">Select Inspection Level</option>
+            <option value="">Select Template</option>
             {inspectionLevels?.map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}

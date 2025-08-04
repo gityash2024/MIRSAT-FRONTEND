@@ -376,7 +376,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       
                       <TaskDetail>
                         <Layers size={16} />
-                        <div>Inspection Level: {task.inspectionLevel?.name || 'N/A'}</div>
+                        <div>Template: {task.inspectionLevel?.name || 'N/A'}</div>
                       </TaskDetail>
                       
                       <TaskDetail>

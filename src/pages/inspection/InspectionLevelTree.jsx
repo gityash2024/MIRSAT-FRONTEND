@@ -491,7 +491,7 @@ const InspectionLevelTree = ({
       
       if (isTopLevel) {
         await inspectionService.deleteInspectionLevel(nodeToDelete._id);
-        toast.success('Inspection level deleted successfully');
+        toast.success('Template deleted successfully');
       } else {
         const pathParts = selectedNodePath.split('.');
         const topLevelIndex = parseInt(pathParts[0], 10);
@@ -701,7 +701,7 @@ const InspectionLevelTree = ({
           <Search className="search-icon" size={20} />
           <input
             type="text"
-            placeholder="Search inspection levels..."
+            placeholder="Search Templates..."
             value={searchTerm}
             onChange={handleSearch}
             disabled={loading}

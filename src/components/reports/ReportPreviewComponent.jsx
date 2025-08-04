@@ -512,8 +512,8 @@ const ReportPreviewComponent = ({
             />
           )}
         </LogoContainer>
-        <ReportTitle>{reportData.title || 'Inspection Report'}</ReportTitle>
-        <ReportSubtitle>Inspection Report</ReportSubtitle>
+        <ReportTitle>{reportData.title || 'Template Report'}</ReportTitle>
+        <ReportSubtitle>Template Report</ReportSubtitle>
       </PreviewHeader>
       
       <OverviewSection>
@@ -554,12 +554,12 @@ const ReportPreviewComponent = ({
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Inspection Location</MetadataLabel>
+          <MetadataLabel>Template Location</MetadataLabel>
           <MetadataValue>{reportData.metadata?.inspectionLocation || 'Not specified'}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Inspection Date</MetadataLabel>
+          <MetadataLabel>Template Date</MetadataLabel>
           <MetadataValue>{reportData.metadata?.inspectionDate || 'Not specified'}</MetadataValue>
         </MetadataItem>
         
@@ -608,7 +608,7 @@ const ReportPreviewComponent = ({
         <SectionsHeader>
           <h2>
             <FileText size={18} />
-            Inspection Sections
+            Template Sections
           </h2>
         </SectionsHeader>
         

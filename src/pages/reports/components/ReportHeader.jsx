@@ -75,7 +75,7 @@ const ReportHeader = ({ onToggleFilters, dateRange, onDateRangeChange }) => {
           Comprehensive Analysis and Performance Metrics
         </PageTitle>
         <PageDescription>
-          Overview of task completion, inspection status, and team performance
+          Overview of task completion, template status, and team performance
         </PageDescription>
       </TitleSection>
 

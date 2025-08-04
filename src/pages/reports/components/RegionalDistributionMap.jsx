@@ -179,7 +179,7 @@ const CustomTooltip = ({ active, payload }) => {
           {payload[0].payload.region}
         </p>
         <p style={{ margin: '4px 0', color: '#64748b' }}>
-          Inspections: {payload[0].value}
+          Templates: {payload[0].value}
         </p>
         <p style={{ margin: '4px 0', color: '#64748b' }}>
           Compliance: {payload[0].payload.compliance}%
@@ -262,7 +262,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
           <Map size={20} />
           Regional Distribution
         </Title>
-        <Subtitle>Distribution of inspections and compliance across regions</Subtitle>
+        <Subtitle>Distribution of templates and compliance across regions</Subtitle>
       </Header>
 
       {regionalData.loading ? (
@@ -324,12 +324,12 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
           <MetricsList>
             <MetricCard color="var(--color-navy)">
               <MetricHeader>
-                <MetricName>Total Inspections</MetricName>
+                <MetricName>Total Templates</MetricName>
                 <Activity size={16} color="var(--color-navy)" />
               </MetricHeader>
               <MetricValue>
                 {regionalData.metrics.totalInspections.toLocaleString()}
-                <MetricUnit>inspections</MetricUnit>
+                <MetricUnit>templates</MetricUnit>
               </MetricValue>
             </MetricCard>
 

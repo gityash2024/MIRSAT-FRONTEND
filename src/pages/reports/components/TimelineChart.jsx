@@ -247,7 +247,7 @@ const TimelineChart = ({ dateRange, filters }) => {
           <Clock size={20} />
           Activity Timeline
         </Title>
-        <Subtitle>Recent inspection activities and updates</Subtitle>
+        <Subtitle>Recent template activities and updates</Subtitle>
       </Header>
 
       <FilterTabs>

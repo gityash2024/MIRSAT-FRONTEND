@@ -1151,7 +1151,7 @@ const InspectionLevelView = () => {
                 ) : (
                   <>
                     <ListChecks size={18} />
-                    Inspection Levels Hierarchy
+                    Templates Hierarchy
                   </>
                 )}
               </CardTitle>

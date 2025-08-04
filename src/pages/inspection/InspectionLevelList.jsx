@@ -818,7 +818,7 @@ const InspectionLevelList = ({
           <Layers size={24} />
           Template
         </PageTitle>
-        <SubTitle>Manage inspection levels and their hierarchies</SubTitle>
+        <SubTitle>Manage Templates and their hierarchies</SubTitle>
       </Header>
 
       <ActionBar>
@@ -826,7 +826,7 @@ const InspectionLevelList = ({
           <Search className="search-icon" size={20} />
           <input 
             type="text" 
-            placeholder="Search inspection levels..." 
+            placeholder="Search Templates..." 
             value={searchTerm}
             onChange={handleSearch}
             disabled={loading}

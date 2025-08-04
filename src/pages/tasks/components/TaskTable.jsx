@@ -931,7 +931,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                     {hasPreInspectionQuestions(task) && (
                       <ActionButton 
                         onClick={() => handleShowPreInspectionQuestions(task)}
-                        title="View pre-inspection questions"
+                        title="View pre-template questions"
                         style={{
                           background: '#e0f2fe',
                           color: '#0284c7'

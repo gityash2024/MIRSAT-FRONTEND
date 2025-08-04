@@ -1194,7 +1194,7 @@ const UserTasks = () => {
 
                 <TaskDetailRow>
                   <Activity size={16} />
-                  Inspection: {task.inspectionLevel?.name || 'N/A'}
+                  Template: {task.inspectionLevel?.name || 'N/A'}
                 </TaskDetailRow>
                
               </TaskBody>

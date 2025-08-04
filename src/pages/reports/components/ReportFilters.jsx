@@ -224,7 +224,7 @@ const ReportFilters = ({ filters, onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <FilterTitle>Inspection Type</FilterTitle>
+          <FilterTitle>Template Type</FilterTitle>
           <CheckboxGroup>
             {filterOptions.inspectionTypes.map(type => (
               <Checkbox key={type}>

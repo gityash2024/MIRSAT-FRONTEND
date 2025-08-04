@@ -677,7 +677,7 @@ const TabNavigationButtons = styled.div`
 
 const DiscardButton = styled(Button)`
   background: #fee2e2;
-  color: #b91c1c;
+  color: #b91c1b;
     border: none;
     &:hover {
     background: #fecaca;
@@ -4727,10 +4727,10 @@ const InspectionLevelForm = () => {
         
         <SectionsWrapper>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h4>Inspection Levels</h4>
+            <h4>Template Levels</h4>
             <Button onClick={addSection}>
               <Plus size={16} style={{ marginRight: '4px' }} />
-              Add Inspection Level
+              Add Template Level
             </Button>
           </div>
           
@@ -4742,19 +4742,19 @@ const InspectionLevelForm = () => {
                 <div>
                   <InspectionFormRow>
                     <InspectionFormGroup>
-                      <Label>Inspection Level Name</Label>
+                      <Label>Template Level Name</Label>
                       <Input
                         value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
                         onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                        placeholder="Enter inspection level name"
+                        placeholder="Enter template level name"
                       />
                     </InspectionFormGroup>
                     <InspectionFormGroup>
-                      <Label>Inspection Level Description</Label>
+                      <Label>Template Level Description</Label>
                       <TextArea
                         value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
                         onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                        placeholder="Enter inspection level description"
+                        placeholder="Enter template level description"
                         rows={2}
                       />
                     </InspectionFormGroup>
@@ -4808,7 +4808,7 @@ const InspectionLevelForm = () => {
           ) : (
             <TabEmptyState>
               <Layers size={32} />
-              <p>No inspection levels added yet</p>
+              <p>No template levels added yet</p>
               <Button onClick={addSection}>
                 <Plus size={16} style={{ marginRight: '4px' }} />
                 Add Inspection Level
@@ -5060,11 +5060,11 @@ const InspectionLevelForm = () => {
                   Pages and Questions
                 </h3>
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
-                  Create the structure of your inspection with pages, inspection levels, and questions.
+                  Create the structure of your template with pages, template levels, and questions.
                 </p>
                 <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
-                  <li>Add Pages to organize your inspection into logical sections</li>
-                  <li>Add Inspection Levels to each page to group related questions</li>
+                  <li>Add Pages to organize your template into logical sections</li>
+                  <li>Add Template Levels to each page to group related questions</li>
                   <li>Create Questions with appropriate types (Text, Yes/No, Compliance, etc.)</li>
                   <li>Configure scoring for questions to enable compliance assessment</li>
                 </ul>
@@ -5266,10 +5266,10 @@ const InspectionLevelForm = () => {
                 
                 <SectionsWrapper>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4>Inspection Levels</h4>
+                    <h4>Template Levels</h4>
                     <Button onClick={addSection}>
                       <Plus size={16} style={{ marginRight: '4px' }} />
-                      Add Inspection Level
+                      Add Template Level
                     </Button>
                   </div>
                   
@@ -5281,19 +5281,19 @@ const InspectionLevelForm = () => {
                         <div>
                           <InspectionFormRow>
                             <InspectionFormGroup>
-                              <Label>Inspection Level Name</Label>
+                              <Label>Template Level Name</Label>
                               <Input
                                 value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
                                 onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                                placeholder="Enter inspection level name"
+                                placeholder="Enter template level name"
                               />
                             </InspectionFormGroup>
                             <InspectionFormGroup>
-                              <Label>Inspection Level Description</Label>
+                              <Label>Template Level Description</Label>
                               <TextArea
                                 value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
                                 onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                                placeholder="Enter inspection level description"
+                                placeholder="Enter template level description"
                                 rows={2}
                               />
                             </InspectionFormGroup>
@@ -5347,7 +5347,7 @@ const InspectionLevelForm = () => {
                   ) : (
                     <TabEmptyState>
                       <Layers size={32} />
-                      <p>No inspection levels added yet</p>
+                      <p>No template levels added yet</p>
                       <Button onClick={addSection}>
                         <Plus size={16} style={{ marginRight: '4px' }} />
                         Add Inspection Level
