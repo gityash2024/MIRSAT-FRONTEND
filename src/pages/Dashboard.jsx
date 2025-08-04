@@ -474,7 +474,14 @@ const Dashboard = () => {
                 {dashboardData.taskProgress.map((task, index) => (
                   <ProgressItem key={index}>
                     <div className="header">
-                      <span className="task-name">{task.name}</span>
+                      <div>
+                        <span className="task-name">{task.name}</span>
+                        {task.inspector && (
+                          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                            Inspector: {task.inspector} • Template: {task.template}
+                          </div>
+                        )}
+                      </div>
                       <span className="percentage">{task.progress}%</span>
                     </div>
                     <ProgressBar>

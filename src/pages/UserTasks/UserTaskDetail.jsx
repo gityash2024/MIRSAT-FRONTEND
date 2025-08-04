@@ -1983,7 +1983,7 @@ const calculateSectionScore = (section, responses) => {
           totalAchieved += (maxScore * weight);
         }
       } else if (questionType === 'text' || questionType === 'signature') {
-        if (response && response.trim() !== '') {
+        if (response && response?.trim() !== '') {
           totalAchieved += (maxScore * weight);
         }
       } else if (questionType === 'number' || questionType === 'date') {
@@ -3120,6 +3120,197 @@ const UserTaskDetail = () => {
     }
   };
 
+  // Signature Canvas Component for individual questions
+  const SignatureCanvasComponent = ({ questionId, response, isDisabled, onSaveResponse }) => {
+    const canvasRef = useRef(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const initializedRef = useRef(false);
+
+    // Initialize canvas only once and keep it simple
+    useEffect(() => {
+      if (canvasRef.current && !initializedRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        // Basic setup
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'black';
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        
+        initializedRef.current = true;
+        
+        // Load existing signature if any
+        if (response && response.startsWith('data:image')) {
+          const img = new Image();
+          img.onload = () => {
+            if (canvasRef.current) {
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = 'white';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+          };
+          img.src = response;
+        }
+      }
+    }, [response]);
+
+    const startDrawing = (e) => {
+      if (isDisabled || !canvasRef.current) return;
+      
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      setIsDrawing(true);
+    };
+
+    const draw = (e) => {
+      if (!isDrawing || isDisabled || !canvasRef.current) return;
+      
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+      if (isDisabled) return;
+      setIsDrawing(false);
+    };
+
+    const handleCanvasBlur = () => {
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const dataURL = canvas.toDataURL('image/png');
+        onSaveResponse(questionId, dataURL);
+      }
+    };
+
+    const clearSignature = () => {
+      if (isDisabled || !canvasRef.current) return;
+      
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Clear the response
+      onSaveResponse(questionId, '');
+    };
+
+    return (
+      <div>
+        <div style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px' }}>
+          {isDisabled ? 'Signature' : 'Draw your signature below'}
+        </div>
+        
+        <SignatureCanvas>
+          <canvas 
+            ref={canvasRef}
+            width="500" 
+            height="200"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              const touch = e.touches[0];
+              const rect = e.target.getBoundingClientRect();
+              const mouseEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+              };
+              startDrawing(mouseEvent);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              const touch = e.touches[0];
+              const mouseEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+              };
+              draw(mouseEvent);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopDrawing();
+            }}
+            onBlur={handleCanvasBlur}
+            tabIndex={0}
+            style={{
+              cursor: isDisabled ? 'not-allowed' : 'crosshair',
+              opacity: isDisabled ? 0.7 : 1,
+              outline: 'none',
+              touchAction: 'none'
+            }}
+          />
+        </SignatureCanvas>
+        
+        {!isDisabled && (
+          <SignatureActions>
+            <ClearButton onClick={clearSignature}>
+              Clear
+            </ClearButton>
+          </SignatureActions>
+        )}
+        
+        {response && (
+          <div style={{ 
+            marginTop: '12px',
+            textAlign: 'center'
+          }}>
+            <div style={{ 
+              fontSize: '12px',
+              color: '#16a34a',
+              fontWeight: '500',
+              marginBottom: '8px'
+            }}>
+              ✅ Signature saved
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <div style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '4px',
+                background: 'white',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <img 
+                  src={response}
+                  alt="Signature preview"
+                  style={{
+                    width: '150px',
+                    height: '60px',
+                    objectFit: 'contain',
+                    display: 'block'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderQuestionInput = (question, task, onSaveResponse) => {
     const questionId = question._id;
     const response = task.questionnaireResponses?.[questionId];
@@ -3482,16 +3673,35 @@ const UserTaskDetail = () => {
       case 'signature':
         return (
           <InputContainer>
-            <InputGroup>
-              <input
-                type="text"
-                placeholder="Type your signature"
-                value={displayValue || ''}
-                onChange={(e) => handleInputChange(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
-                disabled={isDisabled}
-              />
-            </InputGroup>
+            <div style={{ 
+              border: '2px dashed #e5e7eb',
+              borderRadius: '12px',
+              padding: '16px',
+              background: '#f9fafb',
+              transition: 'all 0.3s ease'
+            }}>
+              <div style={{ 
+                marginBottom: '12px',
+                fontSize: '14px',
+                color: '#6b7280',
+                textAlign: 'center'
+              }}>
+                {isDisabled ? 'Signature' : 'Draw your signature below'}
+              </div>
+              
+              <div style={{ 
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: '12px'
+              }}>
+                <SignatureCanvasComponent 
+                  questionId={questionId}
+                  response={response}
+                  isDisabled={isDisabled}
+                  onSaveResponse={onSaveResponse}
+                />
+              </div>
+            </div>
           </InputContainer>
         );
         
@@ -5093,6 +5303,29 @@ const UserTaskDetail = () => {
                     onMouseMove={handleDrawing}
                     onMouseUp={handleStopDrawing}
                     onMouseLeave={handleStopDrawing}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      const touch = e.touches[0];
+                      const rect = e.target.getBoundingClientRect();
+                      const mouseEvent = {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                      };
+                      handleStartDrawing(mouseEvent);
+                    }}
+                    onTouchMove={(e) => {
+                      e.preventDefault();
+                      const touch = e.touches[0];
+                      const mouseEvent = {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                      };
+                      handleDrawing(mouseEvent);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleStopDrawing();
+                    }}
                   />
                 </SignatureCanvas>
               ) : (

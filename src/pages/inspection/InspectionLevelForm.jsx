@@ -1805,7 +1805,7 @@ const QuestionItemComponent = ({
                   </Select>
                 </FormGroup>
                 
-                <FormGroup style={{ marginBottom: '12px' }}>
+                {/* <FormGroup style={{ marginBottom: '12px' }}>
                   <Label>Question Weight</Label>
                   <Input
                     type="number"
@@ -1816,7 +1816,7 @@ const QuestionItemComponent = ({
                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                     Multiplies the base score value
               </div>
-                </FormGroup>
+                </FormGroup> */}
                 
                 <FormGroup>
                   <Label>Max Possible Score</Label>
@@ -1835,7 +1835,7 @@ const QuestionItemComponent = ({
                 {/* Enhanced Scoring Settings */}
                 {question.scoring?.enabled && (
                   <div style={{ marginTop: '16px' }}>
-              <div style={{ 
+              {/* <div style={{ 
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -1845,7 +1845,7 @@ const QuestionItemComponent = ({
                     }}>
                       <Award size={16} />
                       <span>Detailed Scoring</span>
-                    </div>
+                    </div> */}
                     
                     {question.type === 'yesno' && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -5176,7 +5176,7 @@ const InspectionLevelForm = () => {
             </InspectionFormGroup>
           </InspectionFormRow>
           <InspectionFormRow>
-            <InspectionFormGroup>
+            {/* <InspectionFormGroup>
               <Label>Priority</Label>
               <Select
                 name="priority"
@@ -5223,7 +5223,7 @@ const InspectionLevelForm = () => {
                   Recommended
                 </option>
               </Select>
-            </InspectionFormGroup>
+            </InspectionFormGroup> */}
             <InspectionFormGroup>
               <Label>Status</Label>
               <InspectionStatusBadge status={formData.status}>
