@@ -3767,8 +3767,8 @@ const UserTaskDetail = () => {
                   <QuestionHeader>
                     <QuestionText>{question.text}</QuestionText>
                     <QuestionBadges>
-                      <QuestionBadge type={question.required !== false ? 'mandatory' : 'recommended'}>
-                        {question.required !== false ? 'Mandatory' : 'Recommended'}
+                      <QuestionBadge type={question.requirementType || (question.required !== false ? 'mandatory' : 'recommended')}>
+                        {(question.requirementType === 'recommended') || (question.requirementType === undefined && question.required === false) ? 'Recommended' : 'Mandatory'}
                       </QuestionBadge>
                     </QuestionBadges>
                   </QuestionHeader>
@@ -4109,8 +4109,8 @@ const UserTaskDetail = () => {
                             </QuestionText>
                             
                             <QuestionBadges>
-                              <QuestionBadge type={question.required !== false ? 'mandatory' : 'recommended'}>
-                                {question.required !== false ? 'Mandatory' : 'Recommended'}
+                              <QuestionBadge type={question.requirementType || (question.required !== false ? 'mandatory' : 'recommended')}>
+                                {(question.requirementType === 'recommended') || (question.requirementType === undefined && question.required === false) ? 'Recommended' : 'Mandatory'}
                               </QuestionBadge>
                               <ScoreBadge hasResponse={achievedScore > 0}>
                                 <Star size={14} />

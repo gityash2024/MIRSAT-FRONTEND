@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Eye, EyeOff } from 'lucide-react';
-import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS } from '../../../utils/permissions';
+import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS } from '../../../utils/permissions';
+import { useAuth } from '../../../hooks/useAuth';
 
 const Form = styled.form`
   display: grid;
@@ -163,6 +164,7 @@ const Button = styled.button`
 `;
 
 const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Save', isSubmitting = false }) => {
+  const { user: currentUser } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -183,10 +185,19 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (initialData._id) {
+    if (initialData._id || initialData.id) {
       setFormData({
         ...initialData,
-        status: initialData.isActive ? 'active' : 'inactive'
+        status: initialData.isActive ? 'active' : 'inactive',
+        permissions: initialData.permissions || [],
+        // Ensure all fields are properly set
+        name: initialData.name || '',
+        email: initialData.email || '',
+        phone: initialData.phone || '',
+        role: initialData.role || 'inspector',
+        department: initialData.department || '',
+        address: initialData.address || '',
+        emergencyContact: initialData.emergencyContact || ''
       });
     }
   }, [initialData]);
@@ -299,6 +310,26 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     );
   };
 
+  const renderModulePermissions = () => {
+    return (
+      <PermissionGroup>
+        <PermissionGroupTitle>Module Access</PermissionGroupTitle>
+        <PermissionList>
+          {Object.entries(MODULE_PERMISSIONS).map(([moduleName, permission]) => (
+            <PermissionItem key={permission}>
+              <input
+                type="checkbox"
+                checked={formData.permissions?.includes(permission)}
+                onChange={() => handlePermissionChange(permission)}
+              />
+              {moduleName.replace(/_/g, ' ')}
+            </PermissionItem>
+          ))}
+        </PermissionList>
+      </PermissionGroup>
+    );
+  };
+
   const showPermissionsSection = formData.role === ROLES.MANAGER;
   const isEditMode = !!initialData._id;
 
@@ -367,6 +398,11 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             name="department"
             value={formData.department || ''}
             onChange={handleChange}
+            disabled={currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR}
+            style={{ 
+              opacity: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) ? 0.6 : 1,
+              cursor: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) ? 'not-allowed' : 'pointer'
+            }}
           >
             <option value="">Select Department</option>
             <option value="field_operations">Field Operations</option>
@@ -374,6 +410,11 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             <option value="administration">Administration</option>
             <option value="support">Support</option>
           </Select>
+          {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) && (
+            <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
+              Only admins can modify department
+            </span>
+          )}
         </FormGroup>
 
         <FormGroup>
@@ -455,8 +496,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       {showPermissionsSection && (
         <PermissionsSection>
           <PermissionGroupTitle>Permissions</PermissionGroupTitle>
-          {Object.entries(PERMISSIONS).filter(([groupName]) => groupName !== 'SETTINGS').map(([groupName, groupPermissions]) =>
-            renderPermissionGroup(groupName, groupPermissions)
+          {formData.role === ROLES.MANAGER ? (
+            renderModulePermissions()
+          ) : (
+            Object.entries(PERMISSIONS).filter(([groupName]) => groupName !== 'SETTINGS').map(([groupName, groupPermissions]) =>
+              renderPermissionGroup(groupName, groupPermissions)
+            )
           )}
         </PermissionsSection>
       )}

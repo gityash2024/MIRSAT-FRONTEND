@@ -158,6 +158,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // ADD OBVIOUS DEBUGGING
+  console.log('🚨🚨🚨 REAL SIDEBAR COMPONENT RENDERING!!!');
+  console.log('🚨🚨🚨 User:', user);
+  console.log('🚨🚨🚨 User Role:', user?.role);
+  console.log('🚨🚨🚨 User Permissions:', user?.permissions);
+  
   const isMobile = window.innerWidth <= 768;
   const effectiveCollapsed = isMobile 
     ? (typeof isOpen !== 'undefined' ? !isOpen : false) 
@@ -180,7 +186,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: 'Dashboard',
       path: userRole === 'inspector' ? '/user-dashboard' : '/dashboard',
       icon: Home,
-      permission: 'view_dashboard',
+      permission: 'view_dashboard', // Old system
+      modulePermission: 'access_dashboard', // New module system for managers
       roles: ['admin', 'manager', 'inspector']
     },
     {
@@ -188,6 +195,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/tasks',
       icon: ClipboardList,
       permission: 'view_tasks',
+      modulePermission: 'access_tasks',
       roles: ['admin', 'manager']
     },
     {
@@ -195,6 +203,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/user-tasks',
       icon: ClipboardList,
       permission: 'view_tasks',
+      modulePermission: 'access_tasks',
       roles: ['inspector']
     },
     {
@@ -202,13 +211,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/users',
       icon: Users,
       permission: 'view_users',
-      roles: ['admin']  // Only admin can access users
+      modulePermission: 'access_users',
+      roles: ['admin', 'manager']  // Allow managers if they have permission
     },
     {
       title: 'Template',
       path: '/inspection',
       icon: ListChecks,
       permission: 'view_inspections',
+      modulePermission: 'access_template',
       roles: ['admin', 'manager']
     },
     {
@@ -216,13 +227,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/assets',
       icon: Database,
       permission: 'view_assets',
-      roles: ['admin']  // Only admin can access assets
+      modulePermission: 'access_assets',
+      roles: ['admin', 'manager']  // Allow managers if they have permission
     },
     {
       title: 'Questionnaires',
       path: '/questionnaire',
       icon: FileText,
       permission: 'view_questionnaires',
+      modulePermission: 'access_questionnaires',
       roles: ['admin', 'manager']
     },
     {
@@ -230,14 +243,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: '/calendar',
       icon: Calendar,
       permission: 'view_calendar',
+      modulePermission: 'access_calendar',
       roles: ['admin', 'manager']
     },
-
     {
       title: 'Profile',
       path: '/profile',
       icon: User,
       permission: null, // No permission required for profile
+      modulePermission: null,
       roles: ['admin', 'manager', 'inspector']  // All roles use /profile
     }
   ];
@@ -245,38 +259,57 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   // Get menu items based on role and permissions
   const getMenuItems = () => {
+    console.log('🔍 getMenuItems called for role:', userRole);
+    
     return navigationItems.filter(item => {
+      console.log(`🔍 Checking item: ${item.title} for role: ${userRole}`);
+      
       // Check if the user's role is allowed for this item
       if (!item.roles.includes(userRole)) {
+        console.log(`❌ Role ${userRole} not allowed for ${item.title}`);
         return false;
       }
 
       // For admin role, show all items designated for admin (no permission check needed)
       if (userRole === 'admin') {
+        console.log(`✅ Admin access granted for ${item.title}`);
         return true;
       }
 
-      // For inspector role, show all items designated for inspector (no permission check needed)
+      // For inspector role, show all items designated for inspector (no permission check needed) 
       if (userRole === 'inspector') {
+        console.log(`✅ Inspector access granted for ${item.title}`);
         return true;
       }
 
-      // For manager role, check permissions if required
+      // For manager role, use NEW MODULE PERMISSIONS
       if (userRole === 'manager') {
-        // If no permission is required, include the item
-        if (item.permission === null) {
+        // If no permission is required (like Profile), include the item
+        if (item.permission === null && item.modulePermission === null) {
+          console.log(`✅ No permission required for ${item.title}`);
           return true;
         }
-        // Check if the user has the required permission
+        
+        // Use modulePermission for managers
+        if (item.modulePermission) {
+          const hasAccess = user?.permissions?.includes(item.modulePermission);
+          console.log(`🔍 Manager ${item.title}: needs "${item.modulePermission}", has access: ${hasAccess}`);
+          return hasAccess;
+        }
+        
+        // Fallback to old permission system if no modulePermission
+        console.log(`🔍 Manager ${item.title}: using old permission "${item.permission}"`);
         return hasPermission(item.permission);
       }
 
       // Default: exclude the item
+      console.log(`❌ Default exclusion for ${item.title}`);
       return false;
     });
   };
 
   const menuItems = getMenuItems();
+  console.log('🚨 FINAL MENU ITEMS:', menuItems.map(item => item.title));
 
   const handleNavigation = (path) => {
     console.log(`Navigating to: ${path}`);

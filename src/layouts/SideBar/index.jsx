@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../hooks/useAuth';
+import { hasModuleAccess, MODULE_PERMISSIONS } from '../../utils/permissions';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -10,7 +11,10 @@ import {
   FileText,
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Package,
+  HelpCircle,
+  User
 } from 'lucide-react';
 
 const SidebarContainer = styled.div`
@@ -141,8 +145,21 @@ const Sidebar = ({ isOpen, width }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  // FORCE CONSOLE LOG AT THE VERY TOP
+  console.log('🚨🚨🚨 SIDEBAR RENDERING - CANNOT MISS THIS LOG');
+  console.log('🚨🚨🚨 USER:', user);
+  console.log('🚨🚨🚨 USER ROLE:', user?.role);
+  console.log('🚨🚨🚨 USER PERMISSIONS:', user?.permissions);
+
+  console.log('🟢 SIDEBAR COMPONENT RENDERED');
+  console.log('🟢 Current user from useAuth:', user);
+  console.log('🟢 User role:', user?.role);
+  console.log('🟢 User permissions:', user?.permissions);
+  console.log('🟢 User email:', user?.email);
+
   // For users, create a restricted menu based on their permissions
   const getUserMenuItems = () => {
+    console.log('🔵 getUserMenuItems called (for inspector)');
     const userMenuItems = [
       {
         icon: LayoutDashboard, 
@@ -164,59 +181,205 @@ const Sidebar = ({ isOpen, width }) => {
   };
 
   // For admin and other roles, create a full menu
-  const getAdminMenuItems = () => [
-    {
-      icon: LayoutDashboard, 
-      label: 'Dashboard', 
-      path: '/dashboard',
-      permissions: []
-    },
-    {
-      icon: ClipboardList, 
-      label: 'Tasks', 
-      path: '/tasks',
-      permissions: ['view_tasks', 'create_tasks', 'edit_tasks', 'delete_tasks']
-    },
-    {
-      icon: Users, 
-      label: 'Users', 
-      path: '/users',
-      permissions: ['view_users', 'create_users', 'edit_users', 'delete_users']
-    },
-    {
-      icon: Calendar, 
-      label: 'Calendar', 
-      path: '/calendar',
-      permissions: ['view_calendar', 'manage_calendar', 'schedule_events']
-    },
-    {
-      icon: FileText, 
-      label: 'Templates', 
-      path: '/inspection',
-      permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
-    },
-    {
-      icon: FileText, 
-      label: 'Question Library', 
-      path: '/questionnaire',
-      permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
-    },
-    {
-      icon: Settings, 
-      label: 'Settings', 
-      path: '/settings',
-      permissions: ['view_settings', 'manage_settings', 'system_config']
+  const getAdminMenuItems = () => {
+    console.log('🔥🔥 getAdminMenuItems called');
+    console.log('🔥🔥 Current user:', user);
+    
+    const allMenuItems = [
+      {
+        icon: LayoutDashboard, 
+        label: 'Dashboard', 
+        path: '/dashboard',
+        module: 'DASHBOARD',
+        permissions: []
+      },
+      {
+        icon: ClipboardList, 
+        label: 'Tasks', 
+        path: '/tasks',
+        module: 'TASKS',
+        permissions: ['view_tasks', 'create_tasks', 'edit_tasks', 'delete_tasks']
+      },
+      {
+        icon: Users, 
+        label: 'Users', 
+        path: '/users',
+        module: 'USERS',
+        permissions: ['view_users', 'create_users', 'edit_users', 'delete_users']
+      },
+      {
+        icon: FileText, 
+        label: 'Templates', 
+        path: '/inspection',
+        module: 'TEMPLATE',
+        permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
+      },
+      {
+        icon: Package, 
+        label: 'Assets', 
+        path: '/assets',
+        module: 'ASSETS',
+        permissions: ['view_assets']
+      },
+      {
+        icon: HelpCircle, 
+        label: 'Questionnaires', 
+        path: '/questionnaire',
+        module: 'QUESTIONNAIRES',
+        permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
+      },
+      {
+        icon: Calendar, 
+        label: 'Calendar', 
+        path: '/calendar',
+        module: 'CALENDAR',
+        permissions: ['view_calendar', 'manage_calendar', 'schedule_events']
+      },
+      {
+        icon: User, 
+        label: 'Profile', 
+        path: '/profile',
+        module: 'PROFILE',
+        permissions: []
+      }
+    ];
+
+    console.log('🔥🔥 All menu items created:', allMenuItems.map(i => ({label: i.label, module: i.module})));
+    console.log('🔥🔥 About to check user role:', user?.role);
+    console.log('🔥🔥 Is user role === "manager"?', user?.role === 'manager');
+
+    // For managers, filter by module permissions + always show Profile
+    if (user?.role === 'manager') {
+      console.log('🚨�� MANAGER DETECTED - SIMPLIFIED LOGIC');
+      console.log('🚨 User permissions array:', user?.permissions);
+      
+      const managerMenuItems = [];
+      
+      // Always add Profile
+      managerMenuItems.push({
+        icon: User, 
+        label: 'Profile', 
+        path: '/profile',
+        module: 'PROFILE',
+        permissions: []
+      });
+      
+      // Add Dashboard if user has access_dashboard permission
+      if (user?.permissions?.includes('access_dashboard')) {
+        console.log('✅ ADDING DASHBOARD - user has access_dashboard');
+        managerMenuItems.push({
+          icon: LayoutDashboard, 
+          label: 'Dashboard', 
+          path: '/dashboard',
+          module: 'DASHBOARD',
+          permissions: []
+        });
+      } else {
+        console.log('❌ SKIPPING DASHBOARD - user does not have access_dashboard');
+      }
+      
+      // Add Tasks if user has access_tasks permission
+      if (user?.permissions?.includes('access_tasks')) {
+        console.log('✅ ADDING TASKS - user has access_tasks');
+        managerMenuItems.push({
+          icon: ClipboardList, 
+          label: 'Tasks', 
+          path: '/tasks',
+          module: 'TASKS',
+          permissions: []
+        });
+      } else {
+        console.log('❌ SKIPPING TASKS - user does not have access_tasks');
+      }
+      
+      // Add Users if user has access_users permission
+      if (user?.permissions?.includes('access_users')) {
+        console.log('✅ ADDING USERS - user has access_users');
+        managerMenuItems.push({
+          icon: Users, 
+          label: 'Users', 
+          path: '/users',
+          module: 'USERS',
+          permissions: []
+        });
+      }
+      
+      // Add Template if user has access_template permission
+      if (user?.permissions?.includes('access_template')) {
+        console.log('✅ ADDING TEMPLATE - user has access_template');
+        managerMenuItems.push({
+          icon: FileText, 
+          label: 'Templates', 
+          path: '/inspection',
+          module: 'TEMPLATE',
+          permissions: []
+        });
+      }
+      
+      // Add Assets if user has access_assets permission
+      if (user?.permissions?.includes('access_assets')) {
+        console.log('✅ ADDING ASSETS - user has access_assets');
+        managerMenuItems.push({
+          icon: Package, 
+          label: 'Assets', 
+          path: '/assets',
+          module: 'ASSETS',
+          permissions: []
+        });
+      }
+      
+      // Add Questionnaires if user has access_questionnaires permission
+      if (user?.permissions?.includes('access_questionnaires')) {
+        console.log('✅ ADDING QUESTIONNAIRES - user has access_questionnaires');
+        managerMenuItems.push({
+          icon: HelpCircle, 
+          label: 'Questionnaires', 
+          path: '/questionnaire',
+          module: 'QUESTIONNAIRES',
+          permissions: []
+        });
+      }
+      
+      // Add Calendar if user has access_calendar permission
+      if (user?.permissions?.includes('access_calendar')) {
+        console.log('✅ ADDING CALENDAR - user has access_calendar');
+        managerMenuItems.push({
+          icon: Calendar, 
+          label: 'Calendar', 
+          path: '/calendar',
+          module: 'CALENDAR',
+          permissions: []
+        });
+      }
+      
+      console.log('🚨 FINAL MANAGER MENU ITEMS:', managerMenuItems.map(i => i.label));
+      return managerMenuItems;
     }
-  ].filter(item => 
-    item.permissions.length === 0 || 
-    item.permissions.some(perm => user?.permissions?.includes(perm))
-  );
+
+    console.log('🔥🔥 Not a manager, using default filtering');
+    // For admin and inspector, show all items (with permission check for inspector) + always show Profile
+    const defaultItems = allMenuItems.filter(item => 
+      item.module === 'PROFILE' || // Always show Profile
+      item.permissions.length === 0 || 
+      item.permissions.some(perm => user?.permissions?.includes(perm)) ||
+      user?.role === 'admin'
+    );
+    console.log('🔥🔥 Default filtered items:', defaultItems.map(i => i.label));
+    return defaultItems;
+  };
 
   // Function to get menu items based on user role
   const getMenuItems = () => {
-    return user?.role === 'inspector' 
-      ? getUserMenuItems() 
-      : getAdminMenuItems();
+    console.log('🔥 getMenuItems called with user:', user);
+    console.log('🔥 User role:', user?.role);
+    
+    if (user?.role === 'inspector') {
+      console.log('🔥 Using inspector menu');
+      return getUserMenuItems();
+    } else {
+      console.log('🔥 Using admin menu (includes manager filtering)');
+      return getAdminMenuItems();
+    }
   };
 
   const handleLogout = () => {
@@ -225,7 +388,10 @@ const Sidebar = ({ isOpen, width }) => {
   };
 
   // Get menu items based on user role and permissions
+  console.log('🟢 About to call getMenuItems()');
   const menuItems = getMenuItems();
+  console.log('🟢 Final menuItems returned:', menuItems);
+  console.log('🟢 Final menuItems labels:', menuItems?.map(i => i.label));
 
   return (
     <SidebarContainer width={width}>

@@ -260,7 +260,8 @@ const ProfileForm = () => {
       return false;
     }
     
-    if (!profileData.department) {
+    // Only require department for admin role (not for manager/inspector)
+    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector') {
       setMessage({ type: 'error', text: 'Department is required.' });
       return false;
     }
@@ -389,12 +390,19 @@ const ProfileForm = () => {
             </FormRow>
             
             <FormGroup>
-              <Label>Department *</Label>
+              <Label>
+                Department{(user?.role !== 'manager' && user?.role !== 'inspector') ? ' *' : ''}
+              </Label>
               <Select
                 name="department"
                 value={profileData.department}
                 onChange={handleInputChange}
-                required
+                required={user?.role !== 'manager' && user?.role !== 'inspector'}
+                disabled={user?.role === 'manager' || user?.role === 'inspector'}
+                style={{
+                  opacity: (user?.role === 'manager' || user?.role === 'inspector') ? 0.6 : 1,
+                  cursor: (user?.role === 'manager' || user?.role === 'inspector') ? 'not-allowed' : 'pointer'
+                }}
               >
                 {DEPARTMENT_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -402,6 +410,16 @@ const ProfileForm = () => {
                   </option>
                 ))}
               </Select>
+              {(user?.role === 'manager' || user?.role === 'inspector') && (
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#666', 
+                  fontStyle: 'italic',
+                  marginTop: '4px'
+                }}>
+                  Only admins can modify department
+                </div>
+              )}
             </FormGroup>
             
             <ButtonGroup>

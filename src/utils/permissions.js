@@ -41,6 +41,18 @@ export const PERMISSIONS = {
   }
 };
 
+// Module-level permissions for managers (simplified)
+export const MODULE_PERMISSIONS = {
+  DASHBOARD: 'access_dashboard',
+  TASKS: 'access_tasks', 
+  USERS: 'access_users',
+  TEMPLATE: 'access_template',
+  ASSETS: 'access_assets',
+  QUESTIONNAIRES: 'access_questionnaires',
+  CALENDAR: 'access_calendar',
+  PROFILE: 'access_profile'
+};
+
 export const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
@@ -83,9 +95,52 @@ export const hasPermission = (user, permission) => {
   // Admin has all permissions
   if (user.role === ROLES.ADMIN) return true;
   
+  // For managers, check both module permissions and granular permissions
+  if (user.role === ROLES.MANAGER) {
+    // Check if it's a module permission
+    if (Object.values(MODULE_PERMISSIONS).includes(permission)) {
+      return user.permissions && user.permissions.includes(permission);
+    }
+    // Fall back to granular permissions for existing functionality
+    const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
+    return rolePermissions.includes(permission);
+  }
+  
   // Other roles - check specific permissions
   const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
   return rolePermissions.includes(permission);
+};
+
+// Helper function to check if manager has access to a module
+export const hasModuleAccess = (user, module) => {
+  console.log('hasModuleAccess called with:', { user: user?.email, role: user?.role, module });
+  
+  if (!user || !user.role) {
+    console.log('No user or role, returning false');
+    return false;
+  }
+  
+  // Admin and Inspector have access to all modules
+  if (user.role === ROLES.ADMIN || user.role === ROLES.INSPECTOR) {
+    console.log('Admin or Inspector, returning true');
+    return true;
+  }
+  
+  // For managers, check module permissions
+  if (user.role === ROLES.MANAGER) {
+    const modulePermission = MODULE_PERMISSIONS[module];
+    console.log('Manager check:', { 
+      module, 
+      modulePermission, 
+      userPermissions: user.permissions,
+      hasPermission: user.permissions && user.permissions.includes(modulePermission)
+    });
+    const hasAccess = user.permissions && user.permissions.includes(modulePermission);
+    return hasAccess;
+  }
+  
+  console.log('No matching role, returning false');
+  return false;
 };
 
 // Helper function to get all available permissions for a role
@@ -110,7 +165,6 @@ export const getAvailableRoles = (userRole) => {
 };
 
 export const DEFAULT_PERMISSIONS = {
-  [ROLES.SUPERADMIN]: ROLE_PERMISSIONS[ROLES.SUPERADMIN],
   [ROLES.ADMIN]: ROLE_PERMISSIONS[ROLES.ADMIN],
   [ROLES.MANAGER]: ROLE_PERMISSIONS[ROLES.MANAGER],
   [ROLES.INSPECTOR]: ROLE_PERMISSIONS[ROLES.INSPECTOR],
