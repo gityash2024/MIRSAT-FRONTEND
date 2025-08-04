@@ -10,6 +10,7 @@ export const PERMISSIONS = {
     CREATE_USERS: 'create_users',
     EDIT_USERS: 'edit_users',
     DELETE_USERS: 'delete_users',
+    EXPORT_USERS: 'export_users',
     MANAGE_ROLES: 'manage_roles',
     MANAGE_PERMISSIONS: 'manage_permissions'
   },

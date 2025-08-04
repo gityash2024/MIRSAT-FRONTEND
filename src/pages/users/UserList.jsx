@@ -26,7 +26,9 @@ import {
   FileText,
   Database,
   CheckCircle,
-  Loader
+  Loader,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -462,6 +464,92 @@ const LoadingContainer = styled.div`
   }
 `;
 
+// Toggle Switch Component
+const ToggleSwitch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.disabled ? 0.6 : 1};
+`;
+
+const ToggleInput = styled.input`
+  opacity: 0;
+  width: 0;
+  height: 0;
+`;
+
+const ToggleSlider = styled.span`
+  position: absolute;
+  cursor: inherit;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: ${props => props.checked ? '#10b981' : '#e5e7eb'};
+  transition: .3s;
+  border-radius: 24px;
+
+  &:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: ${props => props.checked ? '23px' : '3px'};
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const ConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ConfirmModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 450px;
+  margin: 0 16px;
+`;
+
+const ConfirmModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ConfirmModalMessage = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+`;
+
+const ConfirmModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+`;
+
 // UserListSkeleton component - COMMENTED OUT
 /*
 const UserListSkeleton = () => (
@@ -591,6 +679,8 @@ const UserList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [toggleConfirm, setToggleConfirm] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { hasPermission, userRole } = usePermissions();
   
   // Pagination state
@@ -635,7 +725,7 @@ const UserList = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/users/${deleteConfirm._id}`);
+      await api.delete(`/users/${deleteConfirm.id}`);
       toast.success('User deleted successfully');
       fetchUsersList();
       setDeleteConfirm(null);
@@ -644,21 +734,31 @@ const UserList = () => {
     }
   };
 
+  const handleToggleStatusClick = (user) => {
+    setToggleConfirm(user);
+    setActiveDropdown(null);
+  };
+
+  const handleConfirmToggleStatus = async () => {
+    if (!toggleConfirm) return;
+    
+    try {
+      setIsUpdatingStatus(true);
+      await api.patch(`/users/${toggleConfirm.id}/toggle-status`);
+      const newStatus = !toggleConfirm.isActive;
+      toast.success(`User ${newStatus ? 'activated' : 'deactivated'} successfully`);
+      fetchUsersList();
+      setToggleConfirm(null);
+    } catch (error) {
+      toast.error('Failed to update user status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const handleCopyEmail = (email) => {
     navigator.clipboard.writeText(email);
     toast.success('Email copied to clipboard');
-  };
-
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      await api.put(`/users/${userId}`, {
-        isActive: !currentStatus
-      });
-      toast.success('User status updated successfully');
-      fetchUsersList();
-    } catch (error) {
-      toast.error('Failed to update user status');
-    }
   };
   
   const generatePDF = (users) => {
@@ -991,7 +1091,7 @@ const UserList = () => {
           </thead>
           <tbody>
             {currentUsers.map(user => (
-              <tr key={user._id}>
+              <tr key={user.id}>
                 <td>
                   <UserInfo>
                     <span className="name">{user.name}</span>
@@ -1014,7 +1114,22 @@ const UserList = () => {
                   </RoleBadge>
                 </td>
                 <td>
-                  <UserStatus status={user.isActive ? 'Active' : 'Inactive'} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <UserStatus status={user.isActive ? 'Active' : 'Inactive'} />
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
+                      <ToggleSwitch 
+                        disabled={isUpdatingStatus}
+                        onClick={() => handleToggleStatusClick(user)}
+                      >
+                        <ToggleInput 
+                          type="checkbox" 
+                          checked={user.isActive}
+                          readOnly
+                        />
+                        <ToggleSlider checked={user.isActive} />
+                      </ToggleSwitch>
+                    )}
+                  </div>
                 </td>
                 <td>{formatTimestamp(user.lastLogin)}</td>
                 <td>{user.assignedTasks || 0}</td>
@@ -1029,6 +1144,15 @@ const UserList = () => {
                     {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
                       <ActionButton as={Link} to={`/users/${user.id}/edit`}>
                         <Edit size={16} />
+                      </ActionButton>
+                    )}
+
+                    {hasPermission(PERMISSIONS.USERS.DELETE_USERS) && (
+                      <ActionButton 
+                        onClick={() => handleDeleteClick(user)}
+                        style={{ color: '#dc2626' }}
+                      >
+                        <Trash2 size={16} />
                       </ActionButton>
                     )}
                    
@@ -1099,6 +1223,56 @@ const UserList = () => {
             </DialogActions>
           </DialogContent>
         </DeleteConfirmDialog>
+      )}
+
+      {/* Toggle Status Confirmation Modal */}
+      {toggleConfirm && (
+        <ConfirmModal>
+          <ConfirmModalContent>
+            <ConfirmModalTitle>
+              {toggleConfirm.isActive ? <PowerOff size={20} color="#ef4444" /> : <Power size={20} color="#10b981" />}
+              {toggleConfirm.isActive ? 'Deactivate User' : 'Activate User'}
+            </ConfirmModalTitle>
+            <ConfirmModalMessage>
+              Are you sure you want to {toggleConfirm.isActive ? 'deactivate' : 'activate'} <strong>{toggleConfirm.name}</strong>?
+              {toggleConfirm.isActive ? (
+                <>
+                  <br/><br/>⚠️ This will prevent the user from logging in and accessing the system.
+                </>
+              ) : (
+                <>
+                  <br/><br/>✅ This will allow the user to login and access the system again.
+                </>
+              )}
+            </ConfirmModalMessage>
+            <ConfirmModalActions>
+              <Button variant="secondary" onClick={() => setToggleConfirm(null)} disabled={isUpdatingStatus}>
+                Cancel
+              </Button>
+              <Button 
+                variant={toggleConfirm.isActive ? "danger" : "primary"} 
+                onClick={handleConfirmToggleStatus}
+                disabled={isUpdatingStatus}
+                style={{
+                  background: toggleConfirm.isActive ? '#ef4444' : '#10b981',
+                  color: 'white',
+                  border: 'none'
+                }}
+              >
+                {isUpdatingStatus ? (
+                  <>
+                    <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    {toggleConfirm.isActive ? 'Deactivating...' : 'Activating...'}
+                  </>
+                ) : (
+                  <>
+                    {toggleConfirm.isActive ? 'Deactivate User' : 'Activate User'}
+                  </>
+                )}
+              </Button>
+            </ConfirmModalActions>
+          </ConfirmModalContent>
+        </ConfirmModal>
       )}
     </PageContainer>
   );
