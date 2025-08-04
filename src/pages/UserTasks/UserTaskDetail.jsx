@@ -2182,7 +2182,7 @@ const UserTaskDetail = () => {
 
   // Add readonly mode check for archived tasks
   const isArchivedTask = currentTask?.status === 'archived';
-  
+
   // Switch to Overview tab if on Inspection tab for archived tasks
   useEffect(() => {
     if (isArchivedTask && activeTab === 'inspection') {

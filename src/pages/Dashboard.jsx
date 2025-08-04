@@ -396,18 +396,22 @@ const Dashboard = () => {
       let iconColor;
       
       switch (stat.icon) {
+        case 'clipboard':
         case 'Calendar':
           Icon = Calendar;
           iconColor = 'var(--color-info)';
           break;
+        case 'check-circle':
         case 'CheckSquare':
           Icon = CheckSquare;
           iconColor = 'var(--color-success)';
           break;
+        case 'clock':
         case 'Clock':
           Icon = Clock;
           iconColor = 'var(--color-warning)';
           break;
+        case 'shield-check':
         case 'ShieldCheck':
           Icon = ShieldCheck;
           iconColor = 'var(--color-teal)';
@@ -424,7 +428,7 @@ const Dashboard = () => {
               <Icon size={24} color={iconColor} />
             </div>
             <div className="value">{stat.value}</div>
-            <div className="label">{stat.label}</div>
+            <div className="label">{stat.title}</div>
           </StatCard>
         </ScrollAnimation>
       );

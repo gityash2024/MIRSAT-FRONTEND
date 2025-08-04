@@ -24,6 +24,11 @@ const StatusBadge = styled.span`
           background: #e8f5e9;
           color: #2e7d32;
         `;
+      case 'archived':
+        return `
+          background: #f3e5f5;
+          color: #7b1fa2;
+        `;
       case 'in_progress':
         return `
           background: #fff3e0;
@@ -58,6 +63,8 @@ const TaskStatus = ({ status }) => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return <CheckCircle size={12} />;
+      case 'archived':
+        return <CheckCircle size={12} />;
       case 'in_progress':
         return <Clock size={12} />;
       case 'pending':
@@ -73,6 +80,12 @@ const TaskStatus = ({ status }) => {
 
   const formatStatus = (status) => {
     if (!status) return 'Unknown';
+    
+    // Display 'archived' as 'Completed' for better UX
+    if (status.toLowerCase() === 'archived') {
+      return 'Completed';
+    }
+    
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ');
