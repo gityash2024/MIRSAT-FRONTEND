@@ -193,21 +193,24 @@ const LevelCard = styled.div`
 
 const AccordionHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: center;
   width: 100%;
   padding: 20px;
+  text-align: left;
 `;
 
 const LevelInfo = styled.div`
   display: flex;
   gap: 12px;
-  align-items: center;
+  align-items: flex-start;
+  width: 100%;
 `;
 
 const LevelIcon = styled.div`
   width: 40px;
   height: 40px;
+  min-width: 40px;
   border-radius: 8px;
   background: #e3f2fd;
   color: var(--color-navy);
@@ -217,18 +220,25 @@ const LevelIcon = styled.div`
 `;
 
 const LevelDetails = styled.div`
+  flex: 1;
+  text-align: left;
+  
   h3 {
     font-size: 16px;
     font-weight: 600;
     color: var(--color-navy);
     margin-bottom: 4px;
-    display: flex;
-    align-items: flex-start; 
+    margin-top: 0;
+    padding-left: 0;
+    text-align: left;
   }
 
   p {
     font-size: 14px;
     color: #666;
+    margin: 0;
+    padding-left: 0;
+    text-align: left;
   }
 `;
 
@@ -917,19 +927,24 @@ const InspectionLevelList = ({
             return (
               <LevelCard key={level._id || level.id}>
                 <AccordionRoot type="single" collapsible>
-                  <Accordion.Item value={level._id || level.id}>
+                  <Accordion.Item value={level._id || level.id} style={{width: '100%'}}>
                     <AccordionTrigger>
                       <AccordionHeader>
-                        <LevelInfo>
+                        <div style={{display: 'flex', alignItems: 'center', width: '48px', marginRight: '12px'}}>
                           <LevelIcon>
                             <Layers size={20} />
                           </LevelIcon>
-                          <LevelDetails>
-                            <h3>{level.name}</h3>
-                            <p>{level.description}</p>
-                          </LevelDetails>
-                        </LevelInfo>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        </div>
+                        <LevelDetails>
+                          <h3 style={{textAlign: 'left'}}>{level.name}</h3>
+                          <p style={{textAlign: 'left'}}>{level.description || 'No description provided'}</p>
+                        </LevelDetails>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          marginLeft: 'auto'
+                        }}>
                           {level.status && (
                             <StatusBadge type={level.type || 'marina_operator'}>
                               {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
