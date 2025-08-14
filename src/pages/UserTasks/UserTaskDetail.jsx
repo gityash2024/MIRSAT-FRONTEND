@@ -69,6 +69,7 @@ import {
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
+import SignaturePad from 'react-signature-canvas';
 
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
@@ -2030,6 +2031,263 @@ const calculatePageScore = (page, responses) => {
   };
 };
 
+// Signature Canvas Component for individual questions - moved outside to prevent re-renders
+const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled, onSaveResponse }) => {
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const signaturePadRef = useRef(null);
+
+  const handleOpenSignatureModal = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDisabled) return;
+    setShowSignatureModal(true);
+  }, [isDisabled]);
+
+  const handleCloseModal = useCallback(() => {
+    setShowSignatureModal(false);
+  }, []);
+
+  const handleClearSignature = useCallback(() => {
+    if (signaturePadRef.current) {
+      signaturePadRef.current.clear();
+    }
+  }, []);
+
+  const handleSaveSignature = useCallback(() => {
+    if (!signaturePadRef.current) return;
+
+    if (signaturePadRef.current.isEmpty()) {
+      toast.error('Please provide a signature before saving');
+      return;
+    }
+
+    const dataURL = signaturePadRef.current.toDataURL('image/png');
+    onSaveResponse(questionId, dataURL);
+    setShowSignatureModal(false);
+    toast.success('Signature saved successfully');
+  }, [questionId, onSaveResponse]);
+
+  const handleDeleteSignature = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSaveResponse(questionId, '');
+    toast.success('Signature removed');
+  }, [questionId, onSaveResponse]);
+
+  const handleModalOverlayClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      setShowSignatureModal(false);
+    }
+  }, []);
+
+  const handleModalContentClick = useCallback((e) => {
+    e.stopPropagation();
+  }, []);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px' }}>
+        {isDisabled ? 'Signature' : 'Digital Signature Required'}
+      </div>
+
+      {/* Signature Display or Button */}
+      {response ? (
+        <div style={{ 
+          border: '2px dashed #e5e7eb',
+          borderRadius: '12px',
+          padding: '16px',
+          background: '#f9fafb',
+          textAlign: 'center'
+        }}>
+          <div style={{ 
+            fontSize: '12px',
+            color: '#16a34a',
+            fontWeight: '500',
+            marginBottom: '12px'
+          }}>
+            ✅ Signature Captured
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '12px'
+          }}>
+            <div style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '6px',
+              padding: '8px',
+              background: 'white',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+            }}>
+              <img 
+                src={response}
+                alt="Signature preview"
+                style={{
+                  width: '200px',
+                  height: '80px',
+                  objectFit: 'contain',
+                  display: 'block'
+                }}
+              />
+            </div>
+          </div>
+
+          {!isDisabled && (
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={handleOpenSignatureModal}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #3788d8',
+                  background: '#3788d8',
+                  color: 'white',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Update Signature
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSignature}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #ef4444',
+                  background: '#ef4444',
+                  color: 'white',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ 
+          border: '2px dashed #e5e7eb',
+          borderRadius: '12px',
+          padding: '24px',
+          background: '#f9fafb',
+          textAlign: 'center'
+        }}>
+          <div style={{ 
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            No signature provided
+          </div>
+          
+          {!isDisabled && (
+            <button
+              type="button"
+              onClick={handleOpenSignatureModal}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '8px',
+                border: '1px solid #3788d8',
+                background: '#3788d8',
+                color: 'white',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: '0 auto'
+              }}
+            >
+              ✏️ Add Signature
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <ModalOverlay onClick={handleModalOverlayClick}>
+          <ModalContent onClick={handleModalContentClick}>
+            <ModalHeader>
+              <ModalTitle>Digital Signature</ModalTitle>
+              <CloseButton type="button" onClick={handleCloseModal}>
+                ✕
+              </CloseButton>
+            </ModalHeader>
+
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                fontSize: '14px',
+                color: '#6b7280',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                Please sign in the area below
+              </div>
+
+              <div style={{
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                background: 'white',
+                overflow: 'hidden'
+              }}>
+                <SignaturePad
+                  ref={signaturePadRef}
+                  canvasProps={{
+                    width: 500,
+                    height: 200,
+                    style: {
+                      width: '100%',
+                      height: '200px'
+                    }
+                  }}
+                  backgroundColor="#ffffff"
+                  penColor="#000000"
+                />
+              </div>
+            </div>
+
+            <SignatureActions>
+              <ClearButton type="button" onClick={handleClearSignature}>
+                Clear
+              </ClearButton>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #d1d5db',
+                  background: '#f3f4f6',
+                  color: '#6b7280',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Cancel
+              </button>
+              <SaveButton type="button" onClick={handleSaveSignature}>
+                Save Signature
+              </SaveButton>
+            </SignatureActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </div>
+  );
+});
+
+// Set display name for better debugging
+SignatureCanvasComponent.displayName = 'SignatureCanvasComponent';
+
 const UserTaskDetail = () => {
   const dispatch = useDispatch();
   const { taskId } = useParams();
@@ -3127,196 +3385,6 @@ const UserTaskDetail = () => {
     }
   };
 
-  // Signature Canvas Component for individual questions
-  const SignatureCanvasComponent = ({ questionId, response, isDisabled, onSaveResponse }) => {
-    const canvasRef = useRef(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const initializedRef = useRef(false);
-
-    // Initialize canvas only once and keep it simple
-    useEffect(() => {
-      if (canvasRef.current && !initializedRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        
-        // Basic setup
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'black';
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        
-        initializedRef.current = true;
-        
-        // Load existing signature if any
-        if (response && response.startsWith('data:image')) {
-          const img = new Image();
-          img.onload = () => {
-            if (canvasRef.current) {
-              const ctx = canvas.getContext('2d');
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.fillStyle = 'white';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            }
-          };
-          img.src = response;
-        }
-      }
-    }, [response]);
-
-    const startDrawing = (e) => {
-      if (isDisabled || !canvasRef.current) return;
-      
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      setIsDrawing(true);
-    };
-
-    const draw = (e) => {
-      if (!isDrawing || isDisabled || !canvasRef.current) return;
-      
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    };
-
-    const stopDrawing = () => {
-      if (isDisabled) return;
-      setIsDrawing(false);
-    };
-
-    const handleCanvasBlur = () => {
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const dataURL = canvas.toDataURL('image/png');
-        onSaveResponse(questionId, dataURL);
-      }
-    };
-
-    const clearSignature = () => {
-      if (isDisabled || !canvasRef.current) return;
-      
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Clear the response
-      onSaveResponse(questionId, '');
-    };
-
-    return (
-      <div>
-        <div style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px' }}>
-          {isDisabled ? 'Signature' : 'Draw your signature below'}
-        </div>
-        
-        <SignatureCanvas>
-          <canvas 
-            ref={canvasRef}
-            width="500" 
-            height="200"
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              const touch = e.touches[0];
-              const rect = e.target.getBoundingClientRect();
-              const mouseEvent = {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-              };
-              startDrawing(mouseEvent);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              const touch = e.touches[0];
-              const mouseEvent = {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-              };
-              draw(mouseEvent);
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopDrawing();
-            }}
-            onBlur={handleCanvasBlur}
-            tabIndex={0}
-            style={{
-              cursor: isDisabled ? 'not-allowed' : 'crosshair',
-              opacity: isDisabled ? 0.7 : 1,
-              outline: 'none',
-              touchAction: 'none'
-            }}
-          />
-        </SignatureCanvas>
-        
-        {!isDisabled && (
-          <SignatureActions>
-            <ClearButton onClick={clearSignature}>
-              Clear
-            </ClearButton>
-          </SignatureActions>
-        )}
-        
-        {response && (
-          <div style={{ 
-            marginTop: '12px',
-            textAlign: 'center'
-          }}>
-            <div style={{ 
-              fontSize: '12px',
-              color: '#16a34a',
-              fontWeight: '500',
-              marginBottom: '8px'
-            }}>
-              ✅ Signature saved
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <div style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                padding: '4px',
-                background: 'white',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-              }}>
-                <img 
-                  src={response}
-                  alt="Signature preview"
-                  style={{
-                    width: '150px',
-                    height: '60px',
-                    objectFit: 'contain',
-                    display: 'block'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderQuestionInput = (question, task, onSaveResponse) => {
     const questionId = question._id;
@@ -5274,7 +5342,7 @@ const UserTaskDetail = () => {
       
       {showSignatureModal && !isArchivedTask && (
         <ModalOverlay>
-          <ModalContent>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>Sign Final Report</ModalTitle>
               <CloseButton onClick={() => setShowSignatureModal(false)}>
