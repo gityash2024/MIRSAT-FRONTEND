@@ -3761,7 +3761,7 @@ const UserTaskDetail = () => {
                 color: '#6b7280',
                 textAlign: 'center'
               }}>
-                {isDisabled ? 'Signature' : 'Draw your signature below'}
+                {isDisabled ? '' : ''}
               </div>
               
               <div style={{ 
