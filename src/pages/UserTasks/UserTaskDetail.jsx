@@ -2442,11 +2442,11 @@ const UserTaskDetail = () => {
   const isArchivedTask = currentTask?.status === 'archived';
 
   // Switch to Overview tab if on Inspection tab for archived tasks
-  useEffect(() => {
-    if (isArchivedTask && activeTab === 'inspection') {
-      setActiveTab('overview');
-    }
-  }, [isArchivedTask, activeTab]);
+  // useEffect(() => {
+  //   if (isArchivedTask && activeTab === 'inspection') {
+  //     setActiveTab('overview');
+  //   }
+  // }, [isArchivedTask, activeTab]);
 
   // Define timer functions BEFORE useEffects that use them
   const startScreenTimer = useCallback(() => {
@@ -4587,7 +4587,7 @@ const UserTaskDetail = () => {
               <Info size={16} />
               Overview
             </Tab>
-            {!isArchivedTask && (
+            {/* {!isArchivedTask && ( */}
               <Tab 
                 active={activeTab === 'inspection'} 
                 onClick={() => {
@@ -4600,7 +4600,7 @@ const UserTaskDetail = () => {
                 <CheckSquare size={16} />
                 Inspection
               </Tab>
-            )}
+            {/* )} */}
             <Tab 
               active={activeTab === 'report'} 
               onClick={() => {
