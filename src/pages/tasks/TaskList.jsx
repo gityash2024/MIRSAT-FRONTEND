@@ -15,6 +15,7 @@ import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -270,6 +271,8 @@ const TaskList = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
 
   useEffect(() => {
     // Initialize filters if they don't exist
@@ -365,6 +368,34 @@ const TaskList = () => {
 
   // Export tasks to PDF
   const handleExportPDF = () => {
+    setPendingExport({ format: 'pdf', data: tasks });
+    setShowDocumentModal(true);
+    setShowExportDropdown(false);
+  };
+
+  // Export tasks to CSV
+  const handleExportCSV = () => {
+    setPendingExport({ format: 'csv', data: tasks });
+    setShowDocumentModal(true);
+    setShowExportDropdown(false);
+  };
+
+  const handleConfirmExport = (fileName) => {
+    if (!pendingExport) return;
+    
+    const { format, data } = pendingExport;
+    
+    if (format === 'pdf') {
+      generatePDFExport(data, fileName);
+    } else if (format === 'csv') {
+      generateCSVExport(data, fileName);
+    }
+    
+    setShowDocumentModal(false);
+    setPendingExport(null);
+  };
+
+  const generatePDFExport = (tasksData, fileName) => {
     try {
       toast.loading('Generating PDF...');
       
@@ -394,8 +425,8 @@ const TaskList = () => {
       ];
       
       // Prepare data for the table
-      const tableData = tasks.map((task, index) => ({
-        index: (index + 1).toString(), // Convert to string to avoid NaN
+      const tableData = tasksData.map((task, index) => ({
+        index: (index + 1).toString(),
         title: task.title || 'Untitled',
         template: task.inspectionLevel?.name || 'N/A',
         assignee: task.assignedTo && task.assignedTo.length > 0 
@@ -409,89 +440,33 @@ const TaskList = () => {
       
       // Generate the table
       doc.autoTable({
-        head: [columns.map(column => column.header)],
-        body: tableData.map(row => columns.map(column => row[column.dataKey])),
-        startY: 40,
-        theme: 'grid',
+        columns: columns,
+        body: tableData,
+        startY: 35,
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          halign: 'center',
+          valign: 'middle'
+        },
         headStyles: {
           fillColor: [26, 35, 126],
           textColor: [255, 255, 255],
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [240, 240, 240]
+          fillColor: [245, 247, 250]
         },
-        columnStyles: {
-          index: { cellWidth: 15 },
-          title: { cellWidth: 'auto' },
-          priority: { cellWidth: 30 },
-          status: { cellWidth: 40 },
-          progress: { cellWidth: 30 }
-        },
-        styles: {
-          cellPadding: 5,
-          fontSize: 10
-        }
+        tableWidth: 'auto',
+        margin: { left: 14, right: 14 }
       });
-      
-      // Add applied filters section if any
-      const hasFilters = Object.entries(filters || {}).some(([key, value]) => {
-        if (key === 'search') return !!value;
-        return Array.isArray(value) && value.length > 0;
-      });
-      
-      if (hasFilters) {
-        doc.setFontSize(12);
-        doc.setTextColor(26, 35, 126);
-        
-        // Get the Y position after the table - use safer JavaScript approach
-        const tableEndY = (doc.lastAutoTable && doc.lastAutoTable.finalY) 
-          ? doc.lastAutoTable.finalY + 15 
-          : 40;
-        
-        doc.text('Applied Filters:', 14, tableEndY);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(60, 60, 60);
-        
-        let filterText = '';
-        
-        if (filters.search) {
-          filterText += `Search: "${filters.search}"\n`;
-        }
-        
-        if (filters.status && filters.status.length > 0) {
-          filterText += `Status: ${filters.status.join(', ')}\n`;
-        }
-        
-        if (filters.priority && filters.priority.length > 0) {
-          filterText += `Priority: ${filters.priority.join(', ')}\n`;
-        }
-        
-        if (filterText) {
-          doc.text(filterText, 14, tableEndY + 8);
-        }
-      }
-      
-      // Add pagination to each page
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(
-          `Page ${i} of ${pageCount} | MIRSAT Task Report`, 
-          doc.internal.pageSize.width / 2, 
-          doc.internal.pageSize.height - 10, 
-          { align: 'center' }
-        );
-      }
       
       // Save the PDF
-      doc.save('mirsat-tasks-report.pdf');
+      doc.save(`${fileName}.pdf`);
+      
       toast.dismiss();
       toast.success('PDF generated successfully');
-      setShowExportDropdown(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.dismiss();
@@ -499,8 +474,7 @@ const TaskList = () => {
     }
   };
 
-  // Export tasks to CSV
-  const handleExportCSV = () => {
+  const generateCSVExport = (tasksData, fileName) => {
     try {
       toast.loading('Generating CSV...');
       
@@ -508,7 +482,7 @@ const TaskList = () => {
       const headers = ['Task Name', 'Template', 'Assignee', 'Priority', 'Status', 'Due Date', 'Progress'];
       
       // Prepare the data
-      const csvData = tasks.map(task => [
+      const csvData = tasksData.map(task => [
         task.title || 'Untitled',
         task.inspectionLevel?.name || 'N/A',
         task.assignedTo && task.assignedTo.length > 0 
@@ -537,14 +511,13 @@ const TaskList = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'mirsat-tasks-report.csv');
+      link.setAttribute('download', `${fileName}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast.dismiss();
       toast.success('CSV generated successfully');
-      setShowExportDropdown(false);
     } catch (error) {
       console.error('Error generating CSV:', error);
       toast.dismiss();
@@ -675,6 +648,17 @@ const TaskList = () => {
       ) : (
         // Show empty state
         renderEmptyState()
+      )}
+
+      {showDocumentModal && pendingExport && (
+        <DocumentNamingModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          onExport={handleConfirmExport}
+          exportFormat={pendingExport.format}
+          documentType="Tasks-Report"
+          defaultCriteria={['documentType', 'currentDate']}
+        />
       )}
     </PageContainer>
   );

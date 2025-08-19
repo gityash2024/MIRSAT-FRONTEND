@@ -310,7 +310,7 @@ const EventModal = ({
     const eventData = {
       title: formData.title,
       description: formData.description,
-      status: formData.status,
+      // status: formData.status,
       priority: formData.priority,
       assignedTo: formData.assignedTo,
       inspectionLevel: formData.inspectionLevel,
@@ -424,7 +424,7 @@ const EventModal = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <FormGroup>
+              {/* <FormGroup>
                 <Label>Status</Label>
                 <Select
                   value={formData.status}
@@ -437,7 +437,7 @@ const EventModal = ({
                     </option>
                   ))}
                 </Select>
-              </FormGroup>
+              </FormGroup> */}
 
               <FormGroup>
                 <Label>Priority</Label>

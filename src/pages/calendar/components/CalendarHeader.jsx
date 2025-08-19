@@ -6,8 +6,9 @@ import styled from 'styled-components';
 import { Plus, Filter, Download, Calendar, ArrowLeft, FileText } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { PERMISSIONS } from '../../../utils/permissions';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import DocumentNamingModal from '../../../components/ui/DocumentNamingModal';
 
 const Header = styled.div`
   display: flex;
@@ -136,13 +137,17 @@ const DropdownItem = styled.button`
   }
 `;
 
-const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
-  const { hasPermission } = usePermissions();
+const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
   const dropdownRef = useRef(null);
-  const tasks = useSelector((state) => state.tasks.tasks || []);
   
+  // Get tasks from Redux store
+  const { tasks } = useSelector(state => state.tasks);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -157,20 +162,36 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     };
   }, []);
 
-  // Format date to readable string
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Handle export button click
+  const handleExport = (format) => {
+    setPendingExport({ format, data: tasks });
+    setShowDocumentModal(true);
+    setShowExportDropdown(false);
   };
-  
-  // Handle PDF export
-  const handleExportPDF = () => {
+
+  // Handle confirmed export with custom filename
+  const handleConfirmExport = (fileName) => {
+    if (!pendingExport) return;
+    
+    const { format, data } = pendingExport;
+    
+    if (format === 'pdf') {
+      generatePDFExport(data, fileName);
+    } else if (format === 'csv') {
+      generateCSVExport(data, fileName);
+    }
+    
+    setShowDocumentModal(false);
+    setPendingExport(null);
+  };
+
+  // Generate PDF with custom filename
+  const generatePDFExport = (tasksData, fileName) => {
     const doc = new jsPDF();
     
     // Set document properties
     doc.setProperties({
-      title: 'Calendar Events Report',
+      title: `${fileName} - Calendar Events Report`,
       subject: 'MIRSAT System Calendar Events',
       creator: 'MIRSAT System'
     });
@@ -182,7 +203,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     // Add title with proper positioning
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255); // White text
-    doc.text('Calendar Events Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
+    doc.text(fileName || 'Calendar Events Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
     
     // Add date subtitle
     doc.setFontSize(10);
@@ -198,14 +219,14 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     doc.text('Events Summary', 14, contentStartY);
     
     // Prepare summary info
-    const pendingEvents = tasks.filter(task => task.status === 'pending').length;
-    const completedEvents = tasks.filter(task => task.status === 'completed').length;
-    const highPriorityEvents = tasks.filter(task => task.priority === 'high').length;
+    const pendingEvents = tasksData.filter(task => task.status === 'pending').length;
+    const completedEvents = tasksData.filter(task => task.status === 'completed').length;
+    const highPriorityEvents = tasksData.filter(task => task.priority === 'high').length;
     
     // Display summary data
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80); // Dark gray for content
-    doc.text(`Total Events: ${tasks.length}`, 14, contentStartY + 10);
+    doc.text(`Total Events: ${tasksData.length}`, 14, contentStartY + 10);
     doc.text(`Pending Events: ${pendingEvents}`, 14, contentStartY + 20);
     doc.text(`Completed Events: ${completedEvents}`, 14, contentStartY + 30);
     doc.text(`High Priority Events: ${highPriorityEvents}`, 14, contentStartY + 40);
@@ -215,90 +236,54 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
       "Title", 
       "Status", 
       "Priority", 
-      "Assigned To",
+      "Assigned To", 
+      "Description", 
       "Deadline"
     ];
     
-    // Process data for better presentation
-    const tableRows = tasks.map(task => [
-      task.title || 'Untitled',
-      task.status || 'N/A',
-      task.priority || 'N/A',
-      (task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned'),
-      formatDate(task.deadline) || 'No deadline'
+    const tableRows = tasksData.map(task => [
+      task.title || '',
+      task.status || '',
+      task.priority || '',
+      task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned',
+      task.description || '',
+      formatDate(task.deadline) || ''
     ]);
     
-    // Add events table with better styling
+    // AutoTable configuration with improved styling
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
-      startY: contentStartY + 55,
-      styles: { 
-        fontSize: 9,
-        cellPadding: 5,
-        overflow: 'linebreak', // Prevent text overlap
-        lineWidth: 0.1
+      startY: contentStartY + 60,
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        halign: 'left'
       },
       headStyles: {
         fillColor: [26, 35, 126],
         textColor: [255, 255, 255],
-        fontSize: 10,
         fontStyle: 'bold',
-        halign: 'center'
-      },
-      columnStyles: {
-        0: { cellWidth: 50 }, // Title
-        1: { cellWidth: 30 }, // Status
-        2: { cellWidth: 25 }, // Priority
-        3: { cellWidth: 40 }, // Assigned To
-        4: { cellWidth: 35 }  // Deadline
+        fontSize: 9
       },
       alternateRowStyles: {
-        fillColor: [240, 247, 255]
+        fillColor: [245, 245, 245]
       },
-      // Customize status and priority columns
-      didDrawCell: (data) => {
-        if (data.section === 'body') {
-          // Customize status column
-          if (data.column.index === 1) {
-            const status = data.cell.raw;
-            if (status === 'completed') {
-              doc.setFillColor(232, 245, 233); // Light green
-              doc.setTextColor(46, 125, 50);   // Dark green
-            } else if (status === 'in_progress') {
-              doc.setFillColor(225, 245, 254); // Light blue
-              doc.setTextColor(2, 136, 209);   // Dark blue
-            } else if (status === 'pending') {
-              doc.setFillColor(255, 243, 224); // Light orange
-              doc.setTextColor(230, 81, 0);    // Dark orange
-            }
-          }
-          
-          // Customize priority column
-          if (data.column.index === 2) {
-            const priority = data.cell.raw;
-            if (priority === 'high') {
-              doc.setFillColor(255, 235, 238); // Light red
-              doc.setTextColor(211, 47, 47);   // Dark red
-            } else if (priority === 'medium') {
-              doc.setFillColor(255, 243, 224); // Light orange
-              doc.setTextColor(230, 81, 0);    // Dark orange
-            } else if (priority === 'low') {
-              doc.setFillColor(232, 245, 233); // Light green
-              doc.setTextColor(46, 125, 50);   // Dark green
-            }
-          }
-        }
+      columnStyles: {
+        0: { cellWidth: 40 }, // Title
+        1: { cellWidth: 20 }, // Status
+        2: { cellWidth: 20 }, // Priority
+        3: { cellWidth: 30 }, // Assigned To
+        4: { cellWidth: 50 }, // Description
+        5: { cellWidth: 25 }  // Deadline
       },
-      // Reset colors after processing cells
-      didParseCell: (data) => {
-        if (data.section === 'body') {
-          doc.setTextColor(60, 60, 60); // Reset text color
-        }
-      }
+      margin: { top: 10, left: 14, right: 14 },
+      tableLineColor: [200, 200, 200],
+      tableLineWidth: 0.1,
     });
     
-    // Add footer with page numbers
+    // Add footer to all pages
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -313,16 +298,15 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     }
     
     // Save the PDF
-    doc.save('calendar-events.pdf');
-    setShowExportDropdown(false);
+    doc.save(`${fileName}.pdf`);
   };
-  
-  // Handle CSV export
-  const handleExportCSV = () => {
+
+  // Generate CSV with custom filename
+  const generateCSVExport = (tasksData, fileName) => {
     // Prepare CSV data
     const headers = ["Title", "Status", "Priority", "Assigned To", "Description", "Deadline"];
     
-    const csvData = tasks.map(task => [
+    const csvData = tasksData.map(task => [
       task.title || '',
       task.status || '',
       task.priority || '',
@@ -346,67 +330,88 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'calendar-events.csv');
+    link.setAttribute('download', `${fileName}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    setShowExportDropdown(false);
+  };
+
+  // Helper function to format dates
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      return '';
+    }
   };
 
   return (
-    <Header>
-      <HeaderTop>
-        <BackButton onClick={() => navigate('/tasks')}>
-          <ArrowLeft size={18} />
-          Back to Tasks
-        </BackButton>
-        
-        <HeaderContent>
-          <PageTitle>
-            <Calendar size={24} />
-            Calendar View
-          </PageTitle>
-          <PageDescription>Schedule and manage inspection tasks on a calendar</PageDescription>
-        </HeaderContent>
+    <>
+      <Header>
+        <HeaderTop>
+          <BackButton onClick={() => navigate('/tasks')}>
+            <ArrowLeft size={18} />
+            Back to Tasks
+          </BackButton>
+          
+          <HeaderContent>
+            <PageTitle>
+              <Calendar size={24} />
+              Calendar View
+            </PageTitle>
+            <PageDescription>Schedule and manage inspection tasks on a calendar</PageDescription>
+          </HeaderContent>
 
-        <ActionButtons>
-          <Button onClick={onToggleFilters}>
-            <Filter size={16} />
-            Filters
-          </Button>
-          
-          {hasPermission(PERMISSIONS.EXPORT_TASKS) && (
-            <div ref={dropdownRef} style={{ position: 'relative' }}>
-              <Button onClick={() => setShowExportDropdown(!showExportDropdown)}>
-                <Download size={16} />
-                Export
-              </Button>
-              
-              {showExportDropdown && (
-                <DropdownMenu>
-                  <DropdownItem onClick={handleExportPDF}>
-                    <FileText size={16} />
-                    Export as PDF
-                  </DropdownItem>
-                  <DropdownItem onClick={handleExportCSV}>
-                    <FileText size={16} />
-                    Export as CSV
-                  </DropdownItem>
-                </DropdownMenu>
-              )}
-            </div>
-          )}
-          
-          {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
-            <Button variant="primary" onClick={onAddEvent}>
-              <Plus size={16} />
-              Add Event
+          <ActionButtons>
+            <Button onClick={onToggleFilters}>
+              <Filter size={16} />
+              Filters
             </Button>
-          )}
-        </ActionButtons>
-      </HeaderTop>
-    </Header>
+            
+            {hasPermission(PERMISSIONS.EXPORT_TASKS) && (
+              <div ref={dropdownRef} style={{ position: 'relative' }}>
+                <Button onClick={() => setShowExportDropdown(!showExportDropdown)}>
+                  <Download size={16} />
+                  Export
+                </Button>
+                
+                {showExportDropdown && (
+                  <DropdownMenu>
+                    <DropdownItem onClick={() => handleExport('pdf')}>
+                      <FileText size={16} />
+                      Export as PDF
+                    </DropdownItem>
+                    <DropdownItem onClick={() => handleExport('csv')}>
+                      <FileText size={16} />
+                      Export as CSV
+                    </DropdownItem>
+                  </DropdownMenu>
+                )}
+              </div>
+            )}
+            
+            {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
+              <Button variant="primary" onClick={onAddEvent}>
+                <Plus size={16} />
+                Add Event
+              </Button>
+            )}
+          </ActionButtons>
+        </HeaderTop>
+      </Header>
+
+      {showDocumentModal && pendingExport && (
+        <DocumentNamingModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          onExport={handleConfirmExport}
+          exportFormat={pendingExport.format}
+          documentType="Calendar-Events-Report"
+          defaultCriteria={['documentType', 'currentDate']}
+        />
+      )}
+    </>
   );
 };
 

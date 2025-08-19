@@ -11,6 +11,10 @@ import { DownloadDone } from '@mui/icons-material';
 import { ListChecks, Calendar } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PERMISSIONS } from '../../utils/permissions';
+import { inspectionService } from '../../services/inspection.service';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -493,6 +497,8 @@ const InspectionLevelList = ({
   const [publishModalVisible, setPublishModalVisible] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
   const [levelToPublish, setLevelToPublish] = useState(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
   const exportDropdownRef = useRef(null);
   const dispatch = useDispatch();
 
@@ -574,7 +580,13 @@ const InspectionLevelList = ({
   };
 
   const handleExport = async (format) => {
+    setPendingExport({ format, data: inspectionLevels });
+    setShowDocumentModal(true);
     setShowExportDropdown(false);
+  };
+
+  const handleConfirmExport = async (fileName) => {
+    if (!pendingExport) return;
     
     try {
       setLoading(true);
@@ -587,13 +599,13 @@ const InspectionLevelList = ({
       }
       
       const params = {
-        format,
-        ids: inspectionLevels.map(level => level._id)
+        format: pendingExport.format,
+        ids: pendingExport.data.map(level => level._id),
+        fileName
       };
       
       await inspectionService.exportInspectionLevels(params);
-      toast.success(`Export as ${format.toUpperCase()} successful`);
-      setLoading(false);
+      toast.success(`Export as ${pendingExport.format.toUpperCase()} successful`);
     } catch (error) {
       console.error('Export failed', error);
       
@@ -601,16 +613,19 @@ const InspectionLevelList = ({
       if (error.response && error.response.data) {
         try {
           const errorData = error.response.data;
-          errorMessage = errorData.message || `Failed to export as ${format.toUpperCase()}`;
+          errorMessage = errorData.message || `Failed to export as ${pendingExport.format.toUpperCase()}`;
         } catch (parseError) {
-          errorMessage = `Failed to export as ${format.toUpperCase()}`;
+          errorMessage = `Failed to export as ${pendingExport.format.toUpperCase()}`;
         }
       } else {
-        errorMessage = error.message || `Failed to export as ${format.toUpperCase()}`;
+        errorMessage = error.message || `Failed to export as ${pendingExport.format.toUpperCase()}`;
       }
       
       toast.error(errorMessage);
+    } finally {
       setLoading(false);
+      setShowDocumentModal(false);
+      setPendingExport(null);
     }
   };
 
@@ -1028,6 +1043,17 @@ const InspectionLevelList = ({
             );
           })}
         </LevelGrid>
+      )}
+
+      {showDocumentModal && pendingExport && (
+        <DocumentNamingModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          onExport={handleConfirmExport}
+          exportFormat={pendingExport.format}
+          documentType="Templates-Report"
+          defaultCriteria={['documentType', 'currentDate']}
+        />
       )}
     </PageContainer>
   );

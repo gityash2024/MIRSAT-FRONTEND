@@ -17,6 +17,7 @@ import AssetTypeModal from './components/AssetTypeModal';
 import AssetTasksModal from './components/AssetTasksModal';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -158,6 +159,8 @@ const AssetList = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [filters, setFilters] = useState({});
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
 
   useEffect(() => {
     // Load initial data
@@ -219,10 +222,21 @@ const AssetList = () => {
   };
 
   const handleExport = async () => {
+    setPendingExport({ format: 'xlsx', data: assets });
+    setShowDocumentModal(true);
+  };
+
+  const handleConfirmExport = async (fileName) => {
+    if (!pendingExport) return;
+    
     try {
-      await dispatch(exportAssets()).unwrap();
+      // Update the export action to use the custom filename
+      await dispatch(exportAssets(fileName)).unwrap();
     } catch (error) {
       console.error('Export failed:', error);
+    } finally {
+      setShowDocumentModal(false);
+      setPendingExport(null);
     }
   };
 
@@ -396,13 +410,21 @@ const AssetList = () => {
       )}
 
       {isTasksModalOpen && selectedAsset && (
-        <AssetTasksModal
-          isOpen={isTasksModalOpen}
-          onClose={() => {
-            setIsTasksModalOpen(false);
-            setSelectedAsset(null);
-          }}
+        <AssetTasksModal 
+          isOpen={isTasksModalOpen} 
+          onClose={() => setIsTasksModalOpen(false)} 
           asset={selectedAsset}
+        />
+      )}
+
+      {showDocumentModal && pendingExport && (
+        <DocumentNamingModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          onExport={handleConfirmExport}
+          exportFormat={pendingExport.format}
+          documentType="Assets-Report"
+          defaultCriteria={['documentType', 'currentDate']}
         />
       )}
     </PageContainer>

@@ -19,7 +19,7 @@ const Calendar = () => {
 
   return (
     <div>
-      {hasPermission(PERMISSIONS.VIEW_CALENDAR) ? (
+      {hasPermission(PERMISSIONS.CALENDAR.VIEW_CALENDAR) ? (
         <CalendarView />
       ) : (
         <div style={{ padding: "24px", color: "#666" }}>

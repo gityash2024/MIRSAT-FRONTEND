@@ -126,6 +126,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user function
+  const updateUser = async (updates) => {
+    try {
+      // Update user state while preserving all existing user data
+      setUser(prev => {
+        if (!prev) return prev;
+        
+        // Filter out timezone updates to prevent corruption
+        const { timezone, ...safeUpdates } = updates;
+        const updatedUser = { ...prev, ...safeUpdates };
+        
+        return updatedUser;
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -138,7 +158,8 @@ export const AuthProvider = ({ children }) => {
         register,
         forgotPassword,
         resetPassword,
-        fetchUserProfile
+        fetchUserProfile,
+        updateUser
       }}
     >
       {children}

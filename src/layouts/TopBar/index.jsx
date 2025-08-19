@@ -5,6 +5,7 @@ import { Bell, User, ChevronDown, LogOut, Menu } from 'lucide-react';
 import { NotificationDropdown } from '../../pages/notifications';
 import { useNavigate } from 'react-router-dom';
 import useNotification from '../../hooks/useNotification';
+import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -207,6 +208,8 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
       </LeftSection>
       
       <RightSection>
+        <TimezoneDropdown />
+        
         <NotificationContainer ref={notificationRef}>
           <NotificationButton onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
             <Bell size={20} />

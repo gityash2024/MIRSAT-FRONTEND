@@ -41,6 +41,7 @@ import Skeleton from '../../components/ui/Skeleton';
 
 import UserFilter from './components/UserFilters';
 import api from '../../services/api';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -683,6 +684,9 @@ const UserList = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { hasPermission, userRole } = usePermissions();
   
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
@@ -899,14 +903,22 @@ const UserList = () => {
   };
   
   const handleExport = async (format) => {
+    setPendingExport({ format, data: filteredUsers });
+    setShowDocumentModal(true);
+    setShowExportDropdown(false);
+  };
+
+  const handleConfirmExport = async (fileName) => {
+    if (!pendingExport) return;
+    
     try {
-      setShowExportDropdown(false);
+      const { format, data } = pendingExport;
       
       switch(format) {
         case 'pdf':
-          const doc = generatePDF(filteredUsers);
+          const doc = generatePDF(data);
           if (doc) {
-            doc.save('user-management-report.pdf');
+            doc.save(`${fileName}.pdf`);
             toast.success('PDF exported successfully');
           }
           break;
@@ -917,7 +929,7 @@ const UserList = () => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `users-${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `${fileName}.csv`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -928,13 +940,16 @@ const UserList = () => {
             toast.error('Failed to export CSV');
           }
           break;
-  
+
         default:
           toast.error('Invalid export format');
       }
     } catch (error) {
       console.error('Export error:', error);
-      toast.error(`Failed to export as ${format.toUpperCase()}`);
+      toast.error(`Failed to export as ${pendingExport.format.toUpperCase()}`);
+    } finally {
+      setShowDocumentModal(false);
+      setPendingExport(null);
     }
   };
 
@@ -1282,6 +1297,17 @@ const UserList = () => {
             </ConfirmModalActions>
           </ConfirmModalContent>
         </ConfirmModal>
+      )}
+
+      {showDocumentModal && (
+        <DocumentNamingModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          onExport={handleConfirmExport}
+          exportFormat={pendingExport?.format || 'pdf'}
+          documentType="Users-Report"
+          defaultCriteria={['documentType', 'currentDate']}
+        />
       )}
     </PageContainer>
   );

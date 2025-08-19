@@ -232,7 +232,7 @@ const CalendarFilters = ({ onFilterChange }) => {
           </CheckboxGroup>
         </FilterGroup>
 
-        <FilterGroup>
+        {/* <FilterGroup>
           <h3>Assignee</h3>
           <CheckboxGroup>
             {users?.map(user => (
@@ -246,7 +246,7 @@ const CalendarFilters = ({ onFilterChange }) => {
               </Checkbox>
             ))}
           </CheckboxGroup>
-        </FilterGroup>
+        </FilterGroup> */}
 
         <FilterGroup>
           <h3>Template</h3>

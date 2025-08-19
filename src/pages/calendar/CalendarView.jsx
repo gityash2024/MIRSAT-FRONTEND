@@ -344,6 +344,12 @@ const CalendarView = () => {
         return '#10b981'; // Green
       case 'cancelled':
         return '#ef4444'; // Red
+      case 'archived':
+        return '#6b7280'; // Gray
+      case 'incomplete':
+        return '#f59e0b'; // Orange
+      case 'partially_completed':
+        return '#8b5cf6'; // Purple
       default:
         return 'var(--color-navy)'; // Default blue
     }

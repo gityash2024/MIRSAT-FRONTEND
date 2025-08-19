@@ -72,7 +72,7 @@ export const deleteAsset = createAsyncThunk(
 
 export const exportAssets = createAsyncThunk(
   'assets/exportAssets',
-  async (_, { rejectWithValue }) => {
+  async (fileName = 'assets', { rejectWithValue }) => {
     try {
       const response = await assetService.exportAssets();
       
@@ -80,7 +80,7 @@ export const exportAssets = createAsyncThunk(
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'assets.xlsx');
+      link.setAttribute('download', `${fileName}.xlsx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
