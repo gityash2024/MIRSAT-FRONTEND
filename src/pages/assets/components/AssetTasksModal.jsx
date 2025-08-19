@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { fetchTasks } from '../../../store/slices/taskSlice';
 // import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 import { Link } from 'react-router-dom';
+import api from '../../../services/api'; // Fixed import path for api
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -247,26 +248,16 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
   const loadTasks = async () => {
     setLoading(true);
     try {
-      // Properly filter tasks by asset ID - ensure we're passing the correct parameter format
-      const params = { 
-        asset: asset._id || asset.id,
-        limit: 100 // Get all tasks for this asset
-      };
+      const assetId = asset._id || asset.id;
+      console.log('Loading tasks for asset:', assetId);
       
-      console.log('Loading tasks for asset:', params);
-      const response = await dispatch(fetchTasks(params)).unwrap();
-      
-      // Filter tasks to ensure they are actually related to this asset
-      const filteredTasks = (response.data || []).filter(task => {
-        // Check multiple possible ways the asset might be referenced in the task
-        const taskAssetId = task.asset?._id || task.asset?.id || task.asset;
-        const currentAssetId = asset._id || asset.id;
-        
-        return taskAssetId === currentAssetId;
+      // Use the asset-specific endpoint that bypasses role filtering
+      const response = await api.get(`/tasks/asset/${assetId}`, {
+        params: { limit: 100 }
       });
       
-      console.log('Filtered tasks for asset:', filteredTasks);
-      setTasks(filteredTasks);
+      console.log('Asset tasks response:', response.data);
+      setTasks(response.data.data || []);
     } catch (error) {
       console.error('Error loading tasks:', error);
       setTasks([]); // Set empty array on error

@@ -1085,7 +1085,6 @@ const UserList = () => {
               <th>Role</th>
               <th>Status</th>
               <th>Last Active</th>
-              <th>Assigned Tasks</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1116,23 +1115,9 @@ const UserList = () => {
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <UserStatus status={user.isActive ? 'Active' : 'Inactive'} />
-                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
-                      <ToggleSwitch 
-                        disabled={isUpdatingStatus}
-                        onClick={() => handleToggleStatusClick(user)}
-                      >
-                        <ToggleInput 
-                          type="checkbox" 
-                          checked={user.isActive}
-                          readOnly
-                        />
-                        <ToggleSlider checked={user.isActive} />
-                      </ToggleSwitch>
-                    )}
                   </div>
                 </td>
                 <td>{formatTimestamp(user.lastLogin)}</td>
-                <td>{user.assignedTasks || 0}</td>
                 <td>
                   <ActionMenu>
                     {hasPermission(PERMISSIONS.USERS.VIEW_USERS) && (
@@ -1141,13 +1126,37 @@ const UserList = () => {
                       </ActionButton>
                     )}
                     
-                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && (
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && (
                       <ActionButton as={Link} to={`/users/${user.id}/edit`}>
                         <Edit size={16} />
                       </ActionButton>
                     )}
 
-                    {hasPermission(PERMISSIONS.USERS.DELETE_USERS) && (
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && (
+                      <select 
+                        value={user.isActive ? 'active' : 'inactive'}
+                        onChange={(e) => {
+                          const newStatus = e.target.value === 'active';
+                          if (newStatus !== user.isActive) {
+                            handleToggleStatusClick(user);
+                          }
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          color: user.isActive ? '#22c55e' : '#ef4444'
+                        }}
+                        title="Quick status change"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    )}
+
+                    {hasPermission(PERMISSIONS.USERS.DELETE_USERS) && userRole !== 'manager' && (
                       <ActionButton 
                         onClick={() => handleDeleteClick(user)}
                         style={{ color: '#dc2626' }}

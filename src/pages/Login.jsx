@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { login } from '../store/slices/authSlice';
+import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
 
 // Translation objects
@@ -579,8 +580,20 @@ const Login = () => {
      navigate('/dashboard');
    }
     } catch (error) {
-      // Handle login errors
-      setApiError(error || 'Login failed. Please try again.');
+      // Handle login errors - check for deactivated account
+      let errorMessage = error || 'Login failed. Please try again.';
+      
+      // Check if the error is specifically about deactivated account
+      if (typeof error === 'string' && 
+          (error.toLowerCase().includes('deactivated') || 
+           error.toLowerCase().includes('your account has been deactivated'))) {
+        errorMessage = 'Your account is deactivated or not verified, please contact your administrator';
+        toast.error(errorMessage); // Show toast for deactivated account
+        // Don't set apiError to avoid duplicate display
+      } else {
+        setApiError(errorMessage);
+      }
+      // Don't refresh the page, just show the error message
     } finally {
       // Reset loading state
       setIsLoading(false);

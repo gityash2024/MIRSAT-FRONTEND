@@ -832,7 +832,7 @@ const TaskView = () => {
             <PageTitle>{getTaskDataOrDefault(taskData, 'title', 'Untitled Task')}</PageTitle>
             <SubTitle>Task Details and Progress</SubTitle>
           </HeaderContent>
-          {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+          {hasPermission(PERMISSIONS.TASKS.EDIT_TASKS) && (
             <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
               <Edit size={16} />
               Edit Task

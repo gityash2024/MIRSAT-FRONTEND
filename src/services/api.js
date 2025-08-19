@@ -12,7 +12,7 @@ const MAX_RETRIES = 3;
 
 const api = axios.create({
   // baseURL:'http://localhost:5001/api/v1',
-  baseURL:'https://mirsat.mymultimeds.com/api/v1',
+  baseURL:'http://localhost:5001/api/v1',
   
   // baseURL:'http://localhost:5001/api/v1',
   headers: {
@@ -174,6 +174,11 @@ api.interceptors.response.use(
 
     // Handle unauthorized access
     if (error.response?.status === 401) {
+      // Don't auto-redirect for login requests - let the login component handle the error
+      if (error.config?.url?.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+      
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

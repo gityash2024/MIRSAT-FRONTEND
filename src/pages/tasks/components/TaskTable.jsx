@@ -909,19 +909,19 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 </td>
                 <td>
                   <ActionsMenu>
-                    {hasPermission(PERMISSIONS.VIEW_TASKS) && (
+                    {hasPermission(PERMISSIONS.TASKS.VIEW_TASKS) && (
                       <ActionButton onClick={() => handleViewTask(task.id)}>
                         <Eye size={16} />
                       </ActionButton>
                     )}
                     
-                    {hasPermission(PERMISSIONS.EDIT_TASKS) && (
+                    {hasPermission(PERMISSIONS.TASKS.EDIT_TASKS) && (
                       <ActionButton onClick={() => handleEditTask(task.id)}>
                         <Edit size={16} />
                       </ActionButton>
                     )}
                     
-                    {hasPermission(PERMISSIONS.DELETE_TASKS) && (
+                    {hasPermission(PERMISSIONS.TASKS.DELETE_TASKS) && (
                       <ActionButton onClick={() => handleDeleteClick(task)}>
                         <Trash size={16} />
                       </ActionButton>

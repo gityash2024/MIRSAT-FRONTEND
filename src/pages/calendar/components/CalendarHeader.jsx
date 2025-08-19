@@ -398,7 +398,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters }) => {
             </div>
           )}
           
-          {hasPermission(PERMISSIONS.CREATE_TASKS) && (
+          {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
             <Button variant="primary" onClick={onAddEvent}>
               <Plus size={16} />
               Add Event

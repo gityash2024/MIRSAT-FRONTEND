@@ -233,7 +233,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     if (!formData.phone) newErrors.phone = 'Phone number is required';
     if (!formData.role) newErrors.role = 'Role is required';
     
-    if (!initialData._id) {
+    if (!(initialData._id || initialData.id)) {
       if (!formData.password) newErrors.password = 'Password is required';
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
@@ -331,7 +331,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   };
 
   const showPermissionsSection = formData.role === ROLES.MANAGER;
-  const isEditMode = !!initialData._id;
+  const isEditMode = !!(initialData._id || initialData.id);
 
   return (
     <Form onSubmit={handleSubmit}>

@@ -334,10 +334,6 @@ const UserView = () => {
 
   const stats = [
     {
-      label: 'Assigned Tasks',
-      value: user.assignedTasks || 0
-    },
-    {
       label: 'Days Active',
       value: Math.floor((new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24))
     }

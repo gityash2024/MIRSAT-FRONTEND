@@ -230,7 +230,7 @@ const UserEdit = () => {
     try {
       await api.put(`/users/${userId}`, confirmData);
       toast.success('User updated successfully');
-      navigate(`/users/${userId}`);
+      navigate(`/users`);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error updating user');
     } finally {
@@ -282,6 +282,7 @@ const UserEdit = () => {
               <br />
               Role: {confirmData.role}
             </DialogMessage>
+            
             <DialogActions>
               <Button 
                 variant="secondary" 

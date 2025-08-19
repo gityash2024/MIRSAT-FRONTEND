@@ -567,7 +567,7 @@ const TaskList = () => {
           ? 'Try changing your search criteria or filters.'
           : 'Get started by creating your first task.'}
       </EmptyStateDescription>
-      {hasPermission(PERMISSIONS.CREATE_TASKS) && (
+      {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
         <ActionButton as={Link} to="/tasks/create" $variant="primary">
           <Plus size={16} />
           Create Task
@@ -628,7 +628,7 @@ const TaskList = () => {
             </DropdownMenu>
           </ExportDropdown>
           
-          {hasPermission(PERMISSIONS.CREATE_TASKS) && (
+          {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
             <ActionButton as={Link} to="/tasks/create" $variant="primary">
               <Plus size={16} />
               Create Task

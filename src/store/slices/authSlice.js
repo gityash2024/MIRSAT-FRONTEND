@@ -28,7 +28,7 @@ export const login = createAsyncThunk(
     try {
       return await authService.login(email, password);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(error.response?.data?.message || 'Your account is deactivated or not verified, please contact your administrator');
     }
   }
 );
