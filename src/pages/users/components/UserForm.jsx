@@ -405,10 +405,9 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             }}
           >
             <option value="">Select Department</option>
-            <option value="field_operations">Field Operations</option>
-            <option value="operations_management">Operations Management</option>
-            <option value="administration">Administration</option>
-            <option value="support">Support</option>
+            <option value="Field Operations">Field Operations</option>
+            <option value="Operations Management">Operations Management</option>
+            <option value="Administration">Administration</option>
           </Select>
           {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) && (
             <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>

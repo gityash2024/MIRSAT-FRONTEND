@@ -42,8 +42,7 @@ const UserFilter = ({ filters, setFilters }) => {
     role: [
       { value: 'admin', label: 'Admin' },
       { value: 'manager', label: 'Manager' },
-      { value: 'inspector', label: 'Inspector' },
-      { value: 'support', label: 'Support' }
+      { value: 'inspector', label: 'Inspector' }
     ],
     status: [
       { value: 'Active', label: 'Active' },

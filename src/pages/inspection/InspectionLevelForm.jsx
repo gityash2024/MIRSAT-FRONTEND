@@ -1299,22 +1299,22 @@ const QuestionItemComponent = ({
   
   // Calculate total score based on question type and weights
   useEffect(() => {
-    let score = 1;
+    let score = 0;
     
     if (question.answerType === 'yesno' && question.scores?.yes) {
-      score = (question.weight || 1) * question.scores.yes;
+      score = (question.weight || 0) * question.scores.yes;
     } else if (question.answerType === 'compliance') {
       // Find highest score from compliance options
       const highestScore = Math.max(
         ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
       );
-      score = (question.weight || 1) * highestScore;
+      score = (question.weight || 0) * highestScore;
     } else if (question.answerType === 'multiple' && question.scores) {
       // Find highest score from multiple choice options
       const highestScore = Math.max(
         ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
       );
-      score = (question.weight || 1) * highestScore;
+      score = (question.weight || 0) * highestScore;
     }
     
     setTotalScore(score);
@@ -1621,11 +1621,7 @@ const QuestionItemComponent = ({
                   disabled={loading}
                 >
                   <option value="text">Text</option>
-                  {/* <option value="number">Number</option> */}
                   <option value="yesno">Yes/No</option>
-                  {/* <option value="dropdown">Dropdown</option> */}
-                  {/* <option value="radio">Radio Buttons</option> */}
-                  {/* <option value="checkbox">Checkbox</option> */}
                   <option value="multiple">Multiple Choice</option>
                   <option value="compliance">Compliance</option>
                   <option value="signature">Signature</option>
@@ -1638,7 +1634,7 @@ const QuestionItemComponent = ({
               <FormGroup style={{ marginTop: '16px' }}>
                 <Label>Question Weight</Label>
                 <Input
-                  type="number"
+                  type="text"
                   value={question.weight !== undefined ? question.weight : 1}
                   onChange={(e) => {
                     const weight = parseInt(e.target.value);
@@ -1648,8 +1644,9 @@ const QuestionItemComponent = ({
                       weight: isNaN(weight) ? 0 : Math.max(0, weight) 
                     });
                   }}
-                  min="0"
                   placeholder="Question weight"
+                  pattern="[0-9]*"
+                  inputMode="numeric"
                 />
                 <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                   Set to 0 for non-scored questions
@@ -1695,12 +1692,17 @@ const QuestionItemComponent = ({
                         />
                         
                         <Input
-                          type="number"
-                          value={question.scores?.[option] || 0}
-                          onChange={(e) => updateOptionScore(option, e.target.value)}
-                          placeholder="Score"
+                          type="text"
+                          value={question.scores?.[option] || (idx === 0 ? 2 : idx === 1 ? 1 : 0)}
+                          onChange={(e) => {
+                            const newScores = { ...(question.scores || {}) };
+                            newScores[option] = parseInt(e.target.value) || 0;
+                            updateQuestion({ ...question, scores: newScores });
+                          }}
                           style={{ width: '80px' }}
-                          min="0"
+                          placeholder="Score"
+                          pattern="[0-9]*"
+                          inputMode="numeric"
                         />
                         
                         {question.answerType === 'multiple' && (
@@ -1726,47 +1728,46 @@ const QuestionItemComponent = ({
                     <div>
                       <Label style={{ fontSize: '13px' }}>Yes Score</Label>
                       <Input
-                        type="number"
-                        value={question.scores?.Yes || 2} // Default to 2
+                        type="text"
+                        value={question.scores?.Yes || 2}
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
-                          scores.Yes = parseInt(e.target.value) || 0;
-                          updateQuestion({ 
-                            ...question, 
-                            scores,
-                            scoring: {
-                              ...(question.scoring || {}),
-                              max: parseInt(e.target.value) || 2 // Update max score to match Yes value
-                            }
-                          });
+                          const newScores = { ...(question.scores || {}) };
+                          newScores.Yes = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores: newScores });
                         }}
-                        min="0"
+                        placeholder="Enter score"
+                        pattern="[0-9]*"
+                        inputMode="numeric"
                       />
                     </div>
                     <div>
                       <Label style={{ fontSize: '13px' }}>No Score</Label>
                       <Input
-                        type="number"
+                        type="text"
                         value={question.scores?.No || 0}
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
-                          scores.No = parseInt(e.target.value) || 0;
-                          updateQuestion({ ...question, scores });
+                          const newScores = { ...(question.scores || {}) };
+                          newScores.No = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores: newScores });
                         }}
-                        min="0"
+                        placeholder="Enter score"
+                        pattern="[0-9]*"
+                        inputMode="numeric"
                       />
                     </div>
                     <div>
                       <Label style={{ fontSize: '13px' }}>N/A Score</Label>
                       <Input
-                        type="number"
+                        type="text"
                         value={question.scores?.['N/A'] || 0}
                         onChange={(e) => {
-                          const scores = { ...(question.scores || { Yes: 2, No: 0, 'N/A': 0 }) };
-                          scores['N/A'] = parseInt(e.target.value) || 0;
-                          updateQuestion({ ...question, scores });
+                          const newScores = { ...(question.scores || {}) };
+                          newScores['N/A'] = parseInt(e.target.value) || 0;
+                          updateQuestion({ ...question, scores: newScores });
                         }}
-                        min="0"
+                        placeholder="Enter score"
+                        pattern="[0-9]*"
+                        inputMode="numeric"
                       />
                     </div>
                   </div>
@@ -1784,26 +1785,7 @@ const QuestionItemComponent = ({
               }}>
                 <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Question Settings</div>
                 
-                <FormGroup style={{ marginBottom: '12px' }}>
-                  <Label>Requirement Type</Label>
-                  <Select
-                    id={`requirement-${questionIndex}`}
-                    value={question.requirementType || "mandatory"}
-                    onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value, mandatory: e.target.value === "mandatory" })}
-                  style={{ 
-                      borderLeft: `4px solid ${
-                        question.requirementType === 'recommended' ? '#1E40AF' : '#B91C1C'
-                      }`
-                    }}
-                  >
-                    <option value="mandatory" style={{color: '#B91C1C'}}>
-                      Mandatory
-                    </option>
-                    <option value="recommended" style={{color: '#1E40AF'}}>
-                      Recommended
-                    </option>
-                  </Select>
-                </FormGroup>
+                {/* Removed Requirement Type field as it's not required */}
                 
                 {/* <FormGroup style={{ marginBottom: '12px' }}>
                   <Label>Question Weight</Label>
@@ -1820,15 +1802,26 @@ const QuestionItemComponent = ({
                 
                 <FormGroup>
                   <Label>Max Possible Score</Label>
-              <div style={{ 
-                    padding: '8px 12px',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontWeight: '500',
-                    color: '#334155'
-                  }}>
-                    {totalScore} points
+                  <Input
+                    type="text"
+                    value={question.scoring?.max || totalScore}
+                    onChange={(e) => {
+                      const maxScore = parseInt(e.target.value);
+                      const newScoring = {
+                        ...(question.scoring || {}),
+                        max: isNaN(maxScore) ? 0 : Math.max(0, maxScore)
+                      };
+                      updateQuestion({ 
+                        ...question, 
+                        scoring: newScoring 
+                      });
+                    }}
+                    placeholder="Enter max score"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                  />
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                    Maximum possible score for this question
                   </div>
                 </FormGroup>
                 
@@ -2304,23 +2297,6 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               <span style={{ color: '#334155', fontWeight: '500' }}>{formData.type || '-'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Requirement:</strong>
-              {formData.requirementType ? 
-                <RequirementBadge type={formData.requirementType}>
-                  {formData.requirementType === 'mandatory' ? 'Mandatory' : 'Recommended'}
-                </RequirementBadge> 
-                : <span style={{ color: '#94a3b8' }}>-</span>}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Priority:</strong>
-              {formData.priority ? 
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  <PriorityBadge priority={formData.priority} />
-                  {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
-                </span> 
-                : <span style={{ color: '#94a3b8' }}>-</span>}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>Status:</strong>
               <InspectionStatusBadge status={formData.status} style={{padding: '2px 8px', fontSize: '12px'}}>
                 {formData.status === 'draft' ? 'Draft' : 'Published'}
@@ -2645,7 +2621,7 @@ const MobilePreviewPanel = ({
     
     let totalScore = 0;
     section.questions.forEach(question => {
-      const questionWeight = question.weight || 1;
+      const questionWeight = question.weight || 0;
       let maxScore = 0;
       
       if (question.answerType === 'yesno' && question.scores?.Yes) {
@@ -2779,7 +2755,7 @@ const MobilePreviewPanel = ({
   
   // Calculate max score for question
   const calculateQuestionScore = (question) => {
-    const weight = question.weight || 1;
+    const weight = question.weight || 0;
     let maxScore = 0;
     
     if (question.answerType === 'yesno' && question.scores?.Yes) {
@@ -3615,10 +3591,9 @@ const InspectionLevelForm = () => {
   const [formData, setFormData] = useState({
       name: '',
       description: '',
-    type: '',
-    priority: '',
-    status: 'draft',
-    pages: []
+      type: '',
+      status: 'draft',
+      pages: []
   });
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [activeSectionIndex, setActiveSectionIndex] = useState(null);
@@ -3696,9 +3671,7 @@ const InspectionLevelForm = () => {
         name: templateData.name,
         description: templateData.description,
         type: templateData.type,
-        priority: templateData.priority || 'medium',
         status: templateData.status || 'draft',
-        requirementType: templateData.requirementType || 'mandatory',
         pages: []
       };
       
@@ -3774,9 +3747,7 @@ const InspectionLevelForm = () => {
         name: formData.name,
         description: formData.description || 'No description provided',
         type: formData.type,
-        priority: formData.priority || 'medium',
         status: formData.status || 'draft',
-        requirementType: formData.requirementType || 'mandatory',
         pages: [],
         questions: []
       };
@@ -4026,7 +3997,6 @@ const InspectionLevelForm = () => {
       type: 'yesno',
       required: true,
       mandatory: true,
-      requirementType: 'mandatory',
       options: ['Yes', 'No', 'N/A'],
       scoring: {
         enabled: true,

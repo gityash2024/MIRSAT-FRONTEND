@@ -229,7 +229,10 @@ const ProfileForm = () => {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    department: user?.department || ''
+    department: user?.department || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    emergencyContact: user?.emergencyContact || ''
   });
 
   const handleInputChange = (e) => {
@@ -248,7 +251,10 @@ const ProfileForm = () => {
     setProfileData({
       name: user?.name || '',
       email: user?.email || '',
-      department: user?.department || ''
+      department: user?.department || '',
+      phone: user?.phone || '',
+      address: user?.address || '',
+      emergencyContact: user?.emergencyContact || ''
     });
     setIsEditing(false);
     setMessage({ type: '', text: '' });
@@ -272,33 +278,68 @@ const ProfileForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // Validate required fields
+    if (!profileData.name.trim()) {
+      setMessage({ type: 'error', text: 'Name is required.' });
+      return;
+    }
+    
+    if (!profileData.email.trim()) {
+      setMessage({ type: 'error', text: 'Email is required.' });
+      return;
+    }
+    
+    // Only require department for admin role (not for manager/inspector)
+    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector') {
+      setMessage({ type: 'error', text: 'Department is required.' });
       return;
     }
     
     setIsLoading(true);
     setMessage({ type: '', text: '' });
-
+    
     try {
+      // Prepare update data - exclude department for non-admin users
       const updateData = {
-        name: profileData.name.trim(),
-        department: profileData.department
+        name: profileData.name,
+        email: profileData.email
       };
       
-      const response = await api.patch('/users/profile', updateData);
+      // Only include department if user is admin/superadmin
+      if (user?.role === 'admin' || user?.role === 'superadmin') {
+        updateData.department = profileData.department;
+      }
+      
+      // Include other fields
+      if (profileData.phone !== undefined) updateData.phone = profileData.phone;
+      if (profileData.address !== undefined) updateData.address = profileData.address;
+      if (profileData.emergencyContact !== undefined) updateData.emergencyContact = profileData.emergencyContact;
+      
+      // Include password fields if provided
+      if (profileData.currentPassword && profileData.newPassword) {
+        updateData.currentPassword = profileData.currentPassword;
+        updateData.newPassword = profileData.newPassword;
+      }
+      
+      const response = await api.put('/users/profile', updateData);
       
       if (response.data.success) {
-        updateUser(response.data.data);
-        setMessage({ 
-          type: 'success', 
-          text: response.data.message || 'Profile updated successfully.' 
-        });
-        setIsEditing(false);
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setProfileData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: ''
+        }));
+        
+        // Update local user data
+        if (updateUser) {
+          updateUser(response.data.data);
+        }
       }
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: error.response?.data?.message || 'Failed to update profile.' 
+        text: error.response?.data?.message || 'Failed to update profile. Please try again.' 
       });
     } finally {
       setIsLoading(false);
@@ -347,6 +388,24 @@ const ProfileForm = () => {
                 <InfoLabel>Role</InfoLabel>
                 <InfoValue>
                   {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}
+                </InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Phone Number</InfoLabel>
+                <InfoValue>
+                  {user?.phone || 'Not provided'}
+                </InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Address</InfoLabel>
+                <InfoValue>
+                  {user?.address || 'Not provided'}
+                </InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Emergency Contact</InfoLabel>
+                <InfoValue>
+                  {user?.emergencyContact || 'Not provided'}
                 </InfoValue>
               </InfoRow>
             </InfoCard>
@@ -420,6 +479,39 @@ const ProfileForm = () => {
                   Only admins can modify department
                 </div>
               )}
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Phone Number</Label>
+              <Input
+                type="text"
+                name="phone"
+                value={profileData.phone}
+                onChange={handleInputChange}
+                placeholder="Enter phone number"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Address</Label>
+              <Input
+                type="text"
+                name="address"
+                value={profileData.address}
+                onChange={handleInputChange}
+                placeholder="Enter address"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Emergency Contact</Label>
+              <Input
+                type="text"
+                name="emergencyContact"
+                value={profileData.emergencyContact}
+                onChange={handleInputChange}
+                placeholder="Enter emergency contact"
+              />
             </FormGroup>
             
             <ButtonGroup>
