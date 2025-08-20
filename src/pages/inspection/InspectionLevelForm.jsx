@@ -4859,22 +4859,7 @@ const InspectionLevelForm = () => {
             <Save size={16} />
             {id ? 'Update Template' : 'Save'}
           </InspectionSaveButton>
-          <InspectionPublishButton
-            onClick={handlePublish}
-            disabled={loading || !formData.name}
-          >
-            {formData.status === 'active' ? (
-              <>
-                <Download size={16} />
-                Unpublish Template
-              </>
-            ) : (
-              <>
-                <Upload size={16} />
-                Publish
-              </>
-            )}
-          </InspectionPublishButton>
+      
         </div>
       </Header>
       

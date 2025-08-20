@@ -586,7 +586,7 @@ const TaskView = () => {
   const { hasPermission } = usePermissions();
   const fileInputRef = useRef(null);
   
-  const { currentTask: task, loading } = useSelector((state) => state.tasks);
+  const { currentTask: task, loading, error } = useSelector((state) => state.tasks);
   const [selectedAssignee, setSelectedAssignee] = useState('all');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -613,8 +613,17 @@ const TaskView = () => {
   };
 
   useEffect(() => {
-    dispatch(getTaskById(taskId));
+    if (taskId && taskId !== 'undefined') {
+      dispatch(getTaskById(taskId));
+    }
   }, [dispatch, taskId]);
+
+  // Set initial assignee when task loads
+  useEffect(() => {
+    if (task && task.assignedTo && task.assignedTo.length > 0) {
+      setSelectedAssignee(task.assignedTo[0]._id || task.assignedTo[0].id);
+    }
+  }, [task]);
 
   // Debug effect to check what data is received
   useEffect(() => {
@@ -679,25 +688,25 @@ const TaskView = () => {
       return;
     }
     
-    const file = event.target.files[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
     
     try {
       setUploadingFile(true);
-      console.log('Uploading file:', file.name);
+      console.log('Uploading files:', files.length);
       
       await dispatch(uploadTaskAttachment({ 
         id: taskId, 
-        file 
+        files 
       })).unwrap();
       
       // Refresh task data to show the new attachment
       dispatch(getTaskById(taskId));
-      toast.success('File uploaded successfully');
+      toast.success('Files uploaded successfully');
       
     } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Failed to upload file. Please try again.');
+      console.error('Error uploading files:', error);
+      toast.error('Failed to upload files. Please try again.');
     } finally {
       setUploadingFile(false);
       // Clear the file input
@@ -730,22 +739,130 @@ const TaskView = () => {
     }
   };
 
-  if (loading || !task) {
-    return <TaskViewSkeleton />;
-  }
-
-  // If task is fetched but somehow invalid, show an error
-  if (!task || !task.data) {
+  // Show loading skeleton while task is being fetched
+  if (loading && !task) {
     return (
       <PageContainer>
-        <div style={{ padding: '24px', textAlign: 'center' }}>
-          <h2 style={{ color: 'var(--color-navy)', marginBottom: '16px' }}>Task Data Error</h2>
-          <p style={{ marginBottom: '24px' }}>There was an issue loading the task data. The task may have been deleted or you don't have permission to view it.</p>
-          <Button onClick={() => navigate('/tasks')}>
-            <ArrowLeft size={18} />
-            Back to Tasks
-          </Button>
-        </div>
+        <Header>
+          <HeaderTop>
+            <BackButton disabled>
+              <ArrowLeft size={18} />
+              Back to Tasks
+            </BackButton>
+            <HeaderContent>
+              <Skeleton.Base width="300px" height="32px" />
+              <Skeleton.Base width="200px" height="20px" style={{ marginTop: '8px' }} />
+            </HeaderContent>
+          </HeaderTop>
+        </Header>
+        
+        <ContentGrid>
+          <MainContent>
+            <Card>
+              <Skeleton.Base width="100%" height="200px" />
+            </Card>
+          </MainContent>
+          
+          <Sidebar>
+            <Card>
+              <Skeleton.Base width="100%" height="150px" />
+            </Card>
+          </Sidebar>
+        </ContentGrid>
+      </PageContainer>
+    );
+  }
+
+  // Show error state if task failed to load
+  if (error && !task) {
+    return (
+      <PageContainer>
+        <Header>
+          <HeaderTop>
+            <BackButton onClick={() => navigate('/tasks')}>
+              <ArrowLeft size={18} />
+              Back to Tasks
+            </BackButton>
+            <HeaderContent>
+              <PageTitle>Error Loading Task</PageTitle>
+              <SubTitle>Unable to load task details</SubTitle>
+            </HeaderContent>
+          </HeaderTop>
+        </Header>
+        
+        <ContentGrid>
+          <MainContent>
+            <Card>
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <AlertTriangle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
+                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Failed to Load Task</h3>
+                <p style={{ color: '#64748b', marginBottom: '24px' }}>
+                  {error || 'An error occurred while loading the task details.'}
+                </p>
+                <button
+                  onClick={() => dispatch(getTaskById(taskId))}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Try Again
+                </button>
+              </div>
+            </Card>
+          </MainContent>
+        </ContentGrid>
+      </PageContainer>
+    );
+  }
+
+  // Show not found state if task doesn't exist
+  if (!loading && !task) {
+    return (
+      <PageContainer>
+        <Header>
+          <HeaderTop>
+            <BackButton onClick={() => navigate('/tasks')}>
+              <ArrowLeft size={18} />
+              Back to Tasks
+            </BackButton>
+            <HeaderContent>
+              <PageTitle>Task Not Found</PageTitle>
+              <SubTitle>The requested task could not be found</SubTitle>
+            </HeaderContent>
+          </HeaderTop>
+        </Header>
+        
+        <ContentGrid>
+          <MainContent>
+            <Card>
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <HelpCircle size={48} style={{ color: '#94a3b8', marginBottom: '16px' }} />
+                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Task Not Found</h3>
+                <p style={{ color: '#64748b', marginBottom: '24px' }}>
+                  The task you're looking for doesn't exist or has been removed.
+                </p>
+                <button
+                  onClick={() => navigate('/tasks')}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Back to Tasks
+                </button>
+              </div>
+            </Card>
+          </MainContent>
+        </ContentGrid>
       </PageContainer>
     );
   }
@@ -840,32 +957,32 @@ const TaskView = () => {
           )}
         </HeaderTop>
         
-        <HeaderFilters>
-          <Filter size={16} />
-          <FilterSelect 
-            value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-          >
-            <option value="all">All Assignees</option>
-            {hasValidAssignees && taskData.assignedTo.length > 0 ? (
-              taskData.assignedTo.map(user => (
-                <option key={user._id} value={user._id}>
-                  {user.name || 'Unknown User'}
+        {/* Simplified Assignee Filter */}
+        {taskData && taskData.assignedTo && taskData.assignedTo.length > 0 && (
+          <HeaderFilters>
+            <Filter size={16} />
+            <FilterSelect 
+              value={selectedAssignee}
+              onChange={(e) => setSelectedAssignee(e.target.value)}
+            >
+              <option value="all">All Assignees</option>
+              {taskData.assignedTo.map(user => (
+                <option key={user._id || user.id} value={user._id || user.id}>
+                  {user.name || user.email || 'Unknown User'}
                 </option>
-              ))
-            ) : (
-              <option value="" disabled>No assignees found</option>
-            )}
-          </FilterSelect>
-        </HeaderFilters>
+              ))}
+            </FilterSelect>
+          </HeaderFilters>
+        )}
       </Header>
 
       <ContentGrid>
         <MainContent>
+          {/* Task Overview Card */}
           <Card>
             <CardTitle>
               <BarChart size={20} />
-              Overview
+              Task Overview
             </CardTitle>
             <Description>{getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
 
@@ -893,253 +1010,247 @@ const TaskView = () => {
                 <Users size={16} className="icon" />
                 <strong>Assigned To:</strong>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {hasValidAssignees && taskData.assignedTo.length > 0 ? (
-                  taskData.assignedTo.map(user => (
-                    <span key={user._id} style={{ 
-                      background: '#f1f5f9',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}>
-                      {user.name || 'Unknown User'}
-                    </span>
-                  ))
-                ) : (
-                  <span>No assignees</span>
-                )}
+                  {taskData.assignedTo && taskData.assignedTo.length > 0 ? (
+                    taskData.assignedTo.map(user => (
+                      <span key={user._id || user.id} style={{ 
+                        background: '#f1f5f9',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        color: '#475569'
+                      }}>
+                        {user.name || user.email || 'Unknown'}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>Unassigned</span>
+                  )}
                 </div>
               </MetaItem>
-              {hasValidAsset && (
-                <MetaItem>
-                  <Database size={16} className="icon" />
-                  <strong>Asset:</strong>
-                  {taskData.asset.displayName ? (
-                    <span>{taskData.asset.displayName} {taskData.asset.uniqueId ? `(${taskData.asset.uniqueId}${taskData.asset.type ? ` - ${taskData.asset.type}` : ''})` : ''}</span>
-                  ) : (
-                    <span>{taskData.asset._id || 'Asset information unavailable'}</span>
-                  )}
-                </MetaItem>
-              )}
-              {taskData.location && (
+              {taskData.asset && (
                 <MetaItem>
                   <MapPin size={16} className="icon" />
-                  <strong>Location:</strong>
-                  {taskData.location}
+                  <strong>Asset:</strong>
+                  <span>{taskData.asset.displayName || taskData.asset.name || 'Unknown Asset'}</span>
                 </MetaItem>
               )}
             </MetaGrid>
-
-            <AssigneeProgress>
-              {selectedAssignee === 'all' ? (
-                <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
-                  Select an assignee from the dropdown above to view their progress.
-                </div>
-              ) : hasValidAssignees && taskData.assignedTo.length > 0 ? (
-                taskData.assignedTo
-                  .filter(assignee => assignee && assignee._id === selectedAssignee)
-                  .map(assignee => {
-                    const progress = calculateAssigneeProgress(assignee._id);
-                    return (
-                      <AssigneeCard key={assignee._id}>
-                        <AssigneeHeader>
-                          <AssigneeName>{assignee.name || 'Unknown'}</AssigneeName>
-                          <span>{progress.percentage}% Complete</span>
-                        </AssigneeHeader>
-                        <AssigneeStats>
-                          <StatCard>
-                            <div className="label">Completed</div>
-                            <div className="value">{progress.completed}</div>
-                          </StatCard>
-                          <StatCard>
-                            <div className="label">In Progress</div>
-                            <div className="value">{progress.inProgress}</div>
-                          </StatCard>
-                          <StatCard>
-                            <div className="label">Total</div>
-                            <div className="value">{progress.total}</div>
-                          </StatCard>
-                        </AssigneeStats>
-                        <ProgressBar>
-                          <div 
-                            className="fill" 
-                            style={{ width: `${progress.percentage}%` }}
-                          />
-                        </ProgressBar>
-                      </AssigneeCard>
-                    );
-                  })
-              ) : (
-                <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
-                  No assignees found for this task.
-                </div>
-              )}
-            </AssigneeProgress>
           </Card>
 
-          <ChartCard>
-            <CardTitle>Inspection Progress</CardTitle>
-            <ResponsiveContainer width="100%" height={250}>
-              <RechartsBarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="completed" fill="var(--color-navy)" />
-              </RechartsBarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-          <Card style={{ marginTop: '24px' }}>
-            <CardTitle>Comments</CardTitle>
-            <CommentSection>
-              <CommentInput>
-                <textarea 
-                  placeholder="Add a comment..." 
+          {/* Inspection Progress Card */}
+          {taskData.inspectionLevel && (
+            <Card>
+              <CardTitle>
+                <CheckSquare size={20} />
+                Inspection Progress
+              </CardTitle>
+              <div style={{ padding: '16px' }}>
+                <h4 style={{ marginBottom: '12px', color: 'var(--color-navy)' }}>
+                  Template: {taskData.inspectionLevel.name || 'Unknown Template'}
+                </h4>
+                {selectedAssignee !== 'all' ? (
+                  <div>
+                    <p style={{ marginBottom: '16px', color: '#64748b' }}>
+                      Showing progress for selected assignee
+                    </p>
+                    {/* Add inspection progress visualization here */}
+                    <div style={{ 
+                      background: '#f8fafc', 
+                      padding: '20px', 
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      color: '#64748b'
+                    }}>
+                      Inspection progress visualization will be displayed here
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '20px',
+                    color: '#64748b'
+                  }}>
+                    Select an assignee from the dropdown above to view their progress
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Pre-Inspection Questions Card */}
+          {taskData.preInspectionQuestions && taskData.preInspectionQuestions.length > 0 && (
+            <Card>
+              <CardTitle>
+                <Database size={20} />
+                Pre-Inspection Questions
+              </CardTitle>
+              <div style={{ padding: '16px' }}>
+                {taskData.preInspectionQuestions.map((question, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f8fafc',
+                    borderRadius: '6px'
+                  }}>
+                    <strong style={{ color: 'var(--color-navy)' }}>
+                      {index + 1}. {question.text || 'Question text not available'}
+                    </strong>
+                    {question.description && (
+                      <p style={{ marginTop: '8px', color: '#64748b', fontSize: '14px' }}>
+                        {question.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Comments Card */}
+          <Card>
+            <CardTitle>
+              <Send size={20} />
+              Comments & Notes
+            </CardTitle>
+            <div style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <input
+                  type="text"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
                 />
-                <Button 
+                <button
                   onClick={handleAddComment}
-                  disabled={isSubmitting || !comment.trim()}
+                  disabled={!comment.trim() || isSubmitting}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--color-navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
                 >
-                  <Send size={16} />
-                  Post
-                </Button>
-              </CommentInput>
-
-              <CommentList>
-                {hasValidComments && taskData.comments.length > 0 ? (
-                  taskData.comments.map((comment, index) => (
-                    <Comment key={index}>
-                      <div className="header">
-                        <span className="author">{getTaskDataOrDefault(comment, 'user.name', 'Anonymous')}</span>
-                        <span className="timestamp">
-                          {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Unknown date'}
+                  {isSubmitting ? 'Adding...' : 'Add Comment'}
+                </button>
+              </div>
+              
+              {taskData.comments && taskData.comments.length > 0 ? (
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {taskData.comments.map((comment, index) => (
+                    <div key={index} style={{ 
+                      padding: '12px',
+                      marginBottom: '8px',
+                      background: '#f1f5f9',
+                      borderRadius: '6px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <strong style={{ fontSize: '14px' }}>
+                          {comment.user?.name || comment.user?.email || 'Unknown User'}
+                        </strong>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          {new Date(comment.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <p className="content">{comment.content || 'No content'}</p>
-                    </Comment>
-                  ))
-                ) : (
-                  <p>No comments yet</p>
-                )}
-              </CommentList>
-            </CommentSection>
+                      <p style={{ margin: 0, fontSize: '14px' }}>{comment.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                  No comments yet. Be the first to add one!
+                </div>
+              )}
+            </div>
           </Card>
         </MainContent>
-
-        <div>
+        
+        <Sidebar>
+          {/* Attachments Card */}
           <Card>
-            <CardTitle>Inspection Milestones</CardTitle>
-            <MilestoneTimeline>
-              {hasValidSubLevels && taskData.inspectionLevel.subLevels.map((level) => {
-                const status = getSubLevelStatus(level._id);
-                return (
-                  <MilestoneItem key={level._id}>
-                    <MilestoneDot status={status} />
-                    <MilestoneContent>
-                      <MilestoneHeader>
-                        <MilestoneTitle>{level.name || 'Unnamed Level'}</MilestoneTitle>
-                        <MilestoneStatus status={status}>
-                          {status.replace('_', ' ')}
-                        </MilestoneStatus>
-                      </MilestoneHeader>
-                      <MilestoneDescription>
-                        {level.description || 'No description available'}
-                      </MilestoneDescription>
-                      {status !== 'pending' && (
-                        <MilestoneProgress>
-                          <ProgressBar>
-                            <div 
-                              className="fill" 
-                              style={{ 
-                                width: status === 'completed' ? '100%' : '50%',
-                                background: status === 'completed' ? '#10b981' : '#3b82f6'
-                              }} 
-                            />
-                          </ProgressBar>
-                        </MilestoneProgress>
-                      )}
-                    </MilestoneContent>
-                  </MilestoneItem>
-                );
-              })}
-            </MilestoneTimeline>
-          </Card>
-
-          <Card style={{ marginTop: '24px' }}>
             <CardTitle>
               <Paperclip size={20} />
               Attachments
-              {hasPermission(PERMISSIONS.UPDATE_TASKS) && (
-                <div style={{ marginLeft: 'auto' }}>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
-                  <Button 
-                    onClick={() => fileInputRef.current.click()}
-                    disabled={uploadingFile}
-                  >
-                    {uploadingFile ? 'Uploading...' : (
-                      <>
-                        <Upload size={16} />
-                        Upload
-                      </>
-                    )}
-                  </Button>
+            </CardTitle>
+            <div style={{ padding: '16px' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
+                multiple
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingFile}
+                style={{
+                  width: '100%',
+                  padding: '8px 16px',
+                  background: 'var(--color-navy)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  marginBottom: '16px'
+                }}
+              >
+                {uploadingFile ? 'Uploading...' : 'Upload Files'}
+              </button>
+              
+              {taskData.attachments && taskData.attachments.length > 0 ? (
+                <div>
+                  {taskData.attachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px',
+                        marginBottom: '8px',
+                        background: '#f8fafc',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FileText size={16} />
+                        <span style={{ fontSize: '14px' }}>
+                          {attachment.filename || 'Unnamed file'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => window.open(attachment.url, '_blank')}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#e2e8f0',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        View
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                  No attachments found
                 </div>
               )}
-            </CardTitle>
-            {hasValidAttachments && taskData.attachments.length > 0 ? (
-              taskData.attachments.map((attachment, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px',
-                    marginBottom: '8px',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FileText size={18} />
-                    <span>{getTaskDataOrDefault(attachment, 'filename', 'Unnamed file')}</span>
-                  </div>
-                  <div>
-                    <Button
-                      as="a"
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ marginRight: '8px' ,marginBottom:'5px'}}
-                    >
-                      <Download size={16} />
-                      Download
-                    </Button>
-                    {hasPermission(PERMISSIONS.UPDATE_TASKS) && (
-                      <Button
-                        $variant="danger"
-                        onClick={() => handleDeleteAttachment(attachment._id)}
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
-                No attachments found
-              </div>
-            )}
+            </div>
           </Card>
-        </div>
+        </Sidebar>
       </ContentGrid>
     </PageContainer>
   );

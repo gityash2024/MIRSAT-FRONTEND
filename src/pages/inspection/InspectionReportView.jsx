@@ -7,6 +7,9 @@ import ReportPreviewComponent from '../../components/reports/ReportPreviewCompon
 import InspectionLayout from '../../components/common/InspectionLayout';
 import { inspectionService } from '../../services/inspection.service';
 import Skeleton from '../../components/ui/Skeleton';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const PageContainer = styled.div`
   display: flex;
@@ -112,7 +115,9 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const [template, setTemplate] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [error, setError] = useState(null);
-  
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
+
   useEffect(() => {
     if (id && !isCreating) {
       loadTemplateData();
@@ -256,8 +261,189 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   };
   
   const handleDownloadPDF = () => {
-    toast.success('PDF generation started');
-    // Actual PDF generation would be implemented here
+    setPendingExport({ format: 'pdf', data: reportData });
+    setShowDocumentModal(true);
+  };
+
+  const handleDownloadDOCX = () => {
+    setPendingExport({ format: 'docx', data: reportData });
+    setShowDocumentModal(true);
+  };
+
+  const handleConfirmExport = (fileName) => {
+    if (!pendingExport) return;
+    
+    const { format, data } = pendingExport;
+    
+    if (format === 'pdf') {
+      generatePDFReport(data, fileName);
+    } else if (format === 'docx') {
+      generateDOCXReport(data, fileName);
+    }
+    
+    setShowDocumentModal(false);
+    setPendingExport(null);
+  };
+
+  const generatePDFReport = (data, fileName) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Set document properties
+      doc.setProperties({
+        title: `${fileName} - Inspection Report`,
+        subject: 'MIRSAT Inspection Report',
+        creator: 'MIRSAT System'
+      });
+      
+      // Header
+      doc.setFillColor(26, 35, 126);
+      doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+      
+      doc.setFontSize(20);
+      doc.setTextColor(255, 255, 255);
+      doc.text(fileName || 'Inspection Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(200, 200, 200);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 32, { align: 'center' });
+      
+      // Content
+      let yPosition = 60;
+      
+      // Overview section
+      if (data) {
+        doc.setFontSize(16);
+        doc.setTextColor(26, 35, 126);
+        doc.text('Overview', 14, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(12);
+        doc.setTextColor(60, 60, 60);
+        doc.text(`Score: ${data.score || 0}/${data.maxScore || 0}`, 14, yPosition);
+        yPosition += 10;
+        doc.text(`Completion: ${data.completedAt || 'Not completed'}`, 14, yPosition);
+        yPosition += 20;
+        
+        // Sections
+        if (data.sections && data.sections.length > 0) {
+          doc.setFontSize(16);
+          doc.setTextColor(26, 35, 126);
+          doc.text('Inspection Sections', 14, yPosition);
+          yPosition += 15;
+          
+          data.sections.forEach((section, index) => {
+            if (yPosition > 250) {
+              doc.addPage();
+              yPosition = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`${index + 1}. ${section.name || 'Unnamed Section'}`, 14, yPosition);
+            yPosition += 8;
+            
+            if (section.description) {
+              doc.setFontSize(10);
+              doc.setTextColor(100, 100, 100);
+              const splitDesc = doc.splitTextToSize(section.description, 180);
+              doc.text(splitDesc, 20, yPosition);
+              yPosition += splitDesc.length * 5 + 5;
+            }
+            
+            yPosition += 5;
+          });
+        }
+      }
+      
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+          `Page ${i} of ${pageCount} | MIRSAT Inspection Report`, 
+          doc.internal.pageSize.width / 2, 
+          doc.internal.pageSize.height - 10, 
+          { align: 'center' }
+        );
+      }
+      
+      doc.save(`${fileName}.pdf`);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
+  const generateDOCXReport = async (data, fileName) => {
+    try {
+      // For DOCX generation, we'll create a structured HTML that can be exported
+      const htmlContent = generateReportHTML(data, fileName);
+      
+      // Create a blob with the HTML content
+      const blob = new Blob([htmlContent], { 
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      });
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${fileName}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('DOCX downloaded successfully');
+    } catch (error) {
+      console.error('Error generating DOCX:', error);
+      toast.error('Failed to generate DOCX');
+    }
+  };
+
+  const generateReportHTML = (data, fileName) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${fileName} - Inspection Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .header { background-color: #1a237e; color: white; padding: 20px; text-align: center; margin-bottom: 30px; }
+          .section { margin-bottom: 20px; }
+          .section-title { font-size: 18px; font-weight: bold; color: #1a237e; margin-bottom: 10px; }
+          .section-content { margin-left: 15px; }
+          .overview { background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${fileName || 'Inspection Report'}</h1>
+          <p>Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div class="overview">
+          <h2>Overview</h2>
+          <p><strong>Score:</strong> ${data?.score || 0}/${data?.maxScore || 0}</p>
+          <p><strong>Completion:</strong> ${data?.completedAt || 'Not completed'}</p>
+        </div>
+        
+        ${data?.sections?.map((section, index) => `
+          <div class="section">
+            <div class="section-title">${index + 1}. ${section.name || 'Unnamed Section'}</div>
+            <div class="section-content">
+              ${section.description ? `<p>${section.description}</p>` : ''}
+            </div>
+          </div>
+        `).join('') || ''}
+      </body>
+      </html>
+    `;
   };
   
   const handlePublish = () => {
@@ -346,6 +532,11 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
                 Download PDF
               </ActionButton>
               
+              <ActionButton onClick={handleDownloadDOCX}>
+                <Download size={16} />
+                Download DOCX
+              </ActionButton>
+              
               <ActionButton>
                 <Share2 size={16} />
                 Share
@@ -365,6 +556,17 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         )}
         
         {renderContent()}
+        
+        {showDocumentModal && pendingExport && (
+          <DocumentNamingModal
+            isOpen={showDocumentModal}
+            onClose={() => setShowDocumentModal(false)}
+            onExport={handleConfirmExport}
+            exportFormat={pendingExport.format}
+            documentType="Inspection-Report"
+            defaultCriteria={['documentType', 'currentDate']}
+          />
+        )}
       </PageContainer>
     </InspectionLayout>
   );

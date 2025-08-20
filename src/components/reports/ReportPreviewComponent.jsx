@@ -656,7 +656,7 @@ const ReportPreviewComponent = ({
         })}
       </SectionsSection>
       
-      <ActionButtons>
+      {/* <ActionButtons>
         <PrimaryButton>
           <File size={16} />
           Download PDF
@@ -666,7 +666,7 @@ const ReportPreviewComponent = ({
           <MessageSquare size={16} />
           Add Notes
         </SecondaryButton>
-      </ActionButtons>
+      </ActionButtons> */}
     </PreviewContainer>
   );
 };

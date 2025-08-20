@@ -6,6 +6,7 @@ import { fetchTasks } from '../../../store/slices/taskSlice';
 // import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 import { Link } from 'react-router-dom';
 import api from '../../../services/api'; // Fixed import path for api
+import { toast } from 'react-hot-toast'; // Added toast import
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -380,7 +381,19 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       </TaskDetail>
                       
                       <TaskActions>
-                        <TaskButton to={`/tasks/${task._id}`} key={`task-link-${task._id}`}>
+                        <TaskButton 
+                          to={`/tasks/${task._id || task.id}`} 
+                          key={`task-link-${task._id || task.id}`}
+                          onClick={(e) => {
+                            // Validate task ID before navigation
+                            const taskId = task._id || task.id;
+                            if (!taskId || taskId === 'undefined') {
+                              e.preventDefault();
+                              toast.error('Invalid task ID. Cannot view task details.');
+                              return;
+                            }
+                          }}
+                        >
                           View Task Details
                         </TaskButton>
                       </TaskActions>
