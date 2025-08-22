@@ -86,8 +86,8 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Admin and Manager Routes */}
-      <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+      {/* Admin, Manager, and Supervisor Routes - Shared Access */}
+      <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
@@ -99,6 +99,14 @@ const AppRoutes = () => {
           <Route path="/tasks/:taskId" element={<TaskView />} />
           <Route path="/tasks/:taskId/edit" element={<TaskEdit />} />
           
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/calendar-view" element={<CalendarView />} />
+        </Route>
+      </Route>
+
+      {/* Admin and Manager Routes - Full Access Only */}
+      <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+        <Route element={<MainLayout />}>
           <Route path="/users" element={<UserList />} />
           <Route path="/users/create" element={<UserCreate />} />
           <Route path="/users/:userId" element={<UserView />} />
@@ -129,9 +137,6 @@ const AppRoutes = () => {
           <Route path="/questionnaire/edit/:id" element={<QuestionCreate />} />
           
           <Route path="/assets" element={<AssetList />} />
-          
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/calendar-view" element={<CalendarView />} />
           
           <Route path="/reports/*" element={<Reports />} />
         </Route>

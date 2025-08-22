@@ -361,6 +361,7 @@ const UserDashboard = () => {
       case 'in_progress':
         return <Clock size={16} />;
       case 'completed':
+      case 'archived':
         return <CheckSquare size={16} />;
       case 'pending':
         return <AlertCircle size={16} />;
@@ -374,6 +375,7 @@ const UserDashboard = () => {
       case 'in_progress':
         return '#e3f2fd';
       case 'completed':
+      case 'archived':
         return '#e8f5e9';
       case 'pending':
         return '#fff3e0';
@@ -387,11 +389,28 @@ const UserDashboard = () => {
       case 'in_progress':
         return '#1976d2';
       case 'completed':
+      case 'archived':
         return '#2e7d32';
       case 'pending':
         return '#ed6c02';
       default:
         return '#666';
+    }
+  };
+
+  const transformStatusLabel = (status) => {
+    // Transform backend status to user-friendly labels
+    switch (status.toLowerCase()) {
+      case 'archived':
+        return 'Completed';
+      case 'in_progress':
+        return 'In Progress';
+      case 'pending':
+        return 'Pending';
+      case 'completed':
+        return 'Completed';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
     }
   };
 
@@ -520,7 +539,7 @@ const UserDashboard = () => {
               <div>
                 {statusCounts.map((item, index) => (
                   <StatusItem key={index} color={item.color}>
-                    <div className="status-label">{item.status}</div>
+                    <div className="status-label">{transformStatusLabel(item.status)}</div>
                     <div className="status-count">{item.count}</div>
                   </StatusItem>
                 ))}

@@ -1075,9 +1075,9 @@ const QuestionBadge = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.3);
   
   ${props => props.type === 'mandatory' ? css`
-    background: linear-gradient(135deg, #f39c12, #e67e22);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
     color: white;
-    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
   ` : css`
     background: linear-gradient(135deg, #3788d8, #2980b9);
     color: white;
@@ -2310,6 +2310,9 @@ const UserTaskDetail = () => {
   const [signatureMethod, setSignatureMethod] = useState('draw');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
+  const [selectedReportFormat, setSelectedReportFormat] = useState(null);
+  const [documentName, setDocumentName] = useState('');
   const [inspectionPages, setInspectionPages] = useState([]);
   const [scores, setScores] = useState({
     total: 0,
@@ -3056,6 +3059,71 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.dismiss();
       toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleDownloadReport = (format) => {
+    setSelectedReportFormat(format);
+    setDocumentName(`${currentTask?.name || 'Inspection'}_${format.toUpperCase()}_${new Date().toISOString().split('T')[0]}`);
+    setShowDocumentNamingModal(true);
+  };
+
+  const handleSubmitAndDownloadLater = async () => {
+    try {
+      toast.loading('Submitting inspection for later download...');
+      
+      // Archive the task without downloading
+      await dispatch(archiveTask(currentTask._id)).unwrap();
+      
+      // Refresh task data
+      await dispatch(fetchUserTaskDetails(currentTask._id));
+      
+      toast.dismiss();
+      toast.success('Inspection submitted successfully! You can download reports later from the archived tasks.');
+      
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Failed to submit inspection: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleConfirmDownload = async () => {
+    if (!documentName.trim()) {
+      toast.error('Please enter a document name');
+      return;
+    }
+
+    try {
+      setShowDocumentNamingModal(false);
+      toast.loading(`Generating ${selectedReportFormat.toUpperCase()} report...`);
+      
+      let result;
+      
+      switch (selectedReportFormat) {
+        case 'excel':
+          result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
+          break;
+        case 'pdf':
+          // For PDF, you'll need to implement PDF generation in the backend
+          result = await dispatch(exportTaskReport(currentTask._id, 'pdf')).unwrap();
+          break;
+        case 'docx':
+          // For DOCX, you'll need to implement DOCX generation in the backend
+          result = await dispatch(exportTaskReport(currentTask._id, 'docx')).unwrap();
+          break;
+        default:
+          throw new Error('Unsupported format');
+      }
+      
+      toast.dismiss();
+      toast.success(`${selectedReportFormat.toUpperCase()} report generated successfully`);
+      
+      // Here you would handle the actual download with the custom filename
+      // For now, we'll use the existing export functionality
+      
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Failed to generate ${selectedReportFormat.toUpperCase()} report: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -3833,10 +3901,15 @@ const UserTaskDetail = () => {
                 <QuestionNumber>{index + 1}</QuestionNumber>
                 <QuestionContent>
                   <QuestionHeader>
-                    <QuestionText>{question.text}</QuestionText>
+                    <QuestionText>
+                      {question.text}
+                      {question.requirementType !== 'recommended' && (
+                        <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
+                      )}
+                    </QuestionText>
                     <QuestionBadges>
-                      <QuestionBadge type={question.requirementType || (question.required !== false ? 'mandatory' : 'recommended')}>
-                        {(question.requirementType === 'recommended') || (question.requirementType === undefined && question.required === false) ? 'Recommended' : 'Mandatory'}
+                      <QuestionBadge type={question.requirementType === 'recommended' ? 'recommended' : 'mandatory'}>
+                        {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
                       </QuestionBadge>
                     </QuestionBadges>
                   </QuestionHeader>
@@ -3887,9 +3960,8 @@ const UserTaskDetail = () => {
           <InspectionControls>
             {/* Previous Button */}
             <NavigationButton 
-              disabled={isArchivedTask || inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
+              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
               onClick={() => {
-                if (isArchivedTask) return;
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
                 if (currentIndex > 0) {
                   const prevPage = inspectionPages[currentIndex - 1];
@@ -3909,14 +3981,12 @@ const UserTaskDetail = () => {
             <DropdownContainer>
               <DropdownButton 
                 onClick={(e) => {
-                  if (isArchivedTask) return;
                   e.stopPropagation();
                   setShowPageDropdown(!showPageDropdown);
                 }}
-                disabled={isArchivedTask}
                 style={{ 
-                  cursor: isArchivedTask ? 'default' : 'pointer',
-                  opacity: isArchivedTask ? 0.7 : 1
+                  cursor: 'pointer',
+                  opacity: 1
                 }}
               >
                 <span>
@@ -3925,7 +3995,7 @@ const UserTaskDetail = () => {
                 <ChevronDown size={16} />
               </DropdownButton>
               
-              {showPageDropdown && !isArchivedTask && (
+              {showPageDropdown && (
                 <DropdownMenu>
                   {inspectionPages.map((page, index) => {
                     const pageId = page.id || page._id;
@@ -3935,7 +4005,6 @@ const UserTaskDetail = () => {
                       <DropdownItem
                         key={pageId}
                         onClick={(e) => {
-                          if (isArchivedTask) return;
                           e.stopPropagation();
                           setSelectedPage(pageId);
                           setShowPageDropdown(false);
@@ -3964,16 +4033,15 @@ const UserTaskDetail = () => {
 
             {/* Next Button */}
             <NavigationButton 
-              disabled={isArchivedTask || inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
+              disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
               onClick={() => {
-                if (isArchivedTask) return;
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
                 if (currentIndex < inspectionPages.length - 1) {
                   const nextPage = inspectionPages[currentIndex + 1];
                   const nextPageId = nextPage.id || nextPage._id;
                   setSelectedPage(nextPageId);
                   if (nextPage.sections && nextPage.sections.length > 0) {
-                    const firstSectionId = nextPage.sections[0].id || nextPage.sections[0]._id;
+                    const firstSectionId = nextPage.sections[0].id || nextPage.sections[0].id;
                     setSelectedSection(firstSectionId);
                   }
                 }
@@ -4010,9 +4078,8 @@ const UserTaskDetail = () => {
               <SectionNavigationControls ref={sectionNavigationRef}>
                 {/* Previous Section Button */}
                 <SectionNavigationButton 
-                  disabled={isArchivedTask || currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
+                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
                   onClick={() => {
-                    if (isArchivedTask) return;
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
                     if (currentIndex > 0) {
                       const prevSection = currentPage.sections[currentIndex - 1];
@@ -4037,9 +4104,8 @@ const UserTaskDetail = () => {
 
                 {/* Next Section Button */}
                 <SectionNavigationButton 
-                  disabled={isArchivedTask || currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
+                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
                   onClick={() => {
-                    if (isArchivedTask) return;
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
                     if (currentIndex < currentPage.sections.length - 1) {
                       const nextSection = currentPage.sections[currentIndex + 1];
@@ -4070,10 +4136,10 @@ const UserTaskDetail = () => {
                     <SectionNavItem
                       key={sectionId}
                       active={isActive}
-                      onClick={() => !isArchivedTask && setSelectedSection(sectionId)}
+                      onClick={() => setSelectedSection(sectionId)}
                       style={{ 
-                        cursor: isArchivedTask ? 'default' : 'pointer',
-                        opacity: isArchivedTask ? 0.7 : 1
+                        cursor: 'pointer',
+                        opacity: 1
                       }}
                     >
                       <SectionTitle2>{`${idx + 1}. ${section.name}`}</SectionTitle2>
@@ -4174,11 +4240,14 @@ const UserTaskDetail = () => {
                             <QuestionNumber>{qIndex + 1}</QuestionNumber>
                             <QuestionText>
                               {question.text}
+                              {question.requirementType !== 'recommended' && (
+                                <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
+                              )}
                             </QuestionText>
                             
                             <QuestionBadges>
-                              <QuestionBadge type={question.requirementType || (question.required !== false ? 'mandatory' : 'recommended')}>
-                                {(question.requirementType === 'recommended') || (question.requirementType === undefined && question.required === false) ? 'Recommended' : 'Mandatory'}
+                              <QuestionBadge type={question.requirementType === 'recommended' ? 'recommended' : 'mandatory'}>
+                                {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
                               </QuestionBadge>
                               <ScoreBadge hasResponse={achievedScore > 0}>
                                 <Star size={14} />
@@ -5044,6 +5113,9 @@ const UserTaskDetail = () => {
                                   fontSize: '14px' 
                                 }}>
                                   {question.text}
+                                  {question.requirementType !== 'recommended' && (
+                                    <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
+                                  )}
                                 </div>
                                 <div style={{ 
                                   fontSize: '14px', 
@@ -5069,7 +5141,7 @@ const UserTaskDetail = () => {
                   )}
                 </ReportSection>
                 
-                <ReportSection>
+                {/* <ReportSection>
                   <SectionTitle>
                     <Edit size={20} />
                     Inspector Signature
@@ -5106,7 +5178,7 @@ const UserTaskDetail = () => {
                       </div>
                     )}
                   </SignatureSection>
-                </ReportSection>
+                </ReportSection> */}
                 
                 {/* Action Buttons Section */}
                 <div style={{ 
@@ -5174,32 +5246,88 @@ const UserTaskDetail = () => {
                       );
                     })()}
                     
-                    {/* Download Report Button */}
-                    <QuickActionButton 
-                      primary
-                      onClick={handleExportReport}
-                      disabled={currentTask?.status !== 'archived'}
-                      style={{ 
-                        padding: '16px 32px', 
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        background: currentTask?.status === 'archived' 
-                          ? 'linear-gradient(135deg, #3788d8, #2c3e50)' 
-                          : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                        boxShadow: currentTask?.status === 'archived' 
-                          ? '0 4px 15px rgba(55, 136, 216, 0.4)' 
-                          : '0 2px 8px rgba(100, 116, 139, 0.2)',
-                        border: currentTask?.status === 'archived' 
-                          ? '1px solid rgba(55, 136, 216, 0.3)' 
-                          : '1px solid rgba(100, 116, 139, 0.3)',
-                        minWidth: '240px',
-                        height: '56px',
-                        cursor: currentTask?.status === 'archived' ? 'pointer' : 'not-allowed'
-                      }}
-                    >
-                      <Download size={20} />
-                      Download Report
-                    </QuickActionButton>
+                    {/* Download Report Buttons - Only show for archived tasks */}
+                    {currentTask?.status === 'archived' && (
+                      <>
+                        {/* Excel Download */}
+                        <QuickActionButton 
+                          primary
+                          onClick={() => handleDownloadReport('excel')}
+                          style={{ 
+                            padding: '16px 32px', 
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                            boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)',
+                            border: '1px solid rgba(22, 163, 74, 0.3)',
+                            minWidth: '200px',
+                            height: '56px'
+                          }}
+                        >
+                          <Download size={20} />
+                          Download Excel
+                        </QuickActionButton>
+                        
+                        {/* PDF Download */}
+                        <QuickActionButton 
+                          primary
+                          onClick={() => handleDownloadReport('pdf')}
+                          style={{ 
+                            padding: '16px 32px', 
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                            boxShadow: '0 4px 15px rgba(220, 38, 38, 0.4)',
+                            border: '1px solid rgba(220, 38, 38, 0.3)',
+                            minWidth: '200px',
+                            height: '56px'
+                          }}
+                        >
+                          <Download size={20} />
+                          Download PDF
+                        </QuickActionButton>
+                        
+                        {/* Word Download */}
+                        <QuickActionButton 
+                          primary
+                          onClick={() => handleDownloadReport('docx')}
+                          style={{ 
+                            padding: '16px 32px', 
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                            boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
+                            border: '1px solid rgba(37, 99, 235, 0.3)',
+                            minWidth: '200px',
+                            height: '56px'
+                          }}
+                        >
+                          <Download size={20} />
+                          Download Word
+                        </QuickActionButton>
+                      </>
+                    )}
+                    
+                    {/* Submit and Download Later Button - Only show for non-archived completed tasks */}
+                    {currentTask?.status === 'completed' && currentTask?.signature && (
+                      <QuickActionButton 
+                        primary
+                        onClick={handleSubmitAndDownloadLater}
+                        style={{ 
+                          padding: '16px 32px', 
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                          boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)',
+                          border: '1px solid rgba(124, 58, 237, 0.3)',
+                          minWidth: '240px',
+                          height: '56px'
+                        }}
+                      >
+                        <CheckCircle size={20} />
+                        Submit & Download Later
+                      </QuickActionButton>
+                    )}
                   </div>
                   
                   {/* Status Message */}
@@ -5215,7 +5343,7 @@ const UserTaskDetail = () => {
                         justifyContent: 'center'
                       }}>
                         <CheckCircle size={16} />
-                        Inspection completed and archived - Report is ready for download
+                        Inspection completed and archived - Reports are ready for download
                       </p>
                     ) : (() => {
                       const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
@@ -5587,6 +5715,129 @@ const UserTaskDetail = () => {
                     Complete & Archive
                   </>
                 )}
+              </QuickActionButton>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Document Naming Modal */}
+      {showDocumentNamingModal && (
+        <ModalOverlay>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>Customize Report Filename</ModalTitle>
+              <CloseButton onClick={() => setShowDocumentNamingModal(false)}>
+                <X size={20} />
+              </CloseButton>
+            </ModalHeader>
+            
+            <div style={{ padding: '20px 0' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ color: '#374151', lineHeight: '1.6', marginBottom: '16px' }}>
+                  Customize the filename for your {selectedReportFormat?.toUpperCase()} report:
+                </p>
+                
+                <div style={{ 
+                  padding: '16px', 
+                  background: 'rgba(55, 136, 216, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(55, 136, 216, 0.2)',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    marginBottom: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#3788d8'
+                  }}>
+                    <Info size={16} />
+                    Available Variables
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Use: <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{date}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{time}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{taskName}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{inspector}'}</code>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '600', 
+                  color: '#374151', 
+                  marginBottom: '8px' 
+                }}>
+                  Report Filename
+                </label>
+                <input
+                  type="text"
+                  value={documentName}
+                  onChange={(e) => setDocumentName(e.target.value)}
+                  placeholder="Enter custom filename"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    transition: 'all 0.3s ease'
+                  }}
+                />
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#6b7280', 
+                  marginTop: '4px' 
+                }}>
+                  Don't include the file extension (.{selectedReportFormat})
+                </div>
+              </div>
+              
+              <div style={{ 
+                padding: '12px', 
+                background: '#f9fafb',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  Preview:
+                </div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#374151', 
+                  fontWeight: '500',
+                  fontFamily: 'monospace'
+                }}>
+                  {documentName || 'filename'}.{selectedReportFormat}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              justifyContent: 'flex-end',
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '20px'
+            }}>
+              <QuickActionButton 
+                onClick={() => setShowDocumentNamingModal(false)}
+              >
+                Cancel
+              </QuickActionButton>
+              <QuickActionButton 
+                primary
+                onClick={handleConfirmDownload}
+                style={{ 
+                  background: 'linear-gradient(135deg, #3788d8, #2c3e50)',
+                  minWidth: '160px'
+                }}
+              >
+                <Download size={16} />
+                Download Report
               </QuickActionButton>
             </div>
           </ModalContent>

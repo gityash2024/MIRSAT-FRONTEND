@@ -56,6 +56,7 @@ export const MODULE_PERMISSIONS = {
 export const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
+  SUPERVISOR: 'supervisor',
   INSPECTOR: 'inspector',
 };
 
@@ -74,7 +75,33 @@ export const ROLE_PERMISSIONS = {
     ...Object.values(PERMISSIONS.TASKS),
     ...Object.values(PERMISSIONS.INSPECTIONS),
     ...Object.values(PERMISSIONS.CALENDAR),
-    PERMISSIONS.SETTINGS.VIEW_SETTINGS
+    PERMISSIONS.SETTINGS.VIEW_SETTINGS,
+    // Add module permissions for sidebar tabs
+    MODULE_PERMISSIONS.DASHBOARD,
+    MODULE_PERMISSIONS.TASKS,
+    MODULE_PERMISSIONS.USERS,
+    MODULE_PERMISSIONS.TEMPLATE,
+    MODULE_PERMISSIONS.ASSETS,
+    MODULE_PERMISSIONS.QUESTIONNAIRES,
+    MODULE_PERMISSIONS.CALENDAR,
+    MODULE_PERMISSIONS.PROFILE
+  ],
+  [ROLES.SUPERVISOR]: [
+    PERMISSIONS.DASHBOARD.VIEW_DASHBOARD,
+    // Remove user management permissions
+    // PERMISSIONS.USERS.VIEW_USERS,
+    // PERMISSIONS.USERS.CREATE_USERS,
+    // PERMISSIONS.USERS.EDIT_USERS,
+    ...Object.values(PERMISSIONS.TASKS),
+    // Remove inspection/template permissions
+    // ...Object.values(PERMISSIONS.INSPECTIONS),
+    ...Object.values(PERMISSIONS.CALENDAR),
+    PERMISSIONS.SETTINGS.VIEW_SETTINGS,
+    // Remove all module permissions - supervisor has hardcoded access
+    // MODULE_PERMISSIONS.DASHBOARD,
+    // MODULE_PERMISSIONS.TASKS,
+    // MODULE_PERMISSIONS.CALENDAR,
+    // MODULE_PERMISSIONS.PROFILE
   ],
   [ROLES.INSPECTOR]: [
     PERMISSIONS.DASHBOARD.VIEW_DASHBOARD,
@@ -95,8 +122,8 @@ export const hasPermission = (user, permission) => {
   // Admin has all permissions
   if (user.role === ROLES.ADMIN) return true;
   
-  // For managers, check both module permissions and granular permissions
-  if (user.role === ROLES.MANAGER) {
+  // For managers and supervisors, check both module permissions and granular permissions
+  if (user.role === ROLES.MANAGER || user.role === ROLES.SUPERVISOR) {
     // Check if it's a module permission
     if (Object.values(MODULE_PERMISSIONS).includes(permission)) {
       return user.permissions && user.permissions.includes(permission);
@@ -126,6 +153,14 @@ export const hasModuleAccess = (user, module) => {
     return true;
   }
   
+  // For supervisor role, hardcode access to 4 specific modules
+  if (user.role === ROLES.SUPERVISOR) {
+    const supervisorModules = ['DASHBOARD', 'TASKS', 'CALENDAR', 'PROFILE'];
+    const hasAccess = supervisorModules.includes(module);
+    console.log(`Supervisor ${module}: hardcoded access: ${hasAccess}`);
+    return hasAccess;
+  }
+  
   // For managers, check module permissions
   if (user.role === ROLES.MANAGER) {
     const modulePermission = MODULE_PERMISSIONS[module];
@@ -150,14 +185,15 @@ export const getRolePermissions = (role) => {
 
 // Helper function to check if a user can manage other users
 export const canManageUsers = (user) => {
-  return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
+  return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER; // Remove supervisor
 };
 
 // Helper function to get available roles for user creation
 export const getAvailableRoles = (userRole) => {
   const roleHierarchy = {
-    [ROLES.ADMIN]: [ROLES.MANAGER, ROLES.INSPECTOR],
+    [ROLES.ADMIN]: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.INSPECTOR],
     [ROLES.MANAGER]: [ROLES.INSPECTOR],
+    [ROLES.SUPERVISOR]: [ROLES.INSPECTOR], // Supervisor can only create inspectors
     [ROLES.INSPECTOR]: [],
   };
   
@@ -167,5 +203,6 @@ export const getAvailableRoles = (userRole) => {
 export const DEFAULT_PERMISSIONS = {
   [ROLES.ADMIN]: ROLE_PERMISSIONS[ROLES.ADMIN],
   [ROLES.MANAGER]: ROLE_PERMISSIONS[ROLES.MANAGER],
+  [ROLES.SUPERVISOR]: ROLE_PERMISSIONS[ROLES.SUPERVISOR],
   [ROLES.INSPECTOR]: ROLE_PERMISSIONS[ROLES.INSPECTOR],
 };

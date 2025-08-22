@@ -330,7 +330,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     );
   };
 
-  const showPermissionsSection = formData.role === ROLES.MANAGER;
+  const showPermissionsSection = formData.role === ROLES.MANAGER; // Remove supervisor - no permission management
   const isEditMode = !!(initialData._id || initialData.id);
 
   return (
@@ -398,10 +398,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             name="department"
             value={formData.department || ''}
             onChange={handleChange}
-            disabled={currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR}
+            disabled={currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR}
             style={{ 
-              opacity: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) ? 0.6 : 1,
-              cursor: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) ? 'not-allowed' : 'pointer'
+              opacity: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) ? 0.6 : 1,
+              cursor: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) ? 'not-allowed' : 'pointer'
             }}
           >
             <option value="">Select Department</option>
@@ -409,7 +409,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             <option value="Operations Management">Operations Management</option>
             <option value="Administration">Administration</option>
           </Select>
-          {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR) && (
+          {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) && (
             <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
               Only admins can modify department
             </span>

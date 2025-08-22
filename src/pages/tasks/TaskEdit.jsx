@@ -122,7 +122,7 @@ const TaskEdit = () => {
   }, [task, assets]);
   
   const handleCancel = () => {
-    navigate(`/tasks/${taskId}`);
+    navigate(`/tasks`);
   };
   
   if (loading || !task) {
@@ -205,7 +205,7 @@ const TaskEdit = () => {
   return (
     <PageContainer>
       <Header>
-        <BackButton onClick={() => navigate(`/tasks/${taskId}`)}>
+        <BackButton onClick={() => navigate(`/tasks`)}>
           <ArrowLeft size={18} />
           Back to Task
         </BackButton>

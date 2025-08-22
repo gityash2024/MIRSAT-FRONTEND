@@ -1154,7 +1154,7 @@ const UserTasks = () => {
             }}
           >
             <CheckCircle size={16} />
-            Archive
+            Completed
           </FilterButton>
         </ButtonGroup>
       </FilterBar>
@@ -1167,7 +1167,7 @@ const UserTasks = () => {
                 <TaskTitle>{task.title}</TaskTitle>
                 <StatusBadge status={task.status}>
                   <StatusIcon status={task.status} size={14} />
-                  {task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
+                  {task.status === 'archived' ? 'Completed' : task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
                 </StatusBadge>
               </TaskHeader>
               

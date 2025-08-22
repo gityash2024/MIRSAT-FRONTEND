@@ -4138,7 +4138,7 @@ const InspectionLevelForm = () => {
           page.sections.forEach((section, sectionIndex) => {
             const sectionData = {
               id: `section_${pageIndex}_${sectionIndex}`,
-              name: section.name || `Inspection Level ${sectionIndex + 1} (Page ${pageIndex + 1})`,
+              name: section.name || `Template ${sectionIndex + 1} (Page ${pageIndex + 1})`,
               description: section.description || '',
               score: 0,
               maxScore: 0,
@@ -4633,7 +4633,7 @@ const InspectionLevelForm = () => {
             $active={index === activeSectionTab}
             onClick={() => setActiveSectionTab(index)}
           >
-            {section.name || `Inspection Level ${index + 1}`}
+            {section.name || `Template ${index + 1}`}
             <div 
               className="delete-icon"
               onClick={(e) => {
@@ -4781,7 +4781,7 @@ const InspectionLevelForm = () => {
               <p>No template levels added yet</p>
               <Button onClick={addSection}>
                 <Plus size={16} style={{ marginRight: '4px' }} />
-                Add Inspection Level
+                Add Template
               </Button>
             </TabEmptyState>
           )}
@@ -5305,7 +5305,7 @@ const InspectionLevelForm = () => {
                       <p>No template levels added yet</p>
                       <Button onClick={addSection}>
                         <Plus size={16} style={{ marginRight: '4px' }} />
-                        Add Inspection Level
+                        Add Template
                       </Button>
                     </TabEmptyState>
                   )}

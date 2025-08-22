@@ -248,7 +248,7 @@ const UserEdit = () => {
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate(`/users/${userId}`)}>
+      <BackButton onClick={() => navigate(`/users`)}>
         <ArrowLeft size={18} />
         Back to User
       </BackButton>
@@ -264,7 +264,7 @@ const UserEdit = () => {
       <UserForm
         initialData={user}
         onSubmit={handleSubmit}
-        onCancel={() => navigate(`/users/${userId}`)}
+        onCancel={() => navigate(`/users`)}
         submitButtonText="Save Changes"
         isSubmitting={isSubmitting}
       />

@@ -1141,13 +1141,13 @@ const UserList = () => {
                       </ActionButton>
                     )}
                     
-                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && (
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && userRole !== 'supervisor' && (
                       <ActionButton as={Link} to={`/users/${user.id}/edit`}>
                         <Edit size={16} />
                       </ActionButton>
                     )}
 
-                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && (
+                    {hasPermission(PERMISSIONS.USERS.EDIT_USERS) && userRole !== 'manager' && userRole !== 'supervisor' && (
                       <select 
                         value={user.isActive ? 'active' : 'inactive'}
                         onChange={(e) => {
@@ -1171,7 +1171,7 @@ const UserList = () => {
                       </select>
                     )}
 
-                    {hasPermission(PERMISSIONS.USERS.DELETE_USERS) && userRole !== 'manager' && (
+                    {hasPermission(PERMISSIONS.USERS.DELETE_USERS) && userRole !== 'manager' && userRole !== 'supervisor' && (
                       <ActionButton 
                         onClick={() => handleDeleteClick(user)}
                         style={{ color: '#dc2626' }}

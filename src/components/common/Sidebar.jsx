@@ -188,7 +188,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: Home,
       permission: 'view_dashboard', // Old system
       modulePermission: 'access_dashboard', // New module system for managers
-      roles: ['admin', 'manager', 'inspector']
+      roles: ['admin', 'manager', 'supervisor', 'inspector']
     },
     {
       title: 'Tasks',
@@ -196,7 +196,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: ClipboardList,
       permission: 'view_tasks',
       modulePermission: 'access_tasks',
-      roles: ['admin', 'manager']
+      roles: ['admin', 'manager', 'supervisor']
     },
     {
       title: 'My Tasks',
@@ -212,7 +212,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: Users,
       permission: 'view_users',
       modulePermission: 'access_users',
-      roles: ['admin', 'manager']  // Allow managers if they have permission
+      roles: ['admin', 'manager']  // Remove supervisor - no user management
     },
     {
       title: 'Template',
@@ -220,7 +220,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: ListChecks,
       permission: 'view_inspections',
       modulePermission: 'access_template',
-      roles: ['admin', 'manager']
+      roles: ['admin', 'manager']  // Remove supervisor - no template creation
     },
     {
       title: 'Assets',
@@ -228,7 +228,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: Database,
       permission: 'view_assets',
       modulePermission: 'access_assets',
-      roles: ['admin', 'manager']  // Allow managers if they have permission
+      roles: ['admin', 'manager']  // Remove supervisor - no asset management
     },
     {
       title: 'Questionnaires',
@@ -236,7 +236,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: FileText,
       permission: 'view_questionnaires',
       modulePermission: 'access_questionnaires',
-      roles: ['admin', 'manager']
+      roles: ['admin', 'manager']  // Remove supervisor - no questionnaire management
     },
     {
       title: 'Calendar',
@@ -244,7 +244,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: Calendar,
       permission: 'view_calendar',
       modulePermission: 'access_calendar',
-      roles: ['admin', 'manager']
+      roles: ['admin', 'manager', 'supervisor']  // Keep supervisor - can set schedules
     },
     {
       title: 'Profile',
@@ -252,7 +252,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       icon: User,
       permission: null, // No permission required for profile
       modulePermission: null,
-      roles: ['admin', 'manager', 'inspector']  // All roles use /profile
+      roles: ['admin', 'manager', 'supervisor', 'inspector']  // All roles use /profile
     }
   ];
 
@@ -282,6 +282,18 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         return true;
       }
 
+      // For supervisor role, hardcode the 4 specific tabs
+      if (userRole === 'supervisor') {
+        // Supervisor always sees these 4 tabs regardless of permissions
+        const supervisorTabs = ['Dashboard', 'Tasks', 'Calendar', 'Profile'];
+        if (supervisorTabs.includes(item.title)) {
+          console.log(`✅ Supervisor access granted for ${item.title} (hardcoded)`);
+          return true;
+        }
+        console.log(`❌ Supervisor tab ${item.title} not in allowed list`);
+        return false;
+      }
+
       // For manager role, use NEW MODULE PERMISSIONS
       if (userRole === 'manager') {
         // If no permission is required (like Profile), include the item
@@ -290,15 +302,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           return true;
         }
         
-        // Use modulePermission for managers
+        // Use modulePermission for managers and supervisors
         if (item.modulePermission) {
           const hasAccess = user?.permissions?.includes(item.modulePermission);
-          console.log(`🔍 Manager ${item.title}: needs "${item.modulePermission}", has access: ${hasAccess}`);
+          console.log(`🔍 ${userRole} ${item.title}: needs "${item.modulePermission}", has access: ${hasAccess}`);
           return hasAccess;
         }
         
         // Fallback to old permission system if no modulePermission
-        console.log(`🔍 Manager ${item.title}: using old permission "${item.permission}"`);
+        console.log(`🔍 ${userRole} ${item.title}: using old permission "${item.permission}"`);
         return hasPermission(item.permission);
       }
 

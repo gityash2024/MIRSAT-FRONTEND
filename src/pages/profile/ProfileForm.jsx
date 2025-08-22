@@ -266,8 +266,8 @@ const ProfileForm = () => {
       return false;
     }
     
-    // Only require department for admin role (not for manager/inspector)
-    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector') {
+    // Only require department for admin role (not for manager/inspector/supervisor)
+    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
       setMessage({ type: 'error', text: 'Department is required.' });
       return false;
     }
@@ -289,8 +289,8 @@ const ProfileForm = () => {
       return;
     }
     
-    // Only require department for admin role (not for manager/inspector)
-    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector') {
+    // Only require department for admin role (not for manager/inspector/supervisor)
+    if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
       setMessage({ type: 'error', text: 'Department is required.' });
       return;
     }
@@ -450,17 +450,17 @@ const ProfileForm = () => {
             
             <FormGroup>
               <Label>
-                Department{(user?.role !== 'manager' && user?.role !== 'inspector') ? ' *' : ''}
+                Department{(user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') ? ' *' : ''}
               </Label>
               <Select
                 name="department"
                 value={profileData.department}
                 onChange={handleInputChange}
-                required={user?.role !== 'manager' && user?.role !== 'inspector'}
-                disabled={user?.role === 'manager' || user?.role === 'inspector'}
+                required={user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor'}
+                disabled={user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor'}
                 style={{
-                  opacity: (user?.role === 'manager' || user?.role === 'inspector') ? 0.6 : 1,
-                  cursor: (user?.role === 'manager' || user?.role === 'inspector') ? 'not-allowed' : 'pointer'
+                  opacity: (user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor') ? 0.6 : 1,
+                  cursor: (user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor') ? 'not-allowed' : 'pointer'
                 }}
               >
                 {DEPARTMENT_OPTIONS.map(option => (
@@ -469,7 +469,7 @@ const ProfileForm = () => {
                   </option>
                 ))}
               </Select>
-              {(user?.role === 'manager' || user?.role === 'inspector') && (
+              {(user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor') && (
                 <div style={{ 
                   fontSize: '12px', 
                   color: '#666', 
