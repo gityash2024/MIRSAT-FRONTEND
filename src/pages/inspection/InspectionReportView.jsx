@@ -117,7 +117,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const [error, setError] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
-
+  
   useEffect(() => {
     if (id && !isCreating) {
       loadTemplateData();

@@ -6,9 +6,12 @@ import {
   ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
   Send, Download, Paperclip, BarChart, TrendingUp, Users,
   Circle, ChevronRight, Filter, FileText, HelpCircle, CheckSquare, Database, MapPin,
-  Upload, Trash2
+  Upload, Trash2, Info, Activity, CheckCircle as CheckCircleIcon, XCircle, 
+  Award, Star, Target, Zap, BarChart2, PieChart, Eye, EyeOff, Search, 
+  RotateCw, Save, Play, Pause, RefreshCcw, List, Grid, Navigation, 
+  Maximize2, Minimize2, ChevronDown, Loader, MessageSquare, AlertTriangle as AlertTriangleIcon
 } from 'lucide-react';
-import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './components/TaskStatus';
 import TaskPriority from './components/TaskPriority';
@@ -20,6 +23,8 @@ import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
 `;
 
 const Header = styled.div`
@@ -98,16 +103,18 @@ const EditButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
+  
   &:hover {
-    background: #f5f7fb;
+    background: var(--color-navy);
+    color: white;
   }
 `;
 
 const ContentGrid = styled.div`
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 1fr 350px;
   gap: 24px;
-
+  
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
   }
@@ -120,12 +127,9 @@ const MainContent = styled.div`
 `;
 
 const Sidebar = styled.div`
-  width: 350px;
-  flex-shrink: 0;
-  
-  @media (max-width: 1024px) {
-    width: 100%;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 `;
 
 const Card = styled.div`
@@ -133,80 +137,235 @@ const Card = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
 `;
 
 const CardTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-navy);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
 `;
 
-const Description = styled.div`
+const Description = styled.p`
   color: #666;
   font-size: 14px;
   line-height: 1.6;
-  white-space: pre-line;
+  margin-bottom: 20px;
 `;
 
 const MetaGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-top: 24px;
+  margin-top: 20px;
 `;
 
 const MetaItem = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #666;
-  font-size: 14px;
-  .icon {
-    color: var(--color-navy);
-  }
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-top: 24px;
-`;
-
-const StatCard = styled.div`
+  padding: 12px;
   background: #f8fafc;
   border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  .label {
-    font-size: 12px;
-    color: #666;
-  }
-  .value {
-    font-size: 24px;
-    font-weight: 600;
+  border: 1px solid #e2e8f0;
+  
+  .icon {
     color: var(--color-navy);
+    flex-shrink: 0;
   }
+  
+  strong {
+    color: #374151;
+    margin-right: 4px;
+  }
+`;
+
+// Enhanced components for inspection progress
+const ProgressSection = styled.div`
+  margin-top: 20px;
+`;
+
+const ProgressHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ProgressTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+`;
+
+const ProgressValue = styled.div`
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-navy);
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
-  height: 8px;
+  height: 12px;
   background: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
-  margin-top: 8px;
-  .fill {
+  margin-bottom: 16px;
+  
+  .progress-fill {
     height: 100%;
-    background: var(--color-navy);
-    border-radius: 4px;
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, var(--color-navy), #3b82f6);
+    border-radius: 8px;
+    transition: width 0.6s ease;
+  }
+`;
+
+const InspectionLevelsContainer = styled.div`
+  margin-top: 20px;
+`;
+
+const LevelItem = styled.div`
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  
+  &:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e0;
+  }
+`;
+
+const LevelHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const LevelName = styled.h5`
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+`;
+
+const LevelStatus = styled.span`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  
+  ${props => {
+    switch(props.status) {
+      case 'completed':
+        return 'background: #dcfce7; color: #166534;';
+      case 'in_progress':
+        return 'background: #dbeafe; color: #1e40af;';
+      case 'pending':
+        return 'background: #fef3c7; color: #92400e;';
+      default:
+        return 'background: #f3f4f6; color: #6b7280;';
+    }
+  }}
+`;
+
+const SubLevelsList = styled.div`
+  margin-left: 20px;
+  margin-top: 12px;
+`;
+
+const SubLevelItem = styled.div`
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #374151;
+  
+  &:hover {
+    background: #f9fafb;
+  }
+`;
+
+const AnalyticsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+`;
+
+const AnalyticsCard = styled.div`
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  
+  ${props => {
+    switch(props.type) {
+      case 'progress':
+        return 'background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af;';
+      case 'completion':
+        return 'background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534;';
+      case 'time':
+        return 'background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e;';
+      case 'quality':
+        return 'background: linear-gradient(135deg, #f3e8ff, #e9d5ff); color: #7c3aed;';
+      default:
+        return 'background: #f8fafc; color: #374151;';
+    }
+  }}
+`;
+
+const AnalyticsValue = styled.div`
+  font-size: 28px;
+  font-weight: 800;
+  margin: 8px 0;
+`;
+
+const AnalyticsLabel = styled.div`
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const ChartContainer = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+`;
+
+const ChartTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 16px;
+  text-align: center;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  
+  h3 {
+    font-size: 18px;
+    color: #1a202c;
+    margin: 16px 0 8px;
+  }
+  
+  p {
+    margin-bottom: 20px;
   }
 `;
 
@@ -584,13 +743,17 @@ const TaskView = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
-  const fileInputRef = useRef(null);
-  
-  const { currentTask: task, loading, error } = useSelector((state) => state.tasks);
-  const [selectedAssignee, setSelectedAssignee] = useState('all');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [sublevelsModal, setSublevelsModal] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [preInspectionModalOpen, setPreInspectionModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  const { currentTask: task, loading, error } = useSelector((state) => state.tasks);
 
   // Utility function to safely access nested properties
   const getTaskDataOrDefault = (taskObj, path, defaultValue = '') => {
@@ -621,7 +784,7 @@ const TaskView = () => {
   // Set initial assignee when task loads
   useEffect(() => {
     if (task && task.assignedTo && task.assignedTo.length > 0) {
-      setSelectedAssignee(task.assignedTo[0]._id || task.assignedTo[0].id);
+      // setSelectedAssignee(task.assignedTo[0]._id || task.assignedTo[0].id); // Removed as per edit hint
     }
   }, [task]);
 
@@ -956,24 +1119,6 @@ const TaskView = () => {
             </EditButton>
           )}
         </HeaderTop>
-        
-        {/* Simplified Assignee Filter */}
-        {taskData && taskData.assignedTo && taskData.assignedTo.length > 0 && (
-          <HeaderFilters>
-            <Filter size={16} />
-            <FilterSelect 
-              value={selectedAssignee}
-              onChange={(e) => setSelectedAssignee(e.target.value)}
-            >
-              <option value="all">All Assignees</option>
-              {taskData.assignedTo.map(user => (
-                <option key={user._id || user.id} value={user._id || user.id}>
-                  {user.name || user.email || 'Unknown User'}
-                </option>
-              ))}
-            </FilterSelect>
-          </HeaderFilters>
-        )}
       </Header>
 
       <ContentGrid>
@@ -984,6 +1129,70 @@ const TaskView = () => {
               <BarChart size={20} />
               Task Overview
             </CardTitle>
+            
+            {/* Task Summary Grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+              gap: '16px', 
+              marginBottom: '24px',
+              padding: '0 16px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>TASK ID</div>
+                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'monospace' }}>
+                  {taskId}
+                </div>
+              </div>
+              
+              <div style={{
+                background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>TOTAL SECTIONS</div>
+                <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                  {taskData.inspectionLevel?.subLevels ? taskData.inspectionLevel.subLevels.length : 0}
+                </div>
+              </div>
+              
+              <div style={{
+                background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>TOTAL QUESTIONS</div>
+                <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                  {taskData.inspectionLevel?.subLevels ? 
+                    taskData.inspectionLevel.subLevels.reduce((total, level) => 
+                      total + (level.questions ? level.questions.length : 0), 0
+                    ) : 0}
+                </div>
+              </div>
+              
+              <div style={{
+                background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>COMMENTS</div>
+                <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                  {taskData.comments ? taskData.comments.length : 0}
+                </div>
+              </div>
+            </div>
             <Description>{getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
 
             <MetaGrid>
@@ -1034,43 +1243,510 @@ const TaskView = () => {
                   <span>{taskData.asset.displayName || taskData.asset.name || 'Unknown Asset'}</span>
                 </MetaItem>
               )}
+              <MetaItem>
+                <User size={16} className="icon" />
+                <strong>Created By:</strong>
+                <span>{taskData.createdBy?.name || taskData.createdBy?.email || 'Unknown'}</span>
+              </MetaItem>
+              {taskData.createdAt && (
+                <MetaItem>
+                  <Clock size={16} className="icon" />
+                  <strong>Created On:</strong>
+                  <span>{new Date(taskData.createdAt).toLocaleDateString()}</span>
+                </MetaItem>
+              )}
             </MetaGrid>
           </Card>
 
-          {/* Inspection Progress Card */}
+          {/* Enhanced Inspection Progress Card */}
           {taskData.inspectionLevel && (
             <Card>
               <CardTitle>
                 <CheckSquare size={20} />
-                Inspection Progress
+                Inspection Overview
               </CardTitle>
+              
               <div style={{ padding: '16px' }}>
-                <h4 style={{ marginBottom: '12px', color: 'var(--color-navy)' }}>
+                <h4 style={{ marginBottom: '16px', color: 'var(--color-navy)' }}>
                   Template: {taskData.inspectionLevel.name || 'Unknown Template'}
                 </h4>
-                {selectedAssignee !== 'all' ? (
-                  <div>
-                    <p style={{ marginBottom: '16px', color: '#64748b' }}>
-                      Showing progress for selected assignee
-                    </p>
-                    {/* Add inspection progress visualization here */}
-                    <div style={{ 
-                      background: '#f8fafc', 
-                      padding: '20px', 
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      color: '#64748b'
-                    }}>
-                      Inspection progress visualization will be displayed here
+                
+                {/* Task Metrics - Simplified */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                  <div style={{ 
+                    background: 'rgba(55, 136, 216, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>TASK STATUS</div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#3788d8' }}>
+                      {getTaskDataOrDefault(taskData, 'status', 'pending').charAt(0).toUpperCase() + 
+                       getTaskDataOrDefault(taskData, 'status', 'pending').slice(1).replace('_', ' ')}
                     </div>
                   </div>
-                ) : (
+                  
                   <div style={{ 
-                    textAlign: 'center', 
-                    padding: '20px',
-                    color: '#64748b'
+                    background: 'rgba(39, 174, 96, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center'
                   }}>
-                    Select an assignee from the dropdown above to view their progress
+                    <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>PRIORITY</div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#27ae60' }}>
+                      {getTaskDataOrDefault(taskData, 'priority', 'medium').charAt(0).toUpperCase() + 
+                       getTaskDataOrDefault(taskData, 'priority', 'medium').slice(1)}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'rgba(243, 156, 18, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>CREATED BY</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#f39c12' }}>
+                      {taskData.createdBy?.name || taskData.createdBy?.email || 'Unknown'}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'rgba(44, 62, 80, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>ASSIGNEES</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#2c3e50' }}>
+                      {taskData.assignedTo && taskData.assignedTo.length > 0 ? taskData.assignedTo.length : 0} Users
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inspection Level Information */}
+                {taskData.inspectionLevel?.subLevels && taskData.inspectionLevel.subLevels.length > 0 && (
+                  <div style={{ marginTop: '24px' }}>
+                    <h4 style={{ marginBottom: '16px', color: 'var(--color-navy)' }}>
+                      Inspection Template Details
+                    </h4>
+                    <div style={{ 
+                      background: '#f8fafc', 
+                      padding: '16px', 
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+                        <strong>Total Sections:</strong> {taskData.inspectionLevel.subLevels.length}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        <strong>Template:</strong> {taskData.inspectionLevel.name || 'Unknown Template'}
+                      </div>
+                      {taskData.inspectionLevel.description && (
+                        <div style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
+                          <strong>Description:</strong> {taskData.inspectionLevel.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Detailed Inspection Levels and Questions Card */}
+          {taskData.inspectionLevel?.subLevels && taskData.inspectionLevel.subLevels.length > 0 && (
+            <Card>
+              <CardTitle>
+                <List size={20} />
+                Inspection Levels & Questions
+              </CardTitle>
+              <div style={{ padding: '16px' }}>
+                {taskData.inspectionLevel.subLevels.map((level, levelIndex) => (
+                  <div key={level._id || levelIndex} style={{ 
+                    marginBottom: '24px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Level Header */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                      color: 'white',
+                      padding: '16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+                          {levelIndex + 1}. {level.name || 'Unnamed Level'}
+                        </h4>
+                        {level.description && (
+                          <p style={{ margin: '8px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+                            {level.description}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        padding: '8px 12px',
+                        borderRadius: '20px',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}>
+                        {getSubLevelStatus(level._id || levelIndex) === 'completed' ? '✅ Completed' :
+                         getSubLevelStatus(level._id || levelIndex) === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                      </div>
+                    </div>
+
+                    {/* Level Questions */}
+                    {level.questions && level.questions.length > 0 && (
+                      <div style={{ padding: '16px' }}>
+                        <h5 style={{ 
+                          marginBottom: '16px', 
+                          color: 'var(--color-navy)',
+                          fontSize: '16px',
+                          fontWeight: '600'
+                        }}>
+                          Questions ({level.questions.length})
+                        </h5>
+                        
+                        {level.questions.map((question, questionIndex) => (
+                          <div key={question._id || questionIndex} style={{
+                            marginBottom: '16px',
+                            padding: '16px',
+                            background: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            {/* Question Header */}
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              marginBottom: '12px'
+                            }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{
+                                  fontSize: '16px',
+                                  fontWeight: '600',
+                                  color: '#1a202c',
+                                  marginBottom: '8px'
+                                }}>
+                                  Q{questionIndex + 1}. {question.text || 'Question text not available'}
+                                </div>
+                                {question.description && (
+                                  <div style={{
+                                    fontSize: '14px',
+                                    color: '#64748b',
+                                    lineHeight: '1.5'
+                                  }}>
+                                    {question.description}
+                                  </div>
+                                )}
+                                <div style={{
+                                  fontSize: '12px',
+                                  color: '#94a3b8',
+                                  marginTop: '8px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}>
+                                  <span>Type: {renderQuestionType(question.type || 'text')}</span>
+                                  {question.required && (
+                                    <span style={{ color: '#ef4444' }}>• Required</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Question Response */}
+                            {question.response && (
+                              <div style={{
+                                marginTop: '16px',
+                                padding: '12px',
+                                background: 'rgba(39, 174, 96, 0.1)',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(39, 174, 96, 0.2)'
+                              }}>
+                                <div style={{
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  color: '#27ae60',
+                                  marginBottom: '8px'
+                                }}>
+                                  Response:
+                                </div>
+                                <div style={{
+                                  fontSize: '14px',
+                                  color: '#1a202c',
+                                  lineHeight: '1.5'
+                                }}>
+                                  {question.response.text || question.response.value || question.response || 'Response recorded'}
+                                </div>
+                                {question.response.completedBy && (
+                                  <div style={{
+                                    fontSize: '12px',
+                                    color: '#64748b',
+                                    marginTop: '8px',
+                                    fontStyle: 'italic'
+                                  }}>
+                                    Answered by: {question.response.completedBy.name || question.response.completedBy.email || 'Unknown'}
+                                  </div>
+                                )}
+                                {question.response.completedAt && (
+                                  <div style={{
+                                    fontSize: '12px',
+                                    color: '#64748b',
+                                    marginTop: '4px',
+                                    fontStyle: 'italic'
+                                  }}>
+                                    Completed: {new Date(question.response.completedAt).toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Question Status */}
+                            <div style={{
+                              marginTop: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px'
+                            }}>
+                              <span style={{
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#64748b'
+                              }}>
+                                Status:
+                              </span>
+                              <span style={{
+                                padding: '4px 8px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                background: question.response ? 'rgba(39, 174, 96, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                color: question.response ? '#27ae60' : '#ef4444'
+                              }}>
+                                {question.response ? '✅ Completed' : '⏳ Pending'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Level Progress Summary */}
+                    <div style={{
+                      background: '#f1f5f9',
+                      padding: '12px 16px',
+                      borderTop: '1px solid #e2e8f0',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        Level Progress
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}>
+                        <span style={{ color: '#3788d8' }}>
+                          {level.questions ? 
+                            level.questions.filter(q => q.response).length : 0
+                          } / {level.questions ? level.questions.length : 0}
+                        </span>
+                        <span style={{ color: '#64748b' }}>
+                          questions completed
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Progress and Scoring Summary Card */}
+          {taskData.inspectionLevel && (
+            <Card>
+              <CardTitle>
+                <Award size={20} />
+                Progress & Scoring Summary
+              </CardTitle>
+              <div style={{ padding: '16px' }}>
+                {/* Overall Progress Metrics */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                  gap: '16px', 
+                  marginBottom: '24px' 
+                }}>
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    color: 'white'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>OVERALL PROGRESS</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                      {taskData.inspectionLevel.subLevels ? 
+                        Math.round((taskData.inspectionLevel.subLevels.filter(level => 
+                          getSubLevelStatus(level._id || level.id) === 'completed'
+                        ).length / taskData.inspectionLevel.subLevels.length) * 100) : 0}%
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    color: 'white'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>COMPLETED LEVELS</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                      {taskData.inspectionLevel.subLevels ? 
+                        taskData.inspectionLevel.subLevels.filter(level => 
+                          getSubLevelStatus(level._id || level.id) === 'completed'
+                        ).length : 0}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    color: 'white'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>IN PROGRESS</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                      {taskData.inspectionLevel.subLevels ? 
+                        taskData.inspectionLevel.subLevels.filter(level => 
+                          getSubLevelStatus(level._id || level.id) === 'in_progress'
+                        ).length : 0}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    color: 'white'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>PENDING</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                      {taskData.inspectionLevel.subLevels ? 
+                        taskData.inspectionLevel.subLevels.filter(level => 
+                          getSubLevelStatus(level._id || level.id) === 'pending'
+                        ).length : 0}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Progress Breakdown */}
+                {taskData.inspectionLevel.subLevels && taskData.inspectionLevel.subLevels.length > 0 && (
+                  <div style={{ marginTop: '24px' }}>
+                    <h4 style={{ marginBottom: '16px', color: 'var(--color-navy)' }}>
+                      Level-by-Level Breakdown
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {taskData.inspectionLevel.subLevels.map((level, levelIndex) => {
+                        const levelStatus = getSubLevelStatus(level._id || level.id);
+                        const completedQuestions = level.questions ? 
+                          level.questions.filter(q => q.response).length : 0;
+                        const totalQuestions = level.questions ? level.questions.length : 0;
+                        const levelProgress = totalQuestions > 0 ? 
+                          Math.round((completedQuestions / totalQuestions) * 100) : 0;
+                        
+                        return (
+                          <div key={level._id || levelIndex} style={{
+                            padding: '16px',
+                            background: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '12px'
+                            }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{
+                                  fontSize: '16px',
+                                  fontWeight: '600',
+                                  color: '#1a202c'
+                                }}>
+                                  {levelIndex + 1}. {level.name || 'Unnamed Level'}
+                                </div>
+                                <div style={{
+                                  fontSize: '14px',
+                                  color: '#64748b',
+                                  marginTop: '4px'
+                                }}>
+                                  {completedQuestions} of {totalQuestions} questions completed
+                                </div>
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px'
+                              }}>
+                                <div style={{
+                                  fontSize: '18px',
+                                  fontWeight: '700',
+                                  color: levelStatus === 'completed' ? '#27ae60' : 
+                                         levelStatus === 'in_progress' ? '#f39c12' : '#95a5a6'
+                                }}>
+                                  {levelProgress}%
+                                </div>
+                                <div style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '16px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  background: levelStatus === 'completed' ? 'rgba(39, 174, 96, 0.1)' :
+                                             levelStatus === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
+                                             'rgba(149, 165, 166, 0.1)',
+                                  color: levelStatus === 'completed' ? '#27ae60' :
+                                         levelStatus === 'in_progress' ? '#f39c12' : '#95a5a6'
+                                }}>
+                                  {levelStatus === 'completed' ? '✅ Completed' :
+                                   levelStatus === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            <div style={{
+                              width: '100%',
+                              height: '8px',
+                              background: '#e2e8f0',
+                              borderRadius: '4px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                width: `${levelProgress}%`,
+                                height: '100%',
+                                background: levelStatus === 'completed' ? '#27ae60' :
+                                           levelStatus === 'in_progress' ? '#f39c12' : '#95a5a6',
+                                transition: 'width 0.3s ease'
+                              }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1106,10 +1782,119 @@ const TaskView = () => {
             </Card>
           )}
 
-          {/* Comments Card */}
+          {/* Task Responses and Answers Card */}
+          {taskData.responses && taskData.responses.length > 0 && (
+            <Card>
+              <CardTitle>
+                <HelpCircle size={20} />
+                Task Responses & Answers
+              </CardTitle>
+              <div style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {taskData.responses.map((response, index) => (
+                    <div key={index} style={{
+                      padding: '16px',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#1a202c',
+                            marginBottom: '8px'
+                          }}>
+                            Response #{index + 1}
+                          </div>
+                          {response.question && (
+                            <div style={{
+                              fontSize: '14px',
+                              color: '#64748b',
+                              marginBottom: '8px',
+                              fontStyle: 'italic'
+                            }}>
+                              <strong>Question:</strong> {response.question}
+                            </div>
+                          )}
+                          <div style={{
+                            fontSize: '14px',
+                            color: '#1a202c',
+                            lineHeight: '1.5'
+                          }}>
+                            <strong>Answer:</strong> {response.answer || response.value || response.text || 'Response recorded'}
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: '8px'
+                        }}>
+                          {response.score !== undefined && (
+                            <div style={{
+                              padding: '6px 12px',
+                              background: 'rgba(39, 174, 96, 0.1)',
+                              borderRadius: '16px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#27ae60'
+                            }}>
+                              Score: {response.score}
+                            </div>
+                          )}
+                          {response.status && (
+                            <div style={{
+                              padding: '6px 12px',
+                              borderRadius: '16px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              background: response.status === 'completed' ? 'rgba(39, 174, 96, 0.1)' :
+                                         response.status === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
+                                         'rgba(149, 165, 166, 0.1)',
+                              color: response.status === 'completed' ? '#27ae60' :
+                                     response.status === 'in_progress' ? '#f39c12' : '#95a5a6'
+                            }}>
+                              {response.status === 'completed' ? '✅ Completed' :
+                               response.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {response.completedBy && (
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b',
+                          marginTop: '12px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid #e2e8f0'
+                        }}>
+                          <strong>Answered by:</strong> {response.completedBy.name || response.completedBy.email || 'Unknown'}
+                          {response.completedAt && (
+                            <span style={{ marginLeft: '16px' }}>
+                              <strong>on:</strong> {new Date(response.completedAt).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Enhanced Comments Card */}
           <Card>
             <CardTitle>
-              <Send size={20} />
+              <MessageSquare size={20} />
               Comments & Notes
             </CardTitle>
             <div style={{ padding: '16px' }}>
@@ -1145,29 +1930,125 @@ const TaskView = () => {
               </div>
               
               {taskData.comments && taskData.comments.length > 0 ? (
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                   {taskData.comments.map((comment, index) => (
                     <div key={index} style={{ 
-                      padding: '12px',
-                      marginBottom: '8px',
-                      background: '#f1f5f9',
-                      borderRadius: '6px'
+                      padding: '16px',
+                      marginBottom: '12px',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <strong style={{ fontSize: '14px' }}>
-                          {comment.user?.name || comment.user?.email || 'Unknown User'}
-                        </strong>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>
-                          {new Date(comment.createdAt).toLocaleString()}
-                        </span>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start',
+                        marginBottom: '8px' 
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600'
+                          }}>
+                            {(comment.user?.name || comment.user?.email || 'U').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ 
+                              fontSize: '14px', 
+                              fontWeight: '600',
+                              color: '#1a202c'
+                            }}>
+                              {comment.user?.name || comment.user?.email || 'Unknown User'}
+                            </div>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#64748b' 
+                            }}>
+                              {comment.user?.role || 'User'}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b',
+                          textAlign: 'right'
+                        }}>
+                          <div>{new Date(comment.createdAt || comment.timestamp).toLocaleDateString()}</div>
+                          <div>{new Date(comment.createdAt || comment.timestamp).toLocaleTimeString()}</div>
+                        </div>
                       </div>
-                      <p style={{ margin: 0, fontSize: '14px' }}>{comment.content}</p>
+                      
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#1a202c',
+                        lineHeight: '1.6',
+                        marginBottom: '8px'
+                      }}>
+                        {comment.content || comment.text || comment.message || 'Comment content'}
+                      </div>
+                      
+                      {comment.attachments && comment.attachments.length > 0 && (
+                        <div style={{
+                          marginTop: '12px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid #e2e8f0'
+                        }}>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            marginBottom: '8px'
+                          }}>
+                            Attachments ({comment.attachments.length}):
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {comment.attachments.map((attachment, attIndex) => (
+                              <div key={attIndex} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 10px',
+                                background: '#f1f5f9',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                color: '#475569'
+                              }}>
+                                <Paperclip size={14} />
+                                <span>{attachment.filename || 'File'}</span>
+                                <button
+                                  onClick={() => window.open(attachment.url, '_blank')}
+                                  style={{
+                                    padding: '2px 6px',
+                                    background: '#3788d8',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '10px'
+                                  }}
+                                >
+                                  View
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                  No comments yet. Be the first to add one!
+                  <MessageSquare size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
+                  <div style={{ fontSize: '16px', marginBottom: '8px' }}>No comments yet</div>
+                  <div style={{ fontSize: '14px' }}>Be the first to add a comment to this task!</div>
                 </div>
               )}
             </div>

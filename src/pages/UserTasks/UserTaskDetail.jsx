@@ -4702,27 +4702,183 @@ const UserTaskDetail = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                       <div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Created By</div>
-                        <div style={{ fontWeight: '600', color: '#1a202c' }}>{currentTask.createdBy?.name || 'Unknown'}</div>
+                        <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                          {currentTask.createdBy?.name || currentTask.createdBy?.email || currentTask.createdBy || 'Unknown'}
+                        </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned To</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
-                          {currentTask.assignedTo?.map(user => user.name).join(', ') || 'Unassigned'}
+                          {Array.isArray(currentTask.assignedTo) 
+                            ? currentTask.assignedTo.map(user => user.name || user.email || user).join(', ')
+                            : currentTask.assignedTo?.name || currentTask.assignedTo?.email || currentTask.assignedTo || 'Unassigned'
+                          }
                         </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Asset</div>
-                        <div style={{ fontWeight: '600', color: '#1a202c' }}>{currentTask.asset?.displayName || 'N/A'}</div>
+                        <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                          {currentTask.asset?.displayName || currentTask.asset?.name || currentTask.asset || 'N/A'}
+                        </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Created</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>{formatDate(currentTask.createdAt)}</div>
                       </div>
+                      {currentTask.status && (
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Status</div>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: currentTask.status === 'completed' ? '#16a34a' : 
+                                   currentTask.status === 'in_progress' ? '#f59e0b' : '#64748b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <StatusIcon status={currentTask.status} />
+                            {currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+                          </div>
+                        </div>
+                      )}
+                      {currentTask.priority && (
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Priority</div>
+                          <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                            <PriorityBadge priority={currentTask.priority}>
+                              {currentTask.priority}
+                            </PriorityBadge>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>
                 
                 {renderPreInspectionQuestionnaire()}
+                
+                {/* Task Comments Section */}
+                {currentTask.comments && currentTask.comments.length > 0 && (
+                  <Card style={{ marginTop: '24px' }}>
+                    <SectionTitle>
+                      <MessageSquare size={20} />
+                      Task Comments
+                    </SectionTitle>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {currentTask.comments.map((comment, index) => (
+                        <div 
+                          key={index}
+                          style={{
+                            padding: '16px',
+                            background: 'rgba(55, 136, 216, 0.05)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(55, 136, 216, 0.1)'
+                          }}
+                        >
+                          <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            marginBottom: '8px'
+                          }}>
+                            <span style={{ 
+                              fontWeight: '600', 
+                              color: '#1a202c',
+                              fontSize: '14px'
+                            }}>
+                              {comment.user?.name || comment.user?.email || comment.user || 'Unknown User'}
+                            </span>
+                            <span style={{ 
+                              fontSize: '12px', 
+                              color: '#64748b' 
+                            }}>
+                              {formatDate(comment.createdAt || comment.timestamp)}
+                            </span>
+                          </div>
+                          <p style={{ 
+                            margin: 0, 
+                            color: '#374151',
+                            fontSize: '14px',
+                            lineHeight: '1.5'
+                          }}>
+                            {comment.text || comment.content || comment.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+                
+                {/* Task Metrics Section */}
+                {(currentTask.status === 'in_progress' || currentTask.status === 'completed' || currentTask.status === 'archived') && (
+                  <Card style={{ marginTop: '24px' }}>
+                    <SectionTitle>
+                      <BarChart2 size={20} />
+                      Task Metrics & Progress
+                    </SectionTitle>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                      <div style={{ 
+                        background: 'rgba(55, 136, 216, 0.1)', 
+                        padding: '20px', 
+                        borderRadius: '12px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>OVERALL PROGRESS</div>
+                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
+                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#64748b' }}>
+                          Task completion
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        background: 'rgba(39, 174, 96, 0.1)', 
+                        padding: '20px', 
+                        borderRadius: '12px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>COMPLIANCE SCORE</div>
+                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
+                          {scores.percentage}%
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#64748b' }}>
+                          {scores.achieved} of {scores.total} points
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        background: 'rgba(243, 156, 18, 0.1)', 
+                        padding: '20px', 
+                        borderRadius: '12px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>TIME SPENT</div>
+                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
+                          {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#64748b' }}>
+                          Total duration
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        background: 'rgba(44, 62, 80, 0.1)', 
+                        padding: '20px', 
+                        borderRadius: '12px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>INSPECTION PAGES</div>
+                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
+                          {inspectionPages.length}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#64748b' }}>
+                          Total sections
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
                 
                 {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
@@ -4785,7 +4941,7 @@ const UserTaskDetail = () => {
                       Inspection Progress
                     </ProgressTitle>
                     
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <ProgressValue>
                         {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                         {/* Debug info in development */}
@@ -4870,128 +5026,6 @@ const UserTaskDetail = () => {
                         </ScoreValue>
                       </ScoreItem>
                     </ScoreGrid>
-                    
-                    {inspectionPages.length > 0 && (
-                      <PageScoresContainer>
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '16px'
-                        }}>
-                          <h4 style={{ 
-                            fontSize: '16px', 
-                            color: '#1a202c',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            margin: 0
-                          }}>
-                            <BarChart2 size={16} />
-                            Page Scores
-                          </h4>
-                          
-                          {autoUpdateEnabled && (
-                            <div style={{ 
-                              fontSize: '10px', 
-                              color: '#16a34a',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '2px 6px',
-                              background: 'rgba(34, 197, 94, 0.1)',
-                              borderRadius: '4px'
-                            }}>
-                              <div style={{ 
-                                width: '3px', 
-                                height: '3px', 
-                                borderRadius: '50%', 
-                                background: '#16a34a',
-                                animation: 'pulse 2s infinite'
-                              }}></div>
-                              Live
-                            </div>
-                          )}
-                        </div>
-                        
-                        {inspectionPages.map((page, index) => {
-                          const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
-                          const hasResponses = pageScore.achieved > 0;
-                          const completionPercentage = page.sections && page.sections.length > 0 ? 
-                            Math.round(page.sections.reduce((sum, section) => {
-                              if (!section.questions) return sum;
-                              const answeredQuestions = section.questions.filter(q => {
-                                const qId = q._id || q.id;
-                                return currentTask.questionnaireResponses && 
-                                  (currentTask.questionnaireResponses[qId] || 
-                                   Object.keys(currentTask.questionnaireResponses).some(k => k.includes(qId)));
-                              }).length;
-                              return sum + (answeredQuestions / section.questions.length);
-                            }, 0) / page.sections.length * 100) : 0;
-                          
-                          return (
-                            <PageScoreItem key={page.id || page._id}>
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px'
-                              }}>
-                                <div style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '50%',
-                                  background: hasResponses ? 'linear-gradient(135deg, #27ae60, #2ecc71)' : '#f3f4f6',
-                                  color: hasResponses ? 'white' : '#6b7280',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontWeight: 'bold',
-                                  fontSize: '14px'
-                                }}>
-                                  {index + 1}
-                                </div>
-                                <span style={{ fontWeight: '600', color: '#1a202c' }}>{page.name}</span>
-                              </div>
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '16px'
-                              }}>
-                                <div style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'flex-end',
-                                  gap: '4px'
-                                }}>
-                                  <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                    Completion: {completionPercentage}%
-                                  </span>
-                                  <div style={{ 
-                                    width: '100px', 
-                                    height: '6px', 
-                                    background: '#e5e7eb', 
-                                    borderRadius: '3px',
-                                    overflow: 'hidden'
-                                  }}>
-                                    <div style={{ 
-                                      height: '100%', 
-                                      width: `${completionPercentage}%`,
-                                      background: completionPercentage >= 100 ? 'linear-gradient(90deg, #27ae60, #2ecc71)' : 'linear-gradient(90deg, #3788d8, #2980b9)',
-                                      borderRadius: '3px',
-                                      transition: 'width 0.3s ease'
-                                    }}></div>
-                                  </div>
-                                </div>
-                                <ScoreBadge hasResponse={hasResponses}>
-                                  <Star size={12} />
-                                  {pageScore.achieved} / {pageScore.total} ({pageScore.percentage}%)
-                                </ScoreBadge>
-                              </div>
-                            </PageScoreItem>
-                          );
-                        })}
-                      </PageScoresContainer>
-                    )}
                   </ScoreCard>
                 )}
               </>

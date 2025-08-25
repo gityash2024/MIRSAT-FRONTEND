@@ -6,8 +6,10 @@ export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const { token } = useSelector((state) => state.auth);
-  // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  // const API_URL = import.meta.env.VITE_API_URL || '
+https://mirsat.mymultimeds.com/api/api';
+  const API_URL = import.meta.env.VITE_API_URL || '
+https://mirsat.mymultimeds.com/api/api';
 
   const uploadFile = async (file) => {
     try {
