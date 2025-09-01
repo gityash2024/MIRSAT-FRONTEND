@@ -14,7 +14,6 @@ import ReportHeader from './components/ReportHeader';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import InspectionStatusChart from './components/InspectionStatusChart';
 import TaskCompletionChart from './components/TaskCompletionChart';
-import InspectorPerformanceTable from './components/InspectorPerformanceTable';
 import TimelineChart from './components/TimelineChart';
 import RegionalDistributionMap from './components/RegionalDistributionMap';
 import ComplianceChart from './components/ComplianceChart';
@@ -115,9 +114,7 @@ const Reports = () => {
           <TimelineChart dateRange={dateRange} filters={selectedFilters} />
         </GridItem>
 
-        <GridItem span={12}>
-          <InspectorPerformanceTable dateRange={dateRange} filters={selectedFilters} />
-        </GridItem>
+      
       </ReportsGrid>
     </ReportsContainer>
   );
