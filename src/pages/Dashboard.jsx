@@ -503,32 +503,7 @@ const Dashboard = () => {
           </Card>
         </ScrollAnimation>
 
-        <ScrollAnimation animation="slideIn" delay={0.4}>
-          <Card>
-            <CardTitle>Inspector Performance</CardTitle>
-            {loading && dashboardData.teamPerformance.length === 0 ? (
-              <LoadingSpinner>Loading inspector performance...</LoadingSpinner>
-            ) : dashboardData.teamPerformance && dashboardData.teamPerformance.length > 0 ? (
-              <div>
-                {dashboardData.teamPerformance.map((member, index) => (
-                  <TeamMemberItem key={index}>
-                    <div className="member-info">
-                      <div className="avatar">
-                        {member.name ? member.name.charAt(0) : 'U'}
-                      </div>
-                      <span className="name">{member.name}</span>
-                    </div>
-                    <div className="performance">
-                      {member.performance}
-                    </div>
-                  </TeamMemberItem>
-                ))}
-              </div>
-            ) : (
-              <EmptyState>No inspector performance data available</EmptyState>
-            )}
-          </Card>
-        </ScrollAnimation>
+      
       </ContentGrid>
       
       <ScrollAnimation animation="fadeIn" delay={0.5}>
