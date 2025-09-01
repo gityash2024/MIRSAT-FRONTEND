@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { API_CONFIG } from '../config/api';
 
 export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const { token } = useSelector((state) => state.auth);
-  // const API_URL = import.meta.env.VITE_API_URL || '
-https://mirsat.mymultimeds.com/api/api';
-  const API_URL = import.meta.env.VITE_API_URL || '
-https://mirsat.mymultimeds.com/api/api';
 
   const uploadFile = async (file) => {
     try {
@@ -19,7 +16,7 @@ https://mirsat.mymultimeds.com/api/api';
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post(`${API_URL}/uploads/attachment`, formData, {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOADS}/attachment`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
@@ -27,7 +24,8 @@ https://mirsat.mymultimeds.com/api/api';
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setProgress(percentCompleted);
-        }
+        },
+        timeout: API_CONFIG.TIMEOUTS.UPLOAD
       });
       
       return {

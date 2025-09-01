@@ -68,7 +68,7 @@ import QuestionLogicBuilder from '../../components/ui/QuestionLogicBuilder';
 import debounce from 'lodash/debounce';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
-import axios from 'axios';
+import api from '../../services/api';
 import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
 import Alert from '@mui/material/Alert';
 
@@ -3653,14 +3653,8 @@ const InspectionLevelForm = () => {
     try {
       setLoading(true);
       
-      // Use the correct API endpoint with proper headers
-      const response = await axios.get(`https://mirsat.mymultimeds.com/api/v1/inspection/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-
-        }
-      });
+      // Use the centralized API service
+      const response = await api.get(`/inspection/${id}`);
       
       const templateData = response.data;
       console.log('Loaded template data:', templateData);
@@ -3800,26 +3794,12 @@ const InspectionLevelForm = () => {
       let response;
       
       if (id) {
-        // response = await axios.put(`
-https://mirsat.mymultimeds.com/api/api/v1/inspection/${id}`, templateData, {
-        response = await axios.put(`
-https://mirsat.mymultimeds.com/api/api/v1/inspection/${id}`, templateData, {
+        response = await api.put(`/inspection/${id}`, templateData, {
           timeout: 60000, // Increase timeout for large templates
-          headers: {
-            'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-
-          }
         });
       } else {
-        // response = await axios.post('https://mirsat.mymultimeds.com/api/v1/inspection', templateData, {
-        response = await axios.post('https://mirsat.mymultimeds.com/api/v1/inspection', templateData, {
+        response = await api.post('/inspection', templateData, {
           timeout: 60000, // Increase timeout for large templates
-          headers: {
-            'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-
-          }
         });
         
         // Clear local storage after successful save
@@ -3878,14 +3858,9 @@ https://mirsat.mymultimeds.com/api/api/v1/inspection/${id}`, templateData, {
           status: newStatus
         };
         
-        // Use the correct API endpoint
-        await axios.put(`https://mirsat.mymultimeds.com/api/v1/inspection/${savedData._id || savedData.id}`, updateData, {
+        // Use the centralized API service
+        await api.put(`/inspection/${savedData._id || savedData.id}`, updateData, {
           timeout: 30000, // 30s timeout for operation
-          headers: {
-            'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-
-          }
         });
         
         setFormData({

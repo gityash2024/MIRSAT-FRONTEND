@@ -2,8 +2,11 @@
  * Application constants
  */
 
-// API configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api';
+// Import centralized API configuration
+import { API_BASE_URL as CENTRALIZED_API_URL } from './api';
+
+// API configuration - use centralized configuration
+export const API_BASE_URL = CENTRALIZED_API_URL;
 
 // Other application constants
 export const APP_NAME = 'MIRSAT';

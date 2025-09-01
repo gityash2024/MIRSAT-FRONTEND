@@ -1193,7 +1193,7 @@ const TaskView = () => {
                 </div>
               </div>
             </div>
-            <Description>{getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
+            <Description> <span style={{ fontWeight: '600', color: 'var(--color-navy)' , fontSize: '16px', marginBottom: '8px'}}>Task Description:</span> {getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
 
             <MetaGrid>
               <MetaItem>

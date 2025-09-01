@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import io from 'socket.io-client';
 import { SOCKET_EVENTS } from '../utils/constants';
+import { SOCKET_CONFIG } from '../config/api';
 import api from '../services/api';
 
 const useNotification = () => {
@@ -14,10 +15,9 @@ const useNotification = () => {
   // Initialize socket connection
   useEffect(() => {
     if (user && token) {
-        const socketInstance = io(process.env.REACT_APP_API_URL || 'https://mirsat.mymultimeds.com/api/v1', {
+        const socketInstance = io(SOCKET_CONFIG.URL, {
         auth: { token },
-        withCredentials: true,
-        transports: ['websocket', 'polling']
+        ...SOCKET_CONFIG.OPTIONS
       });
 
       socketInstance.on('connect', () => {

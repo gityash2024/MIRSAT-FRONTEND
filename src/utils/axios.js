@@ -1,11 +1,12 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api',
+  baseURL: API_CONFIG.BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // Default 30s timeout
+  timeout: API_CONFIG.TIMEOUTS.DEFAULT,
   maxContentLength: 10 * 1024 * 1024, // 10MB max content length
   maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
 });

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 // Track pending requests to avoid duplicates
 const pendingRequests = new Map();
@@ -11,7 +12,7 @@ let backoffRetryCount = 0;
 const MAX_RETRIES = 3;
 
 const api = axios.create({
-  baseURL: 'https://mirsat.mymultimeds.com/api/v1',
+  baseURL: API_CONFIG.BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
