@@ -469,38 +469,59 @@ const Dashboard = () => {
 
       <ContentGrid>
         <ScrollAnimation animation="slideIn" delay={0.3}>
-          <Card>
-            <CardTitle>Task Progress</CardTitle>
-            {loading && dashboardData.taskProgress.length === 0 ? (
-              <LoadingSpinner>Loading task progress...</LoadingSpinner>
-            ) : dashboardData.taskProgress && dashboardData.taskProgress.length > 0 ? (
-              <div>
-                {dashboardData.taskProgress.map((task, index) => (
-                  <ProgressItem key={index}>
-                    <div className="header">
-                      <div>
-                        <span className="task-name">{task.name}</span>
-                        {task.inspector && (
-                          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                            Inspector: {task.inspector} • Template: {task.template}
-                          </div>
-                        )}
-                      </div>
-                      <span className="percentage">{task.progress}%</span>
-                    </div>
-                    <ProgressBar>
-                      <div 
-                        className="fill" 
-                        style={{ width: `${task.progress}%` }} 
-                      />
-                    </ProgressBar>
-                  </ProgressItem>
-                ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {/* Total Tasks Card */}
+            <StatCard style={{ padding: '16px', margin: 0 }}>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
+                <Calendar size={20} color="var(--color-info)" />
               </div>
-            ) : (
-              <EmptyState>No task progress data available</EmptyState>
-            )}
-          </Card>
+              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+                {dashboardData.stats && dashboardData.stats.length > 0 
+                  ? dashboardData.stats.find(s => s.title === 'Total Tasks')?.value || 0 
+                  : 0}
+              </div>
+              <div className="label">Total Tasks</div>
+            </StatCard>
+
+            {/* Completed Tasks Card */}
+            <StatCard style={{ padding: '16px', margin: 0 }}>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
+                <CheckSquare size={20} color="var(--color-success)" />
+              </div>
+              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+                {dashboardData.stats && dashboardData.stats.length > 0 
+                  ? dashboardData.stats.find(s => s.title === 'Completed Tasks')?.value || 0 
+                  : 0}
+              </div>
+              <div className="label">Completed Tasks</div>
+            </StatCard>
+
+            {/* Pending Reviews Card */}
+            <StatCard style={{ padding: '16px', margin: 0 }}>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
+                <Clock size={20} color="var(--color-warning)" />
+              </div>
+              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+                {dashboardData.stats && dashboardData.stats.length > 0 
+                  ? dashboardData.stats.find(s => s.title === 'Pending Reviews')?.value || 0 
+                  : 0}
+              </div>
+              <div className="label">Pending Reviews</div>
+            </StatCard>
+
+            {/* Compliance Score Card */}
+            <StatCard style={{ padding: '16px', margin: 0 }}>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
+                <ShieldCheck size={20} color="var(--color-teal)" />
+              </div>
+              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+                {dashboardData.stats && dashboardData.stats.length > 0 
+                  ? dashboardData.stats.find(s => s.title === 'Compliance Score')?.value || '0%' 
+                  : '0%'}
+              </div>
+              <div className="label">Compliance Score</div>
+            </StatCard>
+          </div>
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.4}>
