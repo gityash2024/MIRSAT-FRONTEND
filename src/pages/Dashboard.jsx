@@ -459,13 +459,13 @@ const Dashboard = () => {
       {/* Test Notification Button for Development */}
       <TestNotificationButton />
 
-      <StatsGrid>
+      {/* <StatsGrid>
         {loading && dashboardData.stats.length === 0 ? (
           <LoadingSpinner>Loading dashboard statistics...</LoadingSpinner>
         ) : (
           renderStatCards()
         )}
-      </StatsGrid>
+      </StatsGrid> */}
 
       <ContentGrid>
         <ScrollAnimation animation="slideIn" delay={0.3}>
