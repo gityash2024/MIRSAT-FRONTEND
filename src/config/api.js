@@ -11,7 +11,7 @@ const getApiBaseUrl = () => {
   // }
   
   // For development, use localhost
-  return 'http://localhost:5001/api/v1';
+  return 'https://mirsat.mymultimeds.com/api/v1';
   // return import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
 };
 
