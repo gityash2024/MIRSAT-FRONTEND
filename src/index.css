@@ -23,13 +23,13 @@
   /* Status colors */
   --color-success: #7CB797;
   --color-warning: #DFBE7F;
-  --color-error: #D18C92;
+  --color-error: #dc2434;
   --color-info: #7CA7C8;
   
   /* Compliance levels */
   --color-compliance-full: #7CB797;
   --color-compliance-partial: #DFBE7F;
-  --color-compliance-non: #D18C92;
+  --color-compliance-non: #dc2434;
   --color-compliance-na: #8CA3B7;
   
   font-family: '_thesansarab_9750fc', '_thesansarab_Fallback_9750fc', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

@@ -157,6 +157,26 @@ export const userTaskService = {
       console.error('Error adding section comment:', error);
       throw error;
     }
+  },
+
+  // Get task progress data for multiple tasks (for admin panel) - using bulk endpoint
+  getTasksProgressData: async (taskIds) => {
+    try {
+      const validTaskIds = taskIds.filter(id => id && id !== 'undefined' && typeof id === 'string');
+      
+      if (validTaskIds.length === 0) {
+        return [];
+      }
+      
+      const response = await api.post('/user-tasks/bulk-progress', {
+        taskIds: validTaskIds
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching tasks progress data:', error);
+      throw error;
+    }
   }
   
 };

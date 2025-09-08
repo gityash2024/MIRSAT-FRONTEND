@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { Plus, Filter, Search, Download, RefreshCw, Loader } from 'lucide-react';
 import TaskFilter from './components/TaskFilter';
 import TaskTable from './components/TaskTable';
-import { fetchTasks, setFilters, setPagination } from '../../store/slices/taskSlice';
+import { fetchTasks, setFilters, setPagination, fetchTasksProgressData } from '../../store/slices/taskSlice';
 import { fetchAssets } from '../../store/slices/assetSlice';
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
@@ -268,6 +268,12 @@ const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
+  
+  // Debug: Log tasks whenever they change
+  useEffect(() => {
+    console.log('TaskList: Tasks updated:', tasks?.map(t => ({ id: t.id, progress: t.overallProgress })));
+  }, [tasks]);
+  
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -305,7 +311,7 @@ const TaskList = () => {
     loadTasks();
   }, [dispatch, filters, pagination?.page, pagination?.limit]);
 
-  const loadTasks = () => {
+  const loadTasks = async () => {
     // Create query params from filters
     const queryParams = {
       ...filters,
@@ -313,7 +319,25 @@ const TaskList = () => {
       limit: pagination?.limit || 10
     };
     
-    dispatch(fetchTasks(queryParams));
+    // First fetch tasks
+    const result = await dispatch(fetchTasks(queryParams));
+    
+    // If tasks were fetched successfully, fetch progress data
+    if (result.type === 'tasks/fetchTasks/fulfilled' && result.payload?.data) {
+      const taskIds = result.payload.data
+        .map(task => task.id)
+        .filter(id => id && id !== 'undefined' && typeof id === 'string' && id.length > 0);
+      
+      if (taskIds.length > 0) {
+        try {
+          console.log('TaskList: Fetching progress data for taskIds:', taskIds);
+          const progressResult = await dispatch(fetchTasksProgressData(taskIds));
+          console.log('TaskList: Progress fetch result:', progressResult);
+        } catch (error) {
+          console.warn('Failed to fetch progress data:', error);
+        }
+      }
+    }
   };
 
   const handleSearchChange = (e) => {

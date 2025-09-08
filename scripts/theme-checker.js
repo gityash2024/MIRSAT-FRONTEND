@@ -50,8 +50,8 @@ const colorMap = {
   '#7cb797': 'var(--color-success)',
   '#DFBE7F': 'var(--color-warning)',
   '#dfbe7f': 'var(--color-warning)',
-  '#D18C92': 'var(--color-error)',
-  '#d18c92': 'var(--color-error)',
+  '#dc2434': 'var(--color-error)',
+  '#dc2434': 'var(--color-error)',
   '#7CA7C8': 'var(--color-info)',
   '#7ca7c8': 'var(--color-info)',
   

@@ -40,7 +40,7 @@ const themeColors = {
   // Status colors
   success: { hex: '#7CB797', var: 'var(--color-success)' },
   warning: { hex: '#DFBE7F', var: 'var(--color-warning)' },
-  error: { hex: '#D18C92', var: 'var(--color-error)' },
+  error: { hex: '#dc2434', var: 'var(--color-error)' },
   info: { hex: '#7CA7C8', var: 'var(--color-info)' },
   
   // Common colors that map to our theme
@@ -82,8 +82,8 @@ const colorMappings = {
   '#7cb797': themeColors.success.var,
   '#DFBE7F': themeColors.warning.var,
   '#dfbe7f': themeColors.warning.var,
-  '#D18C92': themeColors.error.var,
-  '#d18c92': themeColors.error.var,
+  '#dc2434': themeColors.error.var,
+  '#dc2434': themeColors.error.var,
   '#7CA7C8': themeColors.info.var,
   '#7ca7c8': themeColors.info.var,
   

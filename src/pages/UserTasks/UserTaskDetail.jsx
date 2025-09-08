@@ -5284,7 +5284,7 @@ const UserTaskDetail = () => {
                     {currentTask?.status === 'archived' && (
                       <>
                         {/* Excel Download */}
-                        <QuickActionButton 
+                        {/* <QuickActionButton 
                           primary
                           onClick={() => handleDownloadReport('excel')}
                           style={{ 
@@ -5300,7 +5300,7 @@ const UserTaskDetail = () => {
                         >
                           <Download size={20} />
                           Download Excel
-                        </QuickActionButton>
+                        </QuickActionButton> */}
                         
                         {/* PDF Download */}
                         <QuickActionButton 
@@ -5310,19 +5310,19 @@ const UserTaskDetail = () => {
                             padding: '16px 32px', 
                             fontSize: '16px',
                             fontWeight: '600',
-                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-                            boxShadow: '0 4px 15px rgba(220, 38, 38, 0.4)',
-                            border: '1px solid rgba(220, 38, 38, 0.3)',
+                            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                            boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)',
+                            border: '1px solid rgba(22, 163, 74, 0.3)',
                             minWidth: '200px',
                             height: '56px'
                           }}
                         >
                           <Download size={20} />
-                          Download PDF
+                          Download Report
                         </QuickActionButton>
                         
                         {/* Word Download */}
-                        <QuickActionButton 
+                        {/* <QuickActionButton 
                           primary
                           onClick={() => handleDownloadReport('docx')}
                           style={{ 
@@ -5338,7 +5338,7 @@ const UserTaskDetail = () => {
                         >
                           <Download size={20} />
                           Download Word
-                        </QuickActionButton>
+                        </QuickActionButton> */}
                       </>
                     )}
                     

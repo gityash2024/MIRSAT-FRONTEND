@@ -3602,6 +3602,11 @@ const InspectionLevelForm = () => {
   const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
   const [isActivityHistoryOpen, setIsActivityHistoryOpen] = useState(false);
   const [isMoveQuestionModalOpen, setIsMoveQuestionModalOpen] = useState(false);
+  
+  // New confirmation modals for page and section deletion
+  const [showPageDeleteModal, setShowPageDeleteModal] = useState(false);
+  const [showSectionDeleteModal, setShowSectionDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -3886,6 +3891,33 @@ const InspectionLevelForm = () => {
       setSaveMessage('');
       setLoading(false);
     }
+  };
+
+  // Helper functions for confirmation modals
+  const handlePageDeleteClick = (pageIndex, pageName) => {
+    setDeleteTarget({ type: 'page', index: pageIndex, name: pageName });
+    setShowPageDeleteModal(true);
+  };
+
+  const handleSectionDeleteClick = (pageIndex, sectionIndex, sectionName) => {
+    setDeleteTarget({ type: 'section', pageIndex, sectionIndex, name: sectionName });
+    setShowSectionDeleteModal(true);
+  };
+
+  const confirmPageDelete = () => {
+    if (deleteTarget && deleteTarget.type === 'page') {
+      removePage(deleteTarget.index);
+    }
+    setShowPageDeleteModal(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmSectionDelete = () => {
+    if (deleteTarget && deleteTarget.type === 'section') {
+      removeSection(deleteTarget.pageIndex, deleteTarget.sectionIndex);
+    }
+    setShowSectionDeleteModal(false);
+    setDeleteTarget(null);
   };
 
   const handleBack = () => {
@@ -4316,9 +4348,7 @@ const InspectionLevelForm = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete this page: "${page.name || `Page ${pageIndex + 1}`}"? This action cannot be undone.`)) {
-                  removePage(pageIndex);
-                }
+                handlePageDeleteClick(pageIndex, page.name || `Page ${pageIndex + 1}`);
               }}
               style={{
                 background: 'none',
@@ -4449,9 +4479,7 @@ const InspectionLevelForm = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete this section: "${section.name || `Section ${sectionIndex + 1}`}"? This action cannot be undone.`)) {
-                  removeSection(pageIndex, sectionIndex);
-                }
+                handleSectionDeleteClick(pageIndex, sectionIndex, section.name || `Section ${sectionIndex + 1}`);
               }}
               style={{
                 background: 'none',
@@ -4567,9 +4595,7 @@ const InspectionLevelForm = () => {
               className="delete-icon"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete this page: "${page.name || `Page ${index + 1}`}"? This action cannot be undone.`)) {
-                  removePage(index);
-                }
+                handlePageDeleteClick(index, page.name || `Page ${index + 1}`);
               }}
               title="Delete Page"
             >
@@ -4613,9 +4639,7 @@ const InspectionLevelForm = () => {
               className="delete-icon"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete this section: "${section.name || `Section ${index + 1}`}"? This action cannot be undone.`)) {
-                  removeSection(activePageIndex, index);
-                }
+                handleSectionDeleteClick(activePageIndex, index, section.name || `Section ${index + 1}`);
               }}
               title="Delete Section"
             >
@@ -5377,6 +5401,32 @@ const InspectionLevelForm = () => {
           allSets={formData.pages[activePageIndex].sections}
           currentSetIndex={activeSectionIndex}
           onMoveQuestion={handleMoveQuestion}
+        />
+      )}
+
+      {/* Page deletion confirmation modal */}
+      {showPageDeleteModal && (
+        <ConfirmationModal
+          isOpen={showPageDeleteModal}
+          onClose={() => setShowPageDeleteModal(false)}
+          onConfirm={confirmPageDelete}
+          title="Delete Page"
+          message={`Are you sure you want to delete this page: "${deleteTarget?.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
+      )}
+
+      {/* Section deletion confirmation modal */}
+      {showSectionDeleteModal && (
+        <ConfirmationModal
+          isOpen={showSectionDeleteModal}
+          onClose={() => setShowSectionDeleteModal(false)}
+          onConfirm={confirmSectionDelete}
+          title="Delete Section"
+          message={`Are you sure you want to delete this section: "${deleteTarget?.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
         />
       )}
     </PageContainer>

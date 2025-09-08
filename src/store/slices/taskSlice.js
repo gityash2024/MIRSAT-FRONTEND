@@ -301,6 +301,21 @@ export const deleteTask = createAsyncThunk(
     }
   }
 );
+
+export const fetchTasksProgressData = createAsyncThunk(
+  'tasks/fetchTasksProgressData',
+  async (taskIds, { rejectWithValue }) => {
+    try {
+      const { userTaskService } = await import('../../services/userTask.service');
+      const response = await userTaskService.getTasksProgressData(taskIds);
+      return response;
+    } catch (error) {
+      console.error('Error fetching tasks progress data:', error);
+      return rejectWithValue(error.response?.data || 'Error fetching tasks progress data');
+    }
+  }
+);
+
 const taskSlice = createSlice({
   name: 'tasks',
   initialState,
@@ -329,7 +344,11 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload.data;
+        // Ensure tasks have the correct id field for progress matching
+        state.tasks = action.payload.data.map(task => ({
+          ...task,
+          id: task.id || task._id // Ensure id field exists
+        }));
         state.pagination = {
           page: action.payload.page,
           limit: action.payload.limit,
@@ -430,8 +449,31 @@ const taskSlice = createSlice({
         if (state.currentTask?._id === action.payload._id) {
           state.currentTask = action.payload;
         }
+      })
+      .addCase(fetchTasksProgressData.fulfilled, (state, action) => {
+        // Update tasks with progress data
+        if (action.payload && action.payload.length > 0) {
+          console.log('Redux: Updating tasks with progress data:', action.payload);
+          action.payload.forEach(progressData => {
+            // Try to match by both id and _id fields
+            const taskIndex = state.tasks.findIndex(task => 
+              task.id === progressData.taskId || 
+              task._id === progressData.taskId
+            );
+            if (taskIndex !== -1) {
+              console.log(`Redux: Updating task ${progressData.taskId} with progress ${progressData.overallProgress}%`);
+              state.tasks[taskIndex].overallProgress = progressData.overallProgress;
+              state.tasks[taskIndex].completionRate = progressData.completionRate;
+              state.tasks[taskIndex].questionnaireResponses = progressData.questionnaireResponses;
+              state.tasks[taskIndex].completedQuestions = progressData.completedQuestions;
+              state.tasks[taskIndex].totalQuestions = progressData.totalQuestions;
+            } else {
+              console.warn(`Redux: Task ${progressData.taskId} not found in state.tasks. Available task IDs:`, state.tasks.map(t => ({ id: t.id, _id: t._id })));
+            }
+          });
+          console.log('Redux: Tasks after progress update:', state.tasks.map(t => ({ id: t.id, _id: t._id, progress: t.overallProgress })));
+        }
       });
-      
   }
 });
 

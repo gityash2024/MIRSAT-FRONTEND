@@ -43,14 +43,14 @@ export default {
           status: {
             success: '#7CB797', // Muted Green
             warning: '#DFBE7F', // Soft Amber
-            error: '#D18C92', // Subdued Red
+            error: '#dc2434', // Subdued Red
             info: '#7CA7C8', // Gentle Blue
           },
           // Compliance levels
           compliance: {
             full: '#7CB797', // Success
             partial: '#DFBE7F', // Warning 
-            non: '#D18C92', // Error
+            non: '#dc2434', // Error
             na: '#8CA3B7', // Medium Gray
           }
         },

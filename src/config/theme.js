@@ -26,7 +26,7 @@ const colors = {
   status: {
     success: '#7CB797', // Muted Green
     warning: '#DFBE7F', // Soft Amber
-    error: '#D18C92', // Subdued Red
+    error: '#dc2434', // Subdued Red
     info: '#7CA7C8', // Gentle Blue
     alert: '#E99B83', // Muted Coral
   },
@@ -34,7 +34,7 @@ const colors = {
   compliance: {
     full: '#7CB797', // Success - Full compliance
     partial: '#DFBE7F', // Warning - Partial compliance
-    non: '#D18C92', // Error - Non-compliance
+    non: '#dc2434', // Error - Non-compliance
     na: '#8CA3B7', // Medium Gray - Not applicable
   }
 };

@@ -25,13 +25,13 @@ The application uses the following color palette, which is defined as CSS variab
 ### Status Colors
 - **Success** (`--color-success`: #7CB797) - A muted green for success states
 - **Warning** (`--color-warning`: #DFBE7F) - A soft amber for warning states
-- **Error** (`--color-error`: #D18C92) - A subdued red for error states
+- **Error** (`--color-error`: #dc2434) - A subdued red for error states
 - **Info** (`--color-info`: #7CA7C8) - A gentle blue for informational states
 
 ### Compliance Levels
 - **Full Compliance** (`--color-compliance-full`: #7CB797) - Same as success
 - **Partial Compliance** (`--color-compliance-partial`: #DFBE7F) - Same as warning
-- **Non-Compliance** (`--color-compliance-non`: #D18C92) - Same as error
+- **Non-Compliance** (`--color-compliance-non`: #dc2434) - Same as error
 - **Not Applicable** (`--color-compliance-na`: #8CA3B7) - Same as medium gray
 
 ## Using Theme Colors in Components

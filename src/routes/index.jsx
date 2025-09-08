@@ -15,7 +15,7 @@ import Tasks from '../pages/tasks';
 import TaskList from '../pages/tasks/TaskList';
 import TaskCreate from '../pages/tasks/TaskCreate';
 import TaskEdit from '../pages/tasks/TaskEdit';
-import TaskView from '../pages/tasks/TaskView';
+import TaskDetailsView from '../pages/tasks/TaskDetailsView';
 
 import UserList from '../pages/users/UserList';
 import UserCreate from '../pages/users/UserCreate';
@@ -96,7 +96,7 @@ const AppRoutes = () => {
             <Route index element={<TaskList />} />
           </Route>
           <Route path="/tasks/create" element={<TaskCreate />} />
-          <Route path="/tasks/:taskId" element={<TaskView />} />
+          <Route path="/tasks/:taskId" element={<TaskDetailsView />} />
           <Route path="/tasks/:taskId/edit" element={<TaskEdit />} />
           
           <Route path="/calendar" element={<Calendar />} />

@@ -848,7 +848,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                   )}
                 </HeaderContent>
               </th>
-              <th onClick={() => handleSort('overallProgress')}>
+              {/* <th onClick={() => handleSort('overallProgress')}>
                 <HeaderContent>
                   <HeaderText>Progress</HeaderText>
                   {sortConfig.key === 'overallProgress' && (
@@ -861,7 +861,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                     </SortIcon>
                   )}
                 </HeaderContent>
-              </th>
+              </th> */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -901,12 +901,12 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 <td><TaskPriority priority={task.priority} /></td>
                 <td><TaskStatus status={task.status} /></td>
                 <td>{new Date(task.deadline).toLocaleDateString()}</td>
-                <td>
-                  <ProgressBar>
-                    <ProgressFill value={task.overallProgress || 0} />
-                  </ProgressBar>
-                  <ProgressText>{task.overallProgress || 0}%</ProgressText>
-                </td>
+                {/* <td>
+            <ProgressBar>
+              <ProgressFill value={task.overallProgress || 0} />
+            </ProgressBar>
+            <ProgressText>{task.overallProgress || 0}%</ProgressText>
+                </td> */}
                 <td>
                   <ActionsMenu>
                     {hasPermission(PERMISSIONS.TASKS.VIEW_TASKS) && (
