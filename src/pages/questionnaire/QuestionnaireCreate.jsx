@@ -266,7 +266,8 @@ const QuestionCreate = () => {
     text: '',
     answerType: 'yesno',
     options: [],
-    required: true
+    required: true,
+    requirementType: 'mandatory'
   });
   
   // Fetch question data if editing
@@ -454,6 +455,20 @@ const QuestionCreate = () => {
             </Select>
           </FormGroup>
           
+          <FormGroup>
+            <Label>Requirement Type</Label>
+            <Select 
+              name="requirementType" 
+              value={question.requirementType || 'mandatory'} 
+              onChange={handleChange}
+            >
+              <option value="mandatory">Mandatory</option>
+              <option value="recommended">Recommended</option>
+            </Select>
+          </FormGroup>
+        </FormRow>
+        
+        <FormRow>
           <FormGroup>
             <Label>Required</Label>
             <div style={{ marginTop: '10px' }}>

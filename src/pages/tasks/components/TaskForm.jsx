@@ -643,6 +643,7 @@ const PreInspectionQuestions = ({
     type: 'text',
     options: [],
     required: true,
+    requirementType: 'mandatory',
     scoring: {
       enabled: false,
       max: 2
@@ -704,6 +705,7 @@ const PreInspectionQuestions = ({
       type: 'text',
       options: [],
       required: true,
+      requirementType: 'mandatory',
       scoring: {
         enabled: false,
         max: 2
@@ -747,7 +749,8 @@ const PreInspectionQuestions = ({
     const newType = e.target.value;
     let updatedQuestion = { 
       ...newQuestion, 
-      type: newType
+      type: newType,
+      requirementType: newQuestion.requirementType || 'mandatory'
     };
     
     // Add default options based on type
@@ -925,6 +928,17 @@ const PreInspectionQuestions = ({
               <option value="select">Select</option>
               <option value="multiple_choice">Multiple Choice</option>
               <option value="compliance">Compliance</option>
+            </Select>
+          </FormGroup>
+          
+          <FormGroup style={{ marginTop: '16px' }}>
+            <Label>Requirement Type</Label>
+            <Select
+              value={newQuestion.requirementType || 'mandatory'}
+              onChange={(e) => setNewQuestion(prev => ({ ...prev, requirementType: e.target.value }))}
+            >
+              <option value="mandatory">Mandatory</option>
+              <option value="recommended">Recommended</option>
             </Select>
           </FormGroup>
           

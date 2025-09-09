@@ -765,14 +765,14 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
           
           return (
             <QuestionItem key={questionId || index}>
-              <QuestionText mandatory={question.mandatory !== false}>
+              <QuestionText mandatory={question.requirementType !== 'recommended'}>
                 {questionNumber}. {question.text}
-                {question.required && <span style={{ color: 'red' }}> *</span>}
+                {question.requirementType !== 'recommended' && <span style={{ color: 'red' }}> *</span>}
               </QuestionText>
               
-              <MandatoryBadge mandatory={question.mandatory !== false}>
+              <MandatoryBadge mandatory={question.requirementType !== 'recommended'}>
                 <Info size={12} />
-                {question.mandatory === false ? 'Recommended' : 'Mandatory'}
+                {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
               </MandatoryBadge>
               
               {/* Yes/No Questions */}

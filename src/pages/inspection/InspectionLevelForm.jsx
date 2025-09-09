@@ -1348,7 +1348,8 @@ const QuestionItemComponent = ({
     let updatedQuestion = { 
       ...question, 
       type: newType,         // Set the type property
-      answerType: newType    // Also set answerType for backward compatibility
+      answerType: newType,   // Also set answerType for backward compatibility
+      requirementType: question.requirementType || 'mandatory'  // Preserve requirementType
     };
     
     // Add default options based on type
@@ -1517,7 +1518,7 @@ const QuestionItemComponent = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <QuestionNumber>
               {questionIndex + 1}. {question.text || 'Untitled Question'}
-              {question.mandatory && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
+              {question.requirementType !== 'recommended' && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
             </QuestionNumber>
             {question.description && (
               <div style={{ fontSize: '13px', color: '#64748b' }}>
@@ -1629,24 +1630,36 @@ const QuestionItemComponent = ({
                   <option value="file">File Upload</option>
                 </Select>
               </FormGroup>
+
+              <FormGroup style={{ marginTop: '16px' }}>
+                <Label>Requirement Type</Label>
+                <Select
+                  name="requirementType"
+                  value={question.requirementType || 'mandatory'}
+                  onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value })}
+                  disabled={loading}
+                >
+                  <option value="mandatory">Mandatory</option>
+                  <option value="recommended">Recommended</option>
+                </Select>
+              </FormGroup>
               
               {/* Add weight input field after answer type */}
               <FormGroup style={{ marginTop: '16px' }}>
                 <Label>Question Weight</Label>
                 <Input
                   type="text"
-                  value={question.weight !== undefined ? question.weight : 1}
+                  value={question.weight ?? 1}
                   onChange={(e) => {
-                    const weight = parseInt(e.target.value);
+                    const value = e.target.value;
+                    const weight = value === '' ? '' : parseInt(value);
                     // Allow zero or positive values
                     updateQuestion({ 
                       ...question, 
-                      weight: isNaN(weight) ? 0 : Math.max(0, weight) 
+                      weight: value === '' ? '' : (isNaN(weight) ? 0 : Math.max(0, weight))
                     });
                   }}
                   placeholder="Question weight"
-                  pattern="[0-9]*"
-                  inputMode="numeric"
                 />
                 <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                   Set to 0 for non-scored questions
@@ -1693,16 +1706,15 @@ const QuestionItemComponent = ({
                         
                         <Input
                           type="text"
-                          value={question.scores?.[option] || (index === 0 ? 2 : index === 1 ? 1 : 0)}
+                          value={question.scores?.[option] ?? (index === 0 ? 2 : index === 1 ? 1 : 0)}
                           onChange={(e) => {
                             const newScores = { ...(question.scores || {}) };
-                            newScores[option] = parseInt(e.target.value) || 0;
+                            const value = e.target.value;
+                            newScores[option] = value === '' ? '' : parseInt(value) || 0;
                             updateQuestion({ ...question, scores: newScores });
                           }}
                           style={{ width: '80px' }}
                           placeholder="Score"
-                          pattern="[0-9]*"
-                          inputMode="numeric"
                         />
                         
                         {question.answerType === 'multiple' && (
@@ -1729,45 +1741,42 @@ const QuestionItemComponent = ({
                       <Label style={{ fontSize: '13px' }}>Yes Score</Label>
                       <Input
                         type="text"
-                        value={question.scores?.Yes || 2}
+                        value={question.scores?.Yes ?? 2}
                         onChange={(e) => {
                           const newScores = { ...(question.scores || {}) };
-                          newScores.Yes = parseInt(e.target.value) || 0;
+                          const value = e.target.value;
+                          newScores.Yes = value === '' ? '' : parseInt(value) || 0;
                           updateQuestion({ ...question, scores: newScores });
                         }}
                         placeholder="Enter score"
-                        pattern="[0-9]*"
-                        inputMode="numeric"
                       />
                     </div>
                     <div>
                       <Label style={{ fontSize: '13px' }}>No Score</Label>
                       <Input
                         type="text"
-                        value={question.scores?.No || 0}
+                        value={question.scores?.No ?? 0}
                         onChange={(e) => {
                           const newScores = { ...(question.scores || {}) };
-                          newScores.No = parseInt(e.target.value) || 0;
+                          const value = e.target.value;
+                          newScores.No = value === '' ? '' : parseInt(value) || 0;
                           updateQuestion({ ...question, scores: newScores });
                         }}
                         placeholder="Enter score"
-                        pattern="[0-9]*"
-                        inputMode="numeric"
                       />
                     </div>
                     <div>
                       <Label style={{ fontSize: '13px' }}>N/A Score</Label>
                       <Input
                         type="text"
-                        value={question.scores?.['N/A'] || 0}
+                        value={question.scores?.['N/A'] ?? 0}
                         onChange={(e) => {
                           const newScores = { ...(question.scores || {}) };
-                          newScores['N/A'] = parseInt(e.target.value) || 0;
+                          const value = e.target.value;
+                          newScores['N/A'] = value === '' ? '' : parseInt(value) || 0;
                           updateQuestion({ ...question, scores: newScores });
                         }}
                         placeholder="Enter score"
-                        pattern="[0-9]*"
-                        inputMode="numeric"
                       />
                     </div>
                   </div>
@@ -1804,21 +1813,21 @@ const QuestionItemComponent = ({
                   <Label>Max Possible Score</Label>
                   <Input
                     type="text"
-                    value={question.scoring?.max || totalScore}
+                    value={question.scoring?.max ?? totalScore}
                     onChange={(e) => {
-                      const maxScore = parseInt(e.target.value);
+                      const value = e.target.value;
+                      const maxScore = value === '' ? '' : parseInt(value);
                       const newScoring = {
                         ...(question.scoring || {}),
-                        max: isNaN(maxScore) ? 0 : Math.max(0, maxScore)
+                        max: value === '' ? '' : (isNaN(maxScore) ? 0 : Math.max(0, maxScore))
                       };
-                      updateQuestion({ 
+                      updateQuestion({
                         ...question, 
                         scoring: newScoring 
                       });
                     }}
                     placeholder="Enter max score"
-                    pattern="[0-9]*"
-                    inputMode="numeric"
+                    min="0"
                   />
                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                     Maximum possible score for this question
@@ -1845,12 +1854,12 @@ const QuestionItemComponent = ({
                         <div>
                           <Label>Yes Score</Label>
                           <Input
-                            type="number"
-                            min="0"
-                            value={question.scores?.Yes || 2}
+                            type="text"
+                            value={question.scores?.Yes ?? 2}
                             onChange={(e) => {
                               const newScores = { ...(question.scores || {}) };
-                              newScores.Yes = parseInt(e.target.value) || 0;
+                              const value = e.target.value;
+                              newScores.Yes = value === '' ? '' : parseInt(value) || 0;
                               updateQuestion({ ...question, scores: newScores });
                             }}
                           />
@@ -1858,12 +1867,12 @@ const QuestionItemComponent = ({
                         <div>
                           <Label>No Score</Label>
                           <Input
-                            type="number"
-                            min="0"
-                            value={question.scores?.No || 0}
+                            type="text"
+                            value={question.scores?.No ?? 0}
                             onChange={(e) => {
                               const newScores = { ...(question.scores || {}) };
-                              newScores.No = parseInt(e.target.value) || 0;
+                              const value = e.target.value;
+                              newScores.No = value === '' ? '' : parseInt(value) || 0;
                               updateQuestion({ ...question, scores: newScores });
                             }}
                           />
@@ -1871,12 +1880,12 @@ const QuestionItemComponent = ({
                         <div>
                           <Label>N/A Score</Label>
                           <Input
-                            type="number"
-                            min="0"
-                            value={question.scores?.['N/A'] || 0}
+                            type="text"
+                            value={question.scores?.['N/A'] ?? 0}
                             onChange={(e) => {
                               const newScores = { ...(question.scores || {}) };
-                              newScores['N/A'] = parseInt(e.target.value) || 0;
+                              const value = e.target.value;
+                              newScores['N/A'] = value === '' ? '' : parseInt(value) || 0;
                               updateQuestion({ ...question, scores: newScores });
                             }}
                           />
@@ -1899,12 +1908,12 @@ const QuestionItemComponent = ({
                             }}>
                               <span>{option}</span>
                               <Input
-                                type="number"
-                                min="0"
-                                value={question.scores?.[option] || (idx === 0 ? 2 : idx === 1 ? 1 : 0)}
+                                type="text"
+                                value={question.scores?.[option] ?? (idx === 0 ? 2 : idx === 1 ? 1 : 0)}
                                 onChange={(e) => {
                                   const newScores = { ...(question.scores || {}) };
-                                  newScores[option] = parseInt(e.target.value) || 0;
+                                  const value = e.target.value;
+                                  newScores[option] = value === '' ? '' : parseInt(value) || 0;
                                   updateQuestion({ ...question, scores: newScores });
                                 }}
                                 style={{ width: '80px' }}
@@ -4004,6 +4013,7 @@ const InspectionLevelForm = () => {
       type: 'yesno',
       required: true,
       mandatory: true,
+      requirementType: 'mandatory',
       options: ['Yes', 'No', 'N/A'],
       scoring: {
         enabled: true,

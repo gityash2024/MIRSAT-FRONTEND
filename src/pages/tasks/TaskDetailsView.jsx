@@ -13,15 +13,17 @@ import {
   MapPin,
   Award,
   MessageSquare,
-  Download,
   Edit,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  FileSpreadsheet
 } from 'lucide-react';
-import { fetchUserTaskDetails } from '../../store/slices/userTasksSlice';
+import { fetchUserTaskDetails, exportTaskReport } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import { toast } from 'react-hot-toast';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -301,6 +303,47 @@ const ScoreValue = styled.span`
   color: #1e293b;
 `;
 
+const ExportButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #0369a1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(3, 105, 161, 0.2);
+  position: relative;
+
+  &:hover {
+    background: #0284c7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(3, 105, 161, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
 const TaskDetailsView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -308,6 +351,8 @@ const TaskDetailsView = () => {
   const { user } = useAuth();
   
   const { currentTask, loading, error } = useSelector((state) => state.userTasks);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
 
   useEffect(() => {
     if (taskId && taskId !== 'undefined') {
@@ -318,8 +363,38 @@ const TaskDetailsView = () => {
     }
   }, [dispatch, taskId]);
 
+
   const handleBack = () => {
     navigate('/tasks');
+  };
+
+  const handleExportExcel = () => {
+    if (!currentTask) return;
+    setShowDocumentNamingModal(true);
+  };
+
+  const handleConfirmExport = async (fileName) => {
+    if (!currentTask) return;
+    
+    try {
+      setIsExporting(true);
+      setShowDocumentNamingModal(false);
+      toast.loading('Generating Excel report...');
+      
+      await dispatch(exportTaskReport({ 
+        taskId: currentTask._id, 
+        format: 'excel',
+        fileName: fileName
+      })).unwrap();
+      
+      toast.dismiss();
+      toast.success('Excel report exported successfully');
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Failed to export Excel report: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getQuestionStatus = (question, responses) => {
@@ -456,13 +531,22 @@ const TaskDetailsView = () => {
           Back to Tasks
         </BackButton>
         <TaskTitle>{currentTask.name || currentTask.title}</TaskTitle>
-        <StatusBadge status={currentTask.status}>
-          {currentTask.status === 'completed' && <CheckCircle size={12} />}
-          {currentTask.status === 'in_progress' && <Clock size={12} />}
-          {currentTask.status === 'pending' && <Clock size={12} />}
-          {currentTask.status === 'archived' && <FileText size={12} />}
-          {currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
-        </StatusBadge>
+        <HeaderActions>
+          <StatusBadge status={currentTask.status}>
+            {currentTask.status === 'completed' && <CheckCircle size={12} />}
+            {currentTask.status === 'in_progress' && <Clock size={12} />}
+            {currentTask.status === 'pending' && <Clock size={12} />}
+            {currentTask.status === 'archived' && <FileText size={12} />}
+            {currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
+          </StatusBadge>
+          <ExportButton 
+            onClick={handleExportExcel}
+            disabled={isExporting || !currentTask}
+          >
+            <FileSpreadsheet size={16} />
+            {isExporting ? 'Exporting...' : 'Export Excel Report'}
+          </ExportButton>
+        </HeaderActions>
       </Header>
 
       <Content>
@@ -664,10 +748,77 @@ const TaskDetailsView = () => {
                                     {question.type === 'text' && response}
                                     {question.type === 'date' && response && new Date(response).toLocaleDateString()}
                                     {question.type === 'file' && response && (
-                                      <span style={{ color: '#0369a1' }}>📎 File uploaded: {response}</span>
+                                      <div style={{ marginTop: '8px' }}>
+                                        {response.startsWith('data:image/') ? (
+                                          <div>
+                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              📎 Image uploaded
+                                            </div>
+                                            <img 
+                                              src={response} 
+                                              alt="Uploaded file" 
+                                              style={{ 
+                                                maxWidth: '200px', 
+                                                maxHeight: '150px', 
+                                                borderRadius: '6px',
+                                                border: '1px solid #e2e8f0',
+                                                cursor: 'pointer'
+                                              }}
+                                              onClick={() => window.open(response, '_blank')}
+                                            />
+                                          </div>
+                                        ) : response.startsWith('data:') ? (
+                                          <div>
+                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              📎 File uploaded
+                                            </div>
+                                            <button
+                                              onClick={() => {
+                                                const link = document.createElement('a');
+                                                link.href = response;
+                                                link.download = 'uploaded-file';
+                                                link.click();
+                                              }}
+                                              style={{
+                                                padding: '8px 12px',
+                                                background: '#0369a1',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px'
+                                              }}
+                                            >
+                                              Download File
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <span style={{ color: '#0369a1' }}>📎 File uploaded: {response}</span>
+                                        )}
+                                      </div>
                                     )}
                                     {question.type === 'signature' && response && (
-                                      <span style={{ color: '#0369a1' }}>✍️ Signature provided</span>
+                                      <div style={{ marginTop: '8px' }}>
+                                        <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                          ✍️ Signature provided
+                                        </div>
+                                        {response.startsWith('data:image/') ? (
+                                          <img 
+                                            src={response} 
+                                            alt="Signature" 
+                                            style={{ 
+                                              maxWidth: '200px', 
+                                              maxHeight: '100px', 
+                                              borderRadius: '6px',
+                                              border: '1px solid #e2e8f0',
+                                              cursor: 'pointer'
+                                            }}
+                                            onClick={() => window.open(response, '_blank')}
+                                          />
+                                        ) : (
+                                          <span style={{ color: '#0369a1' }}>✍️ Signature provided</span>
+                                        )}
+                                      </div>
                                     )}
                                     {question.type === 'multiple_choice' && Array.isArray(response) && (
                                       <span>{response.join(', ')}</span>
@@ -679,7 +830,7 @@ const TaskDetailsView = () => {
                                   
                                   {/* Comments are handled separately in the backend */}
                                   
-                                  {question.scoring?.enabled && (
+                                  {/* {question.scoring?.enabled && (
                                     <ScoreSection>
                                       <ScoreItem>
                                         <span>Score:</span>
@@ -692,7 +843,7 @@ const TaskDetailsView = () => {
                                         </ScoreValue>
                                       </ScoreItem>
                                     </ScoreSection>
-                                  )}
+                                  )} */}
                                 </ResponseSection>
                               )}
                             </QuestionCard>
@@ -707,6 +858,16 @@ const TaskDetailsView = () => {
           </TaskCard>
         )}
       </Content>
+
+      {/* Document Naming Modal */}
+      <DocumentNamingModal
+        isOpen={showDocumentNamingModal}
+        onClose={() => setShowDocumentNamingModal(false)}
+        onExport={handleConfirmExport}
+        exportFormat="excel"
+        documentType="Task Report"
+        defaultCriteria={['documentType', 'currentDate']}
+      />
     </PageContainer>
   );
 };

@@ -624,10 +624,10 @@ const QuestionnaireList = () => {
             onKeyDown={handleSearch}
           />
         </SearchInput>
-        <FilterButton>
+        {/* <FilterButton>
           <Filter size={16} />
           Filter
-        </FilterButton>
+        </FilterButton> */}
       </SearchContainer>
 
       <QuestionnairesTable>

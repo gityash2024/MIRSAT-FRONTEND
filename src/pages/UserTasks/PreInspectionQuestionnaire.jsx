@@ -388,7 +388,7 @@ const PreInspectionStepForm = ({ task }) => {
     // Calculate questionnaire scores
     if (task.questions && task.questionnaireResponses) {
       const responses = task.questionnaireResponses;
-      const questions = task.questions.filter(q => q.mandatory !== false);
+      const questions = task.questions.filter(q => q.requirementType !== 'recommended');
       
       questions.forEach(question => {
         const questionId = question._id || question.id;

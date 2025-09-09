@@ -87,16 +87,44 @@ export const userTaskService = {
     return response.data;
   },
   
-  exportTaskReport: async (taskId) => {
+  exportTaskReport: async (taskId, format = 'excel', fileName = null) => {
     try {
-      const response = await api.get(`/user-tasks/${taskId}/export?format=excel`, {
+      let url = `/user-tasks/${taskId}/export?format=${format}`;
+      if (fileName) {
+        url += `&fileName=${encodeURIComponent(fileName)}`;
+      }
+      
+      const response = await api.get(url, {
         responseType: 'blob'
       });
       
-      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      let mimeType, fileExtension;
+      if (format === 'pdf') {
+        mimeType = 'application/pdf';
+        fileExtension = 'pdf';
+      } else {
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        fileExtension = 'xlsx';
+      }
+      
+      const blob = new Blob([response.data], { type: mimeType });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `inspection_report_${taskId}.xlsx`;
+      
+      // Use the filename from the response headers if available, otherwise use the provided filename
+      const contentDisposition = response.headers['content-disposition'];
+      let downloadFileName = `inspection_report_${taskId}.${fileExtension}`;
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch) {
+          downloadFileName = fileNameMatch[1];
+        }
+      } else if (fileName) {
+        downloadFileName = `${fileName}.${fileExtension}`;
+      }
+      
+      link.download = downloadFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -3050,7 +3050,10 @@ const UserTaskDetail = () => {
         })).unwrap();
       }
       
-      const result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
+      const result = await dispatch(exportTaskReport({ 
+        taskId: currentTask._id, 
+        format: 'excel' 
+      })).unwrap();
       
       toast.dismiss();
       toast.success('Report exported successfully');
@@ -3101,15 +3104,23 @@ const UserTaskDetail = () => {
       
       switch (selectedReportFormat) {
         case 'excel':
-          result = await dispatch(exportTaskReport(currentTask._id)).unwrap();
+          result = await dispatch(exportTaskReport({ 
+            taskId: currentTask._id, 
+            format: 'excel' 
+          })).unwrap();
           break;
         case 'pdf':
-          // For PDF, you'll need to implement PDF generation in the backend
-          result = await dispatch(exportTaskReport(currentTask._id, 'pdf')).unwrap();
+          result = await dispatch(exportTaskReport({ 
+            taskId: currentTask._id, 
+            format: 'pdf' 
+          })).unwrap();
           break;
         case 'docx':
           // For DOCX, you'll need to implement DOCX generation in the backend
-          result = await dispatch(exportTaskReport(currentTask._id, 'docx')).unwrap();
+          result = await dispatch(exportTaskReport({ 
+            taskId: currentTask._id, 
+            format: 'docx' 
+          })).unwrap();
           break;
         default:
           throw new Error('Unsupported format');
@@ -3603,11 +3614,21 @@ const UserTaskDetail = () => {
                     type="file"
                     accept="image/*,video/*,.pdf,.doc,.docx"
                     disabled={isDisabled}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
-                      onSaveResponse(questionId, file.name);
-                      toast.success('File uploaded successfully!');
+                      
+                      // Convert file to base64 for storage
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64Data = event.target.result;
+                        onSaveResponse(questionId, base64Data);
+                        toast.success('File uploaded successfully!');
+                      };
+                      reader.onerror = () => {
+                        toast.error('Failed to read file');
+                      };
+                      reader.readAsDataURL(file);
                     }}
                     style={{ flex: 1, minWidth: '200px' }}
                   />
@@ -3749,16 +3770,77 @@ const UserTaskDetail = () => {
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <div style={{ 
-                      fontSize: '14px', 
-                      color: '#16a34a',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      ✅ Uploaded: {response}
-                    </div>
+                    {response.startsWith('data:image/') ? (
+                      <div>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#16a34a',
+                          fontWeight: '500',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          ✅ Image uploaded
+                        </div>
+                        <img 
+                          src={response} 
+                          alt="File preview" 
+                          style={{ 
+                            maxWidth: '200px', 
+                            maxHeight: '150px', 
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => window.open(response, '_blank')}
+                        />
+                      </div>
+                    ) : response.startsWith('data:') ? (
+                      <div>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#16a34a',
+                          fontWeight: '500',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          ✅ File uploaded
+                        </div>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = response;
+                            link.download = 'uploaded-file';
+                            link.click();
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            background: '#0369a1',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Download File
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ 
+                        fontSize: '14px', 
+                        color: '#16a34a',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        ✅ Uploaded: {response}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -5160,10 +5242,98 @@ const UserTaskDetail = () => {
                                   border: '1px solid rgba(229, 231, 235, 0.8)'
                                 }}>
                                   <strong>Response:</strong> {
-                                    currentTask.questionnaireResponses && 
-                                    currentTask.questionnaireResponses[question._id] ? 
-                                    currentTask.questionnaireResponses[question._id] : 
-                                    'Not answered'
+                                    (() => {
+                                      const response = currentTask.questionnaireResponses && 
+                                        currentTask.questionnaireResponses[question._id] ? 
+                                        currentTask.questionnaireResponses[question._id] : 
+                                        null;
+                                      
+                                      if (!response) return 'Not answered';
+                                      
+                                      // Handle file responses with preview
+                                      if (question.type === 'file' && response) {
+                                        if (response.startsWith('data:image/')) {
+                                          return (
+                                            <div style={{ marginTop: '8px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                                📎 Image uploaded
+                                              </div>
+                                              <img 
+                                                src={response} 
+                                                alt="Uploaded file" 
+                                                style={{ 
+                                                  maxWidth: '200px', 
+                                                  maxHeight: '150px', 
+                                                  borderRadius: '6px',
+                                                  border: '1px solid #e2e8f0',
+                                                  cursor: 'pointer'
+                                                }}
+                                                onClick={() => window.open(response, '_blank')}
+                                              />
+                                            </div>
+                                          );
+                                        } else if (response.startsWith('data:')) {
+                                          return (
+                                            <div style={{ marginTop: '8px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                                📎 File uploaded
+                                              </div>
+                                              <button
+                                                onClick={() => {
+                                                  const link = document.createElement('a');
+                                                  link.href = response;
+                                                  link.download = 'uploaded-file';
+                                                  link.click();
+                                                }}
+                                                style={{
+                                                  padding: '8px 12px',
+                                                  background: '#0369a1',
+                                                  color: 'white',
+                                                  border: 'none',
+                                                  borderRadius: '6px',
+                                                  cursor: 'pointer',
+                                                  fontSize: '12px'
+                                                }}
+                                              >
+                                                Download File
+                                              </button>
+                                            </div>
+                                          );
+                                        } else {
+                                          return `📎 File uploaded: ${response}`;
+                                        }
+                                      }
+                                      
+                                      // Handle signature responses with preview
+                                      if (question.type === 'signature' && response) {
+                                        if (response.startsWith('data:image/')) {
+                                          return (
+                                            <div style={{ marginTop: '8px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                                ✍️ Signature provided
+                                              </div>
+                                              <img 
+                                                src={response} 
+                                                alt="Signature" 
+                                                style={{ 
+                                                  maxWidth: '200px', 
+                                                  maxHeight: '100px', 
+                                                  borderRadius: '6px',
+                                                  border: '1px solid #e2e8f0',
+                                                  cursor: 'pointer'
+                                                }}
+                                                onClick={() => window.open(response, '_blank')}
+                                              />
+                                            </div>
+                                          );
+                                        } else {
+                                          return '✍️ Signature provided';
+                                        }
+                                      }
+                                      
+                                      // Default response display
+                                      return response;
+                                    })()
                                   }
                                 </div>
                               </div>
@@ -5302,10 +5472,10 @@ const UserTaskDetail = () => {
                           Download Excel
                         </QuickActionButton> */}
                         
-                        {/* PDF Download */}
+                        {/* Excel Download */}
                         <QuickActionButton 
                           primary
-                          onClick={() => handleDownloadReport('pdf')}
+                          onClick={() => handleDownloadReport('excel')}
                           style={{ 
                             padding: '16px 32px', 
                             fontSize: '16px',

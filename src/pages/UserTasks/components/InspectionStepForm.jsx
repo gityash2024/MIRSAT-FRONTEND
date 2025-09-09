@@ -2113,7 +2113,7 @@ const InspectionStepForm = ({
                             <QuestionTitle isOpen={isQuestionOpen}>
                               <ChevronDown size={16} />
                               {qIndex + 1}. {question.text || 'Unnamed Question'}
-                              {question.mandatory !== false && <QuestionMandatory>*</QuestionMandatory>}
+                              {question.requirementType !== 'recommended' && <QuestionMandatory>*</QuestionMandatory>}
                             </QuestionTitle>
                             
                             <QuestionScoreBadge 

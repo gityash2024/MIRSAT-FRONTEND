@@ -115,9 +115,9 @@ export const addUserTaskComment = createAsyncThunk(
 
 export const exportTaskReport = createAsyncThunk(
   'userTasks/exportTaskReport',
-  async (taskId, { rejectWithValue }) => {
+  async ({ taskId, format = 'excel', fileName = null }, { rejectWithValue }) => {
     try {
-      const response = await userTaskService.exportTaskReport(taskId);
+      const response = await userTaskService.exportTaskReport(taskId, format, fileName);
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
