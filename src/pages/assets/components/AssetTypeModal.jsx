@@ -10,6 +10,8 @@ import {
   deleteAssetType 
 } from '../../../store/slices/assetTypeSlice';
 import { motion, AnimatePresence } from 'framer-motion';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import AlertModal from '../../../components/ui/AlertModal';
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -246,10 +248,22 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTypeId, setEditingTypeId] = useState(null);
   const [editingTypeName, setEditingTypeName] = useState('');
+  
+  // Modal states for custom confirmations and alerts
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [typeToDelete, setTypeToDelete] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({});
 
   // Helper function to get asset type ID (handles both 'id' and '_id' fields)
   const getAssetTypeId = (assetType) => {
     return assetType._id || assetType.id;
+  };
+
+  // Helper function to show alert modal
+  const showAlertModal = (title, message, type = 'error') => {
+    setAlertConfig({ title, message, type });
+    setShowAlert(true);
   };
 
   useEffect(() => {
@@ -331,7 +345,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
       return typeId !== assetTypeId && type.name.toLowerCase() === editingTypeName.trim().toLowerCase();
     });
     if (existingType) {
-      alert('Asset type name already exists');
+      showAlertModal('Error', 'Asset type name already exists', 'error');
       return;
     }
     
@@ -346,7 +360,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error updating asset type:', error);
-      alert('Failed to update asset type');
+      showAlertModal('Error', 'Failed to update asset type', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -357,20 +371,27 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
     
     if (!assetTypeId) {
       console.error('No ID found for asset type deletion:', assetType);
-      alert('Error: Cannot delete asset type - no ID found');
+      showAlertModal('Error', 'Cannot delete asset type - no ID found', 'error');
       return;
     }
 
-    if (window.confirm('Are you sure you want to delete this asset type? This action cannot be undone.')) {
-      try {
-        await dispatch(deleteAssetType(assetTypeId)).unwrap();
-        // Refresh the list
-        await dispatch(fetchAssetTypes());
-        if (onSuccess) onSuccess();
-      } catch (error) {
-        console.error('Error deleting asset type:', error);
-        alert('Failed to delete asset type. It may be in use by existing assets.');
-      }
+    setTypeToDelete(assetTypeId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteType = async () => {
+    if (!typeToDelete) return;
+    
+    try {
+      await dispatch(deleteAssetType(typeToDelete)).unwrap();
+      // Refresh the list
+      await dispatch(fetchAssetTypes());
+      if (onSuccess) onSuccess();
+      setShowDeleteConfirm(false);
+      setTypeToDelete(null);
+    } catch (error) {
+      console.error('Error deleting asset type:', error);
+      showAlertModal('Error', 'Failed to delete asset type. It may be in use by existing assets.', 'error');
     }
   };
 
@@ -503,6 +524,30 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
           </ModalContainer>
         </ModalOverlay>
       )}
+      
+      {/* Custom Confirmation Modal for Delete */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setTypeToDelete(null);
+        }}
+        onConfirm={confirmDeleteType}
+        title="Delete Asset Type"
+        message="Are you sure you want to delete this asset type? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="primary"
+      />
+
+      {/* Custom Alert Modal */}
+      <AlertModal
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </AnimatePresence>
   );
 };

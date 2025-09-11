@@ -1401,6 +1401,27 @@ const QuestionItemComponent = ({
       }
     }
     
+    // Clear question text if it contains type-specific text that doesn't match the new type
+    if (updatedQuestion.text) {
+      const currentText = updatedQuestion.text.toLowerCase();
+      const newTypeLower = newType.toLowerCase();
+      
+      // If current text contains old type references, clear it
+      if ((currentText.includes('yes/no') || currentText.includes('yes or no')) && newTypeLower !== 'yesno') {
+        updatedQuestion.text = '';
+      } else if (currentText.includes('compliance') && newTypeLower !== 'compliance') {
+        updatedQuestion.text = '';
+      } else if (currentText.includes('multiple choice') && !['multiple', 'checkbox', 'radio', 'dropdown'].includes(newTypeLower)) {
+        updatedQuestion.text = '';
+      } else if (currentText.includes('file upload') && newTypeLower !== 'file') {
+        updatedQuestion.text = '';
+      } else if (currentText.includes('signature') && newTypeLower !== 'signature') {
+        updatedQuestion.text = '';
+      } else if (currentText.includes('date') && newTypeLower !== 'date') {
+        updatedQuestion.text = '';
+      }
+    }
+    
     updateQuestion(updatedQuestion);
   };
   
@@ -1491,11 +1512,12 @@ const QuestionItemComponent = ({
       case 'location': return 'Location';
       case 'signature': return 'Signature';
       case 'date': return 'Date & Time';
+      case 'file': return 'File Upload';
       case 'checkbox': return 'Checkbox';
       case 'number': return 'Number';
       case 'media': return 'Media Upload';
       case 'slider': return 'Slider';
-      default: return 'Yes/No';
+      default: return 'Text Input';
     }
   };
 
@@ -3822,12 +3844,15 @@ const InspectionLevelForm = () => {
         // Redirect to the templates listing page after successful creation
         navigate('/inspection');
         setSaveMessage('Template created successfully');
+        toast.success('Template created successfully');
         return response.data;
       }
       
       setSaveMessage('Template saved successfully');
       setTimeout(() => setSaveMessage(''), 3000);
+      navigate('/inspection');
       setLoading(false);
+      toast.success('Template updated successfully');
       return response.data;
     } catch (error) {
       console.error('Save error:', error);
@@ -5195,6 +5220,45 @@ const InspectionLevelForm = () => {
               </InspectionStatusBadge>
             </InspectionFormGroup>
           </InspectionFormRow>
+          
+          {/* Navigation Buttons for Basic Information Tab */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            marginTop: '30px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <Button 
+              onClick={() => setActiveTab('pages-questions')}
+              style={{
+                background: 'var(--color-navy)',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                ':hover': {
+                  background: '#151b60'
+                }
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#151b60';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'var(--color-navy)';
+              }}
+            >
+              Next
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </InspectionFormSection>
       )}
       
@@ -5333,6 +5397,71 @@ const InspectionLevelForm = () => {
               </Button>
             </TabEmptyState>
           )}
+          
+          {/* Navigation Buttons for Pages and Questions Tab */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            marginTop: '30px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <Button 
+              onClick={() => setActiveTab('basic-info')}
+              style={{
+                background: 'white',
+                color: 'var(--color-navy)',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#f8fafc';
+                e.target.style.borderColor = '#9ca3af';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'white';
+                e.target.style.borderColor = '#d1d5db';
+              }}
+            >
+              <ChevronLeft size={16} />
+              Back
+            </Button>
+            
+            <Button 
+              onClick={() => setActiveTab('report')}
+              style={{
+                background: 'var(--color-navy)',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#151b60';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'var(--color-navy)';
+              }}
+            >
+              Next
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </InspectionFormSection>
       )}
       
@@ -5361,6 +5490,44 @@ const InspectionLevelForm = () => {
               <ReportPreviewComponent reportData={transformTemplateToReportData()} />
                     </div>
           )}
+          
+          {/* Navigation Buttons for Report Tab */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-start', 
+            marginTop: '30px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <Button 
+              onClick={() => setActiveTab('pages-questions')}
+              style={{
+                background: 'white',
+                color: 'var(--color-navy)',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#f8fafc';
+                e.target.style.borderColor = '#9ca3af';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'white';
+                e.target.style.borderColor = '#d1d5db';
+              }}
+            >
+              <ChevronLeft size={16} />
+              Back
+            </Button>
+          </div>
         </InspectionFormSection>
       )}
       

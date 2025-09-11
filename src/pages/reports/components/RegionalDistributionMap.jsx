@@ -333,7 +333,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
               </MetricValue>
             </MetricCard>
 
-            <MetricCard color="#2196f3">
+            {/* <MetricCard color="#2196f3">
               <MetricHeader>
                 <MetricName>Average Compliance</MetricName>
                 <Activity size={16} color="#2196f3" />
@@ -342,7 +342,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
                 {regionalData.metrics.avgCompliance}
                 <MetricUnit>%</MetricUnit>
               </MetricValue>
-            </MetricCard>
+            </MetricCard> */}
 
             <MetricCard color="#f59e0b">
               <MetricHeader>

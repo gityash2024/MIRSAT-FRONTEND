@@ -286,7 +286,6 @@ const AssetTable = ({
                         onClick={() => {
                           if (!assetId) {
                             console.error('No valid asset ID found for delete:', asset);
-                            alert('Error: Cannot delete asset - no valid ID found');
                             return;
                           }
                           onDelete(assetId);

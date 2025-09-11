@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
 import { Z_INDEX } from '../../utils/zIndex';
 
 const ModalOverlay = styled.div`
@@ -13,7 +13,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: ${Z_INDEX.CONFIRMATION_MODAL};
+  z-index: ${Z_INDEX.ALERT_MODAL};
   padding: 20px;
 `;
 
@@ -21,7 +21,7 @@ const ModalContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 500px;
+  max-width: 400px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -90,17 +90,17 @@ const Button = styled.button`
   min-width: 80px;
 
   ${props => props.variant === 'primary' ? `
-    background: #dc2626;
+    background: #3b82f6;
     color: white;
-    border-color: #dc2626;
+    border-color: #3b82f6;
 
     &:hover {
-      background: #b91c1c;
-      border-color: #b91c1c;
+      background: #2563eb;
+      border-color: #2563eb;
     }
 
     &:active {
-      background: #991b1b;
+      background: #1d4ed8;
     }
   ` : props.variant === 'secondary' ? `
     background: white;
@@ -123,27 +123,30 @@ const Button = styled.button`
   }
 `;
 
-const ConfirmationModal = ({
+const getIcon = (type) => {
+  switch (type) {
+    case 'success':
+      return <CheckCircle size={20} color="#10b981" />;
+    case 'warning':
+      return <AlertTriangle size={20} color="#f59e0b" />;
+    case 'error':
+      return <AlertCircle size={20} color="#dc2626" />;
+    case 'info':
+    default:
+      return <Info size={20} color="#3b82f6" />;
+  }
+};
+
+const AlertModal = ({
   isOpen,
   onClose,
-  onConfirm,
-  title = "Confirm Action",
-  message = "Are you sure you want to proceed?",
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  confirmVariant = "primary",
-  showIcon = true,
-  loading = false
+  title = "Alert",
+  message = "An alert message",
+  type = "info",
+  buttonText = "OK",
+  showIcon = true
 }) => {
   if (!isOpen) return null;
-
-  const handleConfirm = () => {
-    onConfirm();
-  };
-
-  const handleCancel = () => {
-    onClose();
-  };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -156,10 +159,10 @@ const ConfirmationModal = ({
       <ModalContainer>
         <ModalHeader>
           <ModalTitle>
-            {showIcon && <AlertTriangle size={20} color="#dc2626" />}
+            {showIcon && getIcon(type)}
             {title}
           </ModalTitle>
-          <CloseButton onClick={handleCancel}>
+          <CloseButton onClick={onClose}>
             <X size={20} />
           </CloseButton>
         </ModalHeader>
@@ -169,18 +172,10 @@ const ConfirmationModal = ({
           
           <ModalActions>
             <Button
-              variant="secondary"
-              onClick={handleCancel}
-              disabled={loading}
+              variant="primary"
+              onClick={onClose}
             >
-              {cancelText}
-            </Button>
-            <Button
-              variant={confirmVariant}
-              onClick={handleConfirm}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : confirmText}
+              {buttonText}
             </Button>
           </ModalActions>
         </ModalBody>
@@ -189,4 +184,4 @@ const ConfirmationModal = ({
   );
 };
 
-export default ConfirmationModal;
+export default AlertModal;

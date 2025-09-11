@@ -254,12 +254,12 @@ const TimelineChart = ({ dateRange, filters }) => {
         <Tab active={filter === 'all'} onClick={() => setFilter('all')}>
           All Activities
         </Tab>
-        <Tab active={filter === 'critical'} onClick={() => setFilter('critical')}>
+        {/* <Tab active={filter === 'critical'} onClick={() => setFilter('critical')}>
           Critical Issues
         </Tab>
         <Tab active={filter === 'completed'} onClick={() => setFilter('completed')}>
           Completed
-        </Tab>
+        </Tab> */}
       </FilterTabs>
 
       {timelineData.loading ? (
@@ -301,12 +301,12 @@ const TimelineChart = ({ dateRange, filters }) => {
                     ))}
                   </TimelineTags>
                 )}
-                <TimelineActions>
+                {/* <TimelineActions>
                   <ActionButton>
                     View Details
                     <ChevronRight size={14} />
                   </ActionButton>
-                </TimelineActions>
+                </TimelineActions> */}
               </TimelineContent>
             </TimelineItem>
           ))}

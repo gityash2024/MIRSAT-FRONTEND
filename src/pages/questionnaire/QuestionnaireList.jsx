@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from '../../config/constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchQuestionLibrary, addQuestionToLibrary, deleteQuestionFromLibrary } from '../../store/slices/questionLibrarySlice';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import AlertModal from '../../components/ui/AlertModal';
 
 // Styled Components
 const PageContainer = styled.div`
@@ -156,7 +158,10 @@ const QuestionnairesTable = styled.div`
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
 `;
 
 const TableHeader = styled.div`
@@ -346,9 +351,57 @@ const ActionsMenu = styled.div`
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 180px;
-  z-index: 10;
-  overflow: hidden;
+  z-index: 1000;
+  overflow: visible;
   border: 1px solid #e2e8f0;
+  
+  /* Ensure menu doesn't go off-screen on mobile */
+  @media (max-width: 768px) {
+    right: auto;
+    left: 0;
+    transform: translateX(-50%);
+  }
+  
+  /* For last row, position above the button */
+  &[data-position="above"] {
+    top: auto;
+    bottom: calc(100% + 4px);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Ensure menu is always visible and properly positioned */
+  &[data-position="below"] {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Add animation for smooth appearance */
+  animation: fadeIn 0.15s ease-out;
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  &[data-position="above"] {
+    animation: fadeInUp 0.15s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 const ActionItem = styled.button`
@@ -455,8 +508,15 @@ const QuestionnaireList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState('below');
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states for custom confirmations and alerts
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({});
 
   // Fetch question library on component mount
   useEffect(() => {
@@ -540,27 +600,40 @@ const QuestionnaireList = () => {
     }
   };
   
+  // Helper function to show alert modal
+  const showAlertModal = (title, message, type = 'error') => {
+    setAlertConfig({ title, message, type });
+    setShowAlert(true);
+  };
+
   const handleDeleteQuestion = async (questionId, e) => {
     e.stopPropagation();
     
-    if (window.confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
-      try {
-        setLoading(true);
-        
-        await dispatch(deleteQuestionFromLibrary(questionId)).unwrap();
-        toast.success('Question deleted successfully');
-        
-        // Manually refresh the library
-        await dispatch(fetchQuestionLibrary()).unwrap();
-        
-        // Close menu after action
-        setActiveMenu(null);
-      } catch (error) {
-        console.error('Error deleting question:', error);
-        toast.error(typeof error === 'string' ? error : 'Failed to delete question');
-      } finally {
-        setLoading(false);
-      }
+    setQuestionToDelete(questionId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteQuestion = async () => {
+    if (!questionToDelete) return;
+    
+    try {
+      setLoading(true);
+      
+      await dispatch(deleteQuestionFromLibrary(questionToDelete)).unwrap();
+      toast.success('Question deleted successfully');
+      
+      // Manually refresh the library
+      await dispatch(fetchQuestionLibrary()).unwrap();
+      
+      // Close menu after action
+      setActiveMenu(null);
+      setShowDeleteConfirm(false);
+      setQuestionToDelete(null);
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      showAlertModal('Error', typeof error === 'string' ? error : 'Failed to delete question', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -584,7 +657,28 @@ const QuestionnaireList = () => {
   
   const handleMenuToggle = (id, e) => {
     e.stopPropagation();
-    setActiveMenu(prevActiveMenu => prevActiveMenu === id ? null : id);
+    
+    if (activeMenu === id) {
+      setActiveMenu(null);
+      return;
+    }
+    
+    // Calculate if menu should appear above or below
+    const buttonRect = e.currentTarget.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const menuHeight = 120; // Approximate height of the menu
+    
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+    
+    // If there's not enough space below but enough above, position above
+    if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+      setMenuPosition('above');
+    } else {
+      setMenuPosition('below');
+    }
+    
+    setActiveMenu(id);
   };
 
   useEffect(() => {
@@ -592,9 +686,17 @@ const QuestionnaireList = () => {
       setActiveMenu(null);
     };
 
+    const handleResize = () => {
+      // Close menu on resize to prevent positioning issues
+      setActiveMenu(null);
+    };
+
     document.addEventListener('click', handleClickOutside);
+    window.addEventListener('resize', handleResize);
+    
     return () => {
       document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -701,7 +803,9 @@ const QuestionnaireList = () => {
                 </ActionsButton>
                 
                 {activeMenu === (question.id || question._id) && (
-                  <ActionsMenu>
+                  <ActionsMenu 
+                    data-position={menuPosition}
+                  >
                     <ActionItem onClick={(e) => {
                       e.stopPropagation(); 
                       navigate(`/questionnaire/edit/${question.id || question._id}`);
@@ -760,6 +864,31 @@ const QuestionnaireList = () => {
           </Pagination>
         )}
       </QuestionnairesTable>
+
+      {/* Custom Confirmation Modal for Delete */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setQuestionToDelete(null);
+        }}
+        onConfirm={confirmDeleteQuestion}
+        title="Delete Question"
+        message="Are you sure you want to delete this question? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="primary"
+        loading={loading}
+      />
+
+      {/* Custom Alert Modal */}
+      <AlertModal
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </PageContainer>
   );
 };

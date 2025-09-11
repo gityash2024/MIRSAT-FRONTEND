@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { X, FileText, Download, Calendar, User, Tag } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { Z_INDEX } from '../../utils/zIndex';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -13,7 +14,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.MODAL_OVERLAY};
 `;
 
 const ModalContent = styled.div`

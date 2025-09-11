@@ -18,6 +18,8 @@ import AssetTasksModal from './components/AssetTasksModal';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import AlertModal from '../../components/ui/AlertModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -161,6 +163,12 @@ const AssetList = () => {
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
+  
+  // Modal states for custom confirmations and alerts
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({});
 
   useEffect(() => {
     // Load initial data
@@ -258,29 +266,41 @@ const AssetList = () => {
     setIsTypeModalOpen(false);
   };
 
+  const showAlertModal = (title, message, type = 'error') => {
+    setAlertConfig({ title, message, type });
+    setShowAlert(true);
+  };
+
   const handleDelete = async (id) => {
     if (!id) {
       console.error('No ID provided for delete operation');
-      alert('Error: Cannot delete asset - no ID provided');
+      showAlertModal('Error', 'Cannot delete asset - no ID provided', 'error');
       return;
     }
     
-    if (window.confirm('Are you sure you want to delete this asset? This action cannot be undone.')) {
-      try {
-        await dispatch(deleteAsset(id)).unwrap();
-        // Reload assets after successful deletion
-        await loadAssets();
-      } catch (error) {
-        console.error('Delete failed:', error);
-        alert('Failed to delete asset. Please try again.');
-      }
+    setAssetToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!assetToDelete) return;
+    
+    try {
+      await dispatch(deleteAsset(assetToDelete)).unwrap();
+      // Reload assets after successful deletion
+      await loadAssets();
+      setShowDeleteConfirm(false);
+      setAssetToDelete(null);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      showAlertModal('Error', 'Failed to delete asset. Please try again.', 'error');
     }
   };
 
   const handleViewTasks = (asset) => {
     if (!asset || (!asset._id && !asset.id)) {
       console.error('Invalid asset for viewing tasks:', asset);
-      alert('Error: Cannot view tasks for this asset');
+      showAlertModal('Error', 'Cannot view tasks for this asset', 'error');
       return;
     }
     setSelectedAsset(asset);
@@ -427,6 +447,30 @@ const AssetList = () => {
           defaultCriteria={['documentType', 'currentDate']}
         />
       )}
+
+      {/* Custom Confirmation Modal for Delete */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setAssetToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Asset"
+        message="Are you sure you want to delete this asset? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="primary"
+      />
+
+      {/* Custom Alert Modal */}
+      <AlertModal
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </PageContainer>
   );
 };
