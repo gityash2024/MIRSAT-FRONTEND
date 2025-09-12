@@ -212,9 +212,17 @@ const GeneralSettings = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // For phone number field, allow numbers, +, -, spaces, and parentheses
+    let processedValue = value;
+    if (name === 'phone') {
+      // Allow numbers, +, -, spaces, and parentheses for international phone numbers
+      processedValue = value.replace(/[^0-9+\-\(\)\s]/g, '');
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
     setHasChanges(true);
   };

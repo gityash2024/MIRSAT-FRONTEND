@@ -537,7 +537,7 @@ const TaskDetailsView = () => {
             {currentTask.status === 'in_progress' && <Clock size={12} />}
             {currentTask.status === 'pending' && <Clock size={12} />}
             {currentTask.status === 'archived' && <FileText size={12} />}
-            {currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
+            {currentTask.status === 'archived' ? 'Completed' : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
           </StatusBadge>
           <ExportButton 
             onClick={handleExportExcel}

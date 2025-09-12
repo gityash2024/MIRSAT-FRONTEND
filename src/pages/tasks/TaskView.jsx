@@ -825,7 +825,7 @@ const TaskView = () => {
       completed: { color: '#27ae60', bg: 'rgba(39, 174, 96, 0.1)', text: '✅ Completed' },
       in_progress: { color: '#f39c12', bg: 'rgba(243, 156, 18, 0.1)', text: '🔄 In Progress' },
       pending: { color: '#95a5a6', bg: 'rgba(149, 165, 166, 0.1)', text: '⏳ Pending' },
-      archived: { color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.1)', text: '📁 Archived' }
+      archived: { color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.1)', text: '✅ Completed' }
     };
     
     const config = statusConfig[status] || statusConfig.pending;

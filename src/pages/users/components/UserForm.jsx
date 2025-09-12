@@ -222,6 +222,38 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     }
   }, [formData.role]);
 
+  // Phone number validation function
+  const validatePhoneNumber = (phone) => {
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check if phone number is empty
+    if (!cleanPhone) {
+      return 'Phone number is required';
+    }
+    
+    // Check if phone number has valid length (7-15 digits)
+    if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+      return 'Phone number must be between 7 and 15 digits';
+    }
+    
+    // Check if phone number starts with valid country code or local format
+    if (cleanPhone.length >= 10) {
+      // International format validation (starts with country code)
+      if (cleanPhone.startsWith('1') && cleanPhone.length === 11) {
+        return null; // US/Canada format
+      }
+      if (cleanPhone.startsWith('966') && cleanPhone.length === 12) {
+        return null; // Saudi Arabia format
+      }
+      if (cleanPhone.length === 10) {
+        return null; // Local format (10 digits)
+      }
+    }
+    
+    return null; // Valid phone number
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name) newErrors.name = 'Name is required';
@@ -230,7 +262,13 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    
+    // Validate phone number
+    const phoneError = validatePhoneNumber(formData.phone);
+    if (phoneError) {
+      newErrors.phone = phoneError;
+    }
+    
     if (!formData.role) newErrors.role = 'Role is required';
     
     if (!(initialData._id || initialData.id)) {
@@ -265,16 +303,36 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // For phone number field, only allow numeric characters
+    let processedValue = value;
+    if (name === 'phone') {
+      // Remove all non-numeric characters
+      processedValue = value.replace(/\D/g, '');
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
     
+    // Clear existing error for this field
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: undefined
       }));
+    }
+    
+    // Real-time validation for phone number
+    if (name === 'phone' && processedValue) {
+      const phoneError = validatePhoneNumber(processedValue);
+      if (phoneError) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: phoneError
+        }));
+      }
     }
   };
 
@@ -369,7 +427,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             name="phone"
             value={formData.phone || ''}
             onChange={handleChange}
-            placeholder="Enter phone number"
+            placeholder="Enter phone number (numbers only)"
+            maxLength="15"
+            pattern="[0-9]*"
+            inputMode="numeric"
           />
           {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
         </FormGroup>

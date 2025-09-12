@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { AlertTriangle, Flag, MoreHorizontal } from 'lucide-react';
+import { AlertTriangle, ArrowDown, Flag, MoreHorizontal } from 'lucide-react';
 
 const PriorityBadge = styled.span`
   padding: 4px 8px;
@@ -45,7 +45,7 @@ const TaskPriority = ({ priority }) => {
       case 'medium':
         return <Flag size={12} />;
       case 'low':
-        return <MoreHorizontal size={12} />;
+        return <ArrowDown size={12} />;
       default:
         return null;
     }

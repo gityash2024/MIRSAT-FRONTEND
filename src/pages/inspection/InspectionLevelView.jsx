@@ -665,12 +665,12 @@ const InspectionLevelView = () => {
                   </NodeMetadata>
                 </NodeInfo>
                 <NodeActions>
-              <ActionButton>
+              {/* <ActionButton>
                     <Eye size={16} />
                   </ActionButton>
               <ActionButton>
                     <Edit size={16} />
-                  </ActionButton>
+                  </ActionButton> */}
                 </NodeActions>
               </NodeContent>
               

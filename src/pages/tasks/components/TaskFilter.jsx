@@ -301,6 +301,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
       'pending': 'Pending',
       'in_progress': 'In Progress',
       'completed': 'Completed',
+      'archived': 'Completed', // Show archived as Completed for consistency
       'incomplete': 'Incomplete',
       'partially_completed': 'Partially Completed'
     };
@@ -424,9 +425,9 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
             Clear All
           </Button>
         )}
-        <Button $variant="primary">
+        {/* <Button $variant="primary">
           Apply Filters
-        </Button>
+        </Button> */}
       </FilterActions>
     </div>
   );
