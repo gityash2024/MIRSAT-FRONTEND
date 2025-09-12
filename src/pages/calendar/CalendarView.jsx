@@ -9,7 +9,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import EventModal from './components/EventModal';
 import CalendarFilters from './components/CalendarFilters';
 import CalendarHeader from './components/CalendarHeader';
-import { fetchTasks, createTask, updateTask, setPagination } from '../../store/slices/taskSlice';
+import { fetchTasks, createTask, updateTask, deleteTask, setPagination } from '../../store/slices/taskSlice';
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
 import { fetchAssets } from '../../store/slices/assetSlice';
@@ -561,16 +561,13 @@ const CalendarView = () => {
 
   const handleEventDelete = async (eventId) => {
     try {
-      // For now, just mark the task as cancelled instead of deleting
-      const taskData = {
-        status: 'cancelled'
-      };
-      
-      await dispatch(updateTask({ id: eventId, data: taskData })).unwrap();
-      loadEvents(); // Reload events after "deleting"
-      toast.success('Event cancelled successfully');
+      // Actually delete the task instead of just marking it as cancelled
+      await dispatch(deleteTask(eventId)).unwrap();
+      loadEvents(); // Reload events after deleting
+      toast.success('Event deleted successfully');
     } catch (error) {
-      toast.error('Failed to cancel event');
+      console.error('Failed to delete event:', error);
+      toast.error('Failed to delete event');
     }
   };
 
