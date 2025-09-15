@@ -269,10 +269,11 @@ const TaskList = () => {
   const { hasPermission } = usePermissions();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
   
-  // Debug: Log tasks whenever they change
+  // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
     console.log('TaskList: Tasks updated:', tasks?.map(t => ({ id: t.id, progress: t.overallProgress })));
-  }, [tasks]);
+    console.log('TaskList: Pagination data:', pagination);
+  }, [tasks, pagination]);
   
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -295,16 +296,13 @@ const TaskList = () => {
     
     // Initialize pagination if it doesn't exist
     if (!pagination) {
-      dispatch(setPagination({ page: 1, limit: 10 }));
+      dispatch(setPagination({ page: 1, limit: 10, total: 0, pages: 0 }));
     }
     
     // Load necessary data for filters
     dispatch(fetchAssets());
     dispatch(fetchUsers());
     dispatch(fetchInspectionLevels());
-    
-    // Load tasks with current filters
-    loadTasks();
   }, [dispatch]);
 
   useEffect(() => {
@@ -312,31 +310,33 @@ const TaskList = () => {
   }, [dispatch, filters, pagination?.page, pagination?.limit]);
 
   const loadTasks = async () => {
-    // Create query params from filters
-    const queryParams = {
-      ...filters,
-      page: pagination?.page || 1,
-      limit: pagination?.limit || 10
-    };
-    
-    // First fetch tasks
-    const result = await dispatch(fetchTasks(queryParams));
-    
-    // If tasks were fetched successfully, fetch progress data
-    if (result.type === 'tasks/fetchTasks/fulfilled' && result.payload?.data) {
-      const taskIds = result.payload.data
-        .map(task => task.id)
-        .filter(id => id && id !== 'undefined' && typeof id === 'string' && id.length > 0);
+    try {
+      // Create query params from filters
+      const queryParams = {
+        ...filters,
+        page: pagination?.page || 1,
+        limit: pagination?.limit || 10
+      };
       
-      if (taskIds.length > 0) {
-        try {
-          console.log('TaskList: Fetching progress data for taskIds:', taskIds);
-          const progressResult = await dispatch(fetchTasksProgressData(taskIds));
-          console.log('TaskList: Progress fetch result:', progressResult);
-        } catch (error) {
-          console.warn('Failed to fetch progress data:', error);
+      // First fetch tasks
+      const result = await dispatch(fetchTasks(queryParams));
+      
+      // If tasks were fetched successfully, fetch progress data
+      if (result.type === 'tasks/fetchTasks/fulfilled' && result.payload?.data) {
+        const taskIds = result.payload.data
+          .map(task => task.id)
+          .filter(id => id && id !== 'undefined' && typeof id === 'string' && id.length > 0);
+        
+        if (taskIds.length > 0) {
+          try {
+            const progressResult = await dispatch(fetchTasksProgressData(taskIds));
+          } catch (error) {
+            console.warn('Failed to fetch progress data:', error);
+          }
         }
       }
+    } catch (error) {
+      console.error('TaskList: Error in loadTasks:', error);
     }
   };
 
@@ -661,17 +661,14 @@ const TaskList = () => {
             Retry
           </ActionButton>
         </ErrorContainer>
-      ) : tasks && tasks.length > 0 ? (
-        // Show tasks table
+      ) : (
+        // Show tasks table (even if empty, so pagination can be displayed)
         <TaskTable 
-          tasks={tasks}
+          tasks={tasks || []}
           loading={loading}
-          pagination={pagination || { page: 1, limit: 10, total: tasks.length, pages: Math.ceil(tasks.length/10) }}
+          pagination={pagination}
           onPageChange={handlePageChange}
         />
-      ) : (
-        // Show empty state
-        renderEmptyState()
       )}
 
       {showDocumentModal && pendingExport && (

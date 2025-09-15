@@ -625,6 +625,19 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   const [preInspectionModalOpen, setPreInspectionModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
+  // Debug: Log pagination data
+  useEffect(() => {
+    console.log('TaskTable Pagination Debug:', {
+      pagination,
+      hasPagination: !!pagination,
+      total: pagination?.total,
+      page: pagination?.page,
+      pages: pagination?.pages,
+      limit: pagination?.limit,
+      tasksCount: sortedTasks.length
+    });
+  }, [pagination, sortedTasks]);
+
   useEffect(() => {
     const sorted = [...initialTasks].sort((a, b) => {
       if (!a || !b) return 0;
@@ -734,18 +747,13 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
     return <TaskTableSkeleton />;
   }
 
-  if (!sortedTasks.length) {
-    return (
-      <TableContainer>
-        <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
-      </TableContainer>
-    );
-  }
-
   return (
     <>
       <TableContainer>
-        <Table>
+        {!sortedTasks.length ? (
+          <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
+        ) : (
+          <Table>
           <thead>
             <tr>
               <th style={{ width: '50px', textAlign: 'center' }}>#</th>
@@ -946,17 +954,20 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
             ))}
           </tbody>
         </Table>
+        )}
 
         <PaginationContainer>
           <PaginationInfo>
-            {sortedTasks.length > 0 ? (
+            {pagination && pagination.total !== undefined && pagination.total > 0 ? (
               <>
-                Showing {Math.min(1, sortedTasks.length)} to{' '}
-                {sortedTasks.length} of{' '}
-                {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                {pagination.total} {pagination.total === 1 ? 'task' : 'tasks'}
               </>
-            ) : (
+            ) : pagination && pagination.total === 0 ? (
               <>Showing 0 tasks</>
+            ) : (
+              <>Showing {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}</>
             )}
           </PaginationInfo>
           
@@ -968,9 +979,48 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               <ChevronLeft size={16} />
             </PaginationButton>
             
+            {/* Page Numbers */}
+            {pagination && pagination.pages && pagination.pages > 1 && (
+              <>
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  const isCurrentPage = pageNum === pagination.page;
+                  
+                  return (
+                    <PaginationButton
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      style={{
+                        background: isCurrentPage ? 'var(--color-navy)' : 'white',
+                        color: isCurrentPage ? 'white' : 'var(--color-gray-dark)',
+                        fontWeight: isCurrentPage ? '600' : '400'
+                      }}
+                    >
+                      {pageNum}
+                    </PaginationButton>
+                  );
+                })}
+                {pagination.pages > 5 && (
+                  <>
+                    <span style={{ padding: '0 8px', color: 'var(--color-gray-medium)' }}>...</span>
+                    <PaginationButton
+                      onClick={() => onPageChange(pagination.pages)}
+                      style={{
+                        background: pagination.page === pagination.pages ? 'var(--color-navy)' : 'white',
+                        color: pagination.page === pagination.pages ? 'white' : 'var(--color-gray-dark)',
+                        fontWeight: pagination.page === pagination.pages ? '600' : '400'
+                      }}
+                    >
+                      {pagination.pages}
+                    </PaginationButton>
+                  </>
+                )}
+              </>
+            )}
+            
             <PaginationButton
               onClick={() => onPageChange((pagination?.page || 1) + 1)}
-              disabled={(pagination?.page || 1) * (pagination?.limit || 10) >= (sortedTasks.length || 0) || sortedTasks.length === 0}
+              disabled={(pagination?.page || 1) >= (pagination?.pages || 1)}
             >
               <ChevronRight size={16} />
             </PaginationButton>

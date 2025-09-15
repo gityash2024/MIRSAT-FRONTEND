@@ -18,7 +18,8 @@ const initialState = {
   pagination: {
     page: 1,
     limit: 10,
-    total: 0
+    total: 0,
+    pages: 0
   }
 };
 
@@ -344,16 +345,24 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
+        console.log('Redux: fetchTasks.fulfilled - Full payload:', action.payload);
+        console.log('Redux: Pagination data from API:', action.payload.pagination);
+        
         // Ensure tasks have the correct id field for progress matching
         state.tasks = action.payload.data.map(task => ({
           ...task,
           id: task.id || task._id // Ensure id field exists
         }));
-        state.pagination = {
-          page: action.payload.page,
-          limit: action.payload.limit,
-          total: action.payload.total
+        
+        const paginationData = {
+          page: action.payload.pagination?.page || action.payload.page || 1,
+          limit: action.payload.pagination?.limit || action.payload.limit || 10,
+          total: action.payload.pagination?.total || action.payload.total || 0,
+          pages: action.payload.pagination?.pages || action.payload.pages || action.payload.totalPages || Math.ceil((action.payload.pagination?.total || action.payload.total || 0) / (action.payload.pagination?.limit || action.payload.limit || 10))
         };
+        
+        console.log('Redux: Setting pagination data:', paginationData);
+        state.pagination = paginationData;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
