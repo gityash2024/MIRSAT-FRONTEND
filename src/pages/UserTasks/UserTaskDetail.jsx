@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   X,
   MessageSquare,
   AlertTriangle,
@@ -53,7 +54,6 @@ import {
   Navigation,
   Maximize2,
   Minimize2,
-  ChevronDown,
   Loader
 } from 'react-feather';
 import { toast } from 'react-hot-toast';
@@ -246,6 +246,78 @@ const QuickActionButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+  }
+`;
+
+// Export dropdown styled components
+const ExportButtonContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const ExportButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  padding: 16px 32px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);
+  min-width: 200px;
+  height: 56px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(22, 163, 74, 0.6);
+  }
+`;
+
+const ExportDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  margin-top: 4px;
+`;
+
+const ExportOption = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: white;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  
+  &:hover {
+    background: #f8fafc;
+  }
+  
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 `;
 
@@ -2310,8 +2382,10 @@ const UserTaskDetail = () => {
   const [signatureMethod, setSignatureMethod] = useState('draw');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [signatureJustSaved, setSignatureJustSaved] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
-  const [selectedReportFormat, setSelectedReportFormat] = useState(null);
+  const [selectedReportFormat, setSelectedReportFormat] = useState('excel');
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [documentName, setDocumentName] = useState('');
   const [inspectionPages, setInspectionPages] = useState([]);
   const [scores, setScores] = useState({
@@ -3065,8 +3139,13 @@ const UserTaskDetail = () => {
     }
   };
 
-  const handleDownloadReport = (format) => {
+  const handleExportClick = () => {
+    setShowExportDropdown(!showExportDropdown);
+  };
+
+  const handleExportFormat = (format) => {
     setSelectedReportFormat(format);
+    setShowExportDropdown(false);
     setDocumentName(`${currentTask?.name || 'Inspection'}_${format.toUpperCase()}_${new Date().toISOString().split('T')[0]}`);
     setShowDocumentNamingModal(true);
   };
@@ -3312,8 +3391,15 @@ const UserTaskDetail = () => {
       toast.success('Signature saved successfully');
       setShowSignatureModal(false);
       
+      // Clear signature image after successful save
+      setSignatureImage(null);
+      
+      // Mark that signature was just saved
+      setSignatureJustSaved(true);
+      
+      // Directly open the Complete & Archive modal
       setTimeout(() => {
-        handleExportReport();
+        setShowArchiveModal(true);
       }, 500);
     } catch (error) {
       toast.dismiss();
@@ -3372,10 +3458,16 @@ const UserTaskDetail = () => {
       toast.success('Compliance data submitted successfully! Inspection completed.');
       setShowSignatureModal(false);
       
-      // Auto-export report after successful submission
+      // Clear signature image after successful save
+      setSignatureImage(null);
+      
+      // Mark that signature was just saved
+      setSignatureJustSaved(true);
+      
+      // Directly open the Complete & Archive modal
       setTimeout(() => {
-        handleExportReport();
-      }, 1000);
+        setShowArchiveModal(true);
+      }, 500);
       
     } catch (error) {
       toast.dismiss();
@@ -3404,11 +3496,14 @@ const UserTaskDetail = () => {
       return;
     }
 
-    // Check if task has signature
-    if (!currentTask?.signature && !signatureImage) {
+    // Check if task has signature - only show signature modal if no signature exists and signature wasn't just saved
+    if (!currentTask?.signature && !signatureJustSaved) {
       setShowSignatureModal(true);
       return;
     }
+
+    // Reset the flag
+    setSignatureJustSaved(false);
 
     // Show confirmation modal
     setShowArchiveModal(true);
@@ -3428,6 +3523,9 @@ const UserTaskDetail = () => {
       toast.dismiss();
       toast.success('🎉 Inspection completed and archived successfully!');
       setShowArchiveModal(false);
+      
+      // Reset signature flag
+      setSignatureJustSaved(false);
 
       // Navigate back to tasks list after a short delay
       setTimeout(() => {
@@ -5472,24 +5570,30 @@ const UserTaskDetail = () => {
                           Download Excel
                         </QuickActionButton> */}
                         
-                        {/* Excel Download */}
-                        <QuickActionButton 
-                          primary
-                          onClick={() => handleDownloadReport('excel')}
-                          style={{ 
-                            padding: '16px 32px', 
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                            boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)',
-                            border: '1px solid rgba(22, 163, 74, 0.3)',
-                            minWidth: '200px',
-                            height: '56px'
-                          }}
-                        >
-                          <Download size={20} />
-                          Download Report
-                        </QuickActionButton>
+                        {/* Export Dropdown */}
+                        <ExportButtonContainer className="export-dropdown">
+                          <ExportButton onClick={handleExportClick}>
+                            <Download size={20} />
+                            Download Report
+                            <ChevronDown size={16} />
+                          </ExportButton>
+                          {showExportDropdown && (
+                            <ExportDropdown>
+                              <ExportOption onClick={() => handleExportFormat('excel')}>
+                                <FileText size={16} />
+                                Excel (.xlsx)
+                              </ExportOption>
+                              {/* <ExportOption onClick={() => handleExportFormat('word')}>
+                                <FileText size={16} />
+                                Word (.docx)
+                              </ExportOption> */}
+                              <ExportOption onClick={() => handleExportFormat('pdf')}>
+                                <FileText size={16} />
+                                PDF (.pdf)
+                              </ExportOption>
+                            </ExportDropdown>
+                          )}
+                        </ExportButtonContainer>
                         
                         {/* Word Download */}
                         {/* <QuickActionButton 
@@ -5783,14 +5887,14 @@ const UserTaskDetail = () => {
                 </UploadButton>
               )}
               
-              <SaveButton 
+              {/* <SaveButton 
                 onClick={handleSaveSignature}
                 disabled={!signatureImage}
                 style={{ background: '#64748b' }}
               >
                 <Save size={16} />
                 Save & Continue
-              </SaveButton>
+              </SaveButton> */}
               
               <SaveButton 
                 onClick={handleSaveAndSubmit}
@@ -5815,7 +5919,10 @@ const UserTaskDetail = () => {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Complete & Archive Inspection</ModalTitle>
-              <CloseButton onClick={() => setShowArchiveModal(false)}>
+              <CloseButton onClick={() => {
+                setShowArchiveModal(false);
+                setSignatureJustSaved(false);
+              }}>
                 <X size={20} />
               </CloseButton>
             </ModalHeader>

@@ -120,11 +120,109 @@ const TaskEdit = () => {
       console.log('Available assets:', assets);
     }
   }, [task, assets]);
+
   
   const handleCancel = () => {
     navigate(`/tasks`);
   };
-  
+
+  // Create formattedData - must be before any conditional returns
+  const formattedData = task ? (() => {
+    try {
+      return {
+        _id: task.firstTask?.id || task.firstTask?._id || 
+             (Array.isArray(task.data) && task.data.length > 0 
+              ? task.data[0].id || task.data[0]._id 
+              : (task.data?._id || task.data?.id || taskId)),
+        title: task.firstTask?.title || 
+               (Array.isArray(task.data) && task.data.length > 0 
+                ? task.data[0].title 
+                : (task.data?.title || '')),
+        description: task.firstTask?.description || 
+                     (Array.isArray(task.data) && task.data.length > 0 
+                      ? task.data[0].description 
+                      : (task.data?.description || '')),
+        assignedTo: task.firstTask?.assignedTo || 
+                    (Array.isArray(task.data) && task.data.length > 0 
+                     ? task.data[0].assignedTo 
+                     : (task.data?.assignedTo || [])),
+        status: task.firstTask?.status || 
+                (Array.isArray(task.data) && task.data.length > 0 
+                 ? task.data[0].status 
+                 : (task.data?.status || 'pending')),
+        priority: task.firstTask?.priority || 
+                  (Array.isArray(task.data) && task.data.length > 0 
+                   ? task.data[0].priority 
+                   : (task.data?.priority || 'medium')),
+        deadline: task.firstTask?.deadline ? new Date(task.firstTask.deadline) :
+                  (Array.isArray(task.data) && task.data.length > 0 && task.data[0].deadline
+                   ? new Date(task.data[0].deadline) 
+                   : (task.data?.deadline ? new Date(task.data.deadline) : null)),
+        location: task.firstTask?.location || 
+                  (Array.isArray(task.data) && task.data.length > 0 
+                   ? task.data[0].location 
+                   : (task.data?.location || '')),
+        inspectionLevel: task.firstTask?.inspectionLevel?._id || task.firstTask?.inspectionLevel?.id || task.firstTask?.inspectionLevel ||
+                         (Array.isArray(task.data) && task.data.length > 0 
+                          ? (task.data[0].inspectionLevel?._id || task.data[0].inspectionLevel?.id || task.data[0].inspectionLevel) 
+                          : (task.data?.inspectionLevel?._id || task.data?.inspectionLevel?.id || task.data?.inspectionLevel || null)),
+        asset: task.firstTask?.asset?._id || task.firstTask?.asset?.id || task.firstTask?.asset ||
+               (Array.isArray(task.data) && task.data.length > 0 
+                ? (task.data[0].asset?._id || task.data[0].asset?.id || task.data[0].asset) 
+                : (task.data?.asset?._id || task.data?.asset?.id || task.data?.asset || null)),
+        isActive: task.firstTask?.isActive !== undefined ? task.firstTask.isActive :
+                  (Array.isArray(task.data) && task.data.length > 0 
+                   ? task.data[0].isActive 
+                   : (task.data?.isActive ?? true)),
+        attachments: task.firstTask?.attachments?.map(attachment => ({
+                       ...attachment,
+                       url: attachment.url,
+                       filename: attachment.filename,
+                       existing: true,
+                       _id: attachment._id || attachment.id
+                     })) || 
+                     (Array.isArray(task.data) && task.data.length > 0 
+                      ? (task.data[0].attachments?.map(attachment => ({
+                          ...attachment,
+                          url: attachment.url,
+                          filename: attachment.filename,
+                          existing: true,
+                          _id: attachment._id || attachment.id
+                        })) || [])
+                      : (task.data?.attachments?.map(attachment => ({
+                          ...attachment,
+                          url: attachment.url,
+                          filename: attachment.filename,
+                          existing: true,
+                          _id: attachment._id || attachment.id
+                        })) || [])),
+        preInspectionQuestions: task.firstTask?.preInspectionQuestions || 
+                               (Array.isArray(task.data) && task.data.length > 0 
+                                ? task.data[0].preInspectionQuestions 
+                                : (task.data?.preInspectionQuestions || []))
+      };
+    } catch (error) {
+      console.error('Error creating formattedData:', error);
+      return null;
+    }
+  })() : null;
+
+  // Store pre-inspection questions in localStorage when task is loaded
+  useEffect(() => {
+    try {
+      if (formattedData && formattedData.preInspectionQuestions && formattedData.preInspectionQuestions.length > 0) {
+        const taskId = formattedData._id;
+        if (taskId) {
+          localStorage.setItem(`task_${taskId}_preinspection`, JSON.stringify(formattedData.preInspectionQuestions));
+          console.log('Stored pre-inspection questions in localStorage for task:', taskId, formattedData.preInspectionQuestions);
+        }
+      }
+    } catch (error) {
+      console.error('Error storing pre-inspection questions in localStorage:', error);
+    }
+  }, [formattedData]);
+
+  // All conditional returns must come after all hooks
   if (loading || !task) {
     return (
       <PageContainer>
@@ -133,74 +231,13 @@ const TaskEdit = () => {
     );
   }
 
-  const formattedData = task ? {
-    _id: task.firstTask?.id || task.firstTask?._id || 
-         (Array.isArray(task.data) && task.data.length > 0 
-          ? task.data[0].id || task.data[0]._id 
-          : (task.data?._id || task.data?.id || taskId)),
-    title: task.firstTask?.title || 
-           (Array.isArray(task.data) && task.data.length > 0 
-            ? task.data[0].title 
-            : (task.data?.title || '')),
-    description: task.firstTask?.description || 
-                 (Array.isArray(task.data) && task.data.length > 0 
-                  ? task.data[0].description 
-                  : (task.data?.description || '')),
-    assignedTo: task.firstTask?.assignedTo || 
-                (Array.isArray(task.data) && task.data.length > 0 
-                 ? task.data[0].assignedTo 
-                 : (task.data?.assignedTo || [])),
-    status: task.firstTask?.status || 
-            (Array.isArray(task.data) && task.data.length > 0 
-             ? task.data[0].status 
-             : (task.data?.status || 'pending')),
-    priority: task.firstTask?.priority || 
-              (Array.isArray(task.data) && task.data.length > 0 
-               ? task.data[0].priority 
-               : (task.data?.priority || 'medium')),
-    deadline: task.firstTask?.deadline ? new Date(task.firstTask.deadline) :
-              (Array.isArray(task.data) && task.data.length > 0 && task.data[0].deadline
-               ? new Date(task.data[0].deadline) 
-               : (task.data?.deadline ? new Date(task.data.deadline) : null)),
-    location: task.firstTask?.location || 
-              (Array.isArray(task.data) && task.data.length > 0 
-               ? task.data[0].location 
-               : (task.data?.location || '')),
-    inspectionLevel: task.firstTask?.inspectionLevel?._id || task.firstTask?.inspectionLevel?.id || task.firstTask?.inspectionLevel ||
-                     (Array.isArray(task.data) && task.data.length > 0 
-                      ? (task.data[0].inspectionLevel?._id || task.data[0].inspectionLevel?.id || task.data[0].inspectionLevel) 
-                      : (task.data?.inspectionLevel?._id || task.data?.inspectionLevel?.id || task.data?.inspectionLevel || null)),
-    asset: task.firstTask?.asset?._id || task.firstTask?.asset?.id || task.firstTask?.asset ||
-           (Array.isArray(task.data) && task.data.length > 0 
-            ? (task.data[0].asset?._id || task.data[0].asset?.id || task.data[0].asset) 
-            : (task.data?.asset?._id || task.data?.asset?.id || task.data?.asset || null)),
-    isActive: task.firstTask?.isActive !== undefined ? task.firstTask.isActive :
-              (Array.isArray(task.data) && task.data.length > 0 
-               ? task.data[0].isActive 
-               : (task.data?.isActive ?? true)),
-    attachments: task.firstTask?.attachments?.map(attachment => ({
-                   ...attachment,
-                   url: attachment.url,
-                   filename: attachment.filename,
-                   existing: true,
-                   _id: attachment._id || attachment.id
-                 })) || 
-                 (Array.isArray(task.data) && task.data.length > 0 
-                  ? (task.data[0].attachments?.map(attachment => ({
-                      ...attachment,
-                      url: attachment.url,
-                      filename: attachment.filename,
-                      existing: true,
-                      _id: attachment._id || attachment.id
-                    })) || [])
-                  : (task.data?.attachments?.map(attachment => ({
-                      ...attachment,
-                      url: attachment.url,
-                      filename: attachment.filename,
-                      existing: true,
-                      _id: attachment._id || attachment.id
-                    })) || []))
-  } : null;
+  if (!formattedData) {
+    return (
+      <PageContainer>
+        <div>Error loading task data. Please try again.</div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

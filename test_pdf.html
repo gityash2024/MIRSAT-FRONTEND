@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf-autotable.min.js"></script>
+</head>
+<body>
+    <h1>PDF Generation Test</h1>
+    <button onclick="testPDF()">Generate Test PDF</button>
+    
+    <script>
+        function testPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Test data
+            const taskData = {
+                title: "Test Inspection Report",
+                status: "completed",
+                location: "Test Location",
+                description: "This is a test inspection report",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                scores: {
+                    totalAchieved: 8,
+                    totalMax: 10,
+                    percentage: 80
+                },
+                preInspectionQuestions: [
+                    {
+                        _id: "1",
+                        text: "Is the equipment in good condition?",
+                        question: "Is the equipment in good condition?"
+                    },
+                    {
+                        _id: "2", 
+                        text: "Are all safety measures in place?",
+                        question: "Are all safety measures in place?"
+                    }
+                ],
+                questions: [
+                    {
+                        _id: "3",
+                        text: "Test yes no type",
+                        question: "Test yes no type",
+                        category: "General",
+                        type: "yesno",
+                        weight: 1,
+                        scoring: { max: 2 }
+                    }
+                ],
+                questionnaireResponses: {
+                    "1": "Yes",
+                    "2": "Yes", 
+                    "3": "No"
+                },
+                signature: true,
+                signedAt: new Date().toISOString()
+            };
+            
+            // Generate PDF
+            generateTaskPDF(doc, taskData);
+            
+            // Download
+            doc.save('test_inspection_report.pdf');
+        }
+        
+        function generateTaskPDF(doc, taskData) {
+            // Colors
+            const colors = {
+                primary: '#1A237E',
+                secondary: '#3949ab',
+                text: '#000000',
+                lightText: '#666666',
+                green: '#4caf50',
+                amber: '#ffc107',
+                red: '#f44336',
+                gray: '#9e9e9e'
+            };
+
+            let yPosition = 20;
+            const pageWidth = doc.internal.pageSize.width;
+            const margin = 20;
+            const contentWidth = pageWidth - (margin * 2);
+
+            // Helper function to add text
+            const addText = (text, x, y, options = {}) => {
+                const {
+                    fontSize = 10,
+                    fontStyle = 'normal',
+                    color = colors.text,
+                    align = 'left',
+                    maxWidth = contentWidth
+                } = options;
+
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', fontStyle);
+                doc.setTextColor(color);
+                
+                if (maxWidth) {
+                    const lines = doc.splitTextToSize(text, maxWidth);
+                    doc.text(lines, x, y);
+                    return lines.length * (fontSize * 0.4);
+                } else {
+                    doc.text(text, x, y);
+                    return fontSize * 0.4;
+                }
+            };
+
+            // Title
+            addText('INSPECTION REPORT', margin, yPosition, {
+                fontSize: 20,
+                fontStyle: 'bold',
+                color: colors.primary,
+                align: 'center'
+            });
+            yPosition += 15;
+
+            // Task Information
+            addText('Task Information', margin, yPosition, {
+                fontSize: 16,
+                fontStyle: 'bold',
+                color: colors.primary
+            });
+            yPosition += 10;
+
+            // Task details table
+            const taskDetails = [
+                ['Task Title:', taskData.title || 'N/A'],
+                ['Status:', taskData.status || 'N/A'],
+                ['Location:', taskData.location || 'N/A'],
+                ['Description:', taskData.description || 'N/A'],
+                ['Created At:', taskData.createdAt ? new Date(taskData.createdAt).toLocaleString() : 'N/A'],
+                ['Updated At:', taskData.updatedAt ? new Date(taskData.updatedAt).toLocaleString() : 'N/A']
+            ];
+
+            doc.autoTable({
+                startY: yPosition,
+                head: [['Property', 'Value']],
+                body: taskDetails,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: colors.primary,
+                    textColor: '#FFFFFF',
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    textColor: colors.text
+                },
+                margin: { left: margin, right: margin },
+                didDrawPage: (data) => {
+                    yPosition = data.cursor.y + 10;
+                }
+            });
+
+            yPosition += 20;
+
+            // Pre-Inspection Questionnaire
+            if (taskData.preInspectionQuestions && taskData.preInspectionQuestions.length > 0) {
+                addText('Pre-Inspection Questionnaire', margin, yPosition, {
+                    fontSize: 16,
+                    fontStyle: 'bold',
+                    color: colors.primary
+                });
+                yPosition += 15;
+
+                taskData.preInspectionQuestions.forEach((question, index) => {
+                    const questionId = question._id?.toString() || question.id?.toString();
+                    if (!questionId) return;
+
+                    // Find response
+                    let response = null;
+                    const possibleKeys = [
+                        `q-${questionId}`,
+                        `question-${questionId}`,
+                        questionId
+                    ];
+
+                    for (const key of possibleKeys) {
+                        if (taskData.questionnaireResponses && taskData.questionnaireResponses[key] !== undefined) {
+                            response = taskData.questionnaireResponses[key];
+                            break;
+                        }
+                    }
+
+                    if (!response && taskData.questionnaireResponses) {
+                        const foundKey = Object.keys(taskData.questionnaireResponses).find(key => 
+                            !key.startsWith('c-') && (key.includes(questionId) || key.endsWith(questionId))
+                        );
+                        if (foundKey) {
+                            response = taskData.questionnaireResponses[foundKey];
+                        }
+                    }
+
+                    // Question text
+                    const questionText = question.text || question.question || 'No question text available';
+                    addText(`Q${index + 1}. ${questionText}`, margin, yPosition, {
+                        fontSize: 11,
+                        fontStyle: 'bold',
+                        color: colors.text
+                    });
+                    yPosition += 8;
+
+                    // Response
+                    let responseText = '';
+                    if (response !== null && response !== undefined) {
+                        if (Array.isArray(response)) {
+                            responseText = response.join(', ');
+                        } else {
+                            const responseStr = String(response);
+                            
+                            // Check if it's a base64 image/file
+                            if (responseStr.startsWith('data:image/')) {
+                                responseText = '📎 Image uploaded';
+                            } else if (responseStr.startsWith('data:')) {
+                                responseText = '📎 File uploaded';
+                            } else if (responseStr.length > 100 && /^[A-Za-z0-9+/=]+$/.test(responseStr)) {
+                                responseText = '📎 File uploaded';
+                            } else {
+                                responseText = responseStr;
+                            }
+                        }
+                    } else {
+                        responseText = 'No response';
+                    }
+
+                    addText(`Response: ${responseText}`, margin + 15, yPosition, {
+                        fontSize: 10,
+                        fontStyle: 'normal',
+                        color: colors.text
+                    });
+                    yPosition += 15;
+                });
+
+                yPosition += 10;
+            }
+
+            // Overall Score
+            if (taskData.scores) {
+                addText('Overall Score', margin, yPosition, {
+                    fontSize: 16,
+                    fontStyle: 'bold',
+                    color: colors.primary
+                });
+                yPosition += 10;
+
+                const scoreText = `${taskData.scores.totalAchieved || 0}/${taskData.scores.totalMax || 0} (${taskData.scores.percentage || 0}%)`;
+                addText(`Total Score: ${scoreText}`, margin, yPosition, {
+                    fontSize: 14,
+                    fontStyle: 'bold',
+                    color: colors.text
+                });
+                yPosition += 20;
+            }
+
+            // Questionnaire Results
+            if (taskData.questions && taskData.questions.length > 0) {
+                addText('Questionnaire Results', margin, yPosition, {
+                    fontSize: 16,
+                    fontStyle: 'bold',
+                    color: colors.primary
+                });
+                yPosition += 15;
+
+                // Group questions by category
+                const categories = {};
+                
+                taskData.questions.forEach((question) => {
+                    if (!question) return;
+                    
+                    const category = question.category || 'General';
+                    
+                    if (!categories[category]) {
+                        categories[category] = [];
+                    }
+                    
+                    const questionId = question._id?.toString() || question.id?.toString();
+                    if (!questionId) return;
+                    
+                    // Find response
+                    let response = null;
+                    const possibleKeys = [
+                        `q-${questionId}`,
+                        `question-${questionId}`,
+                        questionId
+                    ];
+                    
+                    for (const key of possibleKeys) {
+                        if (taskData.questionnaireResponses && taskData.questionnaireResponses[key] !== undefined) {
+                            response = taskData.questionnaireResponses[key];
+                            break;
+                        }
+                    }
+                    
+                    if (!response && taskData.questionnaireResponses) {
+                        const foundKey = Object.keys(taskData.questionnaireResponses).find(key => 
+                            !key.startsWith('c-') && (key.includes(questionId) || key.endsWith(questionId))
+                        );
+                        
+                        if (foundKey) {
+                            response = taskData.questionnaireResponses[foundKey];
+                        }
+                    }
+                    
+                    const commentKey = `c-${questionId}`;
+                    const comment = taskData.questionnaireResponses ? taskData.questionnaireResponses[commentKey] || '' : '';
+                    
+                    // Calculate scores
+                    const weight = question.weight || 1;
+                    const maxScore = question.scoring?.max || 2;
+                    const maxPointsForQuestion = maxScore * weight;
+                    
+                    let earnedPointsForQuestion = 0;
+                    let isNA = false;
+                    
+                    if (response !== null && response !== undefined) {
+                        if (response === 'not_applicable' || response === 'na' || response === 'N/A' || response === 'Not applicable') {
+                            isNA = true;
+                        } else {
+                            const questionType = question.type || question.answerType;
+                            
+                            if (questionType === 'compliance' || questionType === 'yesno') {
+                                if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || 
+                                    response === 'Full Compliance' || response === 'Full compliance') {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                } else if (response === 'partial_compliance' || response === 'Partial Compliance' || 
+                                          response === 'Partial compliance') {
+                                    earnedPointsForQuestion = maxPointsForQuestion / 2;
+                                }
+                            } else if (questionType === 'checkbox' || questionType === 'multiple') {
+                                if (Array.isArray(response) && response.length > 0) {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            } else if (questionType === 'file') {
+                                if (typeof response === 'string' && response.trim() !== '') {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            } else if (questionType === 'text' || questionType === 'signature') {
+                                if (typeof response === 'string' && response.trim() !== '') {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            } else if (questionType === 'number') {
+                                if (response !== '' && !isNaN(response)) {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            } else if (questionType === 'date') {
+                                if (response && typeof response === 'string' && response !== '') {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            } else {
+                                if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+                                    earnedPointsForQuestion = maxPointsForQuestion;
+                                }
+                            }
+                        }
+                    }
+                    
+                    categories[category].push({
+                        id: questionId,
+                        text: question.text || question.question || 'No question text available',
+                        response,
+                        comment,
+                        earned: earnedPointsForQuestion,
+                        max: maxPointsForQuestion,
+                        isNA
+                    });
+                });
+
+                // Add questions to PDF
+                Object.entries(categories).forEach(([category, questions]) => {
+                    // Category header
+                    addText(category, margin, yPosition, {
+                        fontSize: 14,
+                        fontStyle: 'bold',
+                        color: colors.secondary
+                    });
+                    yPosition += 10;
+
+                    // Questions table
+                    const tableData = questions.map(question => {
+                        let responseText = '';
+                        if (question.response !== null && question.response !== undefined) {
+                            if (Array.isArray(question.response)) {
+                                responseText = question.response.join(', ');
+                            } else {
+                                const responseStr = String(question.response);
+                                
+                                // Check if it's a base64 image/file
+                                if (responseStr.startsWith('data:image/')) {
+                                    responseText = '📎 Image uploaded';
+                                } else if (responseStr.startsWith('data:')) {
+                                    responseText = '📎 File uploaded';
+                                } else if (responseStr.length > 100 && /^[A-Za-z0-9+/=]+$/.test(responseStr)) {
+                                    responseText = '📎 File uploaded';
+                                } else {
+                                    responseText = responseStr;
+                                }
+                            }
+                        } else {
+                            responseText = 'No response';
+                        }
+
+                        const scoreText = question.isNA ? 'N/A' : `${question.earned}/${question.max}`;
+                        
+                        return [
+                            question.text,
+                            responseText,
+                            scoreText,
+                            question.comment || ''
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: yPosition,
+                        head: [['Question', 'Response', 'Score', 'Comment']],
+                        body: tableData,
+                        theme: 'grid',
+                        headStyles: {
+                            fillColor: colors.primary,
+                            textColor: '#FFFFFF',
+                            fontStyle: 'bold'
+                        },
+                        bodyStyles: {
+                            textColor: colors.text,
+                            fontSize: 9
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 60 }, // Question column
+                            1: { cellWidth: 40 }, // Response column
+                            2: { cellWidth: 20 }, // Score column
+                            3: { cellWidth: 30 }  // Comment column
+                        },
+                        margin: { left: margin, right: margin },
+                        didDrawPage: (data) => {
+                            yPosition = data.cursor.y + 10;
+                        }
+                    });
+
+                    yPosition += 20;
+                });
+            }
+
+            // Signature section
+            if (taskData.signature || taskData.signedBy) {
+                addText('Signature', margin, yPosition, {
+                    fontSize: 16,
+                    fontStyle: 'bold',
+                    color: colors.primary
+                });
+                yPosition += 10;
+
+                addText('Status: Digitally Signed', margin, yPosition, {
+                    fontSize: 12,
+                    fontStyle: 'bold',
+                    color: colors.green
+                });
+                yPosition += 8;
+
+                if (taskData.signedAt) {
+                    addText(`Signed at: ${new Date(taskData.signedAt).toLocaleString()}`, margin, yPosition, {
+                        fontSize: 10,
+                        fontStyle: 'normal',
+                        color: colors.text
+                    });
+                }
+            }
+
+            // Footer
+            yPosition = doc.internal.pageSize.height - 20;
+            addText(`Generated on ${new Date().toLocaleString()}`, margin, yPosition, {
+                fontSize: 8,
+                fontStyle: 'normal',
+                color: colors.lightText,
+                align: 'center'
+            });
+        }
+    </script>
+</body>
+</html>

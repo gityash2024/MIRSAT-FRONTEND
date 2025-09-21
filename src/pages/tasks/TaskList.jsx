@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { Plus, Filter, Search, Download, RefreshCw, Loader } from 'lucide-react';
-import TaskFilter from './components/TaskFilter';
+import { Plus, Search, Download, RefreshCw, Loader, ChevronDown, X, User, AlertCircle } from 'lucide-react';
 import TaskTable from './components/TaskTable';
 import { fetchTasks, setFilters, setPagination, fetchTasksProgressData } from '../../store/slices/taskSlice';
 import { fetchAssets } from '../../store/slices/assetSlice';
@@ -46,10 +45,20 @@ const ActionBar = styled.div`
   gap: 16px;
 `;
 
+const FilterRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  max-width: 900px;
+  flex-wrap: wrap;
+  min-width: 0;
+`;
+
 const SearchBox = styled.div`
   position: relative;
   flex: 1;
-  max-width: 400px;
+  min-width: 200px;
 
   input {
     width: 100%;
@@ -72,6 +81,138 @@ const SearchBox = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+  }
+`;
+
+const FilterDropdown = styled.div`
+  position: relative;
+  min-width: 160px;
+  max-width: 200px;
+  flex: 0 0 auto;
+`;
+
+const DropdownButton = styled.button`
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    border-color: var(--color-navy);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+  }
+`;
+
+const DropdownContent = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 250px;
+  overflow-y: auto;
+  display: ${props => (props.show ? 'block' : 'none')};
+  min-width: 200px;
+  width: max-content;
+`;
+
+const DropdownItem = styled.div`
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  min-width: 180px;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #f5f7fb;
+  }
+
+  input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+  }
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: ${props => props.$selected ? '500' : 'normal'};
+    color: ${props => props.$selected ? 'var(--color-navy)' : 'inherit'};
+  }
+
+  ${props => props.$selected && `
+    background: #f0f4ff;
+    border-left: 3px solid var(--color-navy);
+    margin-bottom: 2px;
+  `}
+`;
+
+const ActiveFilters = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+`;
+
+const FilterTag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-navy);
+  font-weight: 500;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #64748b;
+    border-radius: 50%;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #dc2626;
+    }
   }
 `;
 
@@ -108,14 +249,6 @@ const Button = styled.button`
       background: #f5f7fb;
     }
   `}
-`;
-
-const FilterSection = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
 const EmptyStateContainer = styled.div`
@@ -160,7 +293,7 @@ const DropdownMenu = styled.div`
   display: ${props => (props.show ? 'block' : 'none')};
 `;
 
-const DropdownItem = styled.button`
+const ExportDropdownItem = styled.button`
   width: 100%;
   text-align: left;
   padding: 10px 16px;
@@ -223,14 +356,6 @@ const ActionButton = styled(Button)`
   `}
 `;
 
-const FilterContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
 const ErrorContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -268,6 +393,7 @@ const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
+  const { users } = useSelector((state) => state.users || { users: [] });
   
   // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
@@ -275,11 +401,26 @@ const TaskList = () => {
     console.log('TaskList: Pagination data:', pagination);
   }, [tasks, pagination]);
   
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+
+  // Filter options
+  const statusOptions = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'archived', label: 'Completed' },
+  ];
+
+  const priorityOptions = [
+    { value: 'low', label: 'Low Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'high', label: 'High Priority' },
+  ];
 
   useEffect(() => {
     // Initialize filters if they don't exist
@@ -307,7 +448,30 @@ const TaskList = () => {
 
   useEffect(() => {
     loadTasks();
-  }, [dispatch, filters, pagination?.page, pagination?.limit]);
+}, [dispatch, filters, pagination?.page, pagination?.limit]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showStatusDropdown && !event.target.closest('[data-dropdown="status"]')) {
+        setShowStatusDropdown(false);
+      }
+      if (showPriorityDropdown && !event.target.closest('[data-dropdown="priority"]')) {
+        setShowPriorityDropdown(false);
+      }
+      if (showAssigneeDropdown && !event.target.closest('[data-dropdown="assignee"]')) {
+        setShowAssigneeDropdown(false);
+      }
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showStatusDropdown, showPriorityDropdown, showAssigneeDropdown, showExportDropdown]);
 
   const loadTasks = async () => {
     try {
@@ -315,7 +479,8 @@ const TaskList = () => {
       const queryParams = {
         ...filters,
         page: pagination?.page || 1,
-        limit: pagination?.limit || 10
+        limit: pagination?.limit || 10,
+        sortBy: '-createdAt' // Ensure latest tasks appear first
       };
       
       // First fetch tasks
@@ -350,19 +515,28 @@ const TaskList = () => {
     return () => clearTimeout(timeoutId);
   };
 
-  const handleFilterChange = (newFilters) => {
-    console.log('New filters received:', newFilters);
+  const handleFilterChange = (category, value) => {
+    const currentFilters = Array.isArray(filters[category]) ? [...filters[category]] : [];
     
-    // Create a copy of the current filters
-    const updatedFilters = { ...filters };
+    // Check if value already exists in the array
+    const valueIndex = currentFilters.indexOf(value);
     
-    // Process each filter key in newFilters
-    Object.keys(newFilters).forEach(key => {
-      // Only update the specific filter that changed
-      updatedFilters[key] = newFilters[key];
-    });
+    // Toggle the value
+    if (valueIndex >= 0) {
+      // Remove if exists
+      currentFilters.splice(valueIndex, 1);
+    } else {
+      // Add if doesn't exist
+      currentFilters.push(value);
+    }
     
-    console.log('Updated filters:', updatedFilters);
+    // Create a new filters object with ALL previous filters plus the updated category
+    const updatedFilters = {
+      ...filters,
+      [category]: currentFilters
+    };
+    
+    console.log(`Filter ${category} updated:`, currentFilters);
     
     // Dispatch the updated filters
     dispatch(setFilters(updatedFilters));
@@ -370,6 +544,40 @@ const TaskList = () => {
     // Reset pagination when filters change
     dispatch(setPagination({ page: 1 }));
   };
+
+  const removeFilter = (category, value) => {
+    const currentFilters = Array.isArray(filters[category]) ? [...filters[category]] : [];
+    const updatedFilters = {
+      ...filters,
+      [category]: currentFilters.filter(item => item !== value)
+    };
+    dispatch(setFilters(updatedFilters));
+  };
+
+  const clearAllFilters = () => {
+    const clearedFilters = Object.keys(filters).reduce((acc, key) => ({
+      ...acc,
+      [key]: []
+    }), {});
+    dispatch(setFilters(clearedFilters));
+  };
+
+  const getFilterLabel = (category, value) => {
+    if (category === 'status') {
+      return statusOptions.find(s => s.value === value)?.label || value;
+    }
+    if (category === 'priority') {
+      return priorityOptions.find(p => p.value === value)?.label || value;
+    }
+    if (category === 'assignedTo') {
+      return users.find(u => u._id === value || u.id === value)?.name || value;
+    }
+    return value;
+  };
+
+  const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) => 
+    key !== 'search' && Array.isArray(value) && value.length > 0
+  );
 
   const handlePageChange = (newPage) => {
     dispatch(setPagination({ page: newPage }));
@@ -581,31 +789,91 @@ const TaskList = () => {
       </Header>
 
       <ActionBar>
-        <SearchBox>
-          <Search className="search-icon" size={16} />
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Search tasks..."
-          />
-        </SearchBox>
+        <FilterRow>
+          <SearchBox>
+            <Search className="search-icon" size={16} />
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search tasks..."
+            />
+          </SearchBox>
+
+          <FilterDropdown data-dropdown="status">
+            <DropdownButton onClick={() => setShowStatusDropdown(!showStatusDropdown)}>
+              Status {filters?.status?.length > 0 && `(${filters.status.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showStatusDropdown}>
+              {statusOptions.map(option => (
+                <DropdownItem 
+                  key={option.value}
+                  $selected={filters?.status?.includes(option.value) || false}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters?.status?.includes(option.value) || false}
+                    onChange={() => handleFilterChange('status', option.value)}
+                  />
+                  <span>{option.label}</span>
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </FilterDropdown>
+
+          <FilterDropdown data-dropdown="priority">
+            <DropdownButton onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}>
+              Priority {filters?.priority?.length > 0 && `(${filters.priority.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showPriorityDropdown}>
+              {priorityOptions.map(option => (
+                <DropdownItem 
+                  key={option.value}
+                  $selected={filters?.priority?.includes(option.value) || false}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters?.priority?.includes(option.value) || false}
+                    onChange={() => handleFilterChange('priority', option.value)}
+                  />
+                  <span>{option.label}</span>
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </FilterDropdown>
+
+          <FilterDropdown data-dropdown="assignee">
+            <DropdownButton onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}>
+              Assignee {filters?.assignedTo?.length > 0 && `(${filters.assignedTo.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showAssigneeDropdown}>
+              {users?.map(user => (
+                <DropdownItem 
+                  key={user._id || user.id}
+                  $selected={filters?.assignedTo?.includes(user._id || user.id) || false}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters?.assignedTo?.includes(user._id || user.id) || false}
+                    onChange={() => handleFilterChange('assignedTo', user._id || user.id)}
+                  />
+                  <User size={14} />
+                  <span>{user.name}</span>
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </FilterDropdown>
+        </FilterRow>
 
         <ButtonGroup>
           <ActionButton onClick={handleRefresh} title="Refresh tasks">
             <RefreshCw size={16} />
           </ActionButton>
 
-          <ActionButton 
-            onClick={() => setIsFilterVisible(!isFilterVisible)}
-            title="Filter tasks"
-            $active={isFilterVisible}
-          >
-            <Filter size={16} />
-            Filters
-          </ActionButton>
-
-          <ExportDropdown>
+          <ExportDropdown className="export-dropdown">
             <ActionButton 
               onClick={() => setShowExportDropdown(!showExportDropdown)}
               title="Export tasks"
@@ -614,14 +882,14 @@ const TaskList = () => {
               Export
             </ActionButton>
             <DropdownMenu show={showExportDropdown}>
-              <DropdownItem onClick={handleExportPDF}>
+              <ExportDropdownItem onClick={handleExportPDF}>
                 <Download size={16} />
                 Export as PDF
-              </DropdownItem>
-              <DropdownItem onClick={handleExportCSV}>
+              </ExportDropdownItem>
+              <ExportDropdownItem onClick={handleExportCSV}>
                 <Download size={16} />
                 Export as CSV
-              </DropdownItem>
+              </ExportDropdownItem>
             </DropdownMenu>
           </ExportDropdown>
           
@@ -634,10 +902,29 @@ const TaskList = () => {
         </ButtonGroup>
       </ActionBar>
 
-      {isFilterVisible && (
-        <FilterContainer>
-          <TaskFilter filters={filters || {}} setFilters={handleFilterChange} />
-        </FilterContainer>
+      {hasActiveFilters && (
+        <ActiveFilters>
+          {Object.entries(filters || {})
+            .filter(([key]) => key !== 'search' && key !== 'inspectionLevel' && key !== 'asset')
+            .map(([category, values]) =>
+              Array.isArray(values) ? values.map(value => (
+                <FilterTag key={`${category}-${value}`}>
+                  {category === 'assignedTo' && <User size={12} />}
+                  {category === 'priority' && <AlertCircle size={12} />}
+                  {getFilterLabel(category, value)}
+                  <button onClick={() => removeFilter(category, value)}>
+                    <X size={12} />
+                  </button>
+                </FilterTag>
+              )) : null
+          )}
+          <FilterTag>
+            Clear All
+            <button onClick={clearAllFilters}>
+              <X size={12} />
+            </button>
+          </FilterTag>
+        </ActiveFilters>
       )}
 
       {loading ? (

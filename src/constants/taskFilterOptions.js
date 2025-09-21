@@ -8,5 +8,6 @@ export const filterOptions = {
       { value: 'low', label: 'Low' },
       { value: 'medium', label: 'Medium' },
       { value: 'high', label: 'High' }
-    ]
+    ],
+    assignedTo: [] // This will be populated dynamically from users data
   };

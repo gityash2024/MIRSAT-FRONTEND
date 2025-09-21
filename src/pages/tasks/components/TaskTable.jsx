@@ -618,8 +618,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [sublevelsModal, setSublevelsModal] = useState(null);
   const [sortConfig, setSortConfig] = useState({
-    key: 'title',
-    direction: 'asc'
+    key: 'createdAt',
+    direction: 'desc'
   });
   const [sortedTasks, setSortedTasks] = useState([...initialTasks]);
   const [preInspectionModalOpen, setPreInspectionModalOpen] = useState(false);
@@ -657,6 +657,9 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       } else if (sortConfig.key === 'asset') {
         aValue = a.asset?.displayName || a.asset?.name || '';
         bValue = b.asset?.displayName || b.asset?.name || '';
+      } else if (sortConfig.key === 'createdAt') {
+        aValue = new Date(a.createdAt || 0).getTime();
+        bValue = new Date(b.createdAt || 0).getTime();
       }
 
       if (aValue < bValue) {

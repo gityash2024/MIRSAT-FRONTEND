@@ -1,5 +1,6 @@
 import api from './api';
 import { toast } from 'react-hot-toast';
+import { downloadTaskPDF } from './pdfGenerator';
 
 export const userTaskService = {
   // Get user dashboard statistics
@@ -87,8 +88,26 @@ export const userTaskService = {
     return response.data;
   },
   
-  exportTaskReport: async (taskId, format = 'excel', fileName = null) => {
+  exportTaskReport: async (taskId, format = 'excel', fileName = null, taskData = null) => {
     try {
+      // For PDF, use frontend generation
+      if (format === 'pdf') {
+        let dataToUse = taskData;
+        
+        // If no task data provided, get it from API
+        if (!dataToUse) {
+          const taskDetails = await api.get(`/user-tasks/${taskId}`);
+          dataToUse = taskDetails.data;
+        }
+        
+        // Generate and download PDF using frontend
+        const pdfFileName = fileName || `inspection_report_${taskId}`;
+        downloadTaskPDF(dataToUse, pdfFileName);
+        
+        return { success: true };
+      }
+      
+      // For other formats, use backend
       let url = `/user-tasks/${taskId}/export?format=${format}`;
       if (fileName) {
         url += `&fileName=${encodeURIComponent(fileName)}`;
@@ -99,9 +118,9 @@ export const userTaskService = {
       });
       
       let mimeType, fileExtension;
-      if (format === 'pdf') {
-        mimeType = 'application/pdf';
-        fileExtension = 'pdf';
+      if (format === 'word') {
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        fileExtension = 'docx';
       } else {
         mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         fileExtension = 'xlsx';

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
-import { X, Check, Filter, AlertCircle } from 'lucide-react';
+import { X, Check, Filter, AlertCircle, User } from 'lucide-react';
 import { filterOptions } from '../../../constants/taskFilterOptions';
 
 const FilterContainer = styled.div`
@@ -224,9 +224,11 @@ const FilterDescription = styled.p`
 `;
 
 const TaskFilter = React.memo(({ filters, setFilters }) => {
+  const { users } = useSelector((state) => state.users || { users: [] });
+  
   // Ensure all filter properties are arrays
   React.useEffect(() => {
-    const filterKeys = ['status', 'priority'];
+    const filterKeys = ['status', 'priority', 'assignedTo'];
     const updatedFilters = { ...filters };
     let needsUpdate = false;
 
@@ -317,6 +319,11 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
     return priorityLabels[priority] || priority;
   };
 
+  const getAssigneeLabel = (assigneeId) => {
+    const user = users.find(u => u._id === assigneeId || u.id === assigneeId);
+    return user ? user.name : assigneeId;
+  };
+
   return (
     <div>
       <FilterHeader>
@@ -326,7 +333,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
       </FilterHeader>
       
       <FilterDescription>
-        Select options below to filter tasks by status and priority.
+        Select options below to filter tasks by status, priority, and assignee.
       </FilterDescription>
 
       <FilterContainer>
@@ -387,12 +394,40 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
             ))}
           </CheckboxGroup>
         </FilterGroup>
+
+        <FilterGroup>
+          <h3>Assignee (Inspector)</h3>
+          <CheckboxGroup>
+            {users?.map(user => (
+              <CheckboxLabel 
+                key={user._id || user.id}
+                $checked={filters.assignedTo?.includes(user._id || user.id)}
+                value={user._id || user.id}
+              >
+                <input
+                  type="checkbox"
+                  checked={filters.assignedTo?.includes(user._id || user.id)}
+                  onChange={() => handleFilterChange('assignedTo', user._id || user.id)}
+                />
+                <CustomCheckbox $checked={filters.assignedTo?.includes(user._id || user.id)}>
+                  {filters.assignedTo?.includes(user._id || user.id) && (
+                    <Check size={12} color="white" />
+                  )}
+                </CustomCheckbox>
+                <User size={16} style={{ marginRight: '6px', color: 'var(--color-gray-medium)' }} />
+                <CheckboxText $checked={filters.assignedTo?.includes(user._id || user.id)}>
+                  {user.name}
+                </CheckboxText>
+              </CheckboxLabel>
+            ))}
+          </CheckboxGroup>
+        </FilterGroup>
       </FilterContainer>
 
       {hasActiveFilters && (
         <ActiveFilters>
           {Object.entries(filters)
-            .filter(([key]) => key !== 'search' && key !== 'assignedTo' && key !== 'inspectionLevel' && key !== 'asset')
+            .filter(([key]) => key !== 'search' && key !== 'inspectionLevel' && key !== 'asset')
             .map(([category, values]) =>
               Array.isArray(values) ? values.map(value => {
                 let label = '';
@@ -400,6 +435,8 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
                   label = getStatusLabel(value);
                 } else if (category === 'priority') {
                   label = getPriorityLabel(value);
+                } else if (category === 'assignedTo') {
+                  label = getAssigneeLabel(value);
                 } else {
                   label = getFilterLabel(category, value);
                 }
@@ -408,6 +445,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
                   <FilterTag key={`${category}-${value}`}>
                     {category === 'status' && <StatusIcon status={value} />}
                     {category === 'priority' && <PriorityIcon priority={value} />}
+                    {category === 'assignedTo' && <User size={12} />}
                     {label}
                     <button onClick={() => removeFilter(category, value)}>
                       <X size={12} />

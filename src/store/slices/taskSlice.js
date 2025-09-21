@@ -386,6 +386,7 @@ const taskSlice = createSlice({
       })
       .addCase(createTask.fulfilled, (state, action) => {
         state.loading = false;
+        // Add new task at the beginning since we sort by createdAt descending
         state.tasks.unshift(action.payload);
       })
       .addCase(createTask.rejected, (state, action) => {

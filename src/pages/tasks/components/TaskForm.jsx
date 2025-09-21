@@ -652,15 +652,19 @@ const PreInspectionQuestions = ({
   });
   const [newOption, setNewOption] = useState('');
   const { questions: libraryQuestions, loading } = useSelector(state => state.questionLibrary);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  // Add useEffect to properly initialize questions from initialQuestions
+  // Add useEffect to properly initialize questions from initialQuestions and localStorage
   useEffect(() => {
-    console.log('Initializing pre-inspection questions:', initialQuestions);
-    if (initialQuestions && initialQuestions.length > 0 && (!questions || questions.length === 0)) {
+    console.log('Initializing pre-inspection questions:', initialQuestions, 'isInitialized:', isInitialized);
+    
+    // Only initialize once and if we have initialQuestions
+    if (!isInitialized && initialQuestions && initialQuestions.length > 0) {
       console.log('Setting pre-inspection questions from initialQuestions');
       onChange([...initialQuestions]);
+      setIsInitialized(true);
     }
-  }, [initialQuestions, onChange, questions]);
+  }, [initialQuestions, onChange, isInitialized]);
   
   useEffect(() => {
     dispatch(fetchQuestionLibrary());
@@ -671,6 +675,9 @@ const PreInspectionQuestions = ({
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('Adding question from library:', question);
+    console.log('Current questions before adding:', questions);
+    
     const newQuestion = {
       text: question.text,
       type: question.answerType,
@@ -678,7 +685,10 @@ const PreInspectionQuestions = ({
       required: question.required
     };
     
-    onChange([...questions, newQuestion]);
+    const updatedQuestions = [...questions, newQuestion];
+    console.log('Updated questions after adding:', updatedQuestions);
+    
+    onChange(updatedQuestions);
     setShowLibrary(false);
   };
   
@@ -697,9 +707,18 @@ const PreInspectionQuestions = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (!newQuestion.text.trim()) return;
+    console.log('Adding manual question:', newQuestion);
+    console.log('Current questions before adding:', questions);
     
-    onChange([...questions, { ...newQuestion }]);
+    if (!newQuestion.text.trim()) {
+      console.log('Question text is empty, not adding');
+      return;
+    }
+    
+    const updatedQuestions = [...questions, { ...newQuestion }];
+    console.log('Updated questions after adding:', updatedQuestions);
+    
+    onChange(updatedQuestions);
     setNewQuestion({
       text: '',
       type: 'text',
@@ -824,7 +843,7 @@ const PreInspectionQuestions = ({
         <QuestionTitle>
           <Database size={18} />
           {isEditMode ? 'Add More Pre-Inspection Questions' : 'Pre-Inspection Questions'} ({questions.length})
-          {isEditMode && (
+          {/* {isEditMode && (
             <div style={{ 
               fontSize: '12px', 
               fontWeight: 'normal', 
@@ -834,9 +853,9 @@ const PreInspectionQuestions = ({
             }}>
               Note: Previously filled questions are preserved. Any new questions added here will be included in the update.
             </div>
-          )}
+          )} */}
         </QuestionTitle>
-        {questions.length > 0 && (
+        {/* {questions.length > 0 && (
           <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
             {questions.map((q, i) => (
               <div key={i} style={{ marginBottom: '4px' }}>
@@ -844,11 +863,13 @@ const PreInspectionQuestions = ({
               </div>
             ))}
           </div>
-        )}
+        )} */}
         <div style={{ display: 'flex', gap: '8px' }}>
           <LibrarySelector>
             <LibraryButton type="button" onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
+              console.log('Header library button clicked');
               setShowLibrary(!showLibrary);
               setShowAddManual(false);
             }}>
@@ -887,6 +908,8 @@ const PreInspectionQuestions = ({
           
           <LibraryButton type="button" onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('Header manual button clicked');
             setShowAddManual(!showAddManual);
             setShowLibrary(false);
           }}>
@@ -1192,6 +1215,8 @@ const PreInspectionQuestions = ({
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
           <AddQuestionButton type="button" onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('Library button clicked');
             setShowLibrary(true);
             setShowAddManual(false);
           }}>
@@ -1200,6 +1225,8 @@ const PreInspectionQuestions = ({
           
           <AddQuestionButton type="button" onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('Manual button clicked');
             setShowAddManual(true);
             setShowLibrary(false);
           }}>
@@ -1306,8 +1333,8 @@ const TaskForm = ({
       
       let formattedPreInspectionQuestions = [];
       
-      // Only prepare pre-inspection questions if they're changed in edit mode or it's a new task
-      if (!taskId || isQuestionsChanged) {
+      // For edit mode, use form data directly (localStorage is handled in TaskEdit)
+      if (taskId && isQuestionsChanged) {
         formattedPreInspectionQuestions = Array.isArray(formData.preInspectionQuestions)
           ? formData.preInspectionQuestions.map(q => {
               // Create a clean question object without any undefined/null values
@@ -1337,7 +1364,39 @@ const TaskForm = ({
             })
           : [];
         
-        console.log('Formatted pre-inspection questions:', JSON.stringify(formattedPreInspectionQuestions));
+        console.log('Formatted pre-inspection questions for edit:', JSON.stringify(formattedPreInspectionQuestions));
+      } else if (!taskId) {
+        // For new tasks, use form data directly
+        formattedPreInspectionQuestions = Array.isArray(formData.preInspectionQuestions)
+          ? formData.preInspectionQuestions.map(q => {
+              // Create a clean question object without any undefined/null values
+              const cleanQuestion = {
+                text: q.text,
+                type: q.type,
+                options: q.options || [],
+                required: q.required !== undefined ? q.required : true
+              };
+              
+              // Preserve _id if it exists
+              if (q._id) {
+                cleanQuestion._id = q._id;
+              }
+              
+              // Include scoring if it exists
+              if (q.scoring) {
+                cleanQuestion.scoring = q.scoring;
+              }
+              
+              // Include scores if they exist
+              if (q.scores) {
+                cleanQuestion.scores = q.scores;
+              }
+              
+              return cleanQuestion;
+            })
+          : [];
+        
+        console.log('Formatted pre-inspection questions for new task:', JSON.stringify(formattedPreInspectionQuestions));
       }
       
       // Prepare task data
@@ -1355,9 +1414,8 @@ const TaskForm = ({
         attachments: formData.attachments || []
       };
       
-      // Only include preInspectionQuestions in the payload if they've been changed in edit mode 
-      // AND the array is not empty, or if it's a new task with questions
-      if ((!taskId || isQuestionsChanged) && formattedPreInspectionQuestions.length > 0) {
+      // Include preInspectionQuestions in the payload if we have any questions
+      if (formattedPreInspectionQuestions.length > 0) {
         taskData.preInspectionQuestions = formattedPreInspectionQuestions;
       }
       
@@ -1379,6 +1437,10 @@ const TaskForm = ({
         })).unwrap();
         
         if (updateResult) {
+          // Clear localStorage data after successful update
+          localStorage.removeItem(`task_${taskId}_preinspection`);
+          console.log('Cleared localStorage data for task:', taskId);
+          
           toast.success('Task updated successfully');
           if (onCancel) onCancel(updateResult); // Pass the updated task back
         }
@@ -1582,6 +1644,13 @@ const TaskForm = ({
           // Create a deep copy to avoid reference issues
           const questionsCopy = JSON.parse(JSON.stringify(questions));
           
+          // Store pre-inspection questions in localStorage for this task
+          const taskId = taskData.id || taskData._id;
+          if (taskId) {
+            localStorage.setItem(`task_${taskId}_preinspection`, JSON.stringify(questionsCopy));
+            console.log('Stored pre-inspection questions in localStorage for task:', taskId);
+          }
+          
           // Update form data with the pre-inspection questions
           setFormData(prev => ({
             ...prev,
@@ -1766,33 +1835,73 @@ const TaskForm = ({
           <FormGroup>
             <Label>Attachments</Label>
             <AttachmentList>
-              {formData.attachments.map((attachment, index) => (
-                <AttachmentItem key={index}>
-                  <File size={16} />
-                  <span>{attachment.filename || 'Attachment'}</span>
-                  <AttachmentActions>
-                    <IconButton 
-                      type="button" 
-                      title="Remove"
-                      onClick={() => handleRemoveAttachment(index)}
-                    >
-                      <Trash2 size={14} />
-                    </IconButton>
-                    {attachment.url && (
+              {formData.attachments.map((attachment, index) => {
+                console.log('Attachment data:', attachment); // Debug log
+                
+                const isImage = attachment.contentType?.startsWith('image/') || 
+                               attachment.type?.startsWith('image/') || 
+                               attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+                const isDocument = attachment.contentType?.includes('pdf') || 
+                                  attachment.contentType?.includes('document') ||
+                                  attachment.type?.includes('pdf') || 
+                                  attachment.type?.includes('document') ||
+                                  attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
+                
+                console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
+                
+                return (
+                  <AttachmentItem key={index}>
+                    {isImage ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img 
+                          src={attachment.url} 
+                          alt={attachment.filename || 'Preview'} 
+                          style={{ 
+                            width: '32px', 
+                            height: '32px', 
+                            objectFit: 'cover', 
+                            borderRadius: '4px',
+                            border: '1px solid #e2e8f0'
+                          }}
+                          onError={(e) => {
+                            console.log('Image failed to load:', attachment.url);
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
+                        />
+                        <File size={16} style={{ display: 'none' }} />
+                        <span>{attachment.filename || 'Image'}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <File size={16} />
+                        <span>{attachment.filename || 'Attachment'}</span>
+                      </>
+                    )}
+                    <AttachmentActions>
                       <IconButton 
                         type="button" 
-                        as="a" 
-                        href={attachment.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        title="Open"
+                        title="Remove"
+                        onClick={() => handleRemoveAttachment(index)}
                       >
-                        <ExternalLink size={14} />
+                        <Trash2 size={14} />
                       </IconButton>
-                    )}
-                  </AttachmentActions>
-                </AttachmentItem>
-              ))}
+                      {attachment.url && (
+                        <IconButton 
+                          type="button" 
+                          as="a" 
+                          href={attachment.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          title={isImage ? "View Image" : isDocument ? "Open Document" : "Open File"}
+                        >
+                          <ExternalLink size={14} />
+                        </IconButton>
+                      )}
+                    </AttachmentActions>
+                  </AttachmentItem>
+                );
+              })}
               
               <AttachmentUpload>
                 <input 
@@ -1815,96 +1924,6 @@ const TaskForm = ({
         </>
       )}
       
-      {initialData && 
-        ((initialData.preInspectionQuestions && 
-          Array.isArray(initialData.preInspectionQuestions) && 
-          initialData.preInspectionQuestions.length > 0) || 
-        (initialData.data && 
-          initialData.data.preInspectionQuestions && 
-          Array.isArray(initialData.data.preInspectionQuestions) && 
-          initialData.data.preInspectionQuestions.length > 0)) && (
-        <div style={{ 
-          marginBottom: '24px', 
-          padding: '16px',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          background: '#f8fafc'
-        }}>
-          <div style={{ 
-            fontWeight: '500', 
-            marginBottom: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            {(() => {
-              const questions = initialData.preInspectionQuestions || 
-                             (initialData.data && initialData.data.preInspectionQuestions) || 
-                             [];
-              return (
-                <>
-                  <span>Existing Pre-Inspection Questions ({questions.length})</span>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>These questions will be preserved when updating</span>
-                </>
-              );
-            })()}
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(() => {
-              const questions = initialData.preInspectionQuestions || 
-                             (initialData.data && initialData.data.preInspectionQuestions) || 
-                             [];
-              return questions.map((question, index) => (
-                <div 
-                  key={question._id || index} 
-                  style={{
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                    border: '1px solid #edf2f7'
-                  }}
-                >
-                  <div style={{ fontWeight: '500', marginBottom: '4px' }}>
-                    {index + 1}. {question.text}
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', gap: '12px' }}>
-                    <span>Type: {question.type || 'text'}</span>
-                    {question.options && question.options.length > 0 && (
-                      <span>Options: {question.options.length}</span>
-                    )}
-                    <span>Required: {question.required ? 'Yes' : 'No'}</span>
-                  </div>
-                  {question.options && question.options.length > 0 && (
-                    <div style={{ 
-                      marginTop: '8px',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '6px',
-                      fontSize: '12px'
-                    }}>
-                      {question.options.map((option, i) => (
-                        <span 
-                          key={i}
-                          style={{
-                            padding: '3px 8px',
-                            background: '#f1f5f9',
-                            borderRadius: '4px',
-                            color: '#475569'
-                          }}
-                        >
-                          {option}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ));
-            })()}
-          </div>
-        </div>
-      )}
       
       <PreInspectionQuestions 
         questions={formData.preInspectionQuestions} 

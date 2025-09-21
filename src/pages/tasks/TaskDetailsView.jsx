@@ -17,7 +17,9 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download,
+  ChevronDown
 } from 'lucide-react';
 import { fetchUserTaskDetails, exportTaskReport } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
@@ -337,6 +339,54 @@ const ExportButton = styled.button`
   }
 `;
 
+const ExportDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 160px;
+  overflow: hidden;
+`;
+
+const ExportOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: white;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+`;
+
+const ExportButtonContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
 
 const HeaderActions = styled.div`
   display: flex;
@@ -353,6 +403,8 @@ const TaskDetailsView = () => {
   const { currentTask, loading, error } = useSelector((state) => state.userTasks);
   const [isExporting, setIsExporting] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [selectedExportFormat, setSelectedExportFormat] = useState('excel');
 
   useEffect(() => {
     if (taskId && taskId !== 'undefined') {
@@ -363,35 +415,62 @@ const TaskDetailsView = () => {
     }
   }, [dispatch, taskId]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('[data-export-dropdown]')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
+
 
   const handleBack = () => {
     navigate('/tasks');
   };
 
-  const handleExportExcel = () => {
+  const handleExportClick = () => {
     if (!currentTask) return;
+    setShowExportDropdown(!showExportDropdown);
+  };
+
+  const handleExportFormat = (format) => {
+    setSelectedExportFormat(format);
+    setShowExportDropdown(false);
     setShowDocumentNamingModal(true);
   };
 
   const handleConfirmExport = async (fileName) => {
     if (!currentTask) return;
     
+    const formatLabels = {
+      excel: 'Excel',
+      word: 'Word',
+      pdf: 'PDF'
+    };
+    
     try {
       setIsExporting(true);
       setShowDocumentNamingModal(false);
-      toast.loading('Generating Excel report...');
+      
+      toast.loading(`Generating ${formatLabels[selectedExportFormat]} report...`);
       
       await dispatch(exportTaskReport({ 
         taskId: currentTask._id, 
-        format: 'excel',
+        format: selectedExportFormat,
         fileName: fileName
       })).unwrap();
       
       toast.dismiss();
-      toast.success('Excel report exported successfully');
+      toast.success(`${formatLabels[selectedExportFormat]} report exported successfully`);
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to export Excel report: ${error.message || 'Unknown error'}`);
+      toast.error(`Failed to export ${formatLabels[selectedExportFormat]} report: ${error.message || 'Unknown error'}`);
     } finally {
       setIsExporting(false);
     }
@@ -490,16 +569,46 @@ const TaskDetailsView = () => {
   const inspectionLevel = currentTask.inspectionLevel;
   
   // Calculate total questions from inspection level (excluding pre-inspection questions)
+  // Prioritize pages structure as it contains the correct data
+  const totalQuestionsFromPages = inspectionLevel?.pages?.reduce((total, page) => {
+    return total + page.sections?.reduce((pageTotal, section) => {
+      return pageTotal + (section.questions?.length || 0);
+    }, 0) || 0;
+  }, 0) || 0;
+  
+  // Fallback to subLevels structure if pages is not available
   const totalQuestions = inspectionLevel?.subLevels?.reduce((total, page) => {
     return total + page.subLevels?.reduce((pageTotal, section) => {
       return pageTotal + (section.questions?.length || 0);
     }, 0) || 0;
   }, 0) || 0;
+  
+  // Use pages structure if available, otherwise fallback to subLevels
+  const finalTotalQuestions = totalQuestionsFromPages > 0 ? totalQuestionsFromPages : totalQuestions;
 
   // Calculate completed questions based on actual responses (excluding pre-inspection questions)
   // Filter out pre-inspection question responses
   const inspectionQuestionIds = new Set();
-  if (inspectionLevel?.subLevels) {
+  
+  // Prioritize pages structure as it contains the correct data
+  if (inspectionLevel?.pages) {
+    inspectionLevel.pages.forEach(page => {
+      if (page.sections) {
+        page.sections.forEach(section => {
+          if (section.questions) {
+            section.questions.forEach(question => {
+              if (question._id) {
+                inspectionQuestionIds.add(question._id.toString());
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+  
+  // Fallback to subLevels structure if pages is not available
+  if (inspectionLevel?.subLevels && inspectionQuestionIds.size === 0) {
     inspectionLevel.subLevels.forEach(page => {
       if (page.subLevels) {
         page.subLevels.forEach(section => {
@@ -521,7 +630,7 @@ const TaskDetailsView = () => {
 
   // Use the actual progress from the task data or calculate it
   const progressPercentage = currentTask.overallProgress || 
-    (totalQuestions > 0 ? Math.round((completedQuestions / totalQuestions) * 100) : 0);
+    (finalTotalQuestions > 0 ? Math.round((completedQuestions / finalTotalQuestions) * 100) : 0);
 
   return (
     <PageContainer>
@@ -539,13 +648,32 @@ const TaskDetailsView = () => {
             {currentTask.status === 'archived' && <FileText size={12} />}
             {currentTask.status === 'archived' ? 'Completed' : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
           </StatusBadge>
-          <ExportButton 
-            onClick={handleExportExcel}
-            disabled={isExporting || !currentTask}
-          >
-            <FileSpreadsheet size={16} />
-            {isExporting ? 'Exporting...' : 'Export Excel Report'}
-          </ExportButton>
+          <ExportButtonContainer data-export-dropdown>
+            <ExportButton 
+              onClick={handleExportClick}
+              disabled={isExporting || !currentTask}
+            >
+              <Download size={16} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+              <ChevronDown size={14} />
+            </ExportButton>
+            {showExportDropdown && (
+              <ExportDropdown>
+                <ExportOption onClick={() => handleExportFormat('excel')}>
+                  <FileSpreadsheet size={16} />
+                  Export as Excel
+                </ExportOption>
+                {/* <ExportOption onClick={() => handleExportFormat('word')}>
+                  <FileText size={16} />
+                  Export as Word
+                </ExportOption> */}
+                <ExportOption onClick={() => handleExportFormat('pdf')}>
+                  <FileText size={16} />
+                  Export as PDF
+                </ExportOption>
+              </ExportDropdown>
+            )}
+          </ExportButtonContainer>
         </HeaderActions>
       </Header>
 
@@ -653,7 +781,7 @@ const TaskDetailsView = () => {
                 display: 'flex',
                 justifyContent: 'space-between'
               }}>
-                <span>Questions Completed: {completedQuestions} / {totalQuestions}</span>
+                <span>Questions Completed: {completedQuestions} / {finalTotalQuestions}</span>
                 <span>Completion Rate: {progressPercentage}%</span>
               </div>
             </ProgressSection>
@@ -661,7 +789,7 @@ const TaskDetailsView = () => {
         </TaskCard>
 
         {/* Questions Section */}
-        {inspectionLevel?.subLevels && (
+        {(inspectionLevel?.subLevels || inspectionLevel?.pages) && (
           <TaskCard>
             <CardHeader>
               <CardTitle>
@@ -671,7 +799,8 @@ const TaskDetailsView = () => {
             </CardHeader>
             <CardContent>
               <QuestionsSection>
-                {inspectionLevel.subLevels.map((page, pageIndex) => (
+                {/* Render questions from pages structure */}
+                {inspectionLevel.pages?.map((page, pageIndex) => (
                   <div key={page._id || pageIndex} style={{ marginBottom: '32px' }}>
                     <h3 style={{ 
                       fontSize: '16px', 
@@ -685,7 +814,7 @@ const TaskDetailsView = () => {
                       Page {pageIndex + 1}: {page.name}
                     </h3>
                     
-                    {page.subLevels?.map((section, sectionIndex) => (
+                    {page.sections?.map((section, sectionIndex) => (
                       <div key={section._id || sectionIndex} style={{ marginBottom: '24px' }}>
                         <h4 style={{ 
                           fontSize: '14px', 
@@ -827,23 +956,6 @@ const TaskDetailsView = () => {
                                       <span>{response}</span>
                                     )}
                                   </ResponseValue>
-                                  
-                                  {/* Comments are handled separately in the backend */}
-                                  
-                                  {/* {question.scoring?.enabled && (
-                                    <ScoreSection>
-                                      <ScoreItem>
-                                        <span>Score:</span>
-                                        <ScoreValue>{score.achieved} / {score.max}</ScoreValue>
-                                      </ScoreItem>
-                                      <ScoreItem>
-                                        <span>Percentage:</span>
-                                        <ScoreValue>
-                                          {score.max > 0 ? Math.round((score.achieved / score.max) * 100) : 0}%
-                                        </ScoreValue>
-                                      </ScoreItem>
-                                    </ScoreSection>
-                                  )} */}
                                 </ResponseSection>
                               )}
                             </QuestionCard>
@@ -864,7 +976,7 @@ const TaskDetailsView = () => {
         isOpen={showDocumentNamingModal}
         onClose={() => setShowDocumentNamingModal(false)}
         onExport={handleConfirmExport}
-        exportFormat="excel"
+        exportFormat={selectedExportFormat}
         documentType="Task Report"
         defaultCriteria={['documentType', 'currentDate']}
       />

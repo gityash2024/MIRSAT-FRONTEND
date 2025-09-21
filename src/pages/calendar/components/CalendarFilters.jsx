@@ -172,7 +172,7 @@ const CalendarFilters = ({ onFilterChange }) => {
       return priorities.find(p => p.value === value)?.label || value;
     }
     if (category === 'assignedTo') {
-      return users.find(u => u._id === value)?.name || value;
+      return users.find(u => u._id === value || u.id === value)?.name || value;
     }
     if (category === 'inspectionLevel') {
       return levels?.results?.find(l => l._id === value)?.name || value;
@@ -232,21 +232,21 @@ const CalendarFilters = ({ onFilterChange }) => {
           </CheckboxGroup>
         </FilterGroup>
 
-        {/* <FilterGroup>
-          <h3>Assignee</h3>
+        <FilterGroup>
+          <h3>Assignee (Inspector)</h3>
           <CheckboxGroup>
             {users?.map(user => (
-              <Checkbox key={user._id}>
+              <Checkbox key={user._id || user.id}>
                 <input
                   type="checkbox"
-                  checked={(filters.assignedTo || []).includes(user._id)}
-                  onChange={() => handleFilterChange('assignedTo', user._id)}
+                  checked={(filters.assignedTo || []).includes(user._id || user.id)}
+                  onChange={() => handleFilterChange('assignedTo', user._id || user.id)}
                 />
                 {user.name}
               </Checkbox>
             ))}
           </CheckboxGroup>
-        </FilterGroup> */}
+        </FilterGroup>
 
         <FilterGroup>
           <h3>Template</h3>
