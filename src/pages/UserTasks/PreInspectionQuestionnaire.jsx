@@ -402,12 +402,20 @@ const PreInspectionStepForm = ({ task }) => {
           
           totalQuestionPoints += (2 * weight); // Max score is 2 per question
           
-          if (response === 'full_compliance' || response === 'yes') {
-            achievedQuestionPoints += (2 * weight);
-          } else if (response === 'partial_compliance') {
-            achievedQuestionPoints += (1 * weight);
-          } else if (response === 'na' || response === 'not_applicable') {
-            totalQuestionPoints -= (2 * weight); // Don't count NA questions
+          // Use template-defined scores if available
+          if (question.scores && typeof question.scores === 'object') {
+            // Get the score for this specific response from the template
+            const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+            achievedQuestionPoints += responseScore * weight;
+          } else {
+            // Fallback to old logic if no template scores defined
+            if (response === 'full_compliance' || response === 'yes') {
+              achievedQuestionPoints += (2 * weight);
+            } else if (response === 'partial_compliance') {
+              achievedQuestionPoints += (1 * weight);
+            } else if (response === 'na' || response === 'not_applicable') {
+              totalQuestionPoints -= (2 * weight); // Don't count NA questions
+            }
           }
         }
       });

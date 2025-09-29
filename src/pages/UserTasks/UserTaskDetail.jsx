@@ -2039,33 +2039,41 @@ const calculateSectionScore = (section, responses) => {
         return;
       }
       
-      const questionType = question.type || question.answerType;
-      
-      if (questionType === 'compliance' || questionType === 'yesno') {
-        if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-          totalAchieved += (maxScore * weight);
-        } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-          totalAchieved += (maxScore / 2 * weight);
-        }
-      } else if (questionType === 'checkbox' || questionType === 'multiple') {
-        if (Array.isArray(response) && response.length > 0) {
-          totalAchieved += (maxScore * weight);
-        }
-      } else if (questionType === 'file') {
-        if (response && response.trim() !== '') {
-          totalAchieved += (maxScore * weight);
-        }
-      } else if (questionType === 'text' || questionType === 'signature') {
-        if (response && response?.trim() !== '') {
-          totalAchieved += (maxScore * weight);
-        }
-      } else if (questionType === 'number' || questionType === 'date') {
-        if (response) {
-          totalAchieved += (maxScore * weight);
-        }
+      // Use template-defined scores if available
+      if (question.scores && typeof question.scores === 'object') {
+        // Get the score for this specific response from the template
+        const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+        totalAchieved += responseScore * weight;
       } else {
-        if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-          totalAchieved += (maxScore * weight);
+        // Fallback to old logic if no template scores defined
+        const questionType = question.type || question.answerType;
+        
+        if (questionType === 'compliance' || questionType === 'yesno') {
+          if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+            totalAchieved += (maxScore * weight);
+          } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+            totalAchieved += (maxScore / 2 * weight);
+          }
+        } else if (questionType === 'checkbox' || questionType === 'multiple') {
+          if (Array.isArray(response) && response.length > 0) {
+            totalAchieved += (maxScore * weight);
+          }
+        } else if (questionType === 'file') {
+          if (response && response.trim() !== '') {
+            totalAchieved += (maxScore * weight);
+          }
+        } else if (questionType === 'text' || questionType === 'signature') {
+          if (response && response?.trim() !== '') {
+            totalAchieved += (maxScore * weight);
+          }
+        } else if (questionType === 'number' || questionType === 'date') {
+          if (response) {
+            totalAchieved += (maxScore * weight);
+          }
+        } else {
+          if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+            totalAchieved += (maxScore * weight);
+          }
         }
       }
     }
@@ -4083,13 +4091,13 @@ const UserTaskDetail = () => {
                   <QuestionHeader>
                     <QuestionText>
                       {question.text}
-                      {question.requirementType !== 'recommended' && (
+                      {question.required !== false && (
                         <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                       )}
                     </QuestionText>
                     <QuestionBadges>
-                      <QuestionBadge type={question.requirementType === 'recommended' ? 'recommended' : 'mandatory'}>
-                        {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
+                      <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
+                        {question.required === false ? 'Optional' : 'Required'}
                       </QuestionBadge>
                     </QuestionBadges>
                   </QuestionHeader>
@@ -4391,25 +4399,33 @@ const UserTaskDetail = () => {
                       let achievedScore = 0;
                       
                       if (response !== undefined && response !== null) {
-                        const questionType = question.type || question.answerType;
-                        
-                        if (questionType === 'compliance' || questionType === 'yesno') {
-                          if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-                            achievedScore = maxScore;
-                          } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-                            achievedScore = maxScore / 2;
-                          }
-                        } else if (questionType === 'checkbox' || questionType === 'multiple') {
-                          if (Array.isArray(response) && response.length > 0) {
-                            achievedScore = maxScore;
-                          }
-                        } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
-                          if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-                            achievedScore = maxScore;
-                          }
+                        // Use template-defined scores if available
+                        if (question.scores && typeof question.scores === 'object') {
+                          // Get the score for this specific response from the template
+                          const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+                          achievedScore = responseScore;
                         } else {
-                          if (response && (typeof response === 'string'? response.trim() !== '' : true)) {
-                            achievedScore = maxScore;
+                          // Fallback to old logic if no template scores defined
+                          const questionType = question.type || question.answerType;
+                          
+                          if (questionType === 'compliance' || questionType === 'yesno') {
+                            if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
+                              achievedScore = maxScore;
+                            } else if (response === 'partial_compliance' || response === 'Partial compliance') {
+                              achievedScore = maxScore / 2;
+                            }
+                          } else if (questionType === 'checkbox' || questionType === 'multiple') {
+                            if (Array.isArray(response) && response.length > 0) {
+                              achievedScore = maxScore;
+                            }
+                          } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
+                            if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
+                              achievedScore = maxScore;
+                            }
+                          } else {
+                            if (response && (typeof response === 'string'? response.trim() !== '' : true)) {
+                              achievedScore = maxScore;
+                            }
                           }
                         }
                       }
@@ -4420,14 +4436,14 @@ const UserTaskDetail = () => {
                             <QuestionNumber>{qIndex + 1}</QuestionNumber>
                             <QuestionText>
                               {question.text}
-                              {question.requirementType !== 'recommended' && (
+                              {question.required !== false && (
                                 <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                               )}
                             </QuestionText>
                             
                             <QuestionBadges>
-                              <QuestionBadge type={question.requirementType === 'recommended' ? 'recommended' : 'mandatory'}>
-                                {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
+                              <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
+                                {question.required === false ? 'Optional' : 'Required'}
                               </QuestionBadge>
                               <ScoreBadge hasResponse={achievedScore > 0}>
                                 <Star size={14} />
@@ -5327,7 +5343,7 @@ const UserTaskDetail = () => {
                                   fontSize: '14px' 
                                 }}>
                                   {question.text}
-                                  {question.requirementType !== 'recommended' && (
+                                  {question.required !== false && (
                                     <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                                   )}
                                 </div>

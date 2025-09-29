@@ -19,10 +19,13 @@ import {
   EyeOff,
   FileSpreadsheet,
   Download,
-  ChevronDown
+  ChevronDown,
+  Save,
+  X
 } from 'lucide-react';
-import { fetchUserTaskDetails, exportTaskReport } from '../../store/slices/userTasksSlice';
+import { fetchUserTaskDetails, exportTaskReport, updateTaskQuestionnaire } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
 import Skeleton from '../../components/ui/Skeleton';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { toast } from 'react-hot-toast';
@@ -394,21 +397,183 @@ const HeaderActions = styled.div`
   gap: 12px;
 `;
 
+const EditToggleButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: ${props => props.isEditMode ? '#dc2626' : '#3b82f6'};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.isEditMode ? '#b91c1c' : '#2563eb'};
+  }
+`;
+
+const UpdateButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 16px auto;
+  display: block;
+
+  &:hover {
+    background: #059669;
+  }
+
+  &:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+const EditableQuestionCard = styled.div`
+  background: ${props => props.isEditMode ? '#fef3c7' : 'white'};
+  border: 2px solid ${props => props.isEditMode ? '#f59e0b' : '#e2e8f0'};
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+
+  ${props => props.isEditMode && `
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  `}
+`;
+
+const EditModeIndicator = styled.div`
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: #f59e0b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const OptionsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const OptionButton = styled.button`
+  padding: 8px 16px;
+  border: 2px solid ${props => props.selected ? '#3b82f6' : '#e2e8f0'};
+  background: ${props => props.selected ? '#3b82f6' : 'white'};
+  color: ${props => props.selected ? 'white' : '#374151'};
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #3b82f6;
+    background: ${props => props.selected ? '#3b82f6' : '#f8fafc'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const InputContainer = styled.div`
+  margin-top: 12px;
+`;
+
+const InputGroup = styled.div`
+  position: relative;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 80px;
+  resize: vertical;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+  }
+`;
+
 const TaskDetailsView = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const { userRole } = usePermissions();
   
-  const { currentTask, loading, error } = useSelector((state) => state.userTasks);
+  const { currentTask, taskDetailsLoading, error } = useSelector((state) => state.userTasks);
   const [isExporting, setIsExporting] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [selectedExportFormat, setSelectedExportFormat] = useState('excel');
+  
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [localInputValues, setLocalInputValues] = useState({});
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Check if user is admin (has all permissions)
+  const canEdit = userRole === 'admin';
 
   useEffect(() => {
     if (taskId && taskId !== 'undefined') {
       console.log('Fetching task details for ID:', taskId);
+      // Clear any previous task data and error when fetching new task
+      dispatch({ type: 'userTasks/clearCurrentTask' });
       dispatch(fetchUserTaskDetails(taskId));
     } else {
       console.warn('Invalid task ID provided:', taskId);
@@ -476,6 +641,94 @@ const TaskDetailsView = () => {
     }
   };
 
+  const handleEditToggle = () => {
+    setIsEditMode(!isEditMode);
+    if (isEditMode) {
+      // Reset local values when exiting edit mode
+      setLocalInputValues({});
+    }
+  };
+
+  const handleInputChange = (questionId, value) => {
+    setLocalInputValues(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  const handleSaveInspectionResponse = async (questionId, value) => {
+    if (!currentTask || !isEditMode) {
+      return;
+    }
+    
+    try {
+      setIsUpdating(true);
+      
+      const currentResponses = currentTask.questionnaireResponses || {};
+      const updatedResponses = {
+        ...currentResponses,
+        [questionId]: value
+      };
+      
+      await dispatch(updateTaskQuestionnaire({
+        taskId: currentTask._id,
+        questionnaire: {
+          responses: updatedResponses,
+          notes: currentTask.questionnaireNotes || '',
+          completed: false
+        }
+      })).unwrap();
+      
+      toast.success('Response updated successfully');
+      
+      // Refresh task details
+      await dispatch(fetchUserTaskDetails(currentTask._id));
+      
+    } catch (error) {
+      toast.error(`Failed to update response: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateInspection = async () => {
+    if (!currentTask || !isEditMode) {
+      return;
+    }
+    
+    try {
+      setIsUpdating(true);
+      
+      // Update all local changes
+      const currentResponses = currentTask.questionnaireResponses || {};
+      const updatedResponses = {
+        ...currentResponses,
+        ...localInputValues
+      };
+      
+      await dispatch(updateTaskQuestionnaire({
+        taskId: currentTask._id,
+        questionnaire: {
+          responses: updatedResponses,
+          notes: currentTask.questionnaireNotes || '',
+          completed: false
+        }
+      })).unwrap();
+      
+      toast.success('Inspection responses updated successfully');
+      
+      // Refresh task details and exit edit mode
+      await dispatch(fetchUserTaskDetails(currentTask._id));
+      setIsEditMode(false);
+      setLocalInputValues({});
+      
+    } catch (error) {
+      toast.error(`Failed to update inspection: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getQuestionStatus = (question, responses) => {
     if (!responses || !question._id) return 'pending';
     
@@ -501,24 +754,361 @@ const TaskDetailsView = () => {
     const maxScore = question.scoring?.max || 0;
     let achievedScore = 0;
     
+    // Use template-defined scores if available
+    if (question.scores && typeof question.scores === 'object') {
+      // Get the score for this specific response from the template
+      achievedScore = question.scores[response] || question.scores[response.toString()] || 0;
+    } else {
+      // Fallback to old logic if no template scores defined
     if (question.type === 'yesno' && response) {
       achievedScore = question.scores?.[response] || 0;
     } else if (question.type === 'compliance' && response) {
       achievedScore = question.scores?.[response] || 0;
+      }
     }
     
     return { achieved: achievedScore, max: maxScore };
   };
 
-  if (loading) {
+  const renderEditableQuestionInput = (question, task, onSaveResponse) => {
+    const questionId = question._id;
+    const response = task.questionnaireResponses?.[questionId];
+    const localValue = localInputValues[questionId];
+    const displayValue = localValue !== undefined ? localValue : response;
+    
+    let questionType = question.type || question.answerType;
+    
+    if (questionType === 'yesno' && question.answerType === 'compliance') {
+      questionType = 'compliance';
+    } else if (questionType === 'yesno' && (question.options?.includes('Yes') || question.options?.includes('No'))) {
+      questionType = 'yesno';
+    } else if (questionType === 'multiple_choice') {
+      questionType = 'radio';
+    } else if (questionType === 'multiple') {
+      questionType = 'checkbox';
+    }
+    
+    switch (questionType) {
+      case 'compliance':
+        const complianceOptions = question.options?.length > 0 
+          ? question.options 
+          : ['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'];
+        
+        return (
+          <OptionsContainer>
+            {complianceOptions.map((option, optIndex) => (
+              <OptionButton 
+                key={optIndex}
+                selected={displayValue === option}
+                onClick={() => onSaveResponse(questionId, option)}
+              >
+                {option}
+              </OptionButton>
+            ))}
+          </OptionsContainer>
+        );
+        
+      case 'yesno':
+        const yesNoOptions = question.options?.length > 0 
+          ? question.options 
+          : ['Yes', 'No', 'N/A'];
+        
+        return (
+          <OptionsContainer>
+            {yesNoOptions.map((option, optIndex) => (
+              <OptionButton 
+                key={optIndex}
+                selected={displayValue === option}
+                onClick={() => onSaveResponse(questionId, option)}
+              >
+                {option}
+              </OptionButton>
+            ))}
+          </OptionsContainer>
+        );
+        
+      case 'radio':
+        return (
+          <OptionsContainer>
+            {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
+              <OptionButton 
+                key={optIndex}
+                selected={displayValue === option}
+                onClick={() => onSaveResponse(questionId, option)}
+              >
+                {option}
+              </OptionButton>
+            )) : (
+              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+            )}
+          </OptionsContainer>
+        );
+        
+      case 'checkbox':
+        const selectedOptions = Array.isArray(displayValue) ? displayValue : displayValue ? [displayValue] : [];
+        
+        return (
+          <OptionsContainer>
+            {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
+              <OptionButton 
+                key={optIndex}
+                selected={selectedOptions.includes(option)}
+                onClick={() => {
+                  const newSelection = selectedOptions.includes(option)
+                    ? selectedOptions.filter(opt => opt !== option)
+                    : [...selectedOptions, option];
+                  onSaveResponse(questionId, newSelection);
+                }}
+              >
+                {option}
+              </OptionButton>
+            )) : (
+              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+            )}
+          </OptionsContainer>
+        );
+        
+      case 'text':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <StyledInput
+                type="text"
+                placeholder="Enter your response"
+                value={displayValue || ''}
+                onChange={(e) => handleInputChange(questionId, e.target.value)}
+                onBlur={(e) => onSaveResponse(questionId, e.target.value)}
+              />
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      case 'number':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <StyledInput
+                type="number"
+                placeholder="Enter a number"
+                value={displayValue || ''}
+                onChange={(e) => handleInputChange(questionId, e.target.value)}
+                onBlur={(e) => onSaveResponse(questionId, e.target.value)}
+              />
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      case 'date':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <StyledInput
+                type="date"
+                value={displayValue || ''}
+                onChange={(e) => handleInputChange(questionId, e.target.value)}
+                onBlur={(e) => onSaveResponse(questionId, e.target.value)}
+              />
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      case 'textarea':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <StyledTextarea
+                placeholder="Enter your response"
+                value={displayValue || ''}
+                onChange={(e) => handleInputChange(questionId, e.target.value)}
+                onBlur={(e) => onSaveResponse(questionId, e.target.value)}
+              />
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      case 'file':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <div style={{ 
+                border: '2px dashed #e5e7eb',
+                borderRadius: '12px',
+                padding: '16px',
+                background: '#f9fafb',
+                transition: 'all 0.3s ease',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  marginBottom: '12px',
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {displayValue ? 'File uploaded' : 'Click to upload file'}
+                </div>
+                
+                {displayValue && displayValue.startsWith('data:image/') && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <img 
+                      src={displayValue} 
+                      alt="Uploaded file" 
+                      style={{ 
+                        maxWidth: '200px', 
+                        maxHeight: '150px', 
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                <input
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        onSaveResponse(questionId, event.target.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={{ 
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      case 'signature':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <div 
+                style={{ 
+                  border: '2px dashed #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  background: '#f9fafb',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'center',
+                  position: 'relative',
+                  cursor: 'not-allowed',
+                  opacity: 0.7
+                }}
+                title="Signature cannot be edited once provided"
+              >
+                <div style={{ 
+                  marginBottom: '12px',
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {displayValue ? 'Signature provided' : 'No signature provided'}
+                </div>
+                
+                {displayValue && displayValue.startsWith('data:image/') && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <img 
+                      src={displayValue} 
+                      alt="Signature" 
+                      style={{ 
+                        maxWidth: '200px', 
+                        maxHeight: '100px', 
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                <div style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#9ca3af',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  display: 'inline-block',
+                  cursor: 'not-allowed'
+                }}>
+                  {displayValue ? 'Signature Locked' : 'No Signature'}
+                </div>
+                
+                <div style={{
+                  marginTop: '8px',
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  fontStyle: 'italic'
+                }}>
+                  Signatures cannot be edited once provided
+                </div>
+              </div>
+            </InputGroup>
+          </InputContainer>
+        );
+        
+      default:
+        return (
+          <InputContainer>
+            <InputGroup>
+              <StyledInput
+                type={questionType === 'number' ? 'number' : questionType === 'date' ? 'date' : 'text'}
+                placeholder={`Enter your ${questionType || 'text'} response`}
+                value={displayValue || ''}
+                onChange={(e) => handleInputChange(questionId, e.target.value)}
+                onBlur={(e) => onSaveResponse(questionId, e.target.value)}
+              />
+            </InputGroup>
+          </InputContainer>
+        );
+    }
+  };
+
+  if (taskDetailsLoading || (!error && !currentTask)) {
     return (
       <PageContainer>
         <Header>
-          <Skeleton width={200} height={40} />
+          <BackButton onClick={handleBack}>
+            <ArrowLeft size={16} />
+            Back to Tasks
+          </BackButton>
+          <TaskTitle>Loading Task Details...</TaskTitle>
         </Header>
         <Content>
-          <Skeleton width="100%" height={400} />
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            padding: '48px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e2e8f0',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '16px'
+            }} />
+            <h3 style={{ color: '#64748b', marginBottom: '8px' }}>Loading task details...</h3>
+            <p style={{ color: '#9ca3af' }}>Please wait while we fetch the task information</p>
+          </div>
         </Content>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </PageContainer>
     );
   }
@@ -538,6 +1128,23 @@ const TaskDetailsView = () => {
             <AlertCircle size={48} style={{ marginBottom: '16px' }} />
             <h3>Failed to load task details</h3>
             <p>{error}</p>
+            <button 
+              onClick={() => {
+                dispatch({ type: 'userTasks/clearCurrentTask' });
+                dispatch(fetchUserTaskDetails(taskId));
+              }}
+              style={{
+                marginTop: '16px',
+                padding: '8px 16px',
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
           </div>
         </Content>
       </PageContainer>
@@ -564,6 +1171,7 @@ const TaskDetailsView = () => {
       </PageContainer>
     );
   }
+
 
   const responses = currentTask.questionnaireResponses || {};
   const inspectionLevel = currentTask.inspectionLevel;
@@ -648,6 +1256,7 @@ const TaskDetailsView = () => {
             {currentTask.status === 'archived' && <FileText size={12} />}
             {currentTask.status === 'archived' ? 'Completed' : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
           </StatusBadge>
+          
           <ExportButtonContainer data-export-dropdown>
             <ExportButton 
               onClick={handleExportClick}
@@ -685,6 +1294,27 @@ const TaskDetailsView = () => {
               <FileText size={20} />
               Task Overview
             </CardTitle>
+            {canEdit && (
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <EditToggleButton 
+                  onClick={handleEditToggle}
+                  isEditMode={isEditMode}
+                >
+                  {isEditMode ? <X size={16} /> : <Edit size={16} />}
+                  {isEditMode ? 'Exit Edit' : 'Edit Inspection'}
+                </EditToggleButton>
+                {isEditMode && (
+                  <UpdateButton 
+                    onClick={handleUpdateInspection}
+                    disabled={isUpdating}
+                    style={{ margin: 0, display: 'flex' }}
+                  >
+                    <Save size={16} />
+                    {isUpdating ? 'Updating...' : 'Update Inspection'}
+                  </UpdateButton>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <InfoGrid>
@@ -712,7 +1342,7 @@ const TaskDetailsView = () => {
                 </InfoContent>
               </InfoItem>
 
-              <InfoItem>
+              {/* <InfoItem>
                 <InfoIcon>
                   <MapPin size={20} />
                 </InfoIcon>
@@ -720,7 +1350,7 @@ const TaskDetailsView = () => {
                   <InfoLabel>Location</InfoLabel>
                   <InfoValue>{currentTask.location || 'Not specified'}</InfoValue>
                 </InfoContent>
-              </InfoItem>
+              </InfoItem> */}
 
               <InfoItem>
                 <InfoIcon>
@@ -834,7 +1464,12 @@ const TaskDetailsView = () => {
                           const score = calculateQuestionScore(question, response);
                           
                           return (
-                            <QuestionCard key={question._id || questionIndex} completed={status === 'completed'}>
+                            <EditableQuestionCard 
+                              key={question._id || questionIndex} 
+                              completed={status === 'completed'}
+                              isEditMode={isEditMode}
+                            >
+                              {isEditMode && <EditModeIndicator>Edit Mode</EditModeIndicator>}
                               <QuestionHeader>
                                 <QuestionText>
                                   Q{questionIndex + 1}. {question.text}
@@ -854,7 +1489,14 @@ const TaskDetailsView = () => {
                                 )}
                               </QuestionDetails>
                               
-                              {response && (
+                              {isEditMode ? (
+                                <ResponseSection>
+                                  <ResponseLabel>Edit Response:</ResponseLabel>
+                                  <ResponseValue>
+                                    {renderEditableQuestionInput(question, currentTask, handleSaveInspectionResponse)}
+                                  </ResponseValue>
+                                </ResponseSection>
+                              ) : response ? (
                                 <ResponseSection>
                                   <ResponseLabel>Response:</ResponseLabel>
                                   <ResponseValue>
@@ -927,9 +1569,21 @@ const TaskDetailsView = () => {
                                       </div>
                                     )}
                                     {question.type === 'signature' && response && (
-                                      <div style={{ marginTop: '8px' }}>
-                                        <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                          ✍️ Signature provided
+                                      <div 
+                                        style={{ 
+                                          marginTop: '8px',
+                                          padding: '12px',
+                                          backgroundColor: '#f9fafb',
+                                          borderRadius: '8px',
+                                          border: '1px solid #e5e7eb',
+                                          position: 'relative',
+                                          cursor: 'not-allowed',
+                                          opacity: 0.8
+                                        }}
+                                        title="Signature cannot be edited once provided"
+                                      >
+                                        <div style={{ marginBottom: '8px', color: '#6b7280', fontSize: '12px' }}>
+                                          ✍️ Signature provided (Locked)
                                         </div>
                                         {response.startsWith('data:image/') ? (
                                           <img 
@@ -945,8 +1599,16 @@ const TaskDetailsView = () => {
                                             onClick={() => window.open(response, '_blank')}
                                           />
                                         ) : (
-                                          <span style={{ color: '#0369a1' }}>✍️ Signature provided</span>
+                                          <span style={{ color: '#6b7280' }}>✍️ Signature provided</span>
                                         )}
+                                        <div style={{
+                                          marginTop: '8px',
+                                          fontSize: '11px',
+                                          color: '#9ca3af',
+                                          fontStyle: 'italic'
+                                        }}>
+                                          Signatures cannot be edited once provided
+                                        </div>
                                       </div>
                                     )}
                                     {question.type === 'multiple_choice' && Array.isArray(response) && (
@@ -957,8 +1619,15 @@ const TaskDetailsView = () => {
                                     )}
                                   </ResponseValue>
                                 </ResponseSection>
+                              ) : (
+                                <ResponseSection>
+                                  <ResponseLabel>Response:</ResponseLabel>
+                                  <ResponseValue style={{ color: '#9ca3af', fontStyle: 'italic' }}>
+                                    No response provided
+                                  </ResponseValue>
+                                </ResponseSection>
                               )}
-                            </QuestionCard>
+                            </EditableQuestionCard>
                           );
                         })}
                       </div>

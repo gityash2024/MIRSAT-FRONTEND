@@ -540,12 +540,20 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       totalPoints += (2 * weight);
       
       if (response) {
-        if (response === 'full_compliance' || response === 'yes') {
-          achievedPoints += (2 * weight); // Full compliance = 2 points
-        } else if (response === 'partial_compliance') {
-          achievedPoints += (1 * weight); // Partial compliance = 1 point
-        } else if (response === 'na' || response === 'not_applicable') {
-          totalPoints -= (2 * weight); // Don't count NA questions
+        // Use template-defined scores if available
+        if (question.scores && typeof question.scores === 'object') {
+          // Get the score for this specific response from the template
+          const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+          achievedPoints += responseScore * weight;
+        } else {
+          // Fallback to old logic if no template scores defined
+          if (response === 'full_compliance' || response === 'yes') {
+            achievedPoints += (2 * weight); // Full compliance = 2 points
+          } else if (response === 'partial_compliance') {
+            achievedPoints += (1 * weight); // Partial compliance = 1 point
+          } else if (response === 'na' || response === 'not_applicable') {
+            totalPoints -= (2 * weight); // Don't count NA questions
+          }
         }
       }
     });
@@ -765,14 +773,14 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
           
           return (
             <QuestionItem key={questionId || index}>
-              <QuestionText mandatory={question.requirementType !== 'recommended'}>
+              <QuestionText mandatory={question.required !== false}>
                 {questionNumber}. {question.text}
-                {question.requirementType !== 'recommended' && <span style={{ color: 'red' }}> *</span>}
+                {question.required !== false && <span style={{ color: 'red' }}> *</span>}
               </QuestionText>
               
-              <MandatoryBadge mandatory={question.requirementType !== 'recommended'}>
+              <MandatoryBadge mandatory={question.required !== false}>
                 <Info size={12} />
-                {question.requirementType === 'recommended' ? 'Recommended' : 'Mandatory'}
+                {question.required === false ? 'Optional' : 'Required'}
               </MandatoryBadge>
               
               {/* Yes/No Questions */}

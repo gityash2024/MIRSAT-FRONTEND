@@ -1566,26 +1566,40 @@ const QuestionItemComponent = ({
   
   // Calculate total score based on question type and weights
   useEffect(() => {
-    let score = 0;
+    let maxScore = 0;
     
-    if (question.answerType === 'yesno' && question.scores?.yes) {
-      score = (question.weight || 0) * question.scores.yes;
+    if (question.answerType === 'yesno') {
+      const yesScore = parseInt(question.scores?.Yes) || 0;
+      const noScore = parseInt(question.scores?.No) || 0;
+      const naScore = parseInt(question.scores?.['N/A']) || 0;
+      maxScore = Math.max(yesScore, noScore, naScore);
     } else if (question.answerType === 'compliance') {
-      // Find highest score from compliance options
-      const highestScore = Math.max(
-        ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
-      );
-      score = (question.weight || 0) * highestScore;
-    } else if (question.answerType === 'multiple' && question.scores) {
-      // Find highest score from multiple choice options
-      const highestScore = Math.max(
-        ...(Object.values(question.scores || {}).map(s => Number(s) || 0))
-      );
-      score = (question.weight || 0) * highestScore;
+      const scores = question.scores || {};
+      const complianceScores = [
+        scores['Full compliance'] || 0,
+        scores['Partial compliance'] || 0,
+        scores['Non-compliant'] || 0,
+        scores['Not applicable'] || 0
+      ];
+      maxScore = Math.max(...complianceScores);
+    } else if (question.answerType === 'multiple') {
+      const scores = question.scores || {};
+      const optionScores = Object.values(scores).map(s => parseInt(s) || 0);
+      maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
     }
     
-    setTotalScore(score);
-  }, [question]);
+    setTotalScore(maxScore);
+    
+    // Automatically update the question's scoring.max value
+    const newScoring = {
+      ...(question.scoring || {}),
+      max: maxScore
+    };
+    updateQuestion({
+      ...question,
+      scoring: newScoring
+    });
+  }, [question.scores, question.answerType]);
   
   // Load library with proper debugging
   const loadLibrary = async () => {
@@ -1807,7 +1821,7 @@ const QuestionItemComponent = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <QuestionNumber>
               {questionIndex + 1}. {question.text || 'Untitled Question'}
-              {question.requirementType !== 'recommended' && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
+              {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
             </QuestionNumber>
             {question.description && (
               <div style={{ fontSize: '13px', color: '#64748b' }}>
@@ -1892,7 +1906,7 @@ const QuestionItemComponent = ({
           }}>
             <div style={{ flex: '1', minWidth: '0' }}>
               <FormGroup>
-                <Label>Question Text <span style={{ color: 'red' }}>*</span></Label>
+                <Label>Question Text </Label>
                 <Input
                   type="text"
                   value={question.text || ''}
@@ -1929,18 +1943,6 @@ const QuestionItemComponent = ({
                 </Select>
               </FormGroup>
 
-              <FormGroup style={{ marginTop: '16px' }}>
-                <Label>Requirement Type</Label>
-                <Select
-                  name="requirementType"
-                  value={question.requirementType || 'mandatory'}
-                  onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value })}
-                  disabled={loading}
-                >
-                  <option value="mandatory">Mandatory</option>
-                  <option value="recommended">Recommended</option>
-                </Select>
-              </FormGroup>
               
               {/* Add weight input field after answer type */}
               <FormGroup style={{ marginTop: '16px' }}>
@@ -2009,7 +2011,19 @@ const QuestionItemComponent = ({
                             const newScores = { ...(question.scores || {}) };
                             const value = e.target.value;
                             newScores[option] = value === '' ? '' : parseInt(value) || 0;
-                            updateQuestion({ ...question, scores: newScores });
+                            
+                            // Calculate new max score
+                            const optionScores = Object.values(newScores).map(s => parseInt(s) || 0);
+                            const maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
+                            
+                            updateQuestion({ 
+                              ...question, 
+                              scores: newScores,
+                              scoring: {
+                                ...(question.scoring || {}),
+                                max: maxScore
+                              }
+                            });
                           }}
                           style={{ width: '80px' }}
                           placeholder="Score"
@@ -2044,7 +2058,21 @@ const QuestionItemComponent = ({
                           const newScores = { ...(question.scores || {}) };
                           const value = e.target.value;
                           newScores.Yes = value === '' ? '' : parseInt(value) || 0;
-                          updateQuestion({ ...question, scores: newScores });
+                          
+                          // Calculate new max score
+                          const yesScore = parseInt(newScores.Yes) || 0;
+                          const noScore = parseInt(newScores.No) || 0;
+                          const naScore = parseInt(newScores['N/A']) || 0;
+                          const maxScore = Math.max(yesScore, noScore, naScore);
+                          
+                          updateQuestion({ 
+                            ...question, 
+                            scores: newScores,
+                            scoring: {
+                              ...(question.scoring || {}),
+                              max: maxScore
+                            }
+                          });
                         }}
                         placeholder="Enter score"
                       />
@@ -2058,7 +2086,21 @@ const QuestionItemComponent = ({
                           const newScores = { ...(question.scores || {}) };
                           const value = e.target.value;
                           newScores.No = value === '' ? '' : parseInt(value) || 0;
-                          updateQuestion({ ...question, scores: newScores });
+                          
+                          // Calculate new max score
+                          const yesScore = parseInt(newScores.Yes) || 0;
+                          const noScore = parseInt(newScores.No) || 0;
+                          const naScore = parseInt(newScores['N/A']) || 0;
+                          const maxScore = Math.max(yesScore, noScore, naScore);
+                          
+                          updateQuestion({ 
+                            ...question, 
+                            scores: newScores,
+                            scoring: {
+                              ...(question.scoring || {}),
+                              max: maxScore
+                            }
+                          });
                         }}
                         placeholder="Enter score"
                       />
@@ -2072,7 +2114,21 @@ const QuestionItemComponent = ({
                           const newScores = { ...(question.scores || {}) };
                           const value = e.target.value;
                           newScores['N/A'] = value === '' ? '' : parseInt(value) || 0;
-                          updateQuestion({ ...question, scores: newScores });
+                          
+                          // Calculate new max score
+                          const yesScore = parseInt(newScores.Yes) || 0;
+                          const noScore = parseInt(newScores.No) || 0;
+                          const naScore = parseInt(newScores['N/A']) || 0;
+                          const maxScore = Math.max(yesScore, noScore, naScore);
+                          
+                          updateQuestion({ 
+                            ...question, 
+                            scores: newScores,
+                            scoring: {
+                              ...(question.scoring || {}),
+                              max: maxScore
+                            }
+                          });
                         }}
                         placeholder="Enter score"
                       />
@@ -2099,7 +2155,37 @@ const QuestionItemComponent = ({
               }}>
                 <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Question Settings</div>
                 
-                {/* Removed Requirement Type field as it's not required */}
+                <FormGroup style={{ marginBottom: '16px' }}>
+                  <Label>Requirement Type</Label>
+                  <Select
+                    name="requirementType"
+                    value={question.requirementType || 'mandatory'}
+                    onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value })}
+                    disabled={loading}
+                  >
+                    <option value="mandatory">Mandatory</option>
+                    <option value="recommended">Recommended</option>
+                  </Select>
+                </FormGroup>
+
+                <FormGroup style={{ marginBottom: '16px' }}>
+                  <Label>Required</Label>
+                  <div style={{ marginTop: '10px' }}>
+                    <input 
+                      type="checkbox" 
+                      id={`required-settings-${questionIndex}`}
+                      name="required" 
+                      checked={question.required !== false} 
+                      onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
+                      style={{ marginRight: '8px' }}
+                      disabled={loading}
+                    />
+                    <label htmlFor={`required-settings-${questionIndex}`} style={{ fontSize: '14px', color: '#334155' }}>
+                      This question is required
+                    </label>
+                  </div>
+                  
+                </FormGroup>
                 
                 {/* <FormGroup style={{ marginBottom: '12px' }}>
                   <Label>Question Weight</Label>
@@ -2118,24 +2204,17 @@ const QuestionItemComponent = ({
                   <Label>Max Possible Score</Label>
                   <Input
                     type="text"
-                    value={question.scoring?.max ?? totalScore}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const maxScore = value === '' ? '' : parseInt(value);
-                      const newScoring = {
-                        ...(question.scoring || {}),
-                        max: value === '' ? '' : (isNaN(maxScore) ? 0 : Math.max(0, maxScore))
-                      };
-                      updateQuestion({
-                        ...question, 
-                        scoring: newScoring 
-                      });
+                    value={totalScore}
+                    disabled={true}
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      color: '#64748b',
+                      cursor: 'not-allowed'
                     }}
-                    placeholder="Enter max score"
-                    min="0"
+                    placeholder="Auto-calculated"
                   />
                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                    Maximum possible score for this question
+                    Automatically calculated from scoring inputs
                   </div>
                 </FormGroup>
                 
@@ -3335,6 +3414,7 @@ const MobilePreviewPanel = ({
                             </span>
                             <span style={{ flex: 1 }}>
                               {question.text || 'Untitled Question'}
+                              {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
                             </span>
                           </div>
                           
@@ -3968,7 +4048,8 @@ const InspectionLevelForm = () => {
             id: section._id || section.id,
             questions: section.questions ? section.questions.map(q => ({
               ...q,
-              id: q._id || q.id
+              id: q._id || q.id,
+              required: q.required !== undefined ? q.required : true // Ensure required field is preserved
             })) : []
           })) : []
         }));
@@ -3990,7 +4071,8 @@ const InspectionLevelForm = () => {
                 order: section.order || sectionIndex,
                 questions: section.questions ? section.questions.map(q => ({
                   ...q,
-                  id: q._id || q.id
+                  id: q._id || q.id,
+                  required: q.required !== undefined ? q.required : true // Ensure required field is preserved
                 })) : []
               };
             }) : []
@@ -4051,7 +4133,8 @@ const InspectionLevelForm = () => {
               const processedQuestions = section.questions 
                 ? section.questions.map(q => ({
                     ...q,
-                    description: q.description || ''
+                    description: q.description || '',
+                    required: q.required !== undefined ? q.required : true // Ensure required field is preserved
                   }))
                 : [];
                 

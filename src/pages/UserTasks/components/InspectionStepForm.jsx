@@ -1866,7 +1866,7 @@ const InspectionStepForm = ({
                       score={questionScore.achieved}
                       percentage={questionPercentage}
                     >
-                      {questionScore.achieved}/{questionScore.total}
+                      {questionScore.total === 0 ? 'No scoring' : `${questionScore.achieved}/${questionScore.total}`}
                     </QuestionScoreBadge>
                   </QuestionAccordionHeader>
                   
@@ -2113,14 +2113,14 @@ const InspectionStepForm = ({
                             <QuestionTitle isOpen={isQuestionOpen}>
                               <ChevronDown size={16} />
                               {qIndex + 1}. {question.text || 'Unnamed Question'}
-                              {question.requirementType !== 'recommended' && <QuestionMandatory>*</QuestionMandatory>}
+                              {question.required !== false && <QuestionMandatory>*</QuestionMandatory>}
                             </QuestionTitle>
                             
                             <QuestionScoreBadge 
                               score={questionScore.achieved}
                               percentage={questionPercentage}
                             >
-                              {questionScore.achieved}/{questionScore.total}
+                              {questionScore.total === 0 ? 'No scoring' : `${questionScore.achieved}/${questionScore.total}`}
                             </QuestionScoreBadge>
                           </QuestionAccordionHeader>
                           
@@ -2220,12 +2220,20 @@ const InspectionStepForm = ({
     const response = getQuestionResponse(question._id, sectionId);
     
     // If no response, return zero achieved
-    if (!response || !question.scores) {
+    if (!response) {
       return { achieved: 0, total, percentage: 0 };
     }
     
-    // Get the score for this response from the question's scores object
-    const achieved = question.scores[response] || 0;
+    let achieved = 0;
+    
+    // Use template-defined scores if available
+    if (question.scores && typeof question.scores === 'object') {
+      // Get the score for this specific response from the template
+      achieved = question.scores[response] || question.scores[response.toString()] || 0;
+    } else {
+      // Fallback to old logic if no template scores defined
+      achieved = question.scores?.[response] || 0;
+    }
     
     const percentage = total > 0 ? Math.round((achieved / total) * 100) : 0;
     

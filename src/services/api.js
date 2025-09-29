@@ -169,9 +169,10 @@ api.interceptors.response.use(
     if (error.canceled) {
       return Promise.reject(error);
     }
+    console.log(error,'error-----');
 
     // Handle unauthorized access
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.data?.error?.message?.includes('401')) {
       // Don't auto-redirect for login requests - let the login component handle the error
       if (error.config?.url?.includes('/auth/login')) {
         return Promise.reject(error);

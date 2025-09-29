@@ -34,8 +34,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log(error,'error-----');
     // Handle 401 errors
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.data?.error?.message?.includes('401')) {
       // Don't logout for profile update errors (incorrect current password is expected)
       const isProfileUpdate = error.config?.url?.includes('/users/profile');
       const isPasswordError = error.response?.data?.message?.toLowerCase().includes('password');
