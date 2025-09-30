@@ -44,7 +44,7 @@ import UserTasks from '../pages/UserTasks/index';
 import UserTaskDetail from '../pages/UserTasks/UserTaskDetail';
 import PreInspectionQuestionnaire from '../pages/UserTasks/PreInspectionQuestionnaire';
 import UserProfile from '../pages/profile';
-import Logs from '../pages/logs';
+import Logs from '@/pages/logs';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/permissions';
 
