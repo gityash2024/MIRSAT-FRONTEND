@@ -441,6 +441,19 @@ const taskSlice = createSlice({
             state.currentTask.id === taskId)) {
           state.currentTask = null;
         }
+        
+        // Update pagination after deletion
+        if (state.pagination.total > 0) {
+          state.pagination.total -= 1;
+          state.pagination.pages = Math.ceil(state.pagination.total / state.pagination.limit);
+          
+          // If current page becomes empty and it's not the first page, go to previous page
+          const currentPage = state.pagination.page;
+          const totalPages = state.pagination.pages;
+          if (currentPage > totalPages && totalPages > 0) {
+            state.pagination.page = totalPages;
+          }
+        }
       })
       .addCase(deleteTask.rejected, (state, action) => {
         state.loading = false;

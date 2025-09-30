@@ -15,7 +15,8 @@ import {
   ListChecks,
   Database,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/permissions';
@@ -245,6 +246,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       permission: 'view_calendar',
       modulePermission: 'access_calendar',
       roles: ['admin', 'manager', 'supervisor']  // Keep supervisor - can set schedules
+    },
+    {
+      title: 'Logs',
+      path: '/logs',
+      icon: Activity,
+      permission: null, // No permission required for logs
+      modulePermission: null,
+      roles: ['admin', 'manager', 'supervisor']  // Exclude inspector role
     },
     {
       title: 'Profile',

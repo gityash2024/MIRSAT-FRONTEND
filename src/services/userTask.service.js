@@ -1,6 +1,7 @@
 import api from './api';
 import { toast } from 'react-hot-toast';
 import { downloadTaskPDF } from './pdfGenerator';
+import FrontendLogger from './frontendLogger.service';
 
 export const userTaskService = {
   // Get user dashboard statistics
@@ -46,6 +47,14 @@ export const userTaskService = {
       const response = await api.post(`/user-tasks/${taskId}/progress/${subLevelId}`, payload);
       
       if (response.status >= 200 && response.status < 300) {
+        // Log progress update
+        await FrontendLogger.logTaskProgressUpdate(
+          taskId, 
+          data.taskTitle || 'Unknown Task', 
+          data.subLevelName || 'Unknown Section',
+          data.oldStatus || 'unknown',
+          data.status
+        );
         // toast.success('Progress updated successfully');
       }
       

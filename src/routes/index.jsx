@@ -44,6 +44,7 @@ import UserTasks from '../pages/UserTasks/index';
 import UserTaskDetail from '../pages/UserTasks/UserTaskDetail';
 import PreInspectionQuestionnaire from '../pages/UserTasks/PreInspectionQuestionnaire';
 import UserProfile from '../pages/profile';
+import Logs from '../pages/logs';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/permissions';
 
@@ -152,10 +153,11 @@ const AppRoutes = () => {
         </Route>
       </Route>
       
-      {/* Common Profile Route for All Authenticated Users */}
+      {/* Common Routes for All Authenticated Users */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/profile" element={<UserProfile />} />
+          <Route path="/logs/*" element={<Logs />} />
         </Route>
       </Route>
 

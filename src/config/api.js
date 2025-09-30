@@ -6,12 +6,10 @@
 // Get API base URL from environment variables
 const getApiBaseUrl = () => {
   // For production (Vercel), use the production API URL
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api/v1';
-  }
+
   
   // For development, use localhost
-  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+  return 'http://localhost:5001/api/v1';
 };
 
 // API Configuration
@@ -28,7 +26,8 @@ export const API_CONFIG = {
     QUESTIONNAIRES: '/questionnaires',
     UPLOADS: '/uploads',
     DASHBOARD: '/dashboard',
-    REPORTS: '/reports'
+    REPORTS: '/reports',
+    LOGS: '/logs'
   },
   TIMEOUTS: {
     DEFAULT: 30000,

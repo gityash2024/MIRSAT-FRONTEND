@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
+import FrontendLogger from '../../services/frontendLogger.service';
 import { 
   Info, 
   Activity, 
@@ -3005,6 +3006,10 @@ const UserTaskDetail = () => {
     try {
       await userTaskService.startTask(taskId);
       toast.success('Task started successfully!');
+      
+      // Log task start
+      await FrontendLogger.logTaskStart(taskId, currentTask?.title || 'Unknown Task');
+      
       dispatch(fetchUserTaskDetails(taskId));
       setActiveTab('inspection');
       
@@ -3443,6 +3448,9 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
       
+      // Log signature added
+      await FrontendLogger.logSignatureAdded(currentTask._id, currentTask.title);
+      
       // Then update task status to completed
       await dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
@@ -3455,6 +3463,9 @@ const UserTaskDetail = () => {
           completedAt: new Date().toISOString()
         }
       })).unwrap();
+      
+      // Log task completion
+      await FrontendLogger.logTaskComplete(currentTask._id, currentTask.title);
       
       // Stop timer permanently
       stopTimerPermanently();

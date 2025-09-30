@@ -12,9 +12,10 @@ import Switch from '../../../components/ui/Switch';
 import DatePicker from '../../../components/ui/DatePicker';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
-import { fetchAssets } from '../../../store/slices/assetSlice';
+import { fetchAssets, fetchAllAssetsForDropdown } from '../../../store/slices/assetSlice';
 import { fetchQuestionLibrary } from '../../../store/slices/questionLibrarySlice';
 import { v4 as uuidv4 } from 'uuid';
+import FrontendLogger from '../../../services/frontendLogger.service';
 
 const Form = styled.form`
   display: grid;
@@ -1251,7 +1252,7 @@ const TaskForm = ({
   const fileInputRef = useRef(null);
   const stateUsers = useSelector(state => state.users.users);
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
-  const stateAssets = useSelector(state => state.assets?.assets);
+  const stateAssets = useSelector(state => state.assets?.allAssetsForDropdown);
 
   let users = usersProp.length > 0 ? usersProp : stateUsers;
   users = users?.filter(user => user.role === 'inspector');
@@ -1437,6 +1438,14 @@ const TaskForm = ({
         })).unwrap();
         
         if (updateResult) {
+          // Log task update
+          await FrontendLogger.logActivity({
+            action: 'task_updated',
+            description: `Updated task: ${taskData.title}`,
+            module: 'tasks',
+            details: { taskId, title: taskData.title, changes: taskData }
+          });
+          
           // Clear localStorage data after successful update
           localStorage.removeItem(`task_${taskId}_preinspection`);
           console.log('Cleared localStorage data for task:', taskId);
@@ -1448,6 +1457,15 @@ const TaskForm = ({
         console.log('Creating new task');
         
         const createResult = await dispatch(createTask(taskData)).unwrap();
+        
+        // Log task creation
+        await FrontendLogger.logActivity({
+          action: 'task_created',
+          description: `Created new task: ${taskData.title}`,
+          module: 'tasks',
+          details: { taskId: createResult._id || createResult.id, title: taskData.title, assignedTo: taskData.assignedTo }
+        });
+        
         if (onCancel) onCancel(createResult); // Pass the created task back
       }
     } catch (error) {
@@ -1595,18 +1613,18 @@ const TaskForm = ({
       }
     }
     
-    // Fetch assets if not provided as props
+    // Fetch assets for dropdown if not provided as props
     if (assetsProp.length === 0) {
       // Add a flag to prevent multiple calls
-      const localStorageKey = 'assetsFetchInitiated';
+      const localStorageKey = 'assetsDropdownFetchInitiated';
       const fetchInitiated = sessionStorage.getItem(localStorageKey);
       
       if (!fetchInitiated) {
         sessionStorage.setItem(localStorageKey, 'true');
-        dispatch(fetchAssets())
+        dispatch(fetchAllAssetsForDropdown())
           .unwrap()
           .catch(error => {
-            console.error('Error fetching assets:', error);
+            console.error('Error fetching assets for dropdown:', error);
           })
           .finally(() => {
             // Reset after 10 seconds to allow refetching if needed

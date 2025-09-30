@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { User, Users, Check, X, ChevronDown, ChevronUp, Upload, Paperclip, Trash2 } from 'lucide-react';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
-import { fetchAssets } from '../../../store/slices/assetSlice';
+import { fetchAssets, fetchAllAssetsForDropdown } from '../../../store/slices/assetSlice';
 import { createTask, updateTask } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
 import * as Skeleton from '../../../components/common/Skeleton';
@@ -18,7 +18,7 @@ const TaskForm = ({ initialData = {}, onCancel, submitButtonText = 'Create Task'
   
   const { users = [] } = useSelector(state => state.users);
   const { levels: inspectionLevels = [] } = useSelector(state => state.inspectionLevels);
-  const { assets = [] } = useSelector(state => state.assets);
+  const { allAssetsForDropdown: assets = [] } = useSelector(state => state.assets);
   const { loading: taskLoading } = useSelector(state => state.tasks);
   
   const initialLoading = users.length === 0 && usersProp.length === 0;
@@ -49,7 +49,7 @@ const TaskForm = ({ initialData = {}, onCancel, submitButtonText = 'Create Task'
       dispatch(fetchInspectionLevels());
     }
     if (assets?.length === 0) {
-      dispatch(fetchAssets());
+      dispatch(fetchAllAssetsForDropdown());
     }
   }, [dispatch, users.length, inspectionLevels?.length, assets?.length, usersProp.length, inspectionLevelsProp.length]);
   

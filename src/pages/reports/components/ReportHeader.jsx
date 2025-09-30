@@ -79,35 +79,6 @@ const ReportHeader = ({ onToggleFilters, dateRange, onDateRangeChange }) => {
         </PageDescription>
       </TitleSection>
 
-      <ActionButtons>
-        <DateRangeContainer>
-          <DateRangePicker
-            from={dateRange.start}
-            to={dateRange.end}
-            onSelect={(range) => {
-              onDateRangeChange({
-                start: range.from,
-                end: range.to
-              });
-            }}
-          />
-        </DateRangeContainer>
-
-        <Button onClick={onToggleFilters}>
-          <Filter size={16} />
-          Filters
-        </Button>
-
-        <Button>
-          <Download size={16} />
-          Export PDF
-        </Button>
-
-        <Button variant="primary">
-          <Calendar size={16} />
-          Schedule Report
-        </Button>
-      </ActionButtons>
     </Header>
   );
 };

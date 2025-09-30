@@ -13,6 +13,7 @@ import Reports from './reports';
 import ScrollAnimation from '../components/common/ScrollAnimation';
 import Skeleton from '../components/ui/Skeleton';
 import axios from 'axios';
+import FrontendLogger from '../services/frontendLogger.service';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -358,6 +359,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Log dashboard view
+    FrontendLogger.logDashboardView('main');
     
     const interval = setInterval(() => {
       fetchDashboardData();

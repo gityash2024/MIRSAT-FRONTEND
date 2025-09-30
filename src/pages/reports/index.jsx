@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   FileText, 
@@ -10,6 +10,7 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react';
+import FrontendLogger from '../../services/frontendLogger.service';
 import ReportHeader from './components/ReportHeader';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import InspectionStatusChart from './components/InspectionStatusChart';
@@ -66,8 +67,16 @@ const Reports = () => {
     priority: []
   });
 
+  useEffect(() => {
+    // Log reports page view
+    FrontendLogger.logDashboardView('reports');
+  }, []);
+
   const handleFilterChange = (filters) => {
     setSelectedFilters(filters);
+    
+    // Log filter application
+    FrontendLogger.logFilterApplied(filters, 'reports');
   };
 
   return (

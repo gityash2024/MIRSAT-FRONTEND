@@ -13,6 +13,11 @@ export const assetService = {
     return response.data;
   },
   
+  getAllAssetsForDropdown: async (params = {}) => {
+    const response = await api.get('/assets/dropdown', { params });
+    return response.data;
+  },
+  
   
   createAsset: async (data) => {
     const response = await api.post('/assets', data);

@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Package,
   HelpCircle,
-  User
+  User,
+  Activity
 } from 'lucide-react';
 
 const SidebarContainer = styled.div`
@@ -172,10 +173,18 @@ const Sidebar = ({ isOpen, width }) => {
         label: 'Tasks', 
         path: '/user-tasks',
         permissions: ['view_tasks']
+      },
+      {
+        icon: Activity, 
+        label: 'Logs', 
+        path: '/logs',
+        module: 'LOGS',
+        permissions: [] // Always show Logs to all users
       }
     ];
 
     return userMenuItems.filter(item => 
+      item.permissions.length === 0 || // Always show items with no permissions (like Logs)
       item.permissions.some(perm => user?.permissions?.includes(perm))
     );
   };
@@ -236,6 +245,13 @@ const Sidebar = ({ isOpen, width }) => {
         permissions: ['view_calendar', 'manage_calendar', 'schedule_events']
       },
       {
+        icon: Activity, 
+        label: 'Logs', 
+        path: '/logs',
+        module: 'LOGS',
+        permissions: [] // No specific permissions required for admin users
+      },
+      {
         icon: User, 
         label: 'Profile', 
         path: '/profile',
@@ -245,8 +261,12 @@ const Sidebar = ({ isOpen, width }) => {
     ];
 
     console.log('🔥🔥 All menu items created:', allMenuItems.map(i => ({label: i.label, module: i.module})));
+    console.log('🔥🔥 Logs item specifically:', allMenuItems.find(i => i.label === 'Logs'));
     console.log('🔥🔥 About to check user role:', user?.role);
     console.log('🔥🔥 Is user role === "manager"?', user?.role === 'manager');
+    console.log('🔥🔥 Is user role === "admin"?', user?.role === 'admin');
+    console.log('🔥🔥 User role type:', typeof user?.role);
+    console.log('🔥🔥 User role length:', user?.role?.length);
 
     // For managers, filter by module permissions + always show Profile
     if (user?.role === 'manager') {
@@ -352,18 +372,59 @@ const Sidebar = ({ isOpen, width }) => {
         });
       }
       
+      // Always add Logs for all managers (no specific permission required)
+      console.log('✅ ADDING LOGS - available to all managers');
+      managerMenuItems.push({
+        icon: Activity, 
+        label: 'Logs', 
+        path: '/logs',
+        module: 'LOGS',
+        permissions: []
+      });
+      
       console.log('🚨 FINAL MANAGER MENU ITEMS:', managerMenuItems.map(i => i.label));
       return managerMenuItems;
     }
 
     console.log('🔥🔥 Not a manager, using default filtering');
-    // For admin and inspector, show all items (with permission check for inspector) + always show Profile
-    const defaultItems = allMenuItems.filter(item => 
-      item.module === 'PROFILE' || // Always show Profile
-      item.permissions.length === 0 || 
-      item.permissions.some(perm => user?.permissions?.includes(perm)) ||
-      user?.role === 'admin'
-    );
+    console.log('🔥🔥 User role:', user?.role);
+    console.log('🔥🔥 User role === "admin":', user?.role === 'admin');
+    console.log('🔥🔥 User permissions:', user?.permissions);
+    console.log('🔥🔥 All menu items before filtering:', allMenuItems.map(i => i.label));
+    
+    // For admin and inspector, show all items (with permission check for inspector) + always show Profile and Logs
+    const defaultItems = allMenuItems.filter(item => {
+      const isProfile = item.module === 'PROFILE';
+      const isLogs = item.label === 'Logs';
+      const hasNoPermissions = item.permissions.length === 0;
+      const hasUserPermissions = item.permissions.some(perm => user?.permissions?.includes(perm));
+      const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN' || user?.role?.toLowerCase() === 'admin';
+      
+      // Always show Profile and Logs for admin users
+      if (isProfile || (isLogs && isAdmin)) {
+        console.log(`🔥🔥 ALWAYS SHOWING: ${item.label} (isAdmin: ${isAdmin})`);
+        return true;
+      }
+      
+      const shouldShow = hasNoPermissions || hasUserPermissions || isAdmin;
+      
+      if (item.label === 'Logs') {
+        console.log('🔥🔥 LOGS ITEM CHECK:', {
+          label: item.label,
+          module: item.module,
+          permissions: item.permissions,
+          isProfile,
+          isLogs,
+          hasNoPermissions,
+          hasUserPermissions,
+          isAdmin,
+          shouldShow,
+          userRole: user?.role
+        });
+      }
+      
+      return shouldShow;
+    });
     console.log('🔥🔥 Default filtered items:', defaultItems.map(i => i.label));
     return defaultItems;
   };
@@ -372,13 +433,31 @@ const Sidebar = ({ isOpen, width }) => {
   const getMenuItems = () => {
     console.log('🔥 getMenuItems called with user:', user);
     console.log('🔥 User role:', user?.role);
+    console.log('🔥 User role type:', typeof user?.role);
+    console.log('🔥 User role === "inspector":', user?.role === 'inspector');
     
     if (user?.role === 'inspector') {
       console.log('🔥 Using inspector menu');
       return getUserMenuItems();
     } else {
       console.log('🔥 Using admin menu (includes manager filtering)');
-      return getAdminMenuItems();
+      const adminMenuItems = getAdminMenuItems();
+      console.log('🔥 Admin menu items:', adminMenuItems.map(item => item.label));
+      
+      // Force add Logs if it's missing for admin users
+      const hasLogs = adminMenuItems.some(item => item.label === 'Logs');
+      if (!hasLogs && user?.role === 'admin') {
+        console.log('🔥🔥 FORCING LOGS ADDITION FOR ADMIN');
+        adminMenuItems.push({
+          icon: Activity, 
+          label: 'Logs', 
+          path: '/logs',
+          module: 'LOGS',
+          permissions: []
+        });
+      }
+      
+      return adminMenuItems;
     }
   };
 
@@ -389,9 +468,22 @@ const Sidebar = ({ isOpen, width }) => {
 
   // Get menu items based on user role and permissions
   console.log('🟢 About to call getMenuItems()');
-  const menuItems = getMenuItems();
+  let menuItems = getMenuItems();
   console.log('🟢 Final menuItems returned:', menuItems);
   console.log('🟢 Final menuItems labels:', menuItems?.map(i => i.label));
+  console.log('🔥 Logs in menu items:', menuItems?.some(item => item.label === 'Logs'));
+  
+  // Final fallback: Force add Logs for admin users if still missing
+  if (user?.role === 'admin' && !menuItems?.some(item => item.label === 'Logs')) {
+    console.log('🔥🔥 FINAL FALLBACK: Adding Logs to admin menu');
+    menuItems = [...(menuItems || []), {
+      icon: Activity, 
+      label: 'Logs', 
+      path: '/logs',
+      module: 'LOGS',
+      permissions: []
+    }];
+  }
 
   return (
     <SidebarContainer width={width}>

@@ -25,6 +25,17 @@ export const fetchAsset = createAsyncThunk(
   }
 );
 
+export const fetchAllAssetsForDropdown = createAsyncThunk(
+  'assets/fetchAllAssetsForDropdown',
+  async (params, { rejectWithValue }) => {
+    try {
+      return await assetService.getAllAssetsForDropdown(params);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch assets for dropdown');
+    }
+  }
+);
+
 export const createAsset = createAsyncThunk(
   'assets/createAsset',
   async (assetData, { rejectWithValue }) => {
@@ -100,6 +111,7 @@ export const exportAssets = createAsyncThunk(
 const initialState = {
   assets: [],
   asset: null,
+  allAssetsForDropdown: [],
   loading: false,
   error: null,
   pagination: {
@@ -169,6 +181,22 @@ const assetSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.asset = null;
+      })
+      
+      // fetchAllAssetsForDropdown
+      .addCase(fetchAllAssetsForDropdown.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllAssetsForDropdown.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allAssetsForDropdown = action.payload.data || [];
+      })
+      .addCase(fetchAllAssetsForDropdown.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.allAssetsForDropdown = [];
       })
       
       // createAsset

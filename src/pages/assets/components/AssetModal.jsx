@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createAsset, updateAsset } from '../../../store/slices/assetSlice';
 import { fetchAssetTypes } from '../../../store/slices/assetTypeSlice';
 import { motion, AnimatePresence } from 'framer-motion';
+import FrontendLogger from '../../../services/frontendLogger.service';
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -269,13 +270,23 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         }
         
         // Update existing asset
-        await dispatch(updateAsset({ 
+        const result = await dispatch(updateAsset({ 
           id: assetId, 
           data: cleanFormData 
         })).unwrap();
+        
+        // Log asset update
+        await FrontendLogger.logAssetUpdate(assetId, asset.displayName, cleanFormData);
       } else {
         // Create new asset
-        await dispatch(createAsset(cleanFormData)).unwrap();
+        const result = await dispatch(createAsset(cleanFormData)).unwrap();
+        
+        // Log asset creation
+        await FrontendLogger.logAssetCreate({
+          _id: result._id || result.id,
+          name: cleanFormData.displayName,
+          type: cleanFormData.type
+        });
       }
       
       if (onSuccess) onSuccess();
