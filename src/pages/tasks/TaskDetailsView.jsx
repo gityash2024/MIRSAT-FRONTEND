@@ -1294,7 +1294,7 @@ const TaskDetailsView = () => {
               <FileText size={20} />
               Task Overview
             </CardTitle>
-            {canEdit && (
+           
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <EditToggleButton 
                   onClick={handleEditToggle}
@@ -1302,19 +1302,9 @@ const TaskDetailsView = () => {
                 >
                   {isEditMode ? <X size={16} /> : <Edit size={16} />}
                   {isEditMode ? 'Exit Edit' : 'Edit Inspection'}
-                </EditToggleButton>
-                {isEditMode && (
-                  <UpdateButton 
-                    onClick={handleUpdateInspection}
-                    disabled={isUpdating}
-                    style={{ margin: 0, display: 'flex' }}
-                  >
-                    <Save size={16} />
-                    {isUpdating ? 'Updating...' : 'Update Inspection'}
-                  </UpdateButton>
-                )}
-              </div>
-            )}
+                </EditToggleButton> 
+                </div>
+            
           </CardHeader>
           <CardContent>
             <InfoGrid>

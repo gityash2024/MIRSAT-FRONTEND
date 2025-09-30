@@ -242,6 +242,8 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
   
   useEffect(() => {
     if (isOpen && asset) {
+      // Reset expanded tasks when modal opens
+      setExpandedTasks({});
       loadTasks();
     }
   }, [isOpen, asset]);
@@ -340,11 +342,13 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
             </div>
           ) : tasks.length > 0 ? (
             <TaskList>
-              {tasks.map(task => (
-                <TaskItem key={task._id}>
+              {tasks.map(task => {
+                const taskId = task._id || task.id;
+                return (
+                <TaskItem key={taskId}>
                   <TaskHeader 
-                    onClick={() => toggleTask(task._id)}
-                    isExpanded={expandedTasks[task._id]}
+                    onClick={() => toggleTask(taskId)}
+                    isExpanded={expandedTasks[taskId]}
                   >
                     <TaskItemTitle>
                       {task.title || 'Untitled Task'}
@@ -353,11 +357,11 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       <StatusBadge status={task.status}>
                         {getStatusIcon(task.status)} {task.status || 'pending'}
                       </StatusBadge>
-                      {expandedTasks[task._id] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      {expandedTasks[taskId] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </div>
                   </TaskHeader>
                   
-                  {expandedTasks[task._id] && (
+                  {expandedTasks[taskId] && (
                     <TaskContent>
                       <div style={{ marginBottom: '12px' }}>{task.description || 'No description provided.'}</div>
                       
@@ -400,7 +404,8 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                     </TaskContent>
                   )}
                 </TaskItem>
-              ))}
+                );
+              })}
             </TaskList>
           ) : (
             <EmptyState>

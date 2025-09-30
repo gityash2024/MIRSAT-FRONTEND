@@ -900,6 +900,8 @@ const LogsList = () => {
   };
 
   const formatAction = (action) => {
+    if (!action || typeof action !== 'string') return 'Unknown Action';
+    
     const actionMap = {
       'task_started': 'Task Started',
       'task_completed': 'Task Completed',
@@ -921,6 +923,7 @@ const LogsList = () => {
   };
 
   const getActionType = (action) => {
+    if (!action || typeof action !== 'string') return 'default';
     if (action.includes('started')) return 'task_started';
     if (action.includes('completed')) return 'task_completed';
     if (action.includes('progress')) return 'task_progress_updated';

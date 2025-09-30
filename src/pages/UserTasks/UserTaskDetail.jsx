@@ -4106,11 +4106,11 @@ const UserTaskDetail = () => {
                         <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                       )}
                     </QuestionText>
-                    <QuestionBadges>
+                    {/* <QuestionBadges>
                       <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
                         {question.required === false ? 'Optional' : 'Required'}
                       </QuestionBadge>
-                    </QuestionBadges>
+                    </QuestionBadges> */}
                   </QuestionHeader>
                   
                   {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
@@ -4453,9 +4453,9 @@ const UserTaskDetail = () => {
                             </QuestionText>
                             
                             <QuestionBadges>
-                              <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
+                              {/* <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
                                 {question.required === false ? 'Optional' : 'Required'}
-                              </QuestionBadge>
+                              </QuestionBadge> */}
                               <ScoreBadge hasResponse={achievedScore > 0}>
                                 <Star size={14} />
                                 {achievedScore}/{maxScore}

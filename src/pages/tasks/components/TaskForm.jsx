@@ -1798,7 +1798,7 @@ const TaskForm = ({
             required
           >
             <option value="">Select Template</option>
-            {inspectionLevels?.map(level => (
+            {inspectionLevels?.filter(level => level.status === 'active').map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}
               </option>

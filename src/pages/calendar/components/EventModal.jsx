@@ -199,6 +199,7 @@ const EventModal = ({
   const { users } = useSelector((state) => state.users || { users: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
   const { assets } = useSelector((state) => state.assets || { assets: [] });
+  const { loading } = useSelector((state) => state.tasks || { loading: false });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -211,6 +212,8 @@ const EventModal = ({
     deadline: '',
     location: ''
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Available statuses and priorities
   const statuses = [
@@ -302,30 +305,38 @@ const EventModal = ({
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
     
-    const eventData = {
-      title: formData.title,
-      description: formData.description,
-      // status: formData.status,
-      priority: formData.priority,
-      assignedTo: formData.assignedTo,
-      inspectionLevel: formData.inspectionLevel,
-      asset: formData.asset,
-      deadline: formData.deadline,
-      location: formData.location
-    };
+    setIsSubmitting(true);
+    
+    try {
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        // status: formData.status,
+        priority: formData.priority,
+        assignedTo: formData.assignedTo,
+        inspectionLevel: formData.inspectionLevel,
+        asset: formData.asset,
+        deadline: formData.deadline,
+        location: formData.location
+      };
 
-    if (event) {
-      onUpdate({ ...eventData, id: event.id });
-    } else {
-      onAdd(eventData);
+      if (event) {
+        await onUpdate({ ...eventData, id: event.id });
+      } else {
+        await onAdd(eventData);
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -389,7 +400,7 @@ const EventModal = ({
                   }}
                 >
                   <option value="">Select Template</option>
-                  {levels?.results?.map(level => {
+                  {levels?.results?.filter(level => level.status === 'active').map(level => {
                     const isSelected = level._id === formData.inspectionLevel;
                     console.log(`Template option: ${level.name} (${level._id}) - Selected: ${isSelected}`);
                     return (
@@ -527,11 +538,18 @@ const EventModal = ({
           )}
           
           <ButtonGroup>
-            <Button type="button" onClick={onClose}>
+            <Button type="button" onClick={onClose} disabled={isSubmitting || loading}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" onClick={handleSubmit}>
-              {event ? 'Update Event' : 'Create Event'}
+            <Button type="submit" variant="primary" onClick={handleSubmit} disabled={isSubmitting || loading}>
+              {isSubmitting || loading ? (
+                <>
+                  <span style={{ marginRight: '8px' }}>⏳</span>
+                  {event ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                event ? 'Update Event' : 'Create Event'
+              )}
             </Button>
           </ButtonGroup>
         </ModalFooter>
