@@ -1233,16 +1233,24 @@ const UserList = () => {
       {deleteConfirm && (
         <DeleteConfirmDialog>
           <DialogContent>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>Permanently Delete User</DialogTitle>
             <DialogMessage>
-              Are you sure you want to delete {deleteConfirm.name}? This action cannot be undone.
+              <strong>Warning:</strong> You are about to permanently delete user <strong>{deleteConfirm.name}</strong> ({deleteConfirm.email}). 
+              <br /><br />
+              This action will:
+              <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
+                <li>Completely remove the user from the database</li>
+                <li>Delete all associated user data</li>
+                <li>Allow the email address to be used for new user registrations</li>
+              </ul>
+              <strong>This action cannot be undone.</strong>
             </DialogMessage>
             <DialogActions>
               <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleConfirmDelete}>
-                Delete User
+              <Button variant="primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}>
+                Permanently Delete User
               </Button>
             </DialogActions>
           </DialogContent>
