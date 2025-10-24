@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { X, Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -139,6 +140,7 @@ const Button = styled.button`
 `;
 
 const SubLevelViewModal = ({ subLevel, onClose }) => {
+  const { t } = useTranslation();
   if (!subLevel) return null;
   
   return (
@@ -147,7 +149,7 @@ const SubLevelViewModal = ({ subLevel, onClose }) => {
         <ModalHeader>
           <ModalTitle>
             <Layers size={20} />
-            Sub Level Details
+            {t('inspections.subLevelDetails')}
           </ModalTitle>
           <ModalCloseButton onClick={onClose}>
             <X size={20} />
@@ -156,30 +158,30 @@ const SubLevelViewModal = ({ subLevel, onClose }) => {
         
         <SubLevelDetails>
           <DetailItem>
-            <DetailLabel>Name</DetailLabel>
+            <DetailLabel>{t('common.name')}</DetailLabel>
             <DetailValue>{subLevel.name}</DetailValue>
           </DetailItem>
           
           <DetailItem>
-            <DetailLabel>Description</DetailLabel>
+            <DetailLabel>{t('common.description')}</DetailLabel>
             <DetailValue>{subLevel.description}</DetailValue>
           </DetailItem>
           
           <DetailItem>
-            <DetailLabel>Order</DetailLabel>
-            <DetailValue>{subLevel.order !== undefined ? subLevel.order : 'N/A'}</DetailValue>
+            <DetailLabel>{t('common.order')}</DetailLabel>
+            <DetailValue>{subLevel.order !== undefined ? subLevel.order : t('common.notApplicable')}</DetailValue>
           </DetailItem>
           
           <DetailItem>
-            <DetailLabel>Status</DetailLabel>
+            <DetailLabel>{t('common.status')}</DetailLabel>
             <DetailValue>
-              {subLevel.isCompleted ? 'Completed' : 'Pending'}
+              {subLevel.isCompleted ? t('common.completed') : t('common.pending')}
             </DetailValue>
           </DetailItem>
           
           {subLevel.completedAt && (
             <DetailItem>
-              <DetailLabel>Completed At</DetailLabel>
+              <DetailLabel>{t('common.completedAt')}</DetailLabel>
               <DetailValue>
                 {new Date(subLevel.completedAt).toLocaleString()}
               </DetailValue>
@@ -189,7 +191,7 @@ const SubLevelViewModal = ({ subLevel, onClose }) => {
         
         {subLevel.subLevels && subLevel.subLevels.length > 0 && (
           <NestedSubLevels>
-            <NestedTitle>Nested Sub Levels</NestedTitle>
+            <NestedTitle>{t('inspections.nestedSubLevels')}</NestedTitle>
             {subLevel.subLevels.map((nested, index) => (
               <SubLevelItem key={nested._id || index}>
                 <h5>{nested.name}</h5>
@@ -200,7 +202,7 @@ const SubLevelViewModal = ({ subLevel, onClose }) => {
         )}
         
         <FooterActions>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
         </FooterActions>
       </ModalContent>
     </ModalOverlay>

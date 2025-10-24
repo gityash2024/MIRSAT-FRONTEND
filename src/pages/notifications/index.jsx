@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Check, AlertTriangle, Info, Calendar, Clock, ArrowRight, X, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import useNotification from '../../hooks/useNotification';
 
 // Mock data for fallback
@@ -193,6 +194,7 @@ const ViewAllButton = styled(Link)`
 `;
 
 export const NotificationDropdown = ({ isOpen }) => {
+  const { t } = useTranslation();
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotification();
   
   useEffect(() => {
@@ -208,7 +210,7 @@ export const NotificationDropdown = ({ isOpen }) => {
   return (
     <DropdownContainer isOpen={isOpen}>
       <DropdownHeader>
-        <DropdownTitle>Notifications</DropdownTitle>
+        <DropdownTitle>{t('notifications.notifications')}</DropdownTitle>
         <Badge>{unreadCount || 0} New</Badge>
       </DropdownHeader>
 
@@ -544,6 +546,7 @@ const ActionButton = styled.button`
 `;
 
 const NotificationsPage = () => {
+  const { t } = useTranslation();
   const { 
     notifications, 
     loading, 
@@ -600,8 +603,8 @@ const NotificationsPage = () => {
     <NotificationContainer>
       <Header>
         <TitleSection>
-          <PageTitle>Notifications</PageTitle>
-          <PageDescription>View and manage your notifications</PageDescription>
+          <PageTitle>{t('notifications.notifications')}</PageTitle>
+          <PageDescription>{t('notifications.viewAndManage')}</PageDescription>
         </TitleSection>
         <ActionButtons>
           <FilterButton isActive={filter === 'all'} onClick={() => handleFilterChange('all')}>
@@ -621,7 +624,7 @@ const NotificationsPage = () => {
       </Header>
 
       {loading ? (
-        <LoadingMessage>Loading notifications...</LoadingMessage>
+        <LoadingMessage>{t('notifications.loadingNotifications')}</LoadingMessage>
       ) : filteredNotifications.length > 0 ? (
         <>
           <NotificationGrid>
@@ -676,7 +679,7 @@ const NotificationsPage = () => {
               >
                 Previous
               </PaginationButton>
-              <PageInfo>Page {currentPage} of {totalPages}</PageInfo>
+              <PageInfo>{t('notifications.page')} {currentPage} {t('notifications.of')} {totalPages}</PageInfo>
               <PaginationButton 
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
@@ -689,8 +692,8 @@ const NotificationsPage = () => {
       ) : (
         <EmptyState>
           <Bell size={48} color="#94a3b8" />
-          <EmptyTitle>No notifications</EmptyTitle>
-          <EmptyMessage>You don't have any notifications at the moment</EmptyMessage>
+          <EmptyTitle>{t('notifications.noNotifications')}</EmptyTitle>
+          <EmptyMessage>{t('notifications.noNotificationsMessage')}</EmptyMessage>
         </EmptyState>
       )}
     </NotificationContainer>

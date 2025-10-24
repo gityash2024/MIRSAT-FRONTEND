@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Save, Plus, X } from 'react-feather';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -252,6 +253,7 @@ const RequirementBadge = styled.span`
 `;
 
 const QuestionCreate = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useParams(); // Get question ID if editing
@@ -404,9 +406,9 @@ const QuestionCreate = () => {
       <PageHeader>
         <BackButton onClick={() => navigate('/questionnaire')}>
           <ChevronLeft size={16} />
-          Back to Question Library
+          {t('common.backToQuestionLibrary')}
         </BackButton>
-        <Title>{isEditing ? 'Edit Question' : 'Create Question'}</Title>
+        <Title>{isEditing ? t('common.editQuestion') : t('common.createQuestion')}</Title>
         <ActionButtons>
           <Button 
             primary 
@@ -414,21 +416,21 @@ const QuestionCreate = () => {
             disabled={isSubmitting}
           >
             <Save size={16} />
-            {isEditing ? 'Update Question' : 'Save Question'}
+            {isEditing ? t('common.updateQuestion') : t('common.saveQuestion')}
           </Button>
         </ActionButtons>
       </PageHeader>
       
       <FormCard>
-        <CardTitle>Question Details</CardTitle>
+        <CardTitle>{t('common.questionDetails')}</CardTitle>
         <FormRow>
           <FormGroup>
-            <Label>Question Text *</Label>
+            <Label>{t('common.questionText')} *</Label>
             <TextArea
               name="text"
               value={question.text}
               onChange={handleChange}
-              placeholder="Enter question text"
+              placeholder={t('common.enterQuestionText')}
               rows={3}
               required
             />
@@ -437,33 +439,33 @@ const QuestionCreate = () => {
         
         <FormRow columns="1fr 1fr">
           <FormGroup>
-            <Label>Answer Type</Label>
+            <Label>{t('common.answerType')}</Label>
             <Select 
               name="answerType" 
               value={question.answerType} 
               onChange={handleTypeChange}
             >
-              <option value="yesno">Yes/No</option>
-              <option value="text">Text</option>
-              <option value="multiple_choice">Multiple Choice</option>
+              <option value="yesno">{t('common.yesNo')}</option>
+              <option value="text">{t('common.text')}</option>
+              <option value="multiple_choice">{t('common.multipleChoice')}</option>
           
-              <option value="compliance">Compliance</option>
-              <option value="date">Date</option>
-              <option value="file">File Upload</option>
-              <option value="signature">Signature</option>
-              <option value="media">Media Upload</option>
+              <option value="compliance">{t('common.compliance')}</option>
+              <option value="date">{t('common.date')}</option>
+              <option value="file">{t('common.fileUpload')}</option>
+              <option value="signature">{t('common.signature')}</option>
+              <option value="media">{t('common.mediaUpload')}</option>
             </Select>
           </FormGroup>
           
           <FormGroup>
-            <Label>Requirement Type</Label>
+            <Label>{t('common.requirementType')}</Label>
             <Select 
               name="requirementType" 
               value={question.requirementType || 'mandatory'} 
               onChange={handleChange}
             >
-              <option value="mandatory">Mandatory</option>
-              <option value="recommended">Recommended</option>
+              <option value="mandatory">{t('common.mandatory')}</option>
+              <option value="recommended">{t('common.recommended')}</option>
             </Select>
           </FormGroup>
         </FormRow>
@@ -480,7 +482,7 @@ const QuestionCreate = () => {
                 onChange={handleChange}
                 style={{ marginRight: '8px' }}
               />
-              <label htmlFor="required">This question is required</label>
+              <label htmlFor="required">{t('common.thisQuestionIsRequired')}</label>
             </div>
           </FormGroup>
         </FormRow>

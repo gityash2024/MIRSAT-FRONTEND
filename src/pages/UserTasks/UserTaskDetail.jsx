@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
 import { 
   Info, 
@@ -2145,14 +2146,14 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
     const dataURL = signaturePadRef.current.toDataURL('image/png');
     onSaveResponse(questionId, dataURL);
     setShowSignatureModal(false);
-    toast.success('Signature saved successfully');
+    toast.success(t('tasks.signatureSavedSuccessfully'));
   }, [questionId, onSaveResponse]);
 
   const handleDeleteSignature = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     onSaveResponse(questionId, '');
-    toast.success('Signature removed');
+    toast.success(t('tasks.signatureRemoved'));
   }, [questionId, onSaveResponse]);
 
   const handleModalOverlayClick = useCallback((e) => {
@@ -2168,7 +2169,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
   return (
     <div>
       <div style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px' }}>
-        {isDisabled ? 'Signature' : 'Digital Signature Required'}
+        {isDisabled ? t('tasks.signature') : t('tasks.digitalSignatureRequired')}
       </div>
 
       {/* Signature Display or Button */}
@@ -2186,7 +2187,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
             fontWeight: '500',
             marginBottom: '12px'
           }}>
-            ✅ Signature Captured
+            ✅ {t('tasks.signatureCaptured')}
           </div>
           
           <div style={{
@@ -2353,10 +2354,10 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
                   transition: 'all 0.3s ease'
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <SaveButton type="button" onClick={handleSaveSignature}>
-                Save Signature
+                {t('tasks.saveSignature')}
               </SaveButton>
             </SignatureActions>
           </ModalContent>
@@ -2375,6 +2376,7 @@ const UserTaskDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
+  const { t } = useTranslation();
   const commentBoxRef = useRef(null);
   const timerRef = useRef(null);
   const signatureCanvasRef = useRef(null);
@@ -3005,7 +3007,7 @@ const UserTaskDetail = () => {
   const handleStartTask = async () => {
     try {
       await userTaskService.startTask(taskId);
-      toast.success('Task started successfully!');
+      toast.success(t('tasks.taskStartedSuccessfully'));
       
       // Log task start
       await FrontendLogger.logTaskStart(taskId, currentTask?.title || 'Unknown Task');
@@ -3017,7 +3019,7 @@ const UserTaskDetail = () => {
       setAccumulatedTime(0);
       startScreenTimer();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to start task');
+      toast.error(error.response?.data?.message || t('tasks.failedToStartTask'));
     }
   };
 
@@ -3401,7 +3403,7 @@ const UserTaskDetail = () => {
       await dispatch(fetchUserTaskDetails(currentTask._id));
       
       toast.dismiss();
-      toast.success('Signature saved successfully');
+      toast.success(t('tasks.signatureSavedSuccessfully'));
       setShowSignatureModal(false);
       
       // Clear signature image after successful save
@@ -3605,7 +3607,7 @@ const UserTaskDetail = () => {
       case 'compliance':
         const complianceOptions = question.options?.length > 0 
           ? question.options 
-          : ['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'];
+          : [t('tasks.fullCompliance'), t('tasks.partialCompliance'), t('tasks.nonCompliant'), t('common.notApplicable')];
         
         return (
           <OptionsContainer>
@@ -3625,7 +3627,7 @@ const UserTaskDetail = () => {
       case 'yesno':
         const yesNoOptions = question.options?.length > 0 
           ? question.options 
-          : ['Yes', 'No', 'N/A'];
+          : [t('common.yes'), t('common.no'), t('common.notApplicable')];
         
         return (
           <OptionsContainer>
@@ -3655,7 +3657,7 @@ const UserTaskDetail = () => {
                 {option}
               </OptionButton>
             )) : (
-              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+              <div style={{ color: '#666', fontStyle: 'italic' }}>{t('tasks.noOptionsAvailable')}</div>
             )}
           </OptionsContainer>
         );
@@ -3686,7 +3688,7 @@ const UserTaskDetail = () => {
                 {option}
               </CheckboxItem>
             )) : (
-              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+              <div style={{ color: '#666', fontStyle: 'italic' }}>{t('tasks.noOptionsAvailable')}</div>
             )}
           </CheckboxContainer>
         );
@@ -4076,19 +4078,19 @@ const UserTaskDetail = () => {
           <PreInspectionHeader>
             <SectionTitle>
               <CheckSquare size={20} />
-              Pre-Inspection Questionnaire
+              {t('tasks.preInspectionQuestionnaire')}
             </SectionTitle>
             
             <CompletionBadge complete={isPreInspectionCompleted()}>
               {isPreInspectionCompleted() ? (
                 <>
                   <CheckCircle size={16} />
-                  Completed
+                  {t('tasks.completed')}
                 </>
               ) : (
                 <>
                   <AlertCircle size={16} />
-                  Incomplete
+                  {t('tasks.incomplete')}
                 </>
               )}
             </CompletionBadge>
@@ -4150,9 +4152,9 @@ const UserTaskDetail = () => {
       <InspectionContainer>
         <InspectionHeader>
           <div>
-            <InspectionTitle>Inspection Questionnaire</InspectionTitle>
+            <InspectionTitle>{t('tasks.inspectionQuestionnaire')}</InspectionTitle>
             <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
-              Complete all sections to finish the inspection
+              {t('tasks.completeAllSectionsToFinish')}
             </div>
           </div>
           
@@ -4174,7 +4176,7 @@ const UserTaskDetail = () => {
               }}
             >
               <ChevronLeft size={16} />
-              Previous
+              {t('common.previous')}
             </NavigationButton>
 
             <DropdownContainer>
@@ -4189,7 +4191,7 @@ const UserTaskDetail = () => {
                 }}
               >
                 <span>
-                  {currentPage ? `Page ${inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) + 1}: ${currentPage.name}` : 'Select Page'}
+                  {currentPage ? `${t('common.page')} ${inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) + 1}: ${currentPage.name}` : t('tasks.selectPage')}
                 </span>
                 <ChevronDown size={16} />
               </DropdownButton>
@@ -4246,7 +4248,7 @@ const UserTaskDetail = () => {
                 }
               }}
             >
-              Next
+              {t('common.next')}
               <ChevronRight size={16} />
             </NavigationButton>
           </InspectionControls>
@@ -4257,17 +4259,17 @@ const UserTaskDetail = () => {
             <NavigationHeader>
               <NavigationTitle>
                 <Navigation size={16} />
-                Sections
-                <KeyboardShortcutsBadge title="Keyboard Shortcuts: Alt+← → for pages, Ctrl+← → for sections">
+                {t('tasks.sections')}
+                <KeyboardShortcutsBadge title={t('tasks.keyboardShortcuts')}>
                   <Info size={12} />
                 </KeyboardShortcutsBadge>
               </NavigationTitle>
               <ProgressSummary>
                 <span style={{ fontWeight: '600', color: '#3788d8' }}>
-                  {currentPage?.sections?.length || 0} Sections
+                  {currentPage?.sections?.length || 0} {t('tasks.sections')}
                 </span>
                 <span style={{ color: '#27ae60' }}>
-                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}% Complete
+                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}% {t('tasks.complete')}
                 </span>
               </ProgressSummary>
             </NavigationHeader>
@@ -4293,12 +4295,12 @@ const UserTaskDetail = () => {
                   aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
                 >
                   <ChevronLeft size={14} />
-                  Previous Section
+                  {t('tasks.previousSection')}
                 </SectionNavigationButton>
 
                 {/* Section Counter */}
                 <SectionCounter aria-live="polite">
-                  Section {currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1} of {currentPage.sections.length}
+                  {t('tasks.section')} {currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1} {t('common.of')} {currentPage.sections.length}
                 </SectionCounter>
 
                 {/* Next Section Button */}
@@ -4318,7 +4320,7 @@ const UserTaskDetail = () => {
                   }}
                   aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
                 >
-                  Next Section
+                  {t('tasks.nextSection')}
                   <ChevronRight size={14} />
                 </SectionNavigationButton>
               </SectionNavigationControls>
@@ -4493,7 +4495,7 @@ const UserTaskDetail = () => {
                       color: '#1a202c'
                     }}>
                       <MessageSquare size={18} />
-                      Section Comments
+                      {t('tasks.sectionComments')}
                     </div>
                     
                     {/* Existing Comments */}
@@ -4518,7 +4520,7 @@ const UserTaskDetail = () => {
                                 color: '#374151',
                                 fontSize: '14px'
                               }}>
-                                {comment.user?.name || 'Unknown User'}
+                                {comment.user?.name || t('common.unknownUser')}
                               </span>
                               <span style={{ 
                                 fontSize: '12px', 
@@ -4543,7 +4545,7 @@ const UserTaskDetail = () => {
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
                         <div style={{ flex: 1 }}>
                           <textarea
-                            placeholder="Add a comment for this section..."
+                            placeholder={t('tasks.addCommentForSection')}
                             value={sectionCommentTexts[selectedSection] || ''}
                             onChange={(e) => handleSectionCommentTextChange(selectedSection, e.target.value)}
                             style={{
@@ -4592,12 +4594,12 @@ const UserTaskDetail = () => {
                                 borderRadius: '50%',
                                 animation: 'spin 1s linear infinite'
                               }} />
-                              Saving...
+                              {t('common.saving')}
                             </>
                           ) : (
                             <>
                               <Send size={16} />
-                              Comment
+                              {t('common.comment')}
                             </>
                           )}
                         </button>
@@ -4613,7 +4615,7 @@ const UserTaskDetail = () => {
                         fontStyle: 'italic',
                         fontSize: '14px'
                       }}>
-                        Comments are disabled for archived tasks
+                        {t('tasks.commentsDisabledForArchived')}
                       </div>
                     )}
                                       </div>
@@ -4621,8 +4623,8 @@ const UserTaskDetail = () => {
               ) : (
                 <EmptyState>
                   <Info size={48} />
-                  <h3>Select a Section</h3>
-                  <p>Choose a section from the navigation panel to view and answer questions.</p>
+                  <h3>{t('tasks.selectASection')}</h3>
+                  <p>{t('tasks.chooseASectionFromNavigation')}</p>
                 </EmptyState>
               )}
             </QuestionsContent>
@@ -4646,7 +4648,7 @@ const UserTaskDetail = () => {
           }}>
             <LoadingSpinner />
             <div style={{ fontSize: '18px', color: '#1a202c', fontWeight: '600' }}>
-              Loading task details...
+              {t('tasks.loadingTaskDetails')}
             </div>
           </div>
         </MainContent>
@@ -4661,13 +4663,13 @@ const UserTaskDetail = () => {
           <TopBar>
             <BackButton onClick={() => navigate('/user-tasks')}>
               <ArrowLeft size={18} />
-              Back to Tasks
+              {t('common.backToTasks')}
             </BackButton>
           </TopBar>
           <Card>
             <EmptyState>
               <AlertTriangle size={48} />
-              <h3>Error Loading Task</h3>
+              <h3>{t('tasks.errorLoadingTask')}</h3>
               <p>{error}</p>
             </EmptyState>
           </Card>
@@ -4683,14 +4685,14 @@ const UserTaskDetail = () => {
           <TopBar>
             <BackButton onClick={() => navigate('/user-tasks')}>
               <ArrowLeft size={18} />
-              Back to Tasks
+              {t('common.backToTasks')}
             </BackButton>
           </TopBar>
           <Card>
             <EmptyState>
               <AlertTriangle size={48} />
-              <h3>Task Not Found</h3>
-              <p>The task you are looking for does not exist.</p>
+              <h3>{t('tasks.taskNotFound')}</h3>
+              <p>{t('tasks.taskNotFoundDescription')}</p>
             </EmptyState>
           </Card>
         </MainContent>
@@ -4704,7 +4706,7 @@ const UserTaskDetail = () => {
         <TopBar>
           <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft size={18} />
-            Back to Tasks
+            {t('common.backToTasks')}
           </BackButton>
           
           <QuickActions>
@@ -4777,10 +4779,10 @@ const UserTaskDetail = () => {
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
             <StatusBadge status={currentTask.status}>
               <StatusIcon status={currentTask.status} />
-              {currentTask.status === 'pending' && 'Pending'}
-              {currentTask.status === 'in_progress' && 'In Progress'}
-              {currentTask.status === 'completed' && 'Completed'}
-              {currentTask.status === 'archived' && 'Archived'}
+              {currentTask.status === 'pending' && t('tasks.pending')}
+              {currentTask.status === 'in_progress' && t('tasks.inProgress')}
+              {currentTask.status === 'completed' && t('tasks.completed')}
+              {currentTask.status === 'archived' && t('tasks.archived')}
             </StatusBadge>
             
             {isArchivedTask && (
@@ -4804,7 +4806,10 @@ const UserTaskDetail = () => {
             {currentTask.priority && (
               <PriorityBadge priority={currentTask.priority}>
                 <AlertTriangle size={14} />
-                {currentTask.priority}
+                {currentTask.priority === 'high' ? t('tasks.high') :
+                 currentTask.priority === 'medium' ? t('tasks.medium') :
+                 currentTask.priority === 'low' ? t('tasks.low') :
+                 currentTask.priority}
               </PriorityBadge>
             )}
           </div>
@@ -4812,7 +4817,7 @@ const UserTaskDetail = () => {
           <TaskMeta>
             {currentTask.dueDate && (
               <MetaCard>
-                <MetaLabel>Due Date</MetaLabel>
+                <MetaLabel>{t('tasks.dueDate')}</MetaLabel>
                 <MetaValue>
                   <Calendar size={18} />
                   {formatDate(currentTask.dueDate)}
@@ -4822,7 +4827,7 @@ const UserTaskDetail = () => {
             
             {currentTask.location && (
               <MetaCard>
-                <MetaLabel>Location</MetaLabel>
+                <MetaLabel>{t('tasks.location')}</MetaLabel>
                 <MetaValue>
                   <MapPin size={18} />
                   {currentTask.location}
@@ -4832,7 +4837,7 @@ const UserTaskDetail = () => {
             
             {currentTask.inspectionType && (
               <MetaCard>
-                <MetaLabel>Type</MetaLabel>
+                <MetaLabel>{t('tasks.type')}</MetaLabel>
                 <MetaValue>
                   <Clipboard size={18} />
                   {currentTask.inspectionType}
@@ -4841,7 +4846,7 @@ const UserTaskDetail = () => {
             )}
             
             <MetaCard>
-              <MetaLabel>Progress</MetaLabel>
+              <MetaLabel>{t('tasks.progress')}</MetaLabel>
               <MetaValue>
                 <TrendingUp size={18} />
                 {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
@@ -4861,7 +4866,7 @@ const UserTaskDetail = () => {
               }}
             >
               <Info size={16} />
-              Overview
+              {t('tasks.overview')}
             </Tab>
             {/* {!isArchivedTask && ( */}
               <Tab 
@@ -4874,7 +4879,7 @@ const UserTaskDetail = () => {
                 disabled={currentTask?.status === 'pending'}
               >
                 <CheckSquare size={16} />
-                Inspection
+                {t('tasks.inspection')}
               </Tab>
             {/* )} */}
             <Tab 
@@ -4887,7 +4892,7 @@ const UserTaskDetail = () => {
               disabled={currentTask?.status === 'pending'}
             >
               <FileText size={16} />
-              Final Report
+              {t('tasks.finalReport')}
             </Tab>
           </TabsWrapper>
         </TabsContainer>
@@ -4899,42 +4904,42 @@ const UserTaskDetail = () => {
                 <Card>
                   <SectionTitle>
                     <Info size={20} />
-                    Task Overview
+                    {t('tasks.taskOverview')}
                   </SectionTitle>
                   
                   <div style={{ marginBottom: '24px' }}>
                     <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#1a202c', marginBottom: '12px' }}>
-                      Task Details
+                      {t('tasks.taskDetails')}
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Created By</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.createdBy')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
-                          {currentTask.createdBy?.name || currentTask.createdBy?.email || currentTask.createdBy || 'Unknown'}
+                          {currentTask.createdBy?.name || currentTask.createdBy?.email || currentTask.createdBy || t('common.unknown')}
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned To</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.assignedTo')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {Array.isArray(currentTask.assignedTo) 
                             ? currentTask.assignedTo.map(user => user.name || user.email || user).join(', ')
-                            : currentTask.assignedTo?.name || currentTask.assignedTo?.email || currentTask.assignedTo || 'Unassigned'
+                            : currentTask.assignedTo?.name || currentTask.assignedTo?.email || currentTask.assignedTo || t('tasks.unassigned')
                           }
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Asset</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.asset')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
-                          {currentTask.asset?.displayName || currentTask.asset?.name || currentTask.asset || 'N/A'}
+                          {currentTask.asset?.displayName || currentTask.asset?.name || currentTask.asset || t('common.notApplicable')}
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Created</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.created')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>{formatDate(currentTask.createdAt)}</div>
                       </div>
                       {currentTask.status && (
                         <div>
-                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Status</div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.status')}</div>
                           <div style={{ 
                             fontWeight: '600', 
                             color: currentTask.status === 'completed' ? '#16a34a' : 
@@ -4944,16 +4949,23 @@ const UserTaskDetail = () => {
                             gap: '6px'
                           }}>
                             <StatusIcon status={currentTask.status} />
-                            {currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+                            {currentTask.status === 'pending' ? t('tasks.pending') :
+                             currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                             currentTask.status === 'completed' ? t('tasks.completed') :
+                             currentTask.status === 'archived' ? t('tasks.archived') :
+                             currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
                           </div>
                         </div>
                       )}
                       {currentTask.priority && (
                         <div>
-                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Priority</div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.priority')}</div>
                           <div style={{ fontWeight: '600', color: '#1a202c' }}>
                             <PriorityBadge priority={currentTask.priority}>
-                              {currentTask.priority}
+                              {currentTask.priority === 'high' ? t('tasks.high') :
+                               currentTask.priority === 'medium' ? t('tasks.medium') :
+                               currentTask.priority === 'low' ? t('tasks.low') :
+                               currentTask.priority}
                             </PriorityBadge>
                           </div>
                         </div>
@@ -4969,7 +4981,7 @@ const UserTaskDetail = () => {
                   <Card style={{ marginTop: '24px' }}>
                     <SectionTitle>
                       <MessageSquare size={20} />
-                      Task Comments
+                      {t('tasks.taskComments')}
                     </SectionTitle>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {currentTask.comments.map((comment, index) => (
@@ -4993,7 +5005,7 @@ const UserTaskDetail = () => {
                               color: '#1a202c',
                               fontSize: '14px'
                             }}>
-                              {comment.user?.name || comment.user?.email || comment.user || 'Unknown User'}
+                              {comment.user?.name || comment.user?.email || comment.user || t('common.unknownUser')}
                             </span>
                             <span style={{ 
                               fontSize: '12px', 
@@ -5021,7 +5033,7 @@ const UserTaskDetail = () => {
                   <Card style={{ marginTop: '24px' }}>
                     <SectionTitle>
                       <BarChart2 size={20} />
-                      Task Metrics & Progress
+                      {t('tasks.taskMetricsProgress')}
                     </SectionTitle>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                       <div style={{ 
@@ -5030,12 +5042,12 @@ const UserTaskDetail = () => {
                         borderRadius: '12px',
                         textAlign: 'center'
                       }}>
-                        <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>OVERALL PROGRESS</div>
+                        <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallProgress')}</div>
                         <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
                           {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                         </div>
                         <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          Task completion
+                          {t('tasks.taskCompletion')}
                         </div>
                       </div>
                       
@@ -5045,12 +5057,12 @@ const UserTaskDetail = () => {
                         borderRadius: '12px',
                         textAlign: 'center'
                       }}>
-                        <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>COMPLIANCE SCORE</div>
+                        <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.complianceScore')}</div>
                         <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
                           {scores.percentage}%
                         </div>
                         <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          {scores.achieved} of {scores.total} points
+                          {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
                         </div>
                       </div>
                       
@@ -5060,12 +5072,12 @@ const UserTaskDetail = () => {
                         borderRadius: '12px',
                         textAlign: 'center'
                       }}>
-                        <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>TIME SPENT</div>
+                        <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
                         <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
                           {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                         </div>
                         <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          Total duration
+                          {t('tasks.totalDuration')}
                         </div>
                       </div>
                       
@@ -5075,12 +5087,12 @@ const UserTaskDetail = () => {
                         borderRadius: '12px',
                         textAlign: 'center'
                       }}>
-                        <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>INSPECTION PAGES</div>
+                        <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.inspectionPages')}</div>
                         <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
                           {inspectionPages.length}
                         </div>
                         <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          Total sections
+                          {t('tasks.totalSections')}
                         </div>
                       </div>
                     </div>
@@ -5091,7 +5103,7 @@ const UserTaskDetail = () => {
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <StartTaskButton onClick={handleStartTask} disabled={actionLoading}>
                       <Play size={20} />
-                      Start Inspection
+                      {t('tasks.startInspection')}
                     </StartTaskButton>
                   </div>
                 )}
@@ -5100,7 +5112,7 @@ const UserTaskDetail = () => {
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <ContinueButton onClick={() => setActiveTab('inspection')} disabled={actionLoading}>
                       <Activity size={20} />
-                      Continue Inspection
+                      {t('tasks.continueInspection')}
                     </ContinueButton>
                   </div>
                 )}
@@ -5145,7 +5157,7 @@ const UserTaskDetail = () => {
                   <ProgressHeader>
                     <ProgressTitle>
                       <TrendingUp size={20} />
-                      Inspection Progress
+                      {t('tasks.inspectionProgress')}
                     </ProgressTitle>
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -5177,7 +5189,7 @@ const UserTaskDetail = () => {
                             background: '#16a34a',
                             animation: 'pulse 2s infinite'
                           }}></div>
-                          Live
+                          {t('tasks.live')}
                         </div>
                       )}
                     </div>
@@ -5192,12 +5204,12 @@ const UserTaskDetail = () => {
                   <ScoreCard>
                     <SectionTitle>
                       <Award size={20} />
-                      Inspection Scoring Summary
+                      {t('tasks.inspectionScoringSummary')}
                     </SectionTitle>
                     
                     <ScoreGrid>
                       <ScoreItem>
-                        <ScoreLabel>Compliance Score</ScoreLabel>
+                        <ScoreLabel>{t('tasks.complianceScore')}</ScoreLabel>
                         <ScoreValue>
                           {scores.achieved} / {scores.total}
                           <span style={{ fontSize: '14px', color: '#27ae60', marginLeft: '8px' }}>
@@ -5207,7 +5219,7 @@ const UserTaskDetail = () => {
                       </ScoreItem>
                       
                       <ScoreItem>
-                        <ScoreLabel>Pages Scored</ScoreLabel>
+                        <ScoreLabel>{t('tasks.pagesScored')}</ScoreLabel>
                         <ScoreValue>
                           {inspectionPages.length > 0 ? 
                             inspectionPages.reduce((sum, page) => {
@@ -5219,7 +5231,7 @@ const UserTaskDetail = () => {
                       </ScoreItem>
                       
                       <ScoreItem>
-                        <ScoreLabel>Completion Rate</ScoreLabel>
+                        <ScoreLabel>{t('tasks.completionRate')}</ScoreLabel>
                         <ScoreValue>
                           {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                         </ScoreValue>
@@ -5244,7 +5256,7 @@ const UserTaskDetail = () => {
                   <ReportHeader>
                     <ReportTitle>
                       <FileText size={24} />
-                      Inspection Final Report
+                      {t('tasks.inspectionFinalReport')}
                     </ReportTitle>
                     
                     {/* <QuickActionButton 
@@ -5259,42 +5271,42 @@ const UserTaskDetail = () => {
                   
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                     <div style={{ background: 'rgba(55, 136, 216, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>OVERALL SCORE</div>
+                      <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
                         {scores.percentage}%
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        {scores.achieved} of {scores.total} points
+                        {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
                       </div>
                     </div>
                     
                     <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>COMPLETION</div>
+                      <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.completion')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
                         {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        Questions answered
+                        {t('tasks.questionsAnswered')}
                       </div>
                     </div>
                     
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>TIME SPENT</div>
+                      <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
                         {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        Total duration
+                        {t('tasks.totalDuration')}
                       </div>
                     </div>
                     
                     <div style={{ background: 'rgba(44, 62, 80, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>PAGES</div>
+                      <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
                         {inspectionPages.length}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        Total sections
+                        {t('tasks.totalSections')}
                       </div>
                     </div>
                   </div>
@@ -5311,7 +5323,7 @@ const UserTaskDetail = () => {
                         gap: '8px'
                       }}>
                         <CheckSquare size={18} />
-                        Pre-Inspection Questionnaire
+                        {t('tasks.preInspectionQuestionnaire')}
                       </h3>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -5366,14 +5378,14 @@ const UserTaskDetail = () => {
                                   borderRadius: '8px',
                                   border: '1px solid rgba(229, 231, 235, 0.8)'
                                 }}>
-                                  <strong>Response:</strong> {
+                                  <strong>{t('tasks.response')}:</strong> {
                                     (() => {
                                       const response = currentTask.questionnaireResponses && 
                                         currentTask.questionnaireResponses[question._id] ? 
                                         currentTask.questionnaireResponses[question._id] : 
                                         null;
                                       
-                                      if (!response) return 'Not answered';
+                                      if (!response) return t('tasks.notAnswered');
                                       
                                       // Handle file responses with preview
                                       if (question.type === 'file' && response) {
@@ -5381,7 +5393,7 @@ const UserTaskDetail = () => {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
                                               <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                                📎 Image uploaded
+                                                📎 {t('tasks.imageUploaded')}
                                               </div>
                                               <img 
                                                 src={response} 
@@ -5401,7 +5413,7 @@ const UserTaskDetail = () => {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
                                               <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                                📎 File uploaded
+                                                📎 {t('tasks.fileUploaded')}
                                               </div>
                                               <button
                                                 onClick={() => {
@@ -5420,12 +5432,12 @@ const UserTaskDetail = () => {
                                                   fontSize: '12px'
                                                 }}
                                               >
-                                                Download File
+                                                {t('tasks.downloadFile')}
                                               </button>
                                             </div>
                                           );
                                         } else {
-                                          return `📎 File uploaded: ${response}`;
+                                          return `📎 ${t('tasks.fileUploaded')}: ${response}`;
                                         }
                                       }
                                       
@@ -5435,7 +5447,7 @@ const UserTaskDetail = () => {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
                                               <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                                ✍️ Signature provided
+                                                ✍️ {t('tasks.signatureProvided')}
                                               </div>
                                               <img 
                                                 src={response} 
@@ -5452,7 +5464,7 @@ const UserTaskDetail = () => {
                                             </div>
                                           );
                                         } else {
-                                          return '✍️ Signature provided';
+                                          return `✍️ ${t('tasks.signatureProvided')}`;
                                         }
                                       }
                                       
@@ -5563,12 +5575,12 @@ const UserTaskDetail = () => {
                           {isArchiving ? (
                             <>
                               <Loader size={20} />
-                              Archiving...
+                              {t('tasks.archiving')}
                             </>
                           ) : (
                             <>
                               <CheckCircle size={20} />
-                              Complete & Archive
+                              {t('tasks.completeAndArchive')}
                             </>
                           )}
                         </QuickActionButton>
@@ -5601,7 +5613,7 @@ const UserTaskDetail = () => {
                         <ExportButtonContainer className="export-dropdown">
                           <ExportButton onClick={handleExportClick}>
                             <Download size={20} />
-                            Download Report
+                            {t('tasks.downloadReport')}
                             <ChevronDown size={16} />
                           </ExportButton>
                           {showExportDropdown && (
@@ -5660,7 +5672,7 @@ const UserTaskDetail = () => {
                         }}
                       >
                         <CheckCircle size={20} />
-                        Submit & Download Later
+                        {t('tasks.submitAndDownloadLater')}
                       </QuickActionButton>
                     )}
                   </div>
@@ -5678,7 +5690,7 @@ const UserTaskDetail = () => {
                         justifyContent: 'center'
                       }}>
                         <CheckCircle size={16} />
-                        Inspection completed and archived - Reports are ready for download
+                        {t('tasks.inspectionCompletedAndArchived')}
                       </p>
                     ) : (() => {
                       const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
@@ -5698,12 +5710,12 @@ const UserTaskDetail = () => {
                             {isComplete ? (
                               <>
                                 <CheckCircle size={16} />
-                                Inspection completed ({actualProgress}%) - Ready to archive
+                                {t('tasks.inspectionCompleted')} ({actualProgress}%) - {t('tasks.readyToArchive')}
                               </>
                             ) : (
                               <>
                                 <Clock size={16} />
-                                Progress: {actualProgress}% - Complete all sections to archive
+                                {t('tasks.progress')}: {actualProgress}% - {t('tasks.completeAllSectionsToArchive')}
                               </>
                             )}
                           </p>
@@ -5713,7 +5725,7 @@ const UserTaskDetail = () => {
                               color: '#64748b', 
                               fontStyle: 'italic'
                             }}>
-                              Complete all inspection sections to enable archiving
+                              {t('tasks.completeAllInspectionSectionsToEnableArchiving')}
                             </p>
                           )}
                         </div>
@@ -5729,7 +5741,7 @@ const UserTaskDetail = () => {
             <Card>
               <SectionTitle>
                 <BarChart2 size={20} />
-                Quick Stats
+                {t('tasks.quickStats')}
               </SectionTitle>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -5741,7 +5753,7 @@ const UserTaskDetail = () => {
                   background: 'rgba(55, 136, 216, 0.05)',
                   borderRadius: '8px'
                 }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>Progress</span>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.progress')}</span>
                   <span style={{ fontWeight: '700', color: '#3788d8' }}>
                     {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                   </span>
@@ -5755,7 +5767,7 @@ const UserTaskDetail = () => {
                   background: 'rgba(39, 174, 96, 0.05)',
                   borderRadius: '8px'
                 }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>Score</span>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.score')}</span>
                   <span style={{ fontWeight: '700', color: '#27ae60' }}>
                     {scores.percentage}%
                   </span>
@@ -5769,7 +5781,7 @@ const UserTaskDetail = () => {
                   background: 'rgba(243, 156, 18, 0.05)',
                   borderRadius: '8px'
                 }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>Time</span>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.time')}</span>
                   <span style={{ fontWeight: '700', color: '#f39c12' }}>
                     {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                   </span>
@@ -5783,7 +5795,7 @@ const UserTaskDetail = () => {
                   background: 'rgba(44, 62, 80, 0.05)',
                   borderRadius: '8px'
                 }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>Pages</span>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.pages')}</span>
                   <span style={{ fontWeight: '700', color: '#2c3e50' }}>
                     {inspectionPages.length}
                   </span>
@@ -5945,7 +5957,7 @@ const UserTaskDetail = () => {
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Complete & Archive Inspection</ModalTitle>
+              <ModalTitle>{t('tasks.completeAndArchiveInspection')}</ModalTitle>
               <CloseButton onClick={() => {
                 setShowArchiveModal(false);
                 setSignatureJustSaved(false);
@@ -5987,7 +5999,7 @@ const UserTaskDetail = () => {
 
               <div style={{ marginBottom: '20px' }}>
                 <p style={{ color: '#374151', lineHeight: '1.6' }}>
-                  By clicking "Complete & Archive", this inspection will be:
+                  {t('tasks.byClickingCompleteAndArchive')}
                 </p>
                 <ul style={{ 
                   marginTop: '12px', 
@@ -5995,10 +6007,10 @@ const UserTaskDetail = () => {
                   color: '#64748b',
                   lineHeight: '1.6'
                 }}>
-                  <li>Marked as completed and archived</li>
-                  <li>Made available for report download</li>
-                  <li>Moved to the Archive section in your tasks list</li>
-                  <li>No longer editable</li>
+                  <li>{t('tasks.markedAsCompletedAndArchived')}</li>
+                  <li>{t('tasks.madeAvailableForReportDownload')}</li>
+                  <li>{t('tasks.movedToArchiveSection')}</li>
+                  <li>{t('tasks.noLongerEditable')}</li>
                 </ul>
               </div>
 
@@ -6015,7 +6027,7 @@ const UserTaskDetail = () => {
                   color: '#92400e',
                   fontWeight: '500'
                 }}>
-                  ⚠️ This action cannot be undone. Please ensure all inspection work is complete.
+                  ⚠️ {t('tasks.thisActionCannotBeUndone')}
                 </p>
               </div>
             </div>
@@ -6031,7 +6043,7 @@ const UserTaskDetail = () => {
                 onClick={() => setShowArchiveModal(false)}
                 disabled={isArchiving}
               >
-                Cancel
+                {t('common.cancel')}
               </QuickActionButton>
               <QuickActionButton 
                 primary
@@ -6164,7 +6176,7 @@ const UserTaskDetail = () => {
               <QuickActionButton 
                 onClick={() => setShowDocumentNamingModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </QuickActionButton>
               <QuickActionButton 
                 primary

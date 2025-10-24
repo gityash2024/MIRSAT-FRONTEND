@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { 
   ChevronDown, ChevronUp, ChevronRight, CheckCircle, XCircle, 
   AlertTriangle, Clock, Loader, FileText,
@@ -961,6 +962,7 @@ const InspectionStepForm = ({
   pageData
 }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [selectedSubLevel, setSelectedSubLevel] = useState(null);
   const [expandedNodes, setExpandedNodes] = useState({});
   const [loading, setLoading] = useState({});
@@ -1767,8 +1769,8 @@ const InspectionStepForm = ({
       return (
         <NoSelectionMessage>
           <HelpCircle size={48} />
-          <h3>No Section Selected</h3>
-          <p>Please select a section from the sidebar to view its details</p>
+          <h3>{t('tasks.noSectionSelected')}</h3>
+          <p>{t('tasks.selectSectionFromSidebar')}</p>
         </NoSelectionMessage>
       );
     }
@@ -1796,7 +1798,7 @@ const InspectionStepForm = ({
               status === 'not_applicable' ? 'Not Applicable' : 'Pending'}
           </StatusBadge>
           {selectedSubLevel.mandatory !== false && (
-            <MandatoryBadge mandatory={true}>Required</MandatoryBadge>
+            <MandatoryBadge mandatory={true}>{t('common.required')}</MandatoryBadge>
           )}
         </ContentHeader>
   
@@ -1809,7 +1811,7 @@ const InspectionStepForm = ({
           
           <ScoreGrid>
             <ScoreItem percent={calculateSectionScore(selectedSubLevel._id).percentage}>
-              <div className="score-label">Section Score</div>
+              <div className="score-label">{t('tasks.sectionScore')}</div>
               <div className="score-value">
                 {calculateSectionScore(selectedSubLevel._id).achieved}/{calculateSectionScore(selectedSubLevel._id).total}
                 <span className="score-percent">
@@ -1906,7 +1908,7 @@ const InspectionStepForm = ({
             Comments
           </SectionTitle>
           <CommentInput
-            placeholder="Add your notes here..."
+            placeholder={t('tasks.addNotesHere')}
             value={notes[selectedSubLevel._id] || ''}
             onChange={(e) => handleNoteChange(selectedSubLevel._id, e.target.value)}
             disabled={task.status === 'completed'}
@@ -2017,8 +2019,8 @@ const InspectionStepForm = ({
       return (
         <NoSubLevelsMessage>
           <HelpCircle size={48} />
-          <h3>No Inspection Sections Found</h3>
-          <p>This inspection template doesn't have any sections defined.</p>
+          <h3>{t('tasks.noInspectionSectionsFound')}</h3>
+          <p>{t('tasks.noSectionsDefined')}</p>
         </NoSubLevelsMessage>
       );
     }
@@ -2049,7 +2051,7 @@ const InspectionStepForm = ({
                   <ChevronDown />
                   {levelNumber && <LevelNumber>{levelNumber}</LevelNumber>}
                   {section.name || 'Unnamed Section'}
-                  {section.mandatory !== false && <MandatoryBadge mandatory={true}>Required</MandatoryBadge>}
+                  {section.mandatory !== false && <MandatoryBadge mandatory={true}>{t('common.required')}</MandatoryBadge>}
                 </AccordionTitle>
                 
                 <ScoreBadge 
@@ -2528,7 +2530,7 @@ const InspectionStepForm = ({
         return (
           <TextInput 
             type="text"
-            placeholder="Enter your answer here"
+            placeholder={t('tasks.enterYourAnswer')}
             disabled={disabled}
             value={currentResponse || ''}
             onChange={(e) => handleQuestionResponse(question._id, sectionId, e.target.value)}
@@ -2660,7 +2662,7 @@ const InspectionStepForm = ({
                   style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
                 />
               ) : (
-                <span>Click to sign</span>
+                <span>{t('tasks.clickToSign')}</span>
               )}
             </SignatureBox>
             {currentResponse && (
@@ -2704,7 +2706,7 @@ const InspectionStepForm = ({
                   </SearchButton>
                   <SearchInput
                     type="text"
-                    placeholder="Search sections and questions..."
+                    placeholder={t('tasks.searchSectionsAndQuestions')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -2721,7 +2723,7 @@ const InspectionStepForm = ({
                   </SearchButton>
                   <SearchInput
                     type="text"
-                    placeholder="Search sections and questions..."
+                    placeholder={t('tasks.searchSectionsAndQuestions')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -2733,7 +2735,7 @@ const InspectionStepForm = ({
                     <>
                       <TreeView>
                         <TreeHeader>
-                          <h3>Sections</h3>
+                          <h3>{t('inspections.sections')}</h3>
                           <ProgressIndicator>{calculateProgress()}%</ProgressIndicator>
                         </TreeHeader>
                         
@@ -2778,7 +2780,7 @@ const InspectionStepForm = ({
           </ProgressBar>
           
           <ProgressInfo>
-            <span className="label">Inspection Progress</span>
+            <span className="label">{t('tasks.inspectionProgress')}</span>
             <span className="percentage">{calculateProgress()}%</span>
           </ProgressInfo>
           
@@ -2788,8 +2790,8 @@ const InspectionStepForm = ({
       ) : (
         <NoSubLevelsMessage>
           <HelpCircle size={48} />
-          <h3>No Inspection Template Found</h3>
-          <p>This task doesn't have an inspection template attached.</p>
+          <h3>{t('tasks.noInspectionTemplateFound')}</h3>
+          <p>{t('tasks.noTemplateAttached')}</p>
         </NoSubLevelsMessage>
       )}
     </Container>

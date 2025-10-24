@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   FileText, 
   Flag, 
@@ -473,6 +474,7 @@ const ReportPreviewComponent = ({
     }
   }
 }) => {
+  const { t } = useTranslation();
   const [openSection, setOpenSection] = useState(null);
   const [logoError, setLogoError] = useState(false);
   
@@ -512,65 +514,65 @@ const ReportPreviewComponent = ({
             />
           )}
         </LogoContainer>
-        <ReportTitle>{reportData.title || 'Template Report'}</ReportTitle>
-        <ReportSubtitle>Template Report</ReportSubtitle>
+        <ReportTitle>{reportData.title || t('common.templateReport')}</ReportTitle>
+        <ReportSubtitle>{t('common.templateReport')}</ReportSubtitle>
       </PreviewHeader>
       
       <OverviewSection>
         <OverviewHeader>
           <BarChart2 size={20} />
-          Overview
+          {t('common.overview')}
         </OverviewHeader>
         
         <OverviewGrid>
           <StatCard>
             <Award size={24} color="var(--color-navy)" />
             <CircleScore score={percentage}>{percentage}%</CircleScore>
-            <StatLabel>Overall Score</StatLabel>
+            <StatLabel>{t('common.overallScore')}</StatLabel>
           </StatCard>
           
           <StatCard>
             <StatValue>{score} / {maxScore}</StatValue>
-            <StatLabel>Points Scored</StatLabel>
+            <StatLabel>{t('common.pointsScored')}</StatLabel>
           </StatCard>
           
           <StatCard>
             <Flag size={24} color="var(--color-compliance-non)" />
             <StatValue>{reportData.flaggedItems?.length || 0}</StatValue>
-            <StatLabel>Flagged Items</StatLabel>
+            <StatLabel>{t('common.flaggedItems')}</StatLabel>
           </StatCard>
         </OverviewGrid>
       </OverviewSection>
       
       <MetadataSection>
         <MetadataItem>
-          <MetadataLabel>Document Control Number</MetadataLabel>
-          <MetadataValue>{reportData.metadata?.documentNumber || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.documentControlNumber')}</MetadataLabel>
+          <MetadataValue>{reportData.metadata?.documentNumber || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Beach Operator</MetadataLabel>
-          <MetadataValue>{reportData.metadata?.operatorName || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.beachOperator')}</MetadataLabel>
+          <MetadataValue>{reportData.metadata?.operatorName || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Template Location</MetadataLabel>
-          <MetadataValue>{reportData.metadata?.inspectionLocation || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.templateLocation')}</MetadataLabel>
+          <MetadataValue>{reportData.metadata?.inspectionLocation || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Template Date</MetadataLabel>
-          <MetadataValue>{reportData.metadata?.inspectionDate || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.templateDate')}</MetadataLabel>
+          <MetadataValue>{reportData.metadata?.inspectionDate || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Inspector Name</MetadataLabel>
-          <MetadataValue>{reportData.metadata?.inspectorName || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.inspectorName')}</MetadataLabel>
+          <MetadataValue>{reportData.metadata?.inspectorName || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
         
         <MetadataItem>
-          <MetadataLabel>Report Generated</MetadataLabel>
-          <MetadataValue>{reportData.completedAt || 'Not specified'}</MetadataValue>
+          <MetadataLabel>{t('common.reportGenerated')}</MetadataLabel>
+          <MetadataValue>{reportData.completedAt || t('common.notSpecified')}</MetadataValue>
         </MetadataItem>
       </MetadataSection>
       
@@ -608,7 +610,7 @@ const ReportPreviewComponent = ({
         <SectionsHeader>
           <h2>
             <FileText size={18} />
-            Template Sections
+            {t('common.templateSections')}
           </h2>
         </SectionsHeader>
         

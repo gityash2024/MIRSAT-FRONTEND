@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
 import { Loader } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import InspectionLevelList from './InspectionLevelList';
 import { inspectionService } from '../../services/inspection.service';
 // import LevelListSkeleton from './LevelListSkeleton'; // COMMENTED OUT
@@ -34,6 +35,7 @@ const InspectionLevel = () => {
   const isListView = location.pathname === '/inspection';
   const [loading, setLoading] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
+  const { t } = useTranslation();
   
   // Store inspection data separately from rendering logic
   const [inspectionData, setInspectionData] = useState([]);
@@ -66,25 +68,25 @@ const InspectionLevel = () => {
   // Handle rate limit detection
   useEffect(() => {
     if (errorCount > 3) {
-      toast.error('Too many requests. Please wait a moment before trying again.');
+      toast.error(t('errors.tooManyRequests'));
       setLoading(false);
       setTimeout(() => setErrorCount(0), 5000);
     }
-  }, [errorCount]);
+  }, [errorCount, t]);
 
   const handleError = useCallback((error) => {
     console.error('Error in Inspection module:', error);
     
     if (error?.response?.status === 429) {
       setErrorCount(prev => prev + 1);
-      toast.error('Too many requests. Please wait a moment before trying again.');
+      toast.error(t('errors.tooManyRequests'));
     } else {
-      toast.error(error?.response?.data?.message || error?.message || 'An error occurred');
+      toast.error(error?.response?.data?.message || error?.message || t('errors.genericError'));
     }
     
     setLoading(false);
     isFetchingRef.current = false;
-  }, []);
+  }, [t]);
 
   // Stable fetch function that doesn't change with re-renders
   const fetchInspectionLevels = useCallback(async () => {
@@ -198,7 +200,7 @@ const InspectionLevel = () => {
             color: 'var(--color-navy)', 
             fontSize: '16px' 
           }}>
-            Templates loading...
+            {t('inspections.loadingTemplates')}
           </p>
         </LoadingContainer>
       );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Edit } from 'lucide-react';
 import UserForm from './components/UserForm';
 import { toast } from 'react-hot-toast';
@@ -192,6 +193,7 @@ const UserEditSkeleton = () => (
 );
 
 const UserEdit = () => {
+  const { t } = useTranslation();
   const { userId } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -243,7 +245,7 @@ const UserEdit = () => {
   }
 
   if (!user) {
-    return <div>User not found</div>;
+    return <div>{t('users.userNotFound')}</div>;
   }
 
   return (
@@ -258,7 +260,7 @@ const UserEdit = () => {
           <Edit size={24} className="icon" />
           Edit User
         </PageTitle>
-        <SubTitle>Update user information and permissions</SubTitle>
+        <SubTitle>{t('users.updateUserInformation')}</SubTitle>
       </Header>
 
       <UserForm
@@ -272,7 +274,7 @@ const UserEdit = () => {
       {confirmData && (
         <EditConfirmDialog>
           <DialogContent>
-            <DialogTitle>Confirm Changes</DialogTitle>
+            <DialogTitle>{t('users.confirmChanges')}</DialogTitle>
             <DialogMessage>
               Are you sure you want to save these changes?
               <br /><br />

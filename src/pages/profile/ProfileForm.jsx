@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   User, 
   AlertCircle, 
@@ -222,9 +223,17 @@ const DEPARTMENT_OPTIONS = [
 
 const ProfileForm = () => {
   const { user, updateUser } = useAuth();
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  const DEPARTMENT_OPTIONS = [
+    { value: '', label: t('profile.selectDepartment') },
+    { value: 'Field Operations', label: t('profile.fieldOperations') },
+    { value: 'Operations Management', label: t('profile.operationsManagement') },
+    { value: 'Administration', label: t('profile.administration') }
+  ];
   
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -262,13 +271,13 @@ const ProfileForm = () => {
 
   const validateForm = () => {
     if (!profileData.name.trim()) {
-      setMessage({ type: 'error', text: 'Name is required.' });
+      setMessage({ type: 'error', text: t('profile.nameRequired') });
       return false;
     }
     
     // Only require department for admin role (not for manager/inspector/supervisor)
     if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
-      setMessage({ type: 'error', text: 'Department is required.' });
+      setMessage({ type: 'error', text: t('profile.departmentRequired') });
       return false;
     }
     
@@ -280,18 +289,18 @@ const ProfileForm = () => {
     
     // Validate required fields
     if (!profileData.name.trim()) {
-      setMessage({ type: 'error', text: 'Name is required.' });
+      setMessage({ type: 'error', text: t('profile.nameRequired') });
       return;
     }
     
     if (!profileData.email.trim()) {
-      setMessage({ type: 'error', text: 'Email is required.' });
+      setMessage({ type: 'error', text: t('profile.emailRequired') });
       return;
     }
     
     // Only require department for admin role (not for manager/inspector/supervisor)
     if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
-      setMessage({ type: 'error', text: 'Department is required.' });
+      setMessage({ type: 'error', text: t('profile.departmentRequired') });
       return;
     }
     
@@ -351,7 +360,7 @@ const ProfileForm = () => {
       <FormHeader>
         <FormTitle>
           <User size={20} />
-          Profile Information
+          {t('profile.profileInformation')}
         </FormTitle>
       </FormHeader>
       
@@ -371,41 +380,41 @@ const ProfileForm = () => {
           <>
             <InfoCard>
               <InfoRow>
-                <InfoLabel>Full Name</InfoLabel>
-                <InfoValue>{user?.name || 'Not provided'}</InfoValue>
+                <InfoLabel>{t('profile.fullName')}</InfoLabel>
+                <InfoValue>{user?.name || t('profile.notProvided')}</InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Email Address</InfoLabel>
-                <InfoValue>{user?.email || 'Not provided'}</InfoValue>
+                <InfoLabel>{t('profile.emailAddress')}</InfoLabel>
+                <InfoValue>{user?.email || t('profile.notProvided')}</InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Department</InfoLabel>
+                <InfoLabel>{t('common.department')}</InfoLabel>
                 <InfoValue>
-                  {user?.department || 'Not specified'}
+                  {user?.department || t('profile.notSpecified')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Role</InfoLabel>
+                <InfoLabel>{t('common.role')}</InfoLabel>
                 <InfoValue>
-                  {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}
+                  {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || t('common.inspector')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Phone Number</InfoLabel>
+                <InfoLabel>{t('profile.phoneNumber')}</InfoLabel>
                 <InfoValue>
-                  {user?.phone || 'Not provided'}
+                  {user?.phone || t('profile.notProvided')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Address</InfoLabel>
+                <InfoLabel>{t('profile.address')}</InfoLabel>
                 <InfoValue>
-                  {user?.address || 'Not provided'}
+                  {user?.address || t('profile.notProvided')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
-                <InfoLabel>Emergency Contact</InfoLabel>
+                <InfoLabel>{t('profile.emergencyContact')}</InfoLabel>
                 <InfoValue>
-                  {user?.emergencyContact || 'Not provided'}
+                  {user?.emergencyContact || t('profile.notProvided')}
                 </InfoValue>
               </InfoRow>
             </InfoCard>
@@ -417,7 +426,7 @@ const ProfileForm = () => {
                 onClick={startEdit}
               >
                 <Edit3 size={16} />
-                Edit Profile
+                {t('profile.editProfile')}
               </Button>
             </ButtonGroup>
           </>
@@ -425,32 +434,32 @@ const ProfileForm = () => {
           <form onSubmit={handleSubmit}>
             <FormRow>
               <FormGroup>
-                <Label>Full Name *</Label>
+                <Label>{t('profile.fullName')} *</Label>
                 <Input
                   type="text"
                   name="name"
                   value={profileData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter your full name"
+                  placeholder={t('profile.enterFullName')}
                   required
                 />
               </FormGroup>
               
               <FormGroup>
-                <Label>Email Address</Label>
+                <Label>{t('profile.emailAddress')}</Label>
                 <Input
                   type="email"
                   name="email"
                   value={profileData.email}
                   disabled={true}
-                  placeholder="Email cannot be changed"
+                  placeholder={t('profile.emailCannotBeChanged')}
                 />
               </FormGroup>
             </FormRow>
             
             <FormGroup>
               <Label>
-                Department{(user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') ? ' *' : ''}
+                {t('common.department')}{(user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') ? ' *' : ''}
               </Label>
               <Select
                 name="department"
@@ -476,41 +485,41 @@ const ProfileForm = () => {
                   fontStyle: 'italic',
                   marginTop: '4px'
                 }}>
-                  Only admins can modify department
+                  {t('profile.onlyAdminsCanModifyDepartment')}
                 </div>
               )}
             </FormGroup>
             
             <FormGroup>
-              <Label>Phone Number</Label>
+              <Label>{t('profile.phoneNumber')}</Label>
               <Input
                 type="text"
                 name="phone"
                 value={profileData.phone}
                 onChange={handleInputChange}
-                placeholder="Enter phone number"
+                placeholder={t('profile.enterPhoneNumber')}
               />
             </FormGroup>
             
             <FormGroup>
-              <Label>Address</Label>
+              <Label>{t('profile.address')}</Label>
               <Input
                 type="text"
                 name="address"
                 value={profileData.address}
                 onChange={handleInputChange}
-                placeholder="Enter address"
+                placeholder={t('profile.enterAddress')}
               />
             </FormGroup>
             
             <FormGroup>
-              <Label>Emergency Contact</Label>
+              <Label>{t('profile.emergencyContact')}</Label>
               <Input
                 type="text"
                 name="emergencyContact"
                 value={profileData.emergencyContact}
                 onChange={handleInputChange}
-                placeholder="Enter emergency contact"
+                placeholder={t('profile.enterEmergencyContact')}
               />
             </FormGroup>
             
@@ -521,11 +530,11 @@ const ProfileForm = () => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  'Saving...'
+                  t('profile.saving')
                 ) : (
                   <>
                     <Save size={16} />
-                    Save Changes
+                    {t('profile.saveChanges')}
                   </>
                 )}
               </Button>
@@ -535,7 +544,7 @@ const ProfileForm = () => {
                 disabled={isLoading}
               >
                 <X size={16} />
-                Cancel
+                {t('common.cancel')}
               </Button>
             </ButtonGroup>
           </form>

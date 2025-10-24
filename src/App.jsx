@@ -10,6 +10,8 @@ import AppRoutes from './routes';
 import { restoreUser } from './store/slices/authSlice';
 import './App.css';
 import { LoadingProvider } from './context/LoadingContext';
+import { LanguageProvider } from './context/LanguageContext';
+import './i18n';
 
 function App() {
   // Check if user is already logged in
@@ -22,35 +24,37 @@ function App() {
 
   return (
     <Provider store={store}>
-      <LoadingProvider>
-        <ThemeProvider theme={theme}>
-          <BrowserRouter>
-            <AppRoutes />
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-                success: {
-                  duration: 3000,
-                  style: {
-                    background: 'green',
-                  },
-                },
-                error: {
+      <LanguageProvider>
+        <LoadingProvider>
+          <ThemeProvider theme={theme}>
+            <BrowserRouter>
+              <AppRoutes />
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
                   duration: 4000,
                   style: {
-                    background: 'red',
+                    background: '#363636',
+                    color: '#fff',
                   },
-                },
-              }}
-            />
-          </BrowserRouter>
-        </ThemeProvider>
-      </LoadingProvider>
+                  success: {
+                    duration: 3000,
+                    style: {
+                      background: 'green',
+                    },
+                  },
+                  error: {
+                    duration: 4000,
+                    style: {
+                      background: 'red',
+                    },
+                  },
+                }}
+              />
+            </BrowserRouter>
+          </ThemeProvider>
+        </LoadingProvider>
+      </LanguageProvider>
     </Provider>
   );
 }

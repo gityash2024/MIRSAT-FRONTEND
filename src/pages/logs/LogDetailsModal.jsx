@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   X, 
   Calendar, 
@@ -723,13 +724,14 @@ const CollapsibleContent = styled.div`
 
 const LogDetailsModal = ({ log, isOpen, onClose }) => {
   const [showRawData, setShowRawData] = useState(false);
+  const { t } = useTranslation();
   
   if (!isOpen || !log) return null;
 
   // Helper functions for enhanced details
   const formatValue = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (value === null || value === undefined) return t('common.notAvailable');
+    if (typeof value === 'boolean') return value ? t('common.yes') : t('common.no');
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     if (typeof value === 'string' && value.length > 100) return value.substring(0, 100) + '...';
     return String(value);
@@ -742,7 +744,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     // Common change patterns
     if (details.previousStatus && details.currentStatus) {
       changes.push({
-        label: 'Status',
+        label: t('common.status'),
         previous: details.previousStatus,
         current: details.currentStatus
       });
@@ -750,7 +752,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     
     if (details.previousPriority && details.currentPriority) {
       changes.push({
-        label: 'Priority',
+        label: t('common.priority'),
         previous: details.previousPriority,
         current: details.currentPriority
       });
@@ -758,7 +760,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     
     if (details.oldValue && details.newValue) {
       changes.push({
-        label: 'Value',
+        label: t('logs.value'),
         previous: details.oldValue,
         current: details.newValue
       });
@@ -766,7 +768,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     
     if (details.previousAnswer && details.newAnswer) {
       changes.push({
-        label: 'Answer',
+        label: t('logs.answer'),
         previous: details.previousAnswer,
         current: details.newAnswer
       });
@@ -774,7 +776,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     
     if (details.previousProgress && details.currentProgress) {
       changes.push({
-        label: 'Progress',
+        label: t('logs.progress'),
         previous: `${details.previousProgress}%`,
         current: `${details.currentProgress}%`
       });
@@ -791,9 +793,9 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     if (details.imageUrl || details.image) {
       media.push({
         type: 'image',
-        name: details.imageName || 'Image',
+        name: details.imageName || t('logs.image'),
         url: details.imageUrl || details.image,
-        size: details.imageSize || 'Unknown size',
+        size: details.imageSize || t('logs.unknownSize'),
         icon: FileImage,
         bgColor: '#3b82f6'
       });
@@ -803,9 +805,9 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     if (details.signatureUrl || details.signature) {
       media.push({
         type: 'signature',
-        name: details.signatureName || 'Signature',
+        name: details.signatureName || t('logs.signature'),
         url: details.signatureUrl || details.signature,
-        size: details.signatureSize || 'Unknown size',
+        size: details.signatureSize || t('logs.unknownSize'),
         icon: Edit,
         bgColor: '#8b5cf6'
       });
@@ -818,7 +820,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
           type: 'attachment',
           name: attachment.name || `Attachment ${index + 1}`,
           url: attachment.url,
-          size: attachment.size || 'Unknown size',
+          size: attachment.size || t('logs.unknownSize'),
           icon: FileText,
           bgColor: '#10b981'
         });
@@ -833,7 +835,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
     
     if (details.response) {
       return {
-        status: details.responseStatus || 'Success',
+        status: details.responseStatus || t('logs.success'),
         data: details.response,
         timestamp: details.responseTimestamp || log.timestamp
       };
@@ -844,8 +846,8 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
 
   const getSystemInfo = () => {
     return {
-      ipAddress: log.ipAddress || 'Unknown',
-      userAgent: log.userAgent || 'Unknown',
+      ipAddress: log.ipAddress || t('logs.unknown'),
+      userAgent: log.userAgent || t('logs.unknown'),
       timestamp: log.timestamp,
       module: log.module,
       action: log.action,
@@ -874,25 +876,25 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
   };
 
   const getIPLocation = (ip) => {
-    if (ip === '127.0.0.1' || ip === '::1') return 'Local Development';
-    if (ip?.startsWith('192.168.')) return 'Local Network';
-    if (ip?.startsWith('10.')) return 'Private Network';
-    return 'Unknown Location';
+    if (ip === '127.0.0.1' || ip === '::1') return t('logs.localDevelopment');
+    if (ip?.startsWith('192.168.')) return t('logs.localNetwork');
+    if (ip?.startsWith('10.')) return t('logs.privateNetwork');
+    return t('logs.unknownLocation');
   };
 
   const getDeviceInfo = (userAgent) => {
-    if (!userAgent) return 'Unknown Device';
+    if (!userAgent) return t('logs.unknownDevice');
     
     const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
     const isWindows = /Windows/.test(userAgent);
     const isMac = /Mac/.test(userAgent);
     const isLinux = /Linux/.test(userAgent);
     
-    if (isMobile) return 'Mobile Device';
-    if (isWindows) return 'Windows PC';
-    if (isMac) return 'Mac Computer';
-    if (isLinux) return 'Linux Computer';
-    return 'Unknown Device';
+    if (isMobile) return t('logs.mobileDevice');
+    if (isWindows) return t('logs.windowsPC');
+    if (isMac) return t('logs.macComputer');
+    if (isLinux) return t('logs.linuxComputer');
+    return t('logs.unknownDevice');
   };
 
   return (
@@ -919,7 +921,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
               <Section>
                 <SectionTitle>
                   <FileText size={20} />
-                  Activity Details
+                  {t('logs.activityDetails')}
                 </SectionTitle>
                 <DescriptionCard>
                   {log.description}
@@ -945,7 +947,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                       <ChangeTracker>
                         <ChangeHeader>
                           <GitBranch size={16} />
-                          Change History
+                          {t('logs.changeHistory')}
                         </ChangeHeader>
                         {getChangeItems().map((change, index) => (
                           <ChangeItem key={index}>
@@ -965,7 +967,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                       <MediaPreview>
                         <ChangeHeader>
                           <Image size={16} />
-                          Media & Attachments
+                          {t('logs.mediaAttachments')}
                         </ChangeHeader>
                         {getMediaItems().map((item, index) => (
                           <MediaItem key={index}>
@@ -978,7 +980,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                             </MediaInfo>
                             <PreviewButton onClick={() => window.open(item.url, '_blank')}>
                               <Eye size={14} />
-                              Preview
+                              {t('logs.preview')}
                             </PreviewButton>
                           </MediaItem>
                         ))}
@@ -990,11 +992,11 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                       <ResponseSection>
                         <ResponseHeader>
                           <Code size={16} />
-                          API Response
+                          {t('logs.apiResponse')}
                         </ResponseHeader>
                         <ResponseContent>
-                          <div><strong>Status:</strong> {getResponseData().status}</div>
-                          <div><strong>Timestamp:</strong> {formatDate(getResponseData().timestamp)}</div>
+                          <div><strong>{t('common.status')}:</strong> {getResponseData().status}</div>
+                          <div><strong>{t('common.timestamp')}:</strong> {formatDate(getResponseData().timestamp)}</div>
                           <CodeBlock>{JSON.stringify(getResponseData().data, null, 2)}</CodeBlock>
                         </ResponseContent>
                       </ResponseSection>
@@ -1004,7 +1006,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                     <Section>
                       <SectionTitle>
                         <Settings size={20} />
-                        System Information
+                        {t('logs.systemInformation')}
                       </SectionTitle>
                       <DetailsGrid>
                         <DetailItem>
@@ -1012,19 +1014,19 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                           <DetailValue>{getSystemInfo().ipAddress}</DetailValue>
                         </DetailItem>
                         <DetailItem>
-                          <DetailLabel>User Agent</DetailLabel>
+                          <DetailLabel>{t('logs.userAgent')}</DetailLabel>
                           <DetailValue>{getSystemInfo().userAgent}</DetailValue>
                         </DetailItem>
                         <DetailItem>
-                          <DetailLabel>Module</DetailLabel>
+                          <DetailLabel>{t('logs.module')}</DetailLabel>
                           <DetailValue>{getSystemInfo().module}</DetailValue>
                         </DetailItem>
                         <DetailItem>
-                          <DetailLabel>Action</DetailLabel>
+                          <DetailLabel>{t('logs.action')}</DetailLabel>
                           <DetailValue>{getSystemInfo().action}</DetailValue>
                         </DetailItem>
                         <DetailItem>
-                          <DetailLabel>Severity</DetailLabel>
+                          <DetailLabel>{t('logs.severity')}</DetailLabel>
                           <DetailValue>
                             <Badge type={getSystemInfo().severity}>
                               {getSystemInfo().severity}
@@ -1038,7 +1040,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                     <Section>
                       <SectionTitle>
                         <Database size={20} />
-                        Raw Data
+                        {t('logs.rawData')}
                         <button 
                           onClick={() => setShowRawData(!showRawData)}
                           style={{ 
@@ -1064,7 +1066,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                 <Section>
                   <SectionTitle>
                     <User size={20} />
-                    User Information
+                    {t('logs.userInformation')}
                   </SectionTitle>
                   <UserCard>
                     <UserAvatar>
@@ -1083,22 +1085,22 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                 <Section>
                   <SectionTitle>
                     <FileText size={20} />
-                    Task Information
+                    {t('logs.taskInformation')}
                   </SectionTitle>
                   <TaskCard>
                     <TaskTitle>{log.taskId.title || 'Unknown Task'}</TaskTitle>
                     <TaskInfo>
                       <TaskInfoRow>
-                        <TaskInfoLabel>Status:</TaskInfoLabel>
+                        <TaskInfoLabel>{t('common.status')}:</TaskInfoLabel>
                         <TaskInfoValue>{log.taskId.status || 'Unknown'}</TaskInfoValue>
                       </TaskInfoRow>
                       <TaskInfoRow>
-                        <TaskInfoLabel>Priority:</TaskInfoLabel>
+                        <TaskInfoLabel>{t('common.priority')}:</TaskInfoLabel>
                         <TaskInfoValue>{log.taskId.priority || 'Unknown'}</TaskInfoValue>
                       </TaskInfoRow>
                       {log.taskId.deadline && (
                         <TaskInfoRow>
-                          <TaskInfoLabel>Deadline:</TaskInfoLabel>
+                          <TaskInfoLabel>{t('calendar.deadline')}:</TaskInfoLabel>
                           <TaskInfoValue>{formatDate(log.taskId.deadline)}</TaskInfoValue>
                         </TaskInfoRow>
                       )}
@@ -1112,28 +1114,28 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
               <InfoCard>
                 <CardTitle>
                   <Info size={18} />
-                  Log Information
+                  {t('logs.logInformation')}
                 </CardTitle>
                 <InfoRow>
-                  <InfoLabel>Action</InfoLabel>
+                  <InfoLabel>{t('logs.action')}</InfoLabel>
                   <Badge type={log.action}>
                     {formatAction(log.action)}
                   </Badge>
                 </InfoRow>
                 <InfoRow>
-                  <InfoLabel>Module</InfoLabel>
+                  <InfoLabel>{t('logs.module')}</InfoLabel>
                   <InfoValue style={{ textTransform: 'capitalize' }}>
                     {log.module?.replace('_', ' ')}
                   </InfoValue>
                 </InfoRow>
                 <InfoRow>
-                  <InfoLabel>Severity</InfoLabel>
+                  <InfoLabel>{t('logs.severity')}</InfoLabel>
                   <Badge type={log.severity}>
                     {log.severity}
                   </Badge>
                 </InfoRow>
                 <InfoRow>
-                  <InfoLabel>Timestamp</InfoLabel>
+                  <InfoLabel>{t('common.timestamp')}</InfoLabel>
                   <InfoValue>{formatDate(log.timestamp)}</InfoValue>
                 </InfoRow>
               </InfoCard>
@@ -1141,7 +1143,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
               <InfoCard>
                 <CardTitle>
                   <Monitor size={18} />
-                  Technical Details
+                  {t('logs.technicalDetails')}
                 </CardTitle>
                 
                 {log.ipAddress && (
@@ -1164,7 +1166,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                       <Monitor size={16} />
                     </TechnicalIcon>
                     <TechnicalText>
-                      <TechnicalLabel>Device</TechnicalLabel>
+                      <TechnicalLabel>{t('logs.device')}</TechnicalLabel>
                       <TechnicalValue>
                         {getDeviceInfo(log.userAgent)}
                       </TechnicalValue>
@@ -1173,17 +1175,17 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                 )}
 
                 <InfoRow>
-                  <InfoLabel>Log ID</InfoLabel>
+                  <InfoLabel>{t('logs.logId')}</InfoLabel>
                   <InfoValue style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                     {log._id}
                   </InfoValue>
                 </InfoRow>
                 <InfoRow>
-                  <InfoLabel>Created At</InfoLabel>
+                  <InfoLabel>{t('logs.createdAt')}</InfoLabel>
                   <InfoValue>{formatDate(log.createdAt)}</InfoValue>
                 </InfoRow>
                 <InfoRow>
-                  <InfoLabel>Updated At</InfoLabel>
+                  <InfoLabel>{t('logs.updatedAt')}</InfoLabel>
                   <InfoValue>{formatDate(log.updatedAt)}</InfoValue>
                 </InfoRow>
               </InfoCard>

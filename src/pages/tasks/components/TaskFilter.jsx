@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { X, Check, Filter, AlertCircle, User } from 'lucide-react';
 import { filterOptions } from '../../../constants/taskFilterOptions';
 
@@ -224,6 +225,7 @@ const FilterDescription = styled.p`
 `;
 
 const TaskFilter = React.memo(({ filters, setFilters }) => {
+  const { t } = useTranslation();
   const { users } = useSelector((state) => state.users || { users: [] });
   
   // Ensure all filter properties are arrays
@@ -299,22 +301,22 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
   );
 
   const getStatusLabel = (status) => {
-    const statusLabels = {
-      'pending': 'Pending',
-      'in_progress': 'In Progress',
-      'completed': 'Completed',
-      'archived': 'Completed', // Show archived as Completed for consistency
-      'incomplete': 'Incomplete',
-      'partially_completed': 'Partially Completed'
-    };
+  const statusLabels = {
+    'pending': t('tasks.pending'),
+    'in_progress': t('tasks.inProgress'),
+    'completed': t('tasks.completed'),
+    'archived': t('tasks.completed'), // Show archived as Completed for consistency
+    'incomplete': t('tasks.incomplete'),
+    'partially_completed': t('tasks.partiallyCompleted')
+  };
     return statusLabels[status] || status;
   };
 
   const getPriorityLabel = (priority) => {
     const priorityLabels = {
-      'low': 'Low Priority',
-      'medium': 'Medium Priority',
-      'high': 'High Priority'
+      'low': t('tasks.lowPriority'),
+      'medium': t('tasks.mediumPriority'),
+      'high': t('tasks.highPriority')
     };
     return priorityLabels[priority] || priority;
   };
@@ -338,7 +340,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
 
       <FilterContainer>
         <FilterGroup>
-          <h3>Status</h3>
+          <h3>{t('common.status')}</h3>
           <CheckboxGroup>
             {filterOptions.status?.map(option => (
               <StatusOption 
@@ -366,7 +368,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Priority</h3>
+          <h3>{t('common.priority')}</h3>
           <CheckboxGroup>
             {filterOptions.priority?.map(option => (
               <PriorityOption 
@@ -396,7 +398,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Assignee (Inspector)</h3>
+          <h3>{t('calendar.assigneeInspector')}</h3>
           <CheckboxGroup>
             {users?.map(user => (
               <CheckboxLabel 

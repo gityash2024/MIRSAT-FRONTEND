@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   Clock, Calendar, AlertTriangle, Activity, CheckCircle, 
   XCircle, Database, MapPin, User, Briefcase, Award, Info, 
@@ -333,7 +334,8 @@ const formatDate = (dateString) => {
 };
 
 const PreInspectionStepForm = ({ task }) => {
-  if (!task) return <div>Loading task details...</div>;
+  const { t } = useTranslation();
+  if (!task) return <div>{t('common.loading')}...</div>;
   
   // Get asset information, handling both ID and populated object
   const getAssetInfo = () => {
@@ -465,7 +467,7 @@ const PreInspectionStepForm = ({ task }) => {
       <PreInspectionSection>
         <SectionTitle>
           <CheckSquare size={18} />
-          Pre-Inspection Questionnaire
+          {t('tasks.preInspectionQuestionnaire')}
         </SectionTitle>
         
         <QuestionsList>
@@ -497,7 +499,7 @@ const PreInspectionStepForm = ({ task }) => {
     <Container>
       <Title>
         <Info size={20} />
-        Task Details
+        {t('tasks.taskDetails')}
       </Title>
       <Description>{task.description}</Description>
       
@@ -508,13 +510,13 @@ const PreInspectionStepForm = ({ task }) => {
             color: isOverdue() ? '#d32f2f' : '#4b5563' 
           }}>
             Deadline: <strong>{formatDate(task.deadline)}</strong>
-            {isOverdue() && ' (Overdue)'}
+            {isOverdue() && ` (${t('tasks.overdue')})`}
           </span>
         </MetaItem>
         
         <MetaItem>
           <AlertTriangle size={16} />
-          <span>Priority: 
+          <span>{t('tasks.priority')}: 
             <PriorityBadge priority={task.priority}>
               {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'Medium'}
             </PriorityBadge>
@@ -523,7 +525,7 @@ const PreInspectionStepForm = ({ task }) => {
         
         <MetaItem>
           <Activity size={16} />
-          <span>Status: 
+          <span>{t('common.status')}: 
             <StatusBadge status={task.status}>
               <StatusIcon status={task.status} size={14} />
               {task.status?.replace('_', ' ').split(' ').map(word => 
@@ -536,21 +538,21 @@ const PreInspectionStepForm = ({ task }) => {
         {task.inspectionLevel && (
           <MetaItem>
             <CheckCircle size={16} />
-            <span>Template: <strong>{task.inspectionLevel.name || 'N/A'}</strong></span>
+            <span>{t('tasks.template')}: <strong>{task.inspectionLevel.name || t('common.notApplicable')}</strong></span>
           </MetaItem>
         )}
         
         {task.location && (
           <MetaItem>
             <MapPin size={16} />
-            <span>Location: <strong>{task.location}</strong></span>
+            <span>{t('common.location')}: <strong>{task.location}</strong></span>
           </MetaItem>
         )}
         
         {task.assignedTo && task.assignedTo.length > 0 && (
           <MetaItem>
             <User size={16} />
-            <span>Assigned To: <strong>
+            <span>{t('tasks.assignedTo')}: <strong>
               {Array.isArray(task.assignedTo) 
                 ? task.assignedTo.map(user => 
                     typeof user === 'object' ? user.name || 'Unknown User' : 'Unknown User'
@@ -563,7 +565,7 @@ const PreInspectionStepForm = ({ task }) => {
         {task.createdBy && (
           <MetaItem>
             <Briefcase size={16} />
-            <span>Created By: <strong>{typeof task.createdBy === 'object' ? task.createdBy.name : 'N/A'}</strong></span>
+            <span>{t('tasks.createdBy')}: <strong>{typeof task.createdBy === 'object' ? task.createdBy.name : t('common.notApplicable')}</strong></span>
           </MetaItem>
         )}
       </MetaGrid>
@@ -573,12 +575,12 @@ const PreInspectionStepForm = ({ task }) => {
         <ScoringSummary>
           <SectionTitle>
             <Award size={18} />
-            Compliance Scoring Summary
+            {t('tasks.complianceScoringSummary')}
           </SectionTitle>
           
           <ScoreGrid>
             <ScoreItem percent={scores.percentage}>
-              <div className="score-label">Overall Compliance</div>
+              <div className="score-label">{t('tasks.overallCompliance')}</div>
               <div className="score-value">
                 {scores.achieved} / {scores.total}
                 <span className="score-percent">({scores.percentage}%)</span>
@@ -586,14 +588,14 @@ const PreInspectionStepForm = ({ task }) => {
             </ScoreItem>
             
             <ScoreItem>
-              <div className="score-label">Completion Rate</div>
+              <div className="score-label">{t('tasks.completionRate')}</div>
               <div className="score-value">
                 {task.overallProgress || 0}%
               </div>
             </ScoreItem>
             
             <ScoreItem>
-              <div className="score-label">Total Checkpoints</div>
+              <div className="score-label">{t('tasks.totalCheckpoints')}</div>
               <div className="score-value">
                 {task.progress ? task.progress.length : 0}
               </div>

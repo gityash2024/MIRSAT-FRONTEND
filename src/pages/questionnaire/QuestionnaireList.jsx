@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { Filter, Search, FileText, Plus, MoreHorizontal, Trash2, Edit, Copy, Loader } from 'react-feather';
 import { toast } from 'react-hot-toast';
@@ -9,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchQuestionLibrary, addQuestionToLibrary, deleteQuestionFromLibrary } from '../../store/slices/questionLibrarySlice';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import AlertModal from '../../components/ui/AlertModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Styled Components
 const PageContainer = styled.div`
@@ -162,6 +164,7 @@ const QuestionnairesTable = styled.div`
   position: relative;
   margin-bottom: 20px;
   padding-bottom: 20px;
+  width: 100%;
 `;
 
 const TableHeader = styled.div`
@@ -171,6 +174,7 @@ const TableHeader = styled.div`
   border-bottom: 1px solid #e2e8f0;
   background-color: #f8fafc;
   gap: 16px;
+  text-align: ${props => props.$isRTL ? 'right' : 'left'};
   
   @media (max-width: 1024px) {
     grid-template-columns: minmax(200px, 2fr) 120px 120px 120px 50px;
@@ -495,6 +499,8 @@ const LoadingContainer = styled.div`
 `;
 
 const QuestionnaireList = () => {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
@@ -620,7 +626,7 @@ const QuestionnaireList = () => {
       setLoading(true);
       
       await dispatch(deleteQuestionFromLibrary(questionToDelete)).unwrap();
-      toast.success('Question deleted successfully');
+      toast.success(t('common.questionDeletedSuccessfully'));
       
       // Manually refresh the library
       await dispatch(fetchQuestionLibrary()).unwrap();
@@ -705,12 +711,12 @@ const QuestionnaireList = () => {
       <PageHeader>
         <Title>
           <FileText size={24} />
-          Question Library
+          {t('common.questionLibrary')}
         </Title>
         <ActionButtons>
           <Button primary onClick={handleCreateQuestionnaire}>
             <Plus size={16} />
-            Create Question
+            {t('common.createQuestion')}
           </Button>
         </ActionButtons>
       </PageHeader>
@@ -720,7 +726,7 @@ const QuestionnaireList = () => {
           <Search size={18} />
           <input 
             type="text" 
-            placeholder="Search questions..." 
+            placeholder={t('common.searchQuestions')} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleSearch}
@@ -733,27 +739,27 @@ const QuestionnaireList = () => {
       </SearchContainer>
 
       <QuestionnairesTable>
-        <TableHeader>
-          <HeaderCell>Question Text</HeaderCell>
-          <HeaderCell>Type</HeaderCell>
-          <HeaderCell>Required</HeaderCell>
-          <HeaderCell>Created</HeaderCell>
-          <HeaderCell hideOnMobile>Updated</HeaderCell>
+        <TableHeader $isRTL={isRTL}>
+          <HeaderCell>{t('common.questionText')}</HeaderCell>
+          <HeaderCell>{t('common.type')}</HeaderCell>
+          <HeaderCell>{t('common.required')}</HeaderCell>
+          <HeaderCell>{t('common.created')}</HeaderCell>
+          <HeaderCell hideOnMobile>{t('common.updated')}</HeaderCell>
           <HeaderCell></HeaderCell>
         </TableHeader>
 
         {loading || libraryLoading ? (
           <LoadingContainer>
             <Loader size={40} color="var(--color-navy)" />
-            <p>Questions loading...</p>
+            <p>{t('questionnaire.loadingQuestions')}</p>
           </LoadingContainer>
         ) : filteredQuestions.length === 0 ? (
           <NoResultsWrapper>
-            <h3>No questions found</h3>
-            <p>Try adjusting your search or create a new question.</p>
+            <h3>{t('questionnaire.noQuestionsFound')}</h3>
+            <p>{t('questionnaire.tryAdjustingSearch')}</p>
             <Button primary onClick={handleCreateQuestionnaire}>
               <Plus size={16} />
-              Create Question
+              {t('common.createQuestion')}
             </Button>
           </NoResultsWrapper>
         ) : (
@@ -779,19 +785,19 @@ const QuestionnaireList = () => {
                 </QuestionsCount>
               </InfoCell>
               
-              <InfoCell label="Required">
+              <InfoCell label={t('common.required')}>
                 <StatusBadge status={question.required ? 'published' : 'draft'}>
-                  {question.required ? 'Required' : 'Optional'}
+                  {question.required ? t('common.required') : t('common.optional')}
                 </StatusBadge>
               </InfoCell>
               
-              <InfoCell label="Created">
+              <InfoCell label={t('common.created')}>
                 <DateDisplay>
                   {formatDate(question.createdAt)}
                 </DateDisplay>
               </InfoCell>
               
-              <InfoCell label="Updated" hideOnMobile>
+              <InfoCell label={t('common.updated')} hideOnMobile>
                 <DateDisplay>
                   {formatDate(question.updatedAt)}
                 </DateDisplay>
@@ -811,17 +817,17 @@ const QuestionnaireList = () => {
                       navigate(`/questionnaire/edit/${question.id || question._id}`);
                     }}>
                       <Edit size={16} />
-                      Edit Question
+                      {t('common.editQuestion')}
                     </ActionItem>
                     
                     <ActionItem onClick={(e) => handleDuplicateQuestion(question, e)}>
                       <Copy size={16} />
-                      Duplicate Question
+                      {t('common.duplicateQuestion')}
                     </ActionItem>
                     
                     <ActionItem danger onClick={(e) => handleDeleteQuestion(question.id || question._id, e)}>
                       <Trash2 size={16} />
-                      Delete Question
+                      {t('common.deleteQuestion')}
                     </ActionItem>
                   </ActionsMenu>
                 )}
@@ -833,7 +839,7 @@ const QuestionnaireList = () => {
         {!loading && filteredQuestions.length > 0 && (
           <Pagination>
             <PaginationInfo>
-              Showing {((page - 1) * limit) + 1}-{Math.min(page * limit, totalResults)} of {totalResults} questions
+              {t('common.showing')} {((page - 1) * limit) + 1}-{Math.min(page * limit, totalResults)} {t('common.of')} {totalResults} {t('common.questions')}
             </PaginationInfo>
             
             <PaginationButtons>
@@ -873,10 +879,10 @@ const QuestionnaireList = () => {
           setQuestionToDelete(null);
         }}
         onConfirm={confirmDeleteQuestion}
-        title="Delete Question"
-        message="Are you sure you want to delete this question? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('common.deleteQuestion')}
+        message={t('common.areYouSureYouWantToDeleteThisQuestion')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         confirmVariant="primary"
         loading={loading}
       />

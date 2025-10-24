@@ -42,6 +42,8 @@ import Skeleton from '../../components/ui/Skeleton';
 import UserFilter from './components/UserFilters';
 import api from '../../services/api';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -203,7 +205,7 @@ const Table = styled.table`
 
   th, td {
     padding: 16px;
-    text-align: left;
+    text-align: ${props => props.$isRTL ? 'right' : 'left'};
     border-bottom: 1px solid #e0e0e0;
   }
 
@@ -683,6 +685,29 @@ const UserList = () => {
   const [toggleConfirm, setToggleConfirm] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { hasPermission, userRole } = usePermissions();
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
+  
+  // Translation functions
+  const translateRole = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'inspector': return t('common.inspector');
+      case 'supervisor': return t('common.supervisor');
+      case 'manager': return t('common.manager');
+      case 'superadmin': return t('common.superAdmin');
+      case 'admin': return t('common.admin');
+      default: return role;
+    }
+  };
+
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'Active': return t('common.active');
+      case 'Inactive': return t('common.inactive');
+      case 'Suspended': return t('common.suspended');
+      default: return status;
+    }
+  };
   
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
@@ -1010,7 +1035,7 @@ const UserList = () => {
             color: 'var(--color-navy)', 
             fontSize: '16px' 
           }}>
-            Users loading...
+            {t('users.loadingUsers')}
           </p>
         </LoadingContainer>
       </PageContainer>
@@ -1020,8 +1045,8 @@ const UserList = () => {
   return (
     <PageContainer>
       <Header>
-        <PageTitle>User Management</PageTitle>
-        <SubTitle>Manage user accounts and permissions</SubTitle>
+        <PageTitle>{t('common.userManagement')}</PageTitle>
+        <SubTitle>{t('common.manageUserAccountsAndPermissions')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -1029,7 +1054,7 @@ const UserList = () => {
           <Search className="search-icon" size={20} />
           <input 
             type="text" 
-            placeholder="Search users..." 
+            placeholder={t('common.searchUsers')} 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -1038,7 +1063,7 @@ const UserList = () => {
         <ButtonGroup>
           <Button variant="secondary" onClick={() => setIsFilterVisible(!isFilterVisible)}>
             <Filter size={18} />
-            Filters
+            {t('common.filter')}
           </Button>
           {hasPermission(PERMISSIONS.USERS.EXPORT_USERS) && (
             <ExportDropdown className="export-dropdown">
@@ -1050,7 +1075,7 @@ const UserList = () => {
                 }}
               >
                 <Download size={18} />
-                Export
+                {t('common.export')}
               </Button>
               <DropdownContent show={showExportDropdown}>
                 <DropdownItem 
@@ -1060,7 +1085,7 @@ const UserList = () => {
                   }}
                 >
                   <FileText size={16} className="icon" />
-                  Export as PDF
+                  {t('common.exportAsPDF')}
                 </DropdownItem>
                 {/* <DropdownItem 
                   onClick={(e) => {
@@ -1077,7 +1102,7 @@ const UserList = () => {
           {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
             <Button variant="primary" as={Link} to="/users/create">
               <UserPlus size={18} />
-              Add User
+              {t('common.addUser')}
             </Button>
           )}
         </ButtonGroup>
@@ -1093,14 +1118,14 @@ const UserList = () => {
       )}
 
       <UserTable>
-        <Table>
+        <Table $isRTL={isRTL}>
           <thead>
             <tr>
-              <th>User Details</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Last Active</th>
-              <th>Actions</th>
+              <th>{t('common.userDetails')}</th>
+              <th>{t('common.role')}</th>
+              <th>{t('common.status')}</th>
+              <th>{t('common.lastActive')}</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1124,12 +1149,12 @@ const UserList = () => {
                 <td>
                   <RoleBadge>
                     <Shield size={16} className="icon" />
-                    {user.role?.toUpperCase()}
+                    {translateRole(user.role)}
                   </RoleBadge>
                 </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <UserStatus status={user.isActive ? 'Active' : 'Inactive'} />
+                    <UserStatus status={translateStatus(user.isActive ? 'Active' : 'Inactive')} />
                   </div>
                 </td>
                 <td>{formatTimestamp(user.lastLogin)}</td>
@@ -1166,8 +1191,8 @@ const UserList = () => {
                         }}
                         title="Quick status change"
                       >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active">{t('common.active')}</option>
+                        <option value="inactive">{t('common.inactive')}</option>
                       </select>
                     )}
 
@@ -1198,12 +1223,12 @@ const UserList = () => {
         {filteredUsers.length > 0 && (
           <PaginationContainer>
             <PaginationInfo>
-              Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+              {t('common.showing')} {indexOfFirstUser + 1} {t('common.to')} {Math.min(indexOfLastUser, filteredUsers.length)} {t('common.of')} {filteredUsers.length} {t('common.users')}
             </PaginationInfo>
             
             <PaginationButtons>
               <PaginationButton onClick={firstPage} disabled={currentPage === 1}>
-                First
+                {t('common.first')}
               </PaginationButton>
               <PaginationButton onClick={prevPage} disabled={currentPage === 1}>
                 <ChevronLeft size={16} />
@@ -1223,7 +1248,7 @@ const UserList = () => {
                 <ChevronRight size={16} />
               </PaginationButton>
               <PaginationButton onClick={lastPage} disabled={currentPage === totalPages}>
-                Last
+                {t('common.last')}
               </PaginationButton>
             </PaginationButtons>
           </PaginationContainer>
@@ -1233,24 +1258,24 @@ const UserList = () => {
       {deleteConfirm && (
         <DeleteConfirmDialog>
           <DialogContent>
-            <DialogTitle>Permanently Delete User</DialogTitle>
+            <DialogTitle>{t('common.permanentlyDeleteUser')}</DialogTitle>
             <DialogMessage>
-              <strong>Warning:</strong> You are about to permanently delete user <strong>{deleteConfirm.name}</strong> ({deleteConfirm.email}). 
+              <strong>{t('common.warningYouAreAboutToPermanentlyDelete')}</strong> <strong>{deleteConfirm.name}</strong> ({deleteConfirm.email}). 
               <br /><br />
-              This action will:
+              {t('common.thisActionWill')}:
               <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
-                <li>Completely remove the user from the database</li>
-                <li>Delete all associated user data</li>
-                <li>Allow the email address to be used for new user registrations</li>
+                <li>{t('common.completelyRemoveUserFromDatabase')}</li>
+                <li>{t('common.deleteAllAssociatedUserData')}</li>
+                <li>{t('common.allowEmailAddressToBeUsedForNewRegistrations')}</li>
               </ul>
-              <strong>This action cannot be undone.</strong>
+              <strong>{t('common.thisActionCannotBeUndone')}</strong>
             </DialogMessage>
             <DialogActions>
               <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button variant="primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}>
-                Permanently Delete User
+                {t('common.permanentlyDelete')}
               </Button>
             </DialogActions>
           </DialogContent>
@@ -1263,23 +1288,23 @@ const UserList = () => {
           <ConfirmModalContent>
             <ConfirmModalTitle>
               {toggleConfirm.isActive ? <PowerOff size={20} color="#ef4444" /> : <Power size={20} color="#10b981" />}
-              {toggleConfirm.isActive ? 'Deactivate User' : 'Activate User'}
+              {toggleConfirm.isActive ? t('common.deactivateUser') : t('common.activateUser')}
             </ConfirmModalTitle>
             <ConfirmModalMessage>
-              Are you sure you want to {toggleConfirm.isActive ? 'deactivate' : 'activate'} <strong>{toggleConfirm.name}</strong>?
+              {t('common.areYouSureYouWantTo')} {toggleConfirm.isActive ? t('common.deactivate') : t('common.activate')} <strong>{toggleConfirm.name}</strong>?
               {toggleConfirm.isActive ? (
                 <>
-                  <br/><br/>⚠️ This will prevent the user from logging in and accessing the system.
+                  <br/><br/>⚠️ {t('common.thisWillPreventUser')}
                 </>
               ) : (
                 <>
-                  <br/><br/>✅ This will allow the user to login and access the system again.
+                  <br/><br/>✅ {t('common.thisWillAllowUser')}
                 </>
               )}
             </ConfirmModalMessage>
             <ConfirmModalActions>
               <Button variant="secondary" onClick={() => setToggleConfirm(null)} disabled={isUpdatingStatus}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 variant={toggleConfirm.isActive ? "danger" : "primary"} 
@@ -1294,11 +1319,11 @@ const UserList = () => {
                 {isUpdatingStatus ? (
                   <>
                     <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    {toggleConfirm.isActive ? 'Deactivating...' : 'Activating...'}
+                    {toggleConfirm.isActive ? t('common.deactivating') : t('common.activating')}
                   </>
                 ) : (
                   <>
-                    {toggleConfirm.isActive ? 'Deactivate User' : 'Activate User'}
+                    {toggleConfirm.isActive ? t('common.deactivateUser') : t('common.activateUser')}
                   </>
                 )}
               </Button>

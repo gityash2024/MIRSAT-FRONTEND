@@ -15,6 +15,7 @@ import {
 import { fetchUserDashboardStats } from '../store/slices/userTasksSlice';
 import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/ui/Skeleton';
+import { useTranslation } from 'react-i18next';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -344,6 +345,7 @@ const UserDashboard = () => {
   const { user } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const { dashboardStats, dashboardLoading, error } = useSelector((state) => state.userTasks);
   const { stats, recentTasks, statusCounts, performance } = dashboardStats;
@@ -402,15 +404,53 @@ const UserDashboard = () => {
     // Transform backend status to user-friendly labels
     switch (status.toLowerCase()) {
       case 'archived':
-        return 'Completed';
+        return t('tasks.completed');
       case 'in_progress':
-        return 'In Progress';
+      case 'in progress':
+        return t('tasks.inProgress');
       case 'pending':
-        return 'Pending';
+        return t('tasks.pending');
       case 'completed':
-        return 'Completed';
+        return t('tasks.completed');
+      case 'overdue':
+        return t('dashboard.overdue');
       default:
+        // Check for exact matches first
+        if (status === 'In Progress') {
+          return t('tasks.inProgress');
+        }
+        if (status === 'Overdue') {
+          return t('dashboard.overdue');
+        }
+        if (status === 'Completed') {
+          return t('tasks.completed');
+        }
+        if (status === 'Pending') {
+          return t('tasks.pending');
+        }
         return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+    }
+  };
+
+  const translateStatLabel = (label) => {
+    // Translate stat labels from backend
+    switch (label) {
+      case 'Overdue Tasks':
+        return t('dashboard.overdueTasks');
+      case 'In Progress':
+        return t('dashboard.inProgress');
+      case 'Completed Tasks':
+        return t('dashboard.completedTasks');
+      case 'Assigned Tasks':
+        return t('dashboard.assignedTasks');
+      case 'Overdue':
+        return t('dashboard.overdueTasks');
+      case 'Completed':
+        return t('dashboard.completedTasks');
+      case 'Pending':
+        return t('tasks.pending');
+      default:
+        return label;
     }
   };
 
@@ -421,7 +461,7 @@ const UserDashboard = () => {
           <div style={{ textAlign: 'center' }}>
             <Loader size={40} color="var(--color-navy)" />
             <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
-              User dashboard loading...
+              {t('dashboard.loadingInspectorPerformance')}
             </p>
           </div>
         </LoadingContainer>
@@ -433,17 +473,17 @@ const UserDashboard = () => {
     return (
       <DashboardContainer>
         <WelcomeText>
-          Welcome back, {user?.name || 'Inspector'}
+          {t('dashboard.welcome')}, {user?.name || t('common.inspector')}
         </WelcomeText>
         <Card>
           <EmptyState>
-            <h3>Unable to load dashboard</h3>
+            <h3>{t('dashboard.unableToLoad')}</h3>
             <p>{error}</p>
             <ActionButton 
               variant="primary"
               onClick={() => dispatch(fetchUserDashboardStats())}
             >
-              Try Again
+              {t('common.tryAgain')}
             </ActionButton>
           </EmptyState>
         </Card>
@@ -454,7 +494,7 @@ const UserDashboard = () => {
   return (
     <DashboardContainer>
       <WelcomeText>
-        Welcome back, {user?.name || 'Inspector'}
+        {t('dashboard.welcome')}, {user?.name || t('common.inspector')}
       </WelcomeText>
 
       <StatsGrid>
@@ -475,7 +515,7 @@ const UserDashboard = () => {
                 <Icon size={24} color={stat.color} />
               </div>
               <div className="value">{stat.value}</div>
-              <div className="label">{stat.label}</div>
+              <div className="label">{translateStatLabel(stat.label)}</div>
             </StatCard>
           );
         })}
@@ -485,7 +525,7 @@ const UserDashboard = () => {
         <Card>
           <CardTitle>
             <Calendar size={20} />
-            Recent Tasks
+            {t('tasks.recentTasks')}
           </CardTitle>
           {recentTasks?.length > 0 ? (
             <div>
@@ -515,7 +555,7 @@ const UserDashboard = () => {
                       variant="primary"
                       onClick={() => handleViewTask(task.id)}
                     >
-                      View Details
+                      {t('common.view')}
                     </ActionButton>
                   </div>
                 </TaskItem>
@@ -523,8 +563,8 @@ const UserDashboard = () => {
             </div>
           ) : (
             <EmptyState>
-              <h3>No recent tasks</h3>
-              <p>You don't have any recent tasks assigned to you.</p>
+              <h3>{t('dashboard.noRecentTasks')}</h3>
+              <p>{t('dashboard.noRecentTasksDescription')}</p>
             </EmptyState>
           )}
         </Card>
@@ -533,7 +573,7 @@ const UserDashboard = () => {
           <Card>
             <CardTitle>
               <ListChecks size={20} />
-              Task Status
+              {t('tasks.taskStatus')}
             </CardTitle>
             {statusCounts?.length > 0 ? (
               <div>
@@ -546,8 +586,8 @@ const UserDashboard = () => {
               </div>
             ) : (
               <EmptyState>
-                <h3>No task status</h3>
-                <p>Status information is not available yet.</p>
+                <h3>{t('dashboard.noTaskStatus')}</h3>
+                <p>{t('dashboard.noTaskStatusDescription')}</p>
               </EmptyState>
             )}
           </Card>
@@ -555,12 +595,12 @@ const UserDashboard = () => {
           <Card style={{ marginTop: '24px' }}>
             <CardTitle>
               <TrendingUp size={20} />
-              Performance Metrics
+              {t('dashboard.performanceMetrics')}
             </CardTitle>
             {performance ? (
               <div>
                 <PerformanceCard>
-                  <div className="metric-title">Tasks Completed This Month</div>
+                  <div className="metric-title">{t('dashboard.tasksCompletedThisMonth')}</div>
                   <div className="metric-value">
                     <CheckSquare size={18} color="#2e7d32" />
                     {performance.completedThisMonth}
@@ -568,15 +608,15 @@ const UserDashboard = () => {
                 </PerformanceCard>
                 
                 <PerformanceCard>
-                  <div className="metric-title">Average Completion Time</div>
+                  <div className="metric-title">{t('dashboard.averageCompletionTime')}</div>
                   <div className="metric-value">
                     <Clock size={18} color="#1976d2" />
-                    {performance.avgCompletionTime} days
+                    {performance.avgCompletionTime} {t('common.days')}
                   </div>
                 </PerformanceCard>
                 
                 <PerformanceCard>
-                  <div className="metric-title">Completion Rate</div>
+                  <div className="metric-title">{t('dashboard.completionRate')}</div>
                   <div className="metric-value">
                     <Award size={18} color="#f57c00" />
                     {performance.totalAssigned > 0 
@@ -587,8 +627,8 @@ const UserDashboard = () => {
               </div>
             ) : (
               <EmptyState>
-                <h3>No performance data</h3>
-                <p>Performance metrics will be available as you complete tasks.</p>
+                <h3>{t('dashboard.noPerformanceData')}</h3>
+                <p>{t('dashboard.noPerformanceDataDescription')}</p>
               </EmptyState>
             )}
           </Card>

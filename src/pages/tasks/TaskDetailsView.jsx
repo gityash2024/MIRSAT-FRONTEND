@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -554,6 +555,7 @@ const TaskDetailsView = () => {
   const dispatch = useDispatch();
   const { user } = useAuth();
   const { userRole } = usePermissions();
+  const { t } = useTranslation();
   
   const { currentTask, taskDetailsLoading, error } = useSelector((state) => state.userTasks);
   const [isExporting, setIsExporting] = useState(false);
@@ -839,7 +841,7 @@ const TaskDetailsView = () => {
                 {option}
               </OptionButton>
             )) : (
-              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+              <div style={{ color: '#666', fontStyle: 'italic' }}>{t('tasks.noOptionsAvailable')}</div>
             )}
           </OptionsContainer>
         );
@@ -863,7 +865,7 @@ const TaskDetailsView = () => {
                 {option}
               </OptionButton>
             )) : (
-              <div style={{ color: '#666', fontStyle: 'italic' }}>No options available</div>
+              <div style={{ color: '#666', fontStyle: 'italic' }}>{t('tasks.noOptionsAvailable')}</div>
             )}
           </OptionsContainer>
         );
@@ -874,7 +876,7 @@ const TaskDetailsView = () => {
             <InputGroup>
               <StyledInput
                 type="text"
-                placeholder="Enter your response"
+                placeholder={t('tasks.enterYourResponse')}
                 value={displayValue || ''}
                 onChange={(e) => handleInputChange(questionId, e.target.value)}
                 onBlur={(e) => onSaveResponse(questionId, e.target.value)}
@@ -889,7 +891,7 @@ const TaskDetailsView = () => {
             <InputGroup>
               <StyledInput
                 type="number"
-                placeholder="Enter a number"
+                placeholder={t('tasks.enterNumber')}
                 value={displayValue || ''}
                 onChange={(e) => handleInputChange(questionId, e.target.value)}
                 onBlur={(e) => onSaveResponse(questionId, e.target.value)}
@@ -917,7 +919,7 @@ const TaskDetailsView = () => {
           <InputContainer>
             <InputGroup>
               <StyledTextarea
-                placeholder="Enter your response"
+                placeholder={t('tasks.enterYourResponse')}
                 value={displayValue || ''}
                 onChange={(e) => handleInputChange(questionId, e.target.value)}
                 onBlur={(e) => onSaveResponse(questionId, e.target.value)}
@@ -1003,7 +1005,7 @@ const TaskDetailsView = () => {
                   cursor: 'not-allowed',
                   opacity: 0.7
                 }}
-                title="Signature cannot be edited once provided"
+                title={t('tasks.signatureCannotBeEdited')}
               >
                 <div style={{ 
                   marginBottom: '12px',
@@ -1077,9 +1079,9 @@ const TaskDetailsView = () => {
         <Header>
           <BackButton onClick={handleBack}>
             <ArrowLeft size={16} />
-            Back to Tasks
+            {t('tasks.backToTasks')}
           </BackButton>
-          <TaskTitle>Loading Task Details...</TaskTitle>
+          <TaskTitle>{t('tasks.loadingTaskDetails')}</TaskTitle>
         </Header>
         <Content>
           <div style={{ 
@@ -1099,8 +1101,8 @@ const TaskDetailsView = () => {
               animation: 'spin 1s linear infinite',
               marginBottom: '16px'
             }} />
-            <h3 style={{ color: '#64748b', marginBottom: '8px' }}>Loading task details...</h3>
-            <p style={{ color: '#9ca3af' }}>Please wait while we fetch the task information</p>
+            <h3 style={{ color: '#64748b', marginBottom: '8px' }}>{t('tasks.loadingTaskDetails')}</h3>
+            <p style={{ color: '#9ca3af' }}>{t('tasks.pleaseWaitWhileFetching')}</p>
           </div>
         </Content>
         <style jsx>{`
@@ -1119,14 +1121,14 @@ const TaskDetailsView = () => {
         <Header>
           <BackButton onClick={handleBack}>
             <ArrowLeft size={16} />
-            Back to Tasks
+            {t('tasks.backToTasks')}
           </BackButton>
-          <TaskTitle>Error Loading Task</TaskTitle>
+          <TaskTitle>{t('tasks.errorLoadingTask')}</TaskTitle>
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: '48px', color: '#ef4444' }}>
             <AlertCircle size={48} style={{ marginBottom: '16px' }} />
-            <h3>Failed to load task details</h3>
+            <h3>{t('tasks.failedToLoadTaskDetails')}</h3>
             <p>{error}</p>
             <button 
               onClick={() => {
@@ -1157,15 +1159,15 @@ const TaskDetailsView = () => {
         <Header>
           <BackButton onClick={handleBack}>
             <ArrowLeft size={16} />
-            Back to Tasks
+            {t('tasks.backToTasks')}
           </BackButton>
-          <TaskTitle>Task Not Found</TaskTitle>
+          <TaskTitle>{t('tasks.taskNotFound')}</TaskTitle>
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: '48px' }}>
             <FileText size={48} style={{ marginBottom: '16px', color: '#64748b' }} />
-            <h3>Task not found</h3>
-            <p>The requested task could not be found.</p>
+            <h3>{t('tasks.taskNotFound')}</h3>
+            <p>{t('tasks.taskNotFoundDescription')}</p>
           </div>
         </Content>
       </PageContainer>
@@ -1245,7 +1247,7 @@ const TaskDetailsView = () => {
       <Header>
         <BackButton onClick={handleBack}>
           <ArrowLeft size={16} />
-          Back to Tasks
+          {t('common.backToTasks')}
         </BackButton>
         <TaskTitle>{currentTask.name || currentTask.title}</TaskTitle>
         <HeaderActions>
@@ -1254,7 +1256,7 @@ const TaskDetailsView = () => {
             {currentTask.status === 'in_progress' && <Clock size={12} />}
             {currentTask.status === 'pending' && <Clock size={12} />}
             {currentTask.status === 'archived' && <FileText size={12} />}
-            {currentTask.status === 'archived' ? 'Completed' : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
+            {currentTask.status === 'archived' ? t('common.completed') : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
           </StatusBadge>
           
           <ExportButtonContainer data-export-dropdown>
@@ -1263,14 +1265,14 @@ const TaskDetailsView = () => {
               disabled={isExporting || !currentTask}
             >
               <Download size={16} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
+              {isExporting ? t('common.exporting') : t('common.exportReport')}
               <ChevronDown size={14} />
             </ExportButton>
             {showExportDropdown && (
               <ExportDropdown>
                 <ExportOption onClick={() => handleExportFormat('excel')}>
                   <FileSpreadsheet size={16} />
-                  Export as Excel
+                  {t('common.exportAsExcel')}
                 </ExportOption>
                 {/* <ExportOption onClick={() => handleExportFormat('word')}>
                   <FileText size={16} />
@@ -1278,7 +1280,7 @@ const TaskDetailsView = () => {
                 </ExportOption> */}
                 <ExportOption onClick={() => handleExportFormat('pdf')}>
                   <FileText size={16} />
-                  Export as PDF
+                  {t('common.exportAsPDF')}
                 </ExportOption>
               </ExportDropdown>
             )}
@@ -1292,7 +1294,7 @@ const TaskDetailsView = () => {
           <CardHeader>
             <CardTitle>
               <FileText size={20} />
-              Task Overview
+              {t('common.taskOverview')}
             </CardTitle>
            
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -1301,7 +1303,7 @@ const TaskDetailsView = () => {
                   isEditMode={isEditMode}
                 >
                   {isEditMode ? <X size={16} /> : <Edit size={16} />}
-                  {isEditMode ? 'Exit Edit' : 'Edit Inspection'}
+                  {isEditMode ? t('common.exitEdit') : t('common.editInspection')}
                 </EditToggleButton> 
                 </div>
             
@@ -1313,7 +1315,7 @@ const TaskDetailsView = () => {
                   <User size={20} />
                 </InfoIcon>
                 <InfoContent>
-                  <InfoLabel>Assigned To</InfoLabel>
+                  <InfoLabel>{t('tasks.assignedTo')}</InfoLabel>
                   <InfoValue>
                     {currentTask.assignedTo?.map(user => user.name).join(', ') || 'Unassigned'}
                   </InfoValue>
@@ -1325,7 +1327,7 @@ const TaskDetailsView = () => {
                   <Calendar size={20} />
                 </InfoIcon>
                 <InfoContent>
-                  <InfoLabel>Due Date</InfoLabel>
+                  <InfoLabel>{t('calendar.deadline')}</InfoLabel>
                   <InfoValue>
                     {currentTask.deadline ? new Date(currentTask.deadline).toLocaleDateString() : 'No due date'}
                   </InfoValue>
@@ -1337,7 +1339,7 @@ const TaskDetailsView = () => {
                   <MapPin size={20} />
                 </InfoIcon>
                 <InfoContent>
-                  <InfoLabel>Location</InfoLabel>
+                  <InfoLabel>{t('common.location')}</InfoLabel>
                   <InfoValue>{currentTask.location || 'Not specified'}</InfoValue>
                 </InfoContent>
               </InfoItem> */}
@@ -1347,7 +1349,7 @@ const TaskDetailsView = () => {
                   <Award size={20} />
                 </InfoIcon>
                 <InfoContent>
-                  <InfoLabel>Priority</InfoLabel>
+                  <InfoLabel>{t('common.priority')}</InfoLabel>
                   <InfoValue style={{ 
                     color: currentTask.priority === 'high' ? '#dc2626' : 
                            currentTask.priority === 'medium' ? '#d97706' : '#16a34a'
@@ -1360,7 +1362,7 @@ const TaskDetailsView = () => {
 
             {currentTask.description && (
               <div style={{ marginTop: '16px' }}>
-                <InfoLabel>Description</InfoLabel>
+                <InfoLabel>{t('common.description')}</InfoLabel>
                 <div style={{ 
                   marginTop: '8px', 
                   padding: '12px', 
@@ -1382,13 +1384,13 @@ const TaskDetailsView = () => {
           <CardHeader>
             <CardTitle>
               <Award size={20} />
-              Progress & Scoring
+              {t('common.progressAndScoring')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ProgressSection>
               <ProgressHeader>
-                <ProgressTitle>Overall Progress</ProgressTitle>
+                <ProgressTitle>{t('tasks.overallProgress')}</ProgressTitle>
                 <ProgressValue>{progressPercentage}%</ProgressValue>
               </ProgressHeader>
               <ProgressBar>
@@ -1401,8 +1403,8 @@ const TaskDetailsView = () => {
                 display: 'flex',
                 justifyContent: 'space-between'
               }}>
-                <span>Questions Completed: {completedQuestions} / {finalTotalQuestions}</span>
-                <span>Completion Rate: {progressPercentage}%</span>
+                <span>{t('tasks.questionsCompleted', { completed: completedQuestions, total: finalTotalQuestions })}</span>
+                <span>{t('tasks.completionRate', { percentage: progressPercentage })}</span>
               </div>
             </ProgressSection>
           </CardContent>
@@ -1414,7 +1416,7 @@ const TaskDetailsView = () => {
             <CardHeader>
               <CardTitle>
                 <MessageSquare size={20} />
-                Inspection Questions & Responses
+                {t('common.inspectionQuestionsAndResponses')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1459,7 +1461,7 @@ const TaskDetailsView = () => {
                               completed={status === 'completed'}
                               isEditMode={isEditMode}
                             >
-                              {isEditMode && <EditModeIndicator>Edit Mode</EditModeIndicator>}
+                              {isEditMode && <EditModeIndicator>{t('tasks.editMode')}</EditModeIndicator>}
                               <QuestionHeader>
                                 <QuestionText>
                                   Q{questionIndex + 1}. {question.text}
@@ -1473,7 +1475,7 @@ const TaskDetailsView = () => {
                               </QuestionHeader>
                               
                               <QuestionDetails>
-                                <div>Type: {question.type} • {question.required ? 'Required' : 'Optional'} • {question.scoring?.enabled ? 'Scored' : 'Not Scored'}</div>
+                                <div>{t('tasks.type')}: {question.type} • {question.required ? t('common.required') : t('common.optional')} • {question.scoring?.enabled ? t('tasks.scored') : t('tasks.notScored')}</div>
                                 {question.description && (
                                   <div style={{ marginTop: '4px' }}>{question.description}</div>
                                 )}
@@ -1481,14 +1483,14 @@ const TaskDetailsView = () => {
                               
                               {isEditMode ? (
                                 <ResponseSection>
-                                  <ResponseLabel>Edit Response:</ResponseLabel>
+                                  <ResponseLabel>{t('tasks.editResponse')}:</ResponseLabel>
                                   <ResponseValue>
                                     {renderEditableQuestionInput(question, currentTask, handleSaveInspectionResponse)}
                                   </ResponseValue>
                                 </ResponseSection>
                               ) : response ? (
                                 <ResponseSection>
-                                  <ResponseLabel>Response:</ResponseLabel>
+                                  <ResponseLabel>{t('tasks.response')}:</ResponseLabel>
                                   <ResponseValue>
                                     {question.type === 'yesno' && (
                                       <span style={{ 
@@ -1570,7 +1572,7 @@ const TaskDetailsView = () => {
                                           cursor: 'not-allowed',
                                           opacity: 0.8
                                         }}
-                                        title="Signature cannot be edited once provided"
+                                        title={t('tasks.signatureCannotBeEdited')}
                                       >
                                         <div style={{ marginBottom: '8px', color: '#6b7280', fontSize: '12px' }}>
                                           ✍️ Signature provided (Locked)
@@ -1611,7 +1613,7 @@ const TaskDetailsView = () => {
                                 </ResponseSection>
                               ) : (
                                 <ResponseSection>
-                                  <ResponseLabel>Response:</ResponseLabel>
+                                  <ResponseLabel>{t('tasks.response')}:</ResponseLabel>
                                   <ResponseValue style={{ color: '#9ca3af', fontStyle: 'italic' }}>
                                     No response provided
                                   </ResponseValue>
@@ -1636,7 +1638,7 @@ const TaskDetailsView = () => {
         onClose={() => setShowDocumentNamingModal(false)}
         onExport={handleConfirmExport}
         exportFormat={selectedExportFormat}
-        documentType="Task Report"
+        documentType={t('tasks.taskReport')}
         defaultCriteria={['documentType', 'currentDate']}
       />
     </PageContainer>

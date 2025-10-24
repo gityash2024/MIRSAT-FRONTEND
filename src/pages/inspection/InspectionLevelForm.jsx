@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled, { css } from 'styled-components';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 import { 
   Plus, 
   Trash2, 
@@ -1431,6 +1433,8 @@ const TabMenu = styled.div`
 `;
 
 const QuestionPagination = ({ currentPage, totalPages, onPageChange }) => {
+  const { t } = useTranslation();
+  
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       onPageChange(page);
@@ -1440,32 +1444,32 @@ const QuestionPagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <PaginationContainer>
       <PageInfo>
-        Page {currentPage} of {totalPages}
+        {t('common.page')} {currentPage} {t('common.of')} {totalPages}
       </PageInfo>
       <PaginationButtons>
         <PaginationButton
           onClick={() => goToPage(1)}
           disabled={currentPage === 1}
         >
-          First
+          {t('common.first')}
         </PaginationButton>
         <PaginationButton
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          Previous
+          {t('common.previous')}
         </PaginationButton>
         <PaginationButton
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          Next
+          {t('common.next')}
         </PaginationButton>
         <PaginationButton
           onClick={() => goToPage(totalPages)}
           disabled={currentPage === totalPages}
         >
-          Last
+          {t('common.last')}
         </PaginationButton>
       </PaginationButtons>
     </PaginationContainer>
@@ -1551,6 +1555,7 @@ const QuestionItemComponent = ({
   allLevels = [],
   onMoveQuestion
 }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
@@ -1786,19 +1791,19 @@ const QuestionItemComponent = ({
   // Get answer type label for display
   const getAnswerTypeLabel = (type) => {
     switch(type) {
-      case 'yesno': return 'Yes/No';
-      case 'text': return 'Text Input';
-      case 'multiple': return 'Multiple Choice';
-      case 'compliance': return 'Compliance';
-      case 'location': return 'Location';
-      case 'signature': return 'Signature';
-      case 'date': return 'Date & Time';
-      case 'file': return 'File Upload';
-      case 'checkbox': return 'Checkbox';
-      case 'number': return 'Number';
-      case 'media': return 'Media Upload';
-      case 'slider': return 'Slider';
-      default: return 'Text Input';
+      case 'yesno': return t('common.yesNo');
+      case 'text': return t('common.text');
+      case 'multiple': return t('common.multipleChoice');
+      case 'compliance': return t('common.compliance');
+      case 'location': return t('common.location');
+      case 'signature': return t('common.signature');
+      case 'date': return t('common.date');
+      case 'file': return t('common.fileUpload');
+      case 'checkbox': return t('common.checkbox');
+      case 'number': return t('common.number');
+      case 'media': return t('common.mediaUpload');
+      case 'slider': return t('common.slider');
+      default: return t('common.text');
     }
   };
 
@@ -1820,7 +1825,7 @@ const QuestionItemComponent = ({
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <QuestionNumber>
-              {questionIndex + 1}. {question.text || 'Untitled Question'}
+              {questionIndex + 1}. {question.text || t('common.untitledQuestion')}
               {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
             </QuestionNumber>
             {question.description && (
@@ -1881,7 +1886,7 @@ const QuestionItemComponent = ({
               }}
             >
               <Trash2 size={16} />
-              <span style={{ fontSize: '12px', fontWeight: '500' }}>Delete</span>
+              <span style={{ fontSize: '12px', fontWeight: '500' }}>{t('common.delete')}</span>
             </IconButton>
           </QuestionActionsMenu>
         </QuestionTableRow>
@@ -1906,47 +1911,47 @@ const QuestionItemComponent = ({
           }}>
             <div style={{ flex: '1', minWidth: '0' }}>
               <FormGroup>
-                <Label>Question Text </Label>
+                <Label>{t('common.questionText')}</Label>
                 <Input
                   type="text"
                   value={question.text || ''}
                   onChange={(e) => updateQuestion({ ...question, text: e.target.value })}
-                  placeholder="Enter question text"
+                  placeholder={t('common.enterQuestionText')}
                 />
               </FormGroup>
               
               <FormGroup style={{ marginTop: '16px' }}>
-                <Label>Description</Label>
+                <Label>{t('common.description')}</Label>
                 <TextArea
                   value={question.description || ''}
                   onChange={(e) => updateQuestion({ ...question, description: e.target.value })}
-                  placeholder="Enter question description or instructions"
+                  placeholder={t('common.enterQuestionDescriptionOrInstructions')}
                   rows={2}
                 />
               </FormGroup>
               
               <FormGroup style={{ marginTop: '16px' }}>
-                <Label>Answer Type</Label>
+                <Label>{t('common.answerType')}</Label>
                 <Select
                   name="type"
                   value={question.type || question.answerType || 'text'}
                   onChange={handleTypeChange}
                   disabled={loading}
                 >
-                  <option value="text">Text</option>
-                  <option value="yesno">Yes/No</option>
-                  <option value="multiple">Multiple Choice</option>
-                  <option value="compliance">Compliance</option>
-                  <option value="signature">Signature</option>
-                  <option value="date">Date</option>
-                  <option value="file">File Upload</option>
+                  <option value="text">{t('common.text')}</option>
+                  <option value="yesno">{t('common.yesNo')}</option>
+                  <option value="multiple">{t('common.multipleChoice')}</option>
+                  <option value="compliance">{t('common.compliance')}</option>
+                  <option value="signature">{t('common.signature')}</option>
+                  <option value="date">{t('common.date')}</option>
+                  <option value="file">{t('common.fileUpload')}</option>
                 </Select>
               </FormGroup>
 
               
               {/* Add weight input field after answer type */}
               <FormGroup style={{ marginTop: '16px' }}>
-                <Label>Question Weight</Label>
+                <Label>{t('common.questionWeight')}</Label>
                 <Input
                   type="text"
                   value={question.weight ?? 1}
@@ -1962,7 +1967,7 @@ const QuestionItemComponent = ({
                   placeholder="Question weight"
                 />
                 <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                  Set to 0 for non-scored questions
+                  {t('common.setToZeroForNonScoredQuestions')}
                 </div>
               </FormGroup>
               
@@ -2047,10 +2052,10 @@ const QuestionItemComponent = ({
               {/* Score editor for Yes/No questions */}
               {question.answerType === 'yesno' && (
                 <FormGroup style={{ marginTop: '16px' }}>
-                  <Label>Scoring</Label>
+                  <Label>{t('common.scoring')}</Label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '8px' }}>
                     <div>
-                      <Label style={{ fontSize: '13px' }}>Yes Score</Label>
+                      <Label style={{ fontSize: '13px' }}>{t('common.yesScore')}</Label>
                       <Input
                         type="text"
                         value={question.scores?.Yes ?? 2}
@@ -2078,7 +2083,7 @@ const QuestionItemComponent = ({
                       />
                     </div>
                     <div>
-                      <Label style={{ fontSize: '13px' }}>No Score</Label>
+                      <Label style={{ fontSize: '13px' }}>{t('common.noScore')}</Label>
                       <Input
                         type="text"
                         value={question.scores?.No ?? 0}
@@ -2106,7 +2111,7 @@ const QuestionItemComponent = ({
                       />
                     </div>
                     <div>
-                      <Label style={{ fontSize: '13px' }}>N/A Score</Label>
+                      <Label style={{ fontSize: '13px' }}>{t('common.naScore')}</Label>
                       <Input
                         type="text"
                         value={question.scores?.['N/A'] ?? 0}
@@ -2153,23 +2158,23 @@ const QuestionItemComponent = ({
                 width: '100%',
                 boxSizing: 'border-box'
               }}>
-                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Question Settings</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>{t('common.questionSettings')}</div>
                 
                 <FormGroup style={{ marginBottom: '16px' }}>
-                  <Label>Requirement Type</Label>
+                  <Label>{t('common.requirementType')}</Label>
                   <Select
                     name="requirementType"
                     value={question.requirementType || 'mandatory'}
                     onChange={(e) => updateQuestion({ ...question, requirementType: e.target.value })}
                     disabled={loading}
                   >
-                    <option value="mandatory">Mandatory</option>
-                    <option value="recommended">Recommended</option>
+                    <option value="mandatory">{t('common.mandatory')}</option>
+                    <option value="recommended">{t('common.recommended')}</option>
                   </Select>
                 </FormGroup>
 
                 <FormGroup style={{ marginBottom: '16px' }}>
-                  <Label>Required</Label>
+                  <Label>{t('common.required')}</Label>
                   <div style={{ marginTop: '10px' }}>
                     <input 
                       type="checkbox" 
@@ -2181,14 +2186,14 @@ const QuestionItemComponent = ({
                       disabled={loading}
                     />
                     <label htmlFor={`required-settings-${questionIndex}`} style={{ fontSize: '14px', color: '#334155' }}>
-                      This question is required
+                      {t('common.thisQuestionIsRequired')}
                     </label>
                   </div>
                   
                 </FormGroup>
                 
                 {/* <FormGroup style={{ marginBottom: '12px' }}>
-                  <Label>Question Weight</Label>
+                  <Label>{t('common.questionWeight')}</Label>
                   <Input
                     type="number"
                     value={question.weight || 1}
@@ -2201,7 +2206,7 @@ const QuestionItemComponent = ({
                 </FormGroup> */}
                 
                 <FormGroup>
-                  <Label>Max Possible Score</Label>
+                  <Label>{t('common.maxPossibleScore')}</Label>
                   <Input
                     type="text"
                     value={totalScore}
@@ -2214,7 +2219,7 @@ const QuestionItemComponent = ({
                     placeholder="Auto-calculated"
                   />
                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                    Automatically calculated from scoring inputs
+                    {t('common.automaticallyCalculatedFromScoring')}
                   </div>
                 </FormGroup>
                 
@@ -2270,7 +2275,7 @@ const QuestionItemComponent = ({
                   }}
                 >
                   <Save size={16} />
-                  Save to Library
+                  {t('common.saveToLibrary')}
                 </Button>
                 
                 <Button
@@ -2297,7 +2302,7 @@ const QuestionItemComponent = ({
                   }}
                 >
                   <Folder size={16} />
-                  Select from Library
+                  {t('common.selectFromLibrary')}
                 </Button>
           </div>
       </div>
@@ -2551,6 +2556,8 @@ const SubLevelTreeComponent = ({
 
 // Component to display activity history
 const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
   
   // Calculate section and question counts more accurately
@@ -2625,7 +2632,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
             fontSize: '20px', 
             fontWeight: '600',
             color: 'var(--color-navy)'
-          }}>Template Activity</h2>
+          }}>{t('common.templateActivity')}</h2>
           <button
             onClick={onClose}
             style={{
@@ -2649,25 +2656,25 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
           border: '1px solid #e2e8f0'
         }}>
           <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '16px', color: 'var(--color-navy)' }}>
-            Current Template Information
+            {t('common.currentTemplateInformation')}
           </div>
           <div style={{ fontSize: '14px', color: '#64748b', display: 'grid', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Name:</strong> 
-              <span style={{ color: '#334155', fontWeight: '500' }}>{formData.name || 'Untitled'}</span>
+              <strong>{t('common.name')}:</strong> 
+              <span style={{ color: '#334155', fontWeight: '500' }}>{formData.name || t('common.untitled')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Type:</strong>
+              <strong>{t('common.type')}:</strong>
               <span style={{ color: '#334155', fontWeight: '500' }}>{formData.type || '-'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Status:</strong>
+              <strong>{t('common.status')}:</strong>
               <InspectionStatusBadge status={formData.status} style={{padding: '2px 8px', fontSize: '12px'}}>
-                {formData.status === 'draft' ? 'Draft' : 'Published'}
+                {formData.status === 'draft' ? t('common.draft') : t('common.published')}
               </InspectionStatusBadge>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Pages:</strong>
+              <strong>{t('common.pages')}:</strong>
               <span style={{ 
                 background: '#ebf5ff', 
                 padding: '2px 8px', 
@@ -2678,7 +2685,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               }}>{formData.pages?.length || 0}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Sections:</strong>
+              <strong>{t('common.sections')}:</strong>
               <span style={{ 
                 background: '#eff6ff', 
                 padding: '2px 8px', 
@@ -2689,7 +2696,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               }}>{countSections()}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>Questions:</strong>
+              <strong>{t('common.questions')}:</strong>
               <span style={{ 
                 background: '#eef2ff', 
                 padding: '2px 8px', 
@@ -2704,7 +2711,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               <span style={{ color: '#334155', fontWeight: '500' }}>{getLastUpdated()}</span>
             </div> */}
             <div style={{ borderTop: '1px dashed #e2e8f0', padding: '8px 0 0', marginTop: '4px' }}>
-              <strong>Description:</strong>
+              <strong>{t('common.description')}:</strong>
               <div style={{ 
                 padding: '8px', 
                 marginTop: '4px',
@@ -2714,7 +2721,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
                 border: '1px solid #e2e8f0',
                 fontSize: '13px',
                 lineHeight: '1.4'
-              }}>{formData.description || 'No description provided'}</div>
+              }}>{formData.description || t('common.noDescriptionProvided')}</div>
             </div>
           </div>
         </div>
@@ -2847,7 +2854,7 @@ const MoveQuestionModal = ({
             borderRadius: '8px',
             background: '#f8fafc'
           }}>
-            {question?.text || 'Untitled Question'}
+            {question?.text || t('common.untitledQuestion')}
           </div>
         </FormGroup>
         
@@ -2932,6 +2939,7 @@ const MobilePreviewPanel = ({
   isOpen = true,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(0);
   const [expandedSections, setExpandedSections] = useState({});
   const [expandedQuestions, setExpandedQuestions] = useState({});
@@ -3166,7 +3174,7 @@ const MobilePreviewPanel = ({
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
         </div>
-        <div style={{ color: 'white', fontSize: '12px' }}>Mobile Preview</div>
+        <div style={{ color: 'white', fontSize: '12px' }}>{t('common.mobilePreview')}</div>
         <button
           onClick={onClose}
           style={{
@@ -3208,10 +3216,10 @@ const MobilePreviewPanel = ({
         borderBottom: '1px solid #e2e8f0',
       }}>
         <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
-          {formData.name || 'Untitled Template'}
+          {formData.name || t('common.untitledTemplate')}
         </h2>
         <div style={{ fontSize: '13px', color: '#64748b' }}>
-          {formData.description || 'No description provided'}
+          {formData.description || t('common.noDescriptionProvided')}
         </div>
       </div>
       
@@ -3241,7 +3249,7 @@ const MobilePreviewPanel = ({
         </button>
         
         <div style={{ fontWeight: '500' }}>
-          {formData.pages.length > 0 ? `Page ${currentPage + 1} of ${formData.pages.length}` : 'No Pages'}
+          {formData.pages.length > 0 ? `${t('common.page')} ${currentPage + 1} ${t('common.of')} ${formData.pages.length}` : t('common.noPages')}
         </div>
         
         <button
@@ -3279,7 +3287,7 @@ const MobilePreviewPanel = ({
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
         }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
-            {currentPageData.name || `Page ${currentPage + 1}`}
+            {currentPageData.name || `${t('common.page')} ${currentPage + 1}`}
           </h3>
           {currentPageData.description && (
             <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px' }}>
@@ -3323,7 +3331,7 @@ const MobilePreviewPanel = ({
                     alignItems: 'center',
                     gap: '8px'
                   }}>
-                    {section.name || `Section ${sectionIndex + 1}`}
+                    {section.name || `${t('common.section')} ${sectionIndex + 1}`}
                     <span style={{ 
                       fontSize: '12px', 
                       padding: '2px 8px', 
@@ -3347,7 +3355,7 @@ const MobilePreviewPanel = ({
                     borderRadius: '4px',
                     fontSize: '13px'
                   }}>
-                    {sectionScore} pts
+                    {sectionScore} {t('common.pts')}
                   </div>
                   
                   {/* Accordion toggle */}
@@ -3413,7 +3421,7 @@ const MobilePreviewPanel = ({
                               {questionIndex + 1}
                             </span>
                             <span style={{ flex: 1 }}>
-                              {question.text || 'Untitled Question'}
+                              {question.text || t('common.untitledQuestion')}
                               {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
                             </span>
                           </div>
@@ -3427,7 +3435,7 @@ const MobilePreviewPanel = ({
                               borderRadius: '4px',
                               fontSize: '12px'
                             }}>
-                              {questionScore} pts
+                              {questionScore} {t('common.pts')}
                             </div>
                             {isQuestionExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </div>
@@ -3455,7 +3463,7 @@ const MobilePreviewPanel = ({
                               fontSize: '12px'
                             }}>
                               <div style={{ fontWeight: '600', marginBottom: '4px', color: '#334155' }}>
-                                Scoring
+                                {t('common.scoring')}
                               </div>
                               
                               {question.answerType === 'yesno' && (
@@ -3466,7 +3474,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    Yes: {question.scores?.Yes || 0} pts
+                                    {t('common.yes')}: {question.scores?.Yes || 0} {t('common.pts')}
                                   </div>
                                   <div style={{ 
                                     backgroundColor: '#fee2e2', 
@@ -3474,7 +3482,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    No: {question.scores?.No || 0} pts
+                                    {t('common.no')}: {question.scores?.No || 0} {t('common.pts')}
                                   </div>
                                   <div style={{ 
                                     backgroundColor: '#f1f5f9', 
@@ -3482,7 +3490,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    N/A: {question.scores?.['N/A'] || 0} pts
+                                    {t('common.na')}: {question.scores?.['N/A'] || 0} {t('common.pts')}
                                   </div>
                                 </div>
                               )}
@@ -3495,7 +3503,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    Full: {question.scores?.['Full compliance'] || 0} pts
+                                    {t('common.fullCompliance')}: {question.scores?.['Full compliance'] || 0} {t('common.pts')}
                                   </div>
                                   <div style={{ 
                                     backgroundColor: '#fef9c3', 
@@ -3503,7 +3511,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    Partial: {question.scores?.['Partial compliance'] || 0} pts
+                                    {t('common.partialCompliance')}: {question.scores?.['Partial compliance'] || 0} {t('common.pts')}
                                   </div>
                                   <div style={{ 
                                     backgroundColor: '#fee2e2', 
@@ -3511,7 +3519,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    Non: {question.scores?.['Non-compliant'] || 0} pts
+                                    {t('common.nonCompliant')}: {question.scores?.['Non-compliant'] || 0} {t('common.pts')}
                                   </div>
                                 </div>
                               )}
@@ -3524,7 +3532,7 @@ const MobilePreviewPanel = ({
                                   fontSize: '12px',
                                   color: '#475569'
                                 }}>
-                                  Weight multiplier: {question.weight}x
+                                  {t('common.weightMultiplier')}: {question.weight}x
                                 </div>
                               )}
                             </div>
@@ -3951,6 +3959,8 @@ const InspectionLevelForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -4517,7 +4527,7 @@ const InspectionLevelForm = () => {
           page.sections.forEach((section, sectionIndex) => {
             const sectionData = {
               id: `section_${pageIndex}_${sectionIndex}`,
-              name: section.name || `Template ${sectionIndex + 1} (Page ${pageIndex + 1})`,
+              name: section.name || `${t('common.template')} ${sectionIndex + 1} (${t('common.page')} ${pageIndex + 1})`,
               description: section.description || '',
               score: 0,
               maxScore: 0,
@@ -4532,7 +4542,7 @@ const InspectionLevelForm = () => {
                 maxScore += questionScore;
                 
                 sectionData.items.push({
-                  title: question.text || 'Unnamed Question',
+                  title: question.text || t('common.unnamedQuestion'),
                   status: 'not_applicable'
                 });
                 
@@ -4550,18 +4560,18 @@ const InspectionLevelForm = () => {
     }
     
     return {
-      title: formData.name || 'Draft Inspection Template',
+      title: formData.name || t('common.draftInspectionTemplate'),
       score: 0, // No real score in template preview
       maxScore: maxScore,
       completedAt: new Date().toLocaleString(),
       sections,
       flaggedItems: [],
       metadata: {
-        documentNumber: id ? `Template ID: ${id}` : 'New Template',
-        inspectionLocation: 'Not specified',
+        documentNumber: id ? `Template ID: ${id}` : t('common.newTemplate'),
+        inspectionLocation: t('common.notSpecified'),
         inspectionDate: new Date().toLocaleDateString(),
-        inspectorName: 'Not assigned',
-        operatorName: 'Preview Mode'
+        inspectorName: t('common.notAssigned'),
+        operatorName: t('common.previewMode')
       }
     };
   };
@@ -4918,7 +4928,7 @@ const InspectionLevelForm = () => {
                 style={{ margin: '0 auto' }}
               >
                 <Plus size={16} />
-                Add Question
+                {t('common.addQuestion')}
               </Button>
             </div>
           )}
@@ -5068,10 +5078,10 @@ const InspectionLevelForm = () => {
         
         <SectionsWrapper>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h4>Template Levels</h4>
+            <h4>{t('common.templateLevels')}</h4>
             <Button onClick={addSection}>
               <Plus size={16} style={{ marginRight: '4px' }} />
-              Add Template Level
+              {t('common.addTemplateLevel')}
             </Button>
           </div>
           
@@ -5083,19 +5093,19 @@ const InspectionLevelForm = () => {
                 <div>
                   <InspectionFormRow>
                     <InspectionFormGroup>
-                      <Label>Template Level Name</Label>
+                      <Label>{t('common.templateLevelName')}</Label>
                       <Input
                         value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
                         onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                        placeholder="Enter template level name"
+                        placeholder={t('common.enterTemplateLevelName')}
                       />
                     </InspectionFormGroup>
                     <InspectionFormGroup>
-                      <Label>Template Level Description</Label>
+                      <Label>{t('common.templateLevelDescription')}</Label>
                       <TextArea
                         value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
                         onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                        placeholder="Enter template level description"
+                        placeholder={t('common.enterTemplateLevelDescription')}
                         rows={2}
                       />
                     </InspectionFormGroup>
@@ -5103,10 +5113,10 @@ const InspectionLevelForm = () => {
                   
                   <div style={{ marginTop: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h5>Questions</h5>
+                      <h5>{t('common.questions')}</h5>
                       <Button onClick={() => addQuestion(activeSectionTab)}>
                         <Plus size={16} style={{ marginRight: '4px' }} />
-                        Add Question
+                        {t('common.addQuestion')}
                       </Button>
                     </div>
                     
@@ -5115,9 +5125,9 @@ const InspectionLevelForm = () => {
                       <QuestionTable>
                         <QuestionTableHeader>
                           <div style={{ width: '40px' }}>#</div>
-                          <div>Question</div>
-                          <div>Type</div>
-                          <div>Actions</div>
+                          <div>{t('common.question')}</div>
+                          <div>{t('common.type')}</div>
+                          <div>{t('common.actions')}</div>
                         </QuestionTableHeader>
                         
                         {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
@@ -5138,7 +5148,7 @@ const InspectionLevelForm = () => {
                         <p>No questions added yet</p>
                         <Button onClick={() => addQuestion(activeSectionTab)}>
                           <Plus size={16} style={{ marginRight: '4px' }} />
-                          Add Question
+                          {t('common.addQuestion')}
                         </Button>
                       </TabEmptyState>
                     )}
@@ -5149,10 +5159,10 @@ const InspectionLevelForm = () => {
           ) : (
             <TabEmptyState>
               <Layers size={32} />
-              <p>No template levels added yet</p>
+              <p>{t('common.noTemplateLevelsAddedYet')}</p>
               <Button onClick={addSection}>
                 <Plus size={16} style={{ marginRight: '4px' }} />
-                Add Template
+                {t('common.addTemplateLevel')}
               </Button>
             </TabEmptyState>
           )}
@@ -5180,25 +5190,25 @@ const InspectionLevelForm = () => {
       <Header>
         <BackButton onClick={handleBack}>
           <ChevronLeft size={20} />
-          Back
+          {t('common.back')}
         </BackButton>
-        <h1>{id ? 'Edit Template' : 'Create Template'}</h1>
+        <h1>{id ? t('common.editTemplate') : t('common.createTemplate')}</h1>
         <div>
           <Button onClick={() => setIsActivityHistoryOpen(true)}>
             <History size={16} />
-            Activity
+            {t('common.activity')}
           </Button>
           <Button onClick={() => setIsMobilePreviewOpen(true)}>
             <Smartphone size={16} />
-            Preview
+            {t('common.preview')}
           </Button>
           <Button onClick={toggleGuide}>
             <HelpCircle size={16} />
-            Guide
+            {t('common.guide')}
           </Button>
           <InspectionSaveButton onClick={handleSave} disabled={loading}>
             <Save size={16} />
-            {id ? 'Update Template' : 'Save'}
+            {id ? t('common.updateTemplate') : t('common.save')}
           </InspectionSaveButton>
       
         </div>
@@ -5241,7 +5251,7 @@ const InspectionLevelForm = () => {
           }}
           onClick={() => setActiveTab('basic-info')}
         >
-          Basic Information
+          {t('common.basicInformation')}
         </div>
         <div 
                 style={{ 
@@ -5253,7 +5263,7 @@ const InspectionLevelForm = () => {
           }}
           onClick={() => setActiveTab('pages-questions')}
         >
-          Pages and Questions
+          {t('common.pagesAndQuestions')}
         </div>
         <div 
                 style={{ 
@@ -5265,7 +5275,7 @@ const InspectionLevelForm = () => {
           }}
           onClick={() => setActiveTab('report')}
         >
-          Report
+          {t('common.report')}
               </div>
       </div>
       
@@ -5302,7 +5312,7 @@ const InspectionLevelForm = () => {
             }}>
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: 'var(--color-navy)' }}>
                 <HelpCircle size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                Template Creation Guide
+                {t('common.templateCreationGuide')}
               </h2>
                       <button
                 onClick={toggleGuide}
@@ -5319,7 +5329,7 @@ const InspectionLevelForm = () => {
                   </div>
                 
                 <div style={{ marginBottom: '20px' }}>
-              <p style={{ marginTop: 0, color: '#64748b' }}>Follow these steps to create an effective inspection template:</p>
+              <p style={{ marginTop: 0, color: '#64748b' }}>{t('common.followTheseStepsToCreate')}</p>
               
                   <div style={{ 
                 background: '#f1f5f9', 
@@ -5346,15 +5356,15 @@ const InspectionLevelForm = () => {
                       justifyContent: 'center',
                     fontWeight: 'bold'
                   }}>1</div>
-                  Basic Information
+                  {t('common.basicInformation')}
                   </h3>
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
-                  Start by filling out the template name, type, description, and priority in the "Basic Information" tab.
+                  {t('common.startByFillingOut')}
                 </p>
                 <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
-                  <li>Template Name is required</li>
-                  <li>Choose an appropriate Type for better organization</li>
-                  <li>Add a clear Description to help users understand the template's purpose</li>
+                  <li>{t('common.templateNameIsRequired')}</li>
+                  <li>{t('common.chooseAnAppropriateType')}</li>
+                  <li>{t('common.addAClearDescription')}</li>
                 </ul>
               </div>
               
@@ -5383,16 +5393,16 @@ const InspectionLevelForm = () => {
                     justifyContent: 'center',
                     fontWeight: 'bold'
                   }}>2</div>
-                  Pages and Questions
+                  {t('common.pagesAndQuestions')}
                 </h3>
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
-                  Create the structure of your template with pages, template levels, and questions.
+                  {t('common.createTheStructureOfYourTemplate')}
                 </p>
                 <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
-                  <li>Add Pages to organize your template into logical sections</li>
-                  <li>Add Template Levels to each page to group related questions</li>
-                  <li>Create Questions with appropriate types (Text, Yes/No, Compliance, etc.)</li>
-                  <li>Configure scoring for questions to enable compliance assessment</li>
+                  <li>{t('common.addPagesToOrganize')}</li>
+                  <li>{t('common.addTemplateLevelsToEachPage')}</li>
+                  <li>{t('common.createQuestionsWithAppropriateTypes')}</li>
+                  <li>{t('common.configureScoringForQuestions')}</li>
                 </ul>
                     </div>
               
@@ -5420,15 +5430,15 @@ const InspectionLevelForm = () => {
                           justifyContent: 'center',
                     fontWeight: 'bold'
                   }}>3</div>
-                  Report Preview and Publishing
+                  {t('common.reportPreviewAndPublishing')}
                 </h3>
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
-                  Preview your template and publish when ready.
+                  {t('common.previewYourTemplateAndPublish')}
                 </p>
                 <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
-                  <li>Use the "Report" tab to preview how your template will look</li>
-                  <li>Save your template frequently to avoid losing work</li>
-                  <li>Click "Publish" when you're ready to make it available for inspections</li>
+                  <li>{t('common.useTheReportTabToPreview')}</li>
+                  <li>{t('common.saveYourTemplateFrequently')}</li>
+                  <li>{t('common.clickPublishWhenReady')}</li>
                 </ul>
               </div>
             </div>
@@ -5451,7 +5461,7 @@ const InspectionLevelForm = () => {
                   cursor: 'pointer'
                 }}
               >
-                Got it!
+                {t('common.gotIt')}!
                       </Button>
                           </div>
           </div>
@@ -5461,26 +5471,26 @@ const InspectionLevelForm = () => {
       {/* Basic Information Tab */}
       {activeTab === 'basic-info' && (
         <InspectionFormSection>
-          <h3 style={{ marginBottom: "20px" }}>Basic Information</h3>
+          <h3 style={{ marginBottom: "20px" }}>{t('common.basicInformation')}</h3>
           <InspectionFormRow>
             <InspectionFormGroup>
-              <Label>Template Name*</Label>
+              <Label>{t('common.templateName')}*</Label>
                             <Input
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Enter template name"
+                      placeholder={t('common.enterTemplateName')}
                 required
               />
             </InspectionFormGroup>
             <InspectionFormGroup>
-                    <Label>Type</Label>
+                    <Label>{t('common.type')}</Label>
                     <Select 
                       name="type" 
                       value={formData.type} 
                       onChange={handleChange}
                     >
-                      <option value="">Select type</option>
+                      <option value="">{t('common.selectType')}</option>
                 {assetTypes.map(type => (
                   <option key={type._id} value={type.name}>
                             {type.name}
@@ -5491,12 +5501,12 @@ const InspectionLevelForm = () => {
           </InspectionFormRow>
           <InspectionFormRow>
             <InspectionFormGroup>
-                    <Label>Description</Label>
+                    <Label>{t('common.description')}</Label>
                             <TextArea
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                placeholder="Enter description"
+                placeholder={t('common.enterDescription')}
                 rows={3}
               />
             </InspectionFormGroup>
@@ -5551,9 +5561,9 @@ const InspectionLevelForm = () => {
               </Select>
             </InspectionFormGroup> */}
             <InspectionFormGroup>
-              <Label>Status</Label>
+              <Label>{t('common.status')}</Label>
               <InspectionStatusBadge status={formData.status}>
-                {formData.status === 'draft' ? 'Draft' : 'Published'}
+                {formData.status === 'draft' ? t('common.draft') : t('common.published')}
               </InspectionStatusBadge>
             </InspectionFormGroup>
           </InspectionFormRow>
@@ -5592,7 +5602,7 @@ const InspectionLevelForm = () => {
                 e.target.style.background = 'var(--color-navy)';
               }}
             >
-              Next
+              {t('common.next')}
               <ChevronRight size={16} />
             </Button>
           </div>
@@ -5602,7 +5612,7 @@ const InspectionLevelForm = () => {
       {/* Pages and Questions Tab */}
       {activeTab === 'pages-questions' && (
         <InspectionFormSection>
-          <h3 style={{ marginBottom: "20px" }}>Pages and Questions</h3>
+          <h3 style={{ marginBottom: "20px" }}>{t('common.pagesAndQuestions')}</h3>
           
           {formData.pages.length > 0 && (
             <>
@@ -5611,19 +5621,19 @@ const InspectionLevelForm = () => {
               <div style={{ padding: '24px' }}>
                 <InspectionFormRow>
                   <InspectionFormGroup>
-                    <Label>Page Name</Label>
+                    <Label>{t('common.pageName')}</Label>
                     <Input
                       value={formData.pages[activePageIndex].name}
                       onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
-                      placeholder="Enter page name"
+                      placeholder={t('common.enterPageName')}
                     />
                   </InspectionFormGroup>
                   <InspectionFormGroup>
-                    <Label>Page Description</Label>
+                    <Label>{t('common.pageDescription')}</Label>
                     <TextArea
                       value={formData.pages[activePageIndex].description}
                       onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
-                      placeholder="Enter page description"
+                      placeholder={t('common.enterPageDescription')}
                       rows={2}
                     />
                   </InspectionFormGroup>
@@ -5631,10 +5641,10 @@ const InspectionLevelForm = () => {
                 
                 <SectionsWrapper>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4>Template Levels</h4>
+                    <h4>{t('common.templateLevels')}</h4>
                     <Button onClick={addSection}>
                       <Plus size={16} style={{ marginRight: '4px' }} />
-                      Add Template Level
+                      {t('common.addTemplateLevel')}
                     </Button>
                   </div>
                   
@@ -5646,19 +5656,19 @@ const InspectionLevelForm = () => {
                         <div>
                           <InspectionFormRow>
                             <InspectionFormGroup>
-                              <Label>Template Level Name</Label>
+                              <Label>{t('common.templateLevelName')}</Label>
                               <Input
                                 value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
                                 onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                                placeholder="Enter template level name"
+                                placeholder={t('common.enterTemplateLevelName')}
                               />
                             </InspectionFormGroup>
                             <InspectionFormGroup>
-                              <Label>Template Level Description</Label>
+                              <Label>{t('common.templateLevelDescription')}</Label>
                               <TextArea
                                 value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
                                 onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                                placeholder="Enter template level description"
+                                placeholder={t('common.enterTemplateLevelDescription')}
                                 rows={2}
                               />
                             </InspectionFormGroup>
@@ -5669,7 +5679,7 @@ const InspectionLevelForm = () => {
                               <h5>Questions</h5>
                               <Button onClick={() => addQuestion(activeSectionTab)}>
                                 <Plus size={16} style={{ marginRight: '4px' }} />
-                                Add Question
+                                {t('common.addQuestion')}
                               </Button>
                             </div>
                             
@@ -5701,7 +5711,7 @@ const InspectionLevelForm = () => {
                                 <p>No questions added yet</p>
                                 <Button onClick={() => addQuestion(activeSectionTab)}>
                                   <Plus size={16} style={{ marginRight: '4px' }} />
-                                  Add Question
+                                  {t('common.addQuestion')}
                                 </Button>
                               </TabEmptyState>
                             )}
@@ -5769,7 +5779,7 @@ const InspectionLevelForm = () => {
               }}
             >
               <ChevronLeft size={16} />
-              Back
+              {t('common.back')}
             </Button>
             
             <Button 
@@ -5795,7 +5805,7 @@ const InspectionLevelForm = () => {
                 e.target.style.background = 'var(--color-navy)';
               }}
             >
-              Next
+              {t('common.next')}
               <ChevronRight size={16} />
             </Button>
           </div>
@@ -5805,14 +5815,14 @@ const InspectionLevelForm = () => {
       {/* Report Preview Tab */}
       {activeTab === 'report' && (
         <InspectionFormSection>
-          <h3 style={{ marginBottom: "20px" }}>Report Preview</h3>
+          <h3 style={{ marginBottom: "20px" }}>{t('common.reportPreview')}</h3>
           
           {!formData.pages || formData.pages.length === 0 ? (
             <TabEmptyState>
               <FileText size={32} />
-              <p>Please add at least one page and inspection level to generate a report preview</p>
+              <p>{t('common.pleaseAddAtLeastOnePage')}</p>
               <Button onClick={() => setActiveTab('pages-questions')}>
-                Go to Pages and Questions
+                {t('common.goToPagesAndQuestions')}
               </Button>
             </TabEmptyState>
                   ) : (
@@ -5862,7 +5872,7 @@ const InspectionLevelForm = () => {
               }}
             >
               <ChevronLeft size={16} />
-              Back
+              {t('common.back')}
             </Button>
           </div>
         </InspectionFormSection>

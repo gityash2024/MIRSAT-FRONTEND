@@ -8,6 +8,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import ProfileForm from './ProfileForm';
 import PasswordChangeTab from './PasswordChangeTab';
 
@@ -197,6 +198,7 @@ const TabContent = styled.div`
 
 const UserProfile = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
 
   const getInitials = (name) => {
@@ -207,13 +209,13 @@ const UserProfile = () => {
   const tabs = [
     {
       id: 'profile',
-      label: 'Profile Update',
+      label: t('common.profileUpdate'),
       icon: User,
       component: ProfileForm
     },
     {
       id: 'change-password',
-      label: 'Change Password',
+      label: t('common.changePassword'),
       icon: KeyRound,
       component: PasswordChangeTab
     }
@@ -231,8 +233,8 @@ const UserProfile = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Profile</PageTitle>
-        <PageSubtitle>Manage your account settings and preferences</PageSubtitle>
+        <PageTitle>{t('common.profile')}</PageTitle>
+        <PageSubtitle>{t('common.manageAccountSettings')}</PageSubtitle>
       </PageHeader>
       
       <ProfileGrid>
@@ -243,7 +245,7 @@ const UserProfile = () => {
             </ProfileAvatar>
             <ProfileInfo>
               <div className="name">{user?.name}</div>
-              <div className="role">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}</div>
+              <div className="role">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || t('common.inspector')}</div>
             </ProfileInfo>
           </ProfileHeader>
           
@@ -252,7 +254,7 @@ const UserProfile = () => {
               <ProfileMetaItem>
                 <Mail size={16} className="icon" />
                 <div className="content">
-                  <div className="label">Email</div>
+                  <div className="label">{t('common.email')}</div>
                   <div className="value">{user?.email}</div>
                 </div>
               </ProfileMetaItem>
@@ -260,16 +262,16 @@ const UserProfile = () => {
               <ProfileMetaItem>
                 <Building size={16} className="icon" />
                 <div className="content">
-                  <div className="label">Department</div>
-                  <div className="value">{user?.department || 'Not specified'}</div>
+                  <div className="label">{t('common.department')}</div>
+                  <div className="value">{user?.department || t('common.notSpecified')}</div>
                 </div>
               </ProfileMetaItem>
               
               <ProfileMetaItem>
                 <Shield size={16} className="icon" />
                 <div className="content">
-                  <div className="label">Role</div>
-                  <div className="value">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Inspector'}</div>
+                  <div className="label">{t('common.role')}</div>
+                  <div className="value">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || t('common.inspector')}</div>
                 </div>
               </ProfileMetaItem>
             </ProfileMetaList>

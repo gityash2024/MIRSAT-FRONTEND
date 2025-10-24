@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { 
   Layers,
   Trash2,
@@ -410,6 +411,7 @@ const ModalActions = styled.div`
 const InspectionLevelView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [level, setLevel] = useState(null);
@@ -445,9 +447,9 @@ const InspectionLevelView = () => {
       }
     } catch (err) {
       console.error('Error fetching inspection level:', err);
-      setError(err.message || 'Failed to fetch inspection level');
+      setError(err.message || t('inspections.failedToFetchLevel'));
       setLoading(false);
-      toast.error(`Failed to load template data: ${err.message}`);
+      toast.error(`${t('inspections.failedToLoadTemplate')}: ${err.message}`);
     }
   };
 
@@ -500,10 +502,10 @@ const InspectionLevelView = () => {
   const handleDuplicate = async () => {
     try {
       // Implement duplicate logic
-      toast.success('Template duplicated successfully');
+      toast.success(t('inspections.templateDuplicatedSuccessfully'));
     } catch (err) {
       console.error('Error duplicating template:', err);
-      toast.error('Failed to duplicate template');
+      toast.error(t('inspections.failedToDuplicateTemplate'));
     }
   };
 
@@ -616,7 +618,7 @@ const InspectionLevelView = () => {
           background: 'var(--color-offwhite)',
           borderRadius: '8px'
         }}>
-          No levels defined for this template
+          {t('inspections.noLevelsDefined')}
         </div>
       );
     }
@@ -646,14 +648,14 @@ const InspectionLevelView = () => {
                 <NodeInfo>
                   <h4>
                     <LevelNumber>{levelNumber}</LevelNumber>
-                    {subLevel.name || 'Unnamed Level'}
+                    {subLevel.name || t('inspections.unnamedLevel')}
                   </h4>
-                  <p>{subLevel.description || 'No description provided'}</p>
+                  <p>{subLevel.description || t('inspections.noDescriptionProvided')}</p>
                   <NodeMetadata>
                     {questionsCount > 0 && (
                       <MetadataItem>
                         <ListChecks size={12} />
-                        {questionsCount} Question{questionsCount !== 1 ? 's' : ''}
+                        {questionsCount} {questionsCount !== 1 ? t('inspections.questions') : t('inspections.question')}
                       </MetadataItem>
                     )}
                     {hasChildren && (
@@ -701,7 +703,7 @@ const InspectionLevelView = () => {
           color: 'var(--color-gray-medium)'
         }}>
           <AlertTriangle size={18} style={{ marginBottom: '8px' }} />
-          <p>No inspection questions defined for this template</p>
+          <p>{t('inspections.noQuestionsDefined')}</p>
         </div>
       );
     }
@@ -711,24 +713,24 @@ const InspectionLevelView = () => {
         {allQuestions.map((question, index) => (
           <QuestionItem key={question._id || question.id || index}>
             <QuestionText>
-              {index + 1}. {question.text || 'Untitled Question'}
+              {index + 1}. {question.text || t('inspections.untitledQuestion')}
             </QuestionText>
             <QuestionMeta>
               <div>
                 <QuestionType>
-                  {question.answerType === 'yesno' ? 'Yes/No' : 
-                   question.answerType === 'multiple' ? 'Multiple Choice' : 
-                   question.answerType === 'text' ? 'Text Input' : 
-                   'Standard'}
+                  {question.answerType === 'yesno' ? t('inspections.yesNo') : 
+                   question.answerType === 'multiple' ? t('inspections.multipleChoice') : 
+                   question.answerType === 'text' ? t('inspections.textInput') : 
+                   t('inspections.standard')}
                 </QuestionType>
                 {question.isGeneral && (
                   <span style={{ marginLeft: '8px', fontSize: '11px' }}>
-                    General Question
+                    {t('inspections.generalQuestion')}
                   </span>
                 )}
               </div>
               <div>
-                {question.required ? 'Required' : 'Optional'}
+                {question.required ? t('common.required') : t('common.optional')}
               </div>
             </QuestionMeta>
           </QuestionItem>
@@ -748,7 +750,7 @@ const InspectionLevelView = () => {
           background: 'var(--color-offwhite)',
           borderRadius: '8px'
         }}>
-          No pages or sections defined for this template
+          {t('inspections.noPagesOrSectionsDefined')}
         </div>
       );
     }
@@ -778,10 +780,10 @@ const InspectionLevelView = () => {
                 ) : (
                   <ChevronRight size={18} style={{ marginRight: '8px' }} />
                 )}
-                <strong style={{ flex: 1 }}>Page {pageIndex + 1}: {page.name}</strong>
+                <strong style={{ flex: 1 }}>{t('inspections.page')} {pageIndex + 1}: {page.name}</strong>
                 {page.sections && (
                   <span style={{ fontSize: '13px', opacity: 0.7 }}>
-                    {page.sections.length} section{page.sections.length !== 1 ? 's' : ''}
+                    {page.sections.length} {page.sections.length !== 1 ? t('inspections.sections') : t('inspections.section')}
                   </span>
                 )}
               </div>
@@ -828,10 +830,10 @@ const InspectionLevelView = () => {
                             ) : (
                               <ChevronRight size={16} style={{ marginRight: '8px' }} />
                             )}
-                            <strong style={{ flex: 1 }}>Section {sectionIndex + 1}: {section.name}</strong>
+                            <strong style={{ flex: 1 }}>{t('inspections.section')} {sectionIndex + 1}: {section.name}</strong>
                             {questionCount > 0 && (
                               <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                {questionCount} question{questionCount !== 1 ? 's' : ''}
+                                {questionCount} {questionCount !== 1 ? t('inspections.questions') : t('inspections.question')}
                               </span>
                             )}
                           </div>
@@ -956,7 +958,7 @@ const InspectionLevelView = () => {
   if (loading) {
     return (
       <InspectionLayout 
-        title="Loading Template..." 
+        title={t('inspections.loadingTemplate')} 
         baseUrl={`/inspection/${id}`}
       >
         <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -971,7 +973,7 @@ const InspectionLevelView = () => {
               margin: '0 auto'
             }}></div>
           </div>
-          <p>Loading template data...</p>
+          <p>{t('inspections.loadingTemplateData')}</p>
         </div>
       </InspectionLayout>
     );
@@ -980,18 +982,18 @@ const InspectionLevelView = () => {
   if (error || !level) {
     return (
       <InspectionLayout 
-        title="Error" 
+        title={t('common.error')} 
         baseUrl={`/inspection/${id}`}
       >
         <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626' }}>
           <AlertTriangle size={32} style={{ margin: '0 auto 16px' }} />
-          <p>Failed to load template data. Please try again later.</p>
+          <p>{t('inspections.failedToLoadTemplateData')}</p>
           <Button
             variant="secondary"
             onClick={() => navigate('/inspection')}
             style={{ margin: '16px auto 0', display: 'inline-flex' }}
           >
-            Back to Templates
+            {t('inspections.backToTemplates')}
           </Button>
         </div>
       </InspectionLayout>
@@ -1002,7 +1004,7 @@ const InspectionLevelView = () => {
 
   return (
     <InspectionLayout 
-      title={level.name || 'Inspection Template'} 
+      title={level.name || t('inspections.inspectionTemplate')} 
       onBack={() => navigate('/inspection')}
       onPublish={handlePublish}
       baseUrl={`/inspection/${id}`}
@@ -1014,13 +1016,13 @@ const InspectionLevelView = () => {
           <SummaryCard color="var(--color-navy)">
             <SummaryLabel color="var(--color-navy)">
               <Layers size={16} />
-              Template Type
+              {t('inspections.templateType')}
             </SummaryLabel>
             <SummaryValue>
-              {level.type ? level.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'General Template'}
+              {level.type ? level.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : t('inspections.generalTemplate')}
             </SummaryValue>
             <SummaryDescription>
-              {level.status ? level.status.charAt(0).toUpperCase() + level.status.slice(1) : 'Active'} • 
+              {level.status ? level.status.charAt(0).toUpperCase() + level.status.slice(1) : t('common.active')} • 
               {level.priority ? ` ${level.priority.charAt(0).toUpperCase() + level.priority.slice(1)} Priority` : ''}
             </SummaryDescription>
           </SummaryCard>

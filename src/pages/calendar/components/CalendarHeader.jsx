@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { Plus, Filter, Download, Calendar, ArrowLeft, FileText } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { PERMISSIONS } from '../../../utils/permissions';
@@ -138,6 +139,7 @@ const DropdownItem = styled.button`
 `;
 
 const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -352,39 +354,39 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
         <HeaderTop>
           <BackButton onClick={() => navigate('/tasks')}>
             <ArrowLeft size={18} />
-            Back to Tasks
+            {t('backToTasks')}
           </BackButton>
           
           <HeaderContent>
             <PageTitle>
               <Calendar size={24} />
-              Calendar View
+              {t('calendarView')}
             </PageTitle>
-            <PageDescription>Schedule and manage inspection tasks on a calendar</PageDescription>
+            <PageDescription>{t('scheduleAndManageTasks')}</PageDescription>
           </HeaderContent>
 
           <ActionButtons>
             <Button onClick={onToggleFilters}>
               <Filter size={16} />
-              Filters
+              {t('filters')}
             </Button>
             
             {hasPermission(PERMISSIONS.EXPORT_TASKS) && (
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <Button onClick={() => setShowExportDropdown(!showExportDropdown)}>
                   <Download size={16} />
-                  Export
+                  {t('export')}
                 </Button>
                 
                 {showExportDropdown && (
                   <DropdownMenu>
                     <DropdownItem onClick={() => handleExport('pdf')}>
                       <FileText size={16} />
-                      Export as PDF
+                      {t('exportAsPDF')}
                     </DropdownItem>
                     <DropdownItem onClick={() => handleExport('csv')}>
                       <FileText size={16} />
-                      Export as CSV
+                      {t('exportAsCSV')}
                     </DropdownItem>
                   </DropdownMenu>
                 )}
@@ -394,7 +396,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
             {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
               <Button variant="primary" onClick={onAddEvent}>
                 <Plus size={16} />
-                Add Event
+                {t('addEvent')}
               </Button>
             )}
           </ActionButtons>

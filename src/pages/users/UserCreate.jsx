@@ -3,6 +3,7 @@ user in a system. Here's a breakdown of what the code is doing: */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import UserForm from './components/UserForm';
 import { toast } from 'react-hot-toast';
@@ -130,6 +131,7 @@ const Button = styled.button`
 `;
 
 const UserCreate = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,36 +164,36 @@ const UserCreate = () => {
     <PageContainer>
       <BackButton onClick={() => navigate('/users')}>
         <ArrowLeft size={18} />
-        Back to Users
+        {t('common.backToUsers')}
       </BackButton>
 
       <Header>
         <PageTitle>
           <UserPlus size={24} className="icon" />
-          Create New User
+          {t('common.createNewUser')}
         </PageTitle>
-        <SubTitle>Add a new user to the system</SubTitle>
+        <SubTitle>{t('common.addNewUser')}</SubTitle>
       </Header>
 
       <UserForm
         onSubmit={handleSubmit}
         onCancel={() => navigate('/users')}
-        submitButtonText="Create User"
+        submitButtonText={t('common.createUser')}
         isSubmitting={isSubmitting}
       />
 
       {confirmData && (
         <CreateConfirmDialog>
           <DialogContent>
-            <DialogTitle>Confirm User Creation</DialogTitle>
+            <DialogTitle>{t('common.confirmUserCreation')}</DialogTitle>
             <DialogMessage>
-              Are you sure you want to create a new user with the following details?
+              {t('common.areYouSureYouWantToCreate')}
               <br /><br />
-              Name: {confirmData.name}
+              {t('common.name')}: {confirmData.name}
               <br />
-              Email: {confirmData.email}
+              {t('common.email')}: {confirmData.email}
               <br />
-              Role: {confirmData.role?.toUpperCase()}
+              {t('common.role')}: {confirmData.role?.toUpperCase()}
             </DialogMessage>
             <DialogActions>
               <Button 

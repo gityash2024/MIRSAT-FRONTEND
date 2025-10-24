@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { 
   Plus, 
   Search, 
@@ -137,6 +138,7 @@ const LoadingContainer = styled.div`
 `;
 
 const AssetList = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   
@@ -323,8 +325,8 @@ const AssetList = () => {
     return (
       <PageContainer>
         <Header>
-          <PageTitle>Asset Management</PageTitle>
-          <SubTitle>Manage your assets efficiently</SubTitle>
+          <PageTitle>{t('common.assetManagement')}</PageTitle>
+          <SubTitle>{t('common.manageAssetsEfficiently')}</SubTitle>
         </Header>
         <div style={{ 
           padding: '40px', 
@@ -334,7 +336,7 @@ const AssetList = () => {
           borderRadius: '8px',
           color: '#b91c1c'
         }}>
-          <p><strong>Error loading assets:</strong> {error}</p>
+          <p><strong>{t('common.errorLoadingAssets')}:</strong> {error}</p>
           <button 
             onClick={() => window.location.reload()} 
             style={{
@@ -357,8 +359,8 @@ const AssetList = () => {
   return (
     <PageContainer>
       <Header>
-        <PageTitle>Asset Management</PageTitle>
-        <SubTitle>Manage your assets efficiently</SubTitle>
+        <PageTitle>{t('common.assetManagement')}</PageTitle>
+        <SubTitle>{t('common.manageAssetsEfficiently')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -366,7 +368,7 @@ const AssetList = () => {
           <Search className="search-icon" size={20} />
           <input 
             type="text" 
-            placeholder="Search assets..." 
+            placeholder={t('common.searchAssets')} 
             value={searchTerm}
             onChange={handleSearchChange}
           />
@@ -379,7 +381,7 @@ const AssetList = () => {
             disabled={loading}
           >
             <Plus size={18} />
-            Add Asset Type
+            {t('common.addAssetType')}
           </Button>
           
           <Button 
@@ -388,7 +390,7 @@ const AssetList = () => {
             disabled={loading || assets.length === 0}
           >
             <Download size={18} />
-            Export
+            {t('common.export')}
           </Button>
           
           <Button 
@@ -397,7 +399,7 @@ const AssetList = () => {
             disabled={loading}
           >
             <Plus size={18} />
-            Add Asset
+            {t('common.addAsset')}
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -456,10 +458,10 @@ const AssetList = () => {
           setAssetToDelete(null);
         }}
         onConfirm={confirmDelete}
-        title="Delete Asset"
-        message="Are you sure you want to delete this asset? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('common.deleteAsset')}
+        message={t('common.deleteAssetConfirm')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         confirmVariant="primary"
       />
 

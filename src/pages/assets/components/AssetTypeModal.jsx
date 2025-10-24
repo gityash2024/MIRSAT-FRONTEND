@@ -1,6 +1,7 @@
 // pages/assets/components/AssetTypeModal.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { X, Edit, Trash, Check, X as XIcon } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -240,6 +241,7 @@ const EmptyState = styled.div`
 `;
 
 const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetTypes, loading } = useSelector(state => state.assetTypes || { assetTypes: [], loading: false });
   
@@ -412,7 +414,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>Manage Asset Types</ModalTitle>
+              <ModalTitle>{t('common.manageAssetTypes')}</ModalTitle>
               <CloseButton onClick={onClose}>
                 <X size={20} />
               </CloseButton>
@@ -420,14 +422,14 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
             
             <ModalBody>
               <FormGroup>
-                <Label htmlFor="name">Add New Asset Type</Label>
+                <Label htmlFor="name">{t('common.addNewAssetType')}</Label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <Input
                     type="text"
                     id="name"
                     value={newTypeName}
                     onChange={handleInputChange}
-                    placeholder="Enter asset type name"
+                    placeholder={t('common.enterAssetTypeName')}
                     disabled={isSubmitting}
                   />
                   <Button 
@@ -435,7 +437,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                     onClick={handleAddType} 
                     disabled={isSubmitting || !newTypeName.trim()}
                   >
-                    {isSubmitting ? 'Adding...' : 'Add'}
+                    {isSubmitting ? t('common.adding') : t('common.add')}
                   </Button>
                 </div>
                 {error && <ErrorText>{error}</ErrorText>}
@@ -443,13 +445,13 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
               
               <Divider />
               
-              <TypesListTitle>Existing Asset Types</TypesListTitle>
+              <TypesListTitle>{t('common.existingAssetTypes')}</TypesListTitle>
               
               <TypesList>
                 {loading ? (
-                  <EmptyState>Loading asset types...</EmptyState>
+                  <EmptyState>{t('common.loadingAssetTypes')}</EmptyState>
                 ) : assetTypes.length === 0 ? (
-                  <EmptyState>No asset types found. Add one above.</EmptyState>
+                  <EmptyState>{t('common.noAssetTypesFound')}</EmptyState>
                 ) : (
                   assetTypes.map(assetType => {
                     const assetTypeId = getAssetTypeId(assetType);
@@ -474,7 +476,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                             <IconButton 
                               onClick={() => handleSaveEdit(assetType)}
                               disabled={isSubmitting || !editingTypeName.trim()}
-                              title="Save changes"
+                              title={t('common.saveChanges')}
                             >
                               <Check size={16} />
                             </IconButton>
@@ -482,7 +484,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                               danger 
                               onClick={handleCancelEdit}
                               disabled={isSubmitting}
-                              title="Cancel editing"
+                              title={t('common.cancelEditing')}
                             >
                               <XIcon size={16} />
                             </IconButton>
@@ -494,7 +496,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                               <IconButton 
                                 onClick={() => handleEditClick(assetType)}
                                 disabled={isSubmitting}
-                                title="Edit asset type"
+                                title={t('common.editAssetType')}
                               >
                                 <Edit size={16} />
                               </IconButton>
@@ -502,7 +504,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                                 danger 
                                 onClick={() => handleDeleteType(assetType)}
                                 disabled={isSubmitting}
-                                title="Delete asset type"
+                                title={t('common.deleteAssetType')}
                               >
                                 <Trash size={16} />
                               </IconButton>
@@ -518,7 +520,7 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
             
             <ModalFooter>
               <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
-                Close
+                {t('common.close')}
               </Button>
             </ModalFooter>
           </ModalContainer>
@@ -533,10 +535,10 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
           setTypeToDelete(null);
         }}
         onConfirm={confirmDeleteType}
-        title="Delete Asset Type"
-        message="Are you sure you want to delete this asset type? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('common.deleteAssetType')}
+        message={t('common.deleteAssetTypeConfirm')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         confirmVariant="primary"
       />
 

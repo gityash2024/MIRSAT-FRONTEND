@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import { useTranslation } from 'react-i18next';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -392,6 +393,7 @@ const LoadingContainer = styled.div`
 const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
+  const { t } = useTranslation();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
   
@@ -411,15 +413,15 @@ const TaskList = () => {
 
   // Filter options
   const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'archived', label: 'Completed' },
+    { value: 'pending', label: t('tasks.pending') },
+    { value: 'in_progress', label: t('tasks.inProgress') },
+    { value: 'archived', label: t('tasks.completed') },
   ];
 
   const priorityOptions = [
-    { value: 'low', label: 'Low Priority' },
-    { value: 'medium', label: 'Medium Priority' },
-    { value: 'high', label: 'High Priority' },
+    { value: 'low', label: t('tasks.lowPriority') },
+    { value: 'medium', label: t('tasks.mediumPriority') },
+    { value: 'high', label: t('tasks.highPriority') },
   ];
 
   useEffect(() => {
@@ -763,19 +765,19 @@ const TaskList = () => {
       <EmptyStateIcon>
         <Plus size={48} />
       </EmptyStateIcon>
-      <EmptyStateTitle>No tasks found</EmptyStateTitle>
+      <EmptyStateTitle>{t('tasks.noTasksFound')}</EmptyStateTitle>
       <EmptyStateDescription>
         {Object.keys(filters || {}).some(key => {
           if (key === 'search') return !!filters[key];
           return Array.isArray(filters[key]) && filters[key].length > 0;
         })
-          ? 'Try changing your search criteria or filters.'
-          : 'Get started by creating your first task.'}
+          ? t('tasks.tryChangingFilters')
+          : t('tasks.getStartedByCreating')}
       </EmptyStateDescription>
       {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
         <ActionButton as={Link} to="/tasks/create" $variant="primary">
           <Plus size={16} />
-          Create Task
+          {t('tasks.createTask')}
         </ActionButton>
       )}
     </EmptyStateContainer>
@@ -784,8 +786,8 @@ const TaskList = () => {
   return (
     <PageContainer>
       <Header>
-        <PageTitle>Tasks</PageTitle>
-        <SubTitle>Create and manage inspection tasks</SubTitle>
+        <PageTitle>{t('navigation.tasks')}</PageTitle>
+        <SubTitle>{t('tasks.createAndManage')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -796,13 +798,13 @@ const TaskList = () => {
               type="text" 
               value={searchTerm}
               onChange={handleSearchChange}
-              placeholder="Search tasks..."
+              placeholder={t('tasks.searchPlaceholder')}
             />
           </SearchBox>
 
           <FilterDropdown data-dropdown="status">
             <DropdownButton onClick={() => setShowStatusDropdown(!showStatusDropdown)}>
-              Status {filters?.status?.length > 0 && `(${filters.status.length})`}
+              {t('tasks.status')} {filters?.status?.length > 0 && `(${filters.status.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
             <DropdownContent show={showStatusDropdown}>
@@ -824,7 +826,7 @@ const TaskList = () => {
 
           <FilterDropdown data-dropdown="priority">
             <DropdownButton onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}>
-              Priority {filters?.priority?.length > 0 && `(${filters.priority.length})`}
+              {t('tasks.priority')} {filters?.priority?.length > 0 && `(${filters.priority.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
             <DropdownContent show={showPriorityDropdown}>
@@ -846,7 +848,7 @@ const TaskList = () => {
 
           <FilterDropdown data-dropdown="assignee">
             <DropdownButton onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}>
-              Assignee {filters?.assignedTo?.length > 0 && `(${filters.assignedTo.length})`}
+              {t('tasks.assignedTo')} {filters?.assignedTo?.length > 0 && `(${filters.assignedTo.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
             <DropdownContent show={showAssigneeDropdown}>
@@ -879,16 +881,16 @@ const TaskList = () => {
               title="Export tasks"
             >
               <Download size={16} />
-              Export
+              {t('common.export')}
             </ActionButton>
             <DropdownMenu show={showExportDropdown}>
               <ExportDropdownItem onClick={handleExportPDF}>
                 <Download size={16} />
-                Export as PDF
+                {t('tasks.exportAsPDF')}
               </ExportDropdownItem>
               <ExportDropdownItem onClick={handleExportCSV}>
                 <Download size={16} />
-                Export as CSV
+                {t('tasks.exportAsCSV')}
               </ExportDropdownItem>
             </DropdownMenu>
           </ExportDropdown>
@@ -896,7 +898,7 @@ const TaskList = () => {
           {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
             <ActionButton as={Link} to="/tasks/create" $variant="primary">
               <Plus size={16} />
-              Create Task
+              {t('tasks.createTask')}
             </ActionButton>
           )}
         </ButtonGroup>
@@ -919,7 +921,7 @@ const TaskList = () => {
               )) : null
           )}
           <FilterTag>
-            Clear All
+            {t('common.clearAll')}
             <button onClick={clearAllFilters}>
               <X size={12} />
             </button>
@@ -936,16 +938,16 @@ const TaskList = () => {
             color: 'var(--color-navy)', 
             fontSize: '16px' 
           }}>
-            Tasks loading...
+            {t('tasks.loadingTasks')}
           </p>
         </LoadingContainer>
       ) : error ? (
         // Show error state
         <ErrorContainer>
-          <p>Error loading tasks: {error.message || 'Unknown error'}</p>
+          <p>{t('tasks.errorLoadingTasks')}: {error.message || t('errors.genericError')}</p>
           <ActionButton onClick={handleRefresh}>
             <RefreshCw size={16} />
-            Retry
+            {t('common.retry')}
           </ActionButton>
         </ErrorContainer>
       ) : (

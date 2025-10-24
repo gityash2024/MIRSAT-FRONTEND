@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Users
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const MetricsGrid = styled.div`
@@ -137,7 +138,7 @@ const LoadingContainer = styled.div`
   grid-column: 1 / -1;
 `;
 
-const MetricBreakdown = ({ data }) => {
+const MetricBreakdown = ({ data, translateBreakdownLabel }) => {
   if (!data || Object.keys(data).length === 0) return null;
   
   const total = Object.values(data).reduce((acc, val) => acc + val, 0);
@@ -146,7 +147,7 @@ const MetricBreakdown = ({ data }) => {
     <BreakdownList>
       {Object.entries(data).map(([key, value]) => (
         <BreakdownItem key={key}>
-          <BreakdownLabel>{key.charAt(0).toUpperCase() + key.slice(1)}</BreakdownLabel>
+          <BreakdownLabel>{translateBreakdownLabel(key.charAt(0).toUpperCase() + key.slice(1))}</BreakdownLabel>
           <BreakdownValue>
             {typeof value === 'number' && value % 1 === 0 ? value : value.toFixed(1)}
             <ProgressBar>
@@ -164,11 +165,42 @@ const MetricBreakdown = ({ data }) => {
 };
 
 const PerformanceMetrics = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState({
     data: [],
     loading: true,
     error: null
   });
+
+  const translateMetricTitle = (title) => {
+    switch (title) {
+      case 'Avg. Completion Time': return t('common.avgCompletionTime');
+      case 'Completion Rate': return t('common.completionRate');
+      case 'Total Inspections': return t('common.totalInspections');
+      case 'Active Inspectors': return t('common.activeInspectors');
+      case 'Critical Issues': return t('common.criticalIssues');
+      case 'Compliance Score': return t('common.complianceScore');
+      default: return title;
+    }
+  };
+
+  const translateBreakdownLabel = (label) => {
+    switch (label) {
+      case 'Review': return t('common.review');
+      case 'Execution': return t('common.execution');
+      case 'OnTime': return t('common.onTime');
+      case 'Delayed': return t('common.delayed');
+      case 'Safety': return t('common.safety');
+      case 'Operational': return t('common.operational');
+      case 'Environmental': return t('common.environmental');
+      case 'Certified': return t('common.certified');
+      case 'Trainees': return t('common.trainees');
+      case 'Equipment': return t('common.equipment');
+      case 'Procedural': return t('common.procedural');
+      case 'Documentation': return t('common.documentation');
+      default: return label;
+    }
+  };
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -232,7 +264,7 @@ const PerformanceMetrics = ({ dateRange, filters }) => {
               <IconWrapper background={metric.background} color={metric.color}>
                 {renderIcon(metric.icon)}
               </IconWrapper>
-              <MetricTitle>{metric.title}</MetricTitle>
+              <MetricTitle>{translateMetricTitle(metric.title)}</MetricTitle>
             </MetricHeader>
 
             <MetricValue>
@@ -248,7 +280,7 @@ const PerformanceMetrics = ({ dateRange, filters }) => {
               </TrendIndicator>
             </MetricValue>
 
-            {metric.breakdown && <MetricBreakdown data={metric.breakdown} />}
+            {metric.breakdown && <MetricBreakdown data={metric.breakdown} translateBreakdownLabel={translateBreakdownLabel} />}
           </MetricCard>
         ))
       )}

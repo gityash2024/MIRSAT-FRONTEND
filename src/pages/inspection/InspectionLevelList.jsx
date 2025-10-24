@@ -15,6 +15,8 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import { inspectionService } from '../../services/inspection.service';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -201,7 +203,7 @@ const AccordionHeader = styled.div`
   align-items: center;
   width: 100%;
   padding: 20px;
-  text-align: left;
+  text-align: ${props => props.$isRTL ? 'right' : 'left'};
 `;
 
 const LevelInfo = styled.div`
@@ -501,6 +503,17 @@ const InspectionLevelList = ({
   const [pendingExport, setPendingExport] = useState(null);
   const exportDropdownRef = useRef(null);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
+
+  const translateStatus = (status) => {
+    const statusMap = {
+      'active': t('common.active'),
+      'draft': t('common.draft'),
+      'inactive': t('common.inactive')
+    };
+    return statusMap[status] || status;
+  };
 
   useEffect(() => {
     // Fetch asset types for the filter dropdown
@@ -775,7 +788,7 @@ const InspectionLevelList = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Delete Template</ModalTitle>
+                <ModalTitle>{t('inspections.permanentlyDeleteTemplate')}</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
@@ -783,14 +796,14 @@ const InspectionLevelList = ({
                 <X size={20} />
               </ModalCloseButton>
             </ModalHeader>
-            <p>Are you sure you want to delete <strong>{levelToDelete.name}</strong>?</p>
-            <p>This action cannot be undone.</p>
+            <p>{t('inspections.confirmDeleteTemplate', { name: levelToDelete.name })}</p>
+            <p>{t('inspections.deleteTemplateWarning')}</p>
             <ModalActions>
               <Button 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 variant="primary" 
@@ -798,7 +811,7 @@ const InspectionLevelList = ({
                 disabled={loading}
                 style={{ background: '#dc2626' }}
               >
-                {loading ? 'Deleting...' : 'Delete'}
+                {loading ? t('common.deleting') : t('common.delete')}
               </Button>
             </ModalActions>
           </ModalContent>
@@ -809,7 +822,7 @@ const InspectionLevelList = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>{isPublishing ? 'Publish Template' : 'Unpublish Template'}</ModalTitle>
+                <ModalTitle>{isPublishing ? t('inspections.publishTemplate') : t('inspections.unpublishTemplate')}</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setPublishModalVisible(false)}
                 disabled={loading}
@@ -817,22 +830,22 @@ const InspectionLevelList = ({
                 <X size={20} />
               </ModalCloseButton>
             </ModalHeader>
-            <p>Are you sure you want to {isPublishing ? 'publish' : 'unpublish'} <strong>{levelToPublish.name}</strong>?</p>
-            <p>This action can be reverted later.</p>
+            <p>{t('inspections.confirmPublishUnpublish', { action: isPublishing ? t('inspections.publish') : t('inspections.unpublish'), name: levelToPublish.name })}</p>
+            <p>{t('inspections.actionRevertible')}</p>
             <ModalActions>
-              <Button 
-                onClick={() => setPublishModalVisible(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={isPublishing ? handlePublish : handleUnpublish}
-                disabled={loading}
-              >
-                {loading ? (isPublishing ? 'Publishing...' : 'Unpublishing...') : (isPublishing ? 'Publish' : 'Unpublish')}
-              </Button>
+                  <Button 
+                    onClick={() => setPublishModalVisible(false)}
+                    disabled={loading}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    onClick={isPublishing ? handlePublish : handleUnpublish}
+                    disabled={loading}
+                  >
+                    {loading ? (isPublishing ? t('inspections.publishing') : t('inspections.unpublishing')) : (isPublishing ? t('inspections.publish') : t('inspections.unpublish'))}
+                  </Button>
             </ModalActions>
           </ModalContent>
         </ModalOverlay>
@@ -841,9 +854,9 @@ const InspectionLevelList = ({
       <Header>
         <PageTitle>
           <Layers size={24} />
-          Template
+          {t('inspections.template')}
         </PageTitle>
-        <SubTitle>Manage Templates and their hierarchies</SubTitle>
+        <SubTitle>{t('inspections.manageTemplates')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -851,7 +864,7 @@ const InspectionLevelList = ({
           <Search className="search-icon" size={20} />
           <input 
             type="text" 
-            placeholder="Search Templates..." 
+            placeholder={t('inspections.searchTemplates')} 
             value={searchTerm}
             onChange={handleSearch}
             disabled={loading}
@@ -865,7 +878,7 @@ const InspectionLevelList = ({
             disabled={loading}
           >
             <Filter size={18} />
-            Filters
+            {t('common.filter')}
           </Button>
          <ExportDropdown>
             <Button 
@@ -874,17 +887,17 @@ const InspectionLevelList = ({
               disabled={loading}
             >
               <DownloadDone size={18} />  
-              Export
+              {t('common.export')}
               <ChevronDownCircle size={14} />
             </Button>
             <DropdownContent ref={exportDropdownRef} show={showExportDropdown}>
               <DropdownItem onClick={() => handleExport('pdf')}>
                 <FileText size={16} />
-                Export as PDF
+                {t('inspections.exportAsPDF')}
               </DropdownItem>
               <DropdownItem onClick={() => handleExport('docx')}>
                 <FileText size={16} />
-                Export as Word
+                {t('inspections.exportAsWord')}
               </DropdownItem>
             </DropdownContent>
           </ExportDropdown>
@@ -895,7 +908,7 @@ const InspectionLevelList = ({
             disabled={loading}
           >
             <Plus size={18} />
-            Add Template
+            {t('inspections.addTemplate')}
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -917,20 +930,20 @@ const InspectionLevelList = ({
             color: 'var(--color-navy)', 
             fontSize: '16px' 
           }}>
-            Templates loading...
+            {t('inspections.loadingTemplates')}
           </p>
         </LoadingContainer>
       ) : inspectionLevels.length === 0 ? (
         <EmptyState>
-          <h3>No Template Found</h3>
-          <p>Create your first template to get started</p>
+          <h3>{t('inspections.noTemplatesFound')}</h3>
+          <p>{t('inspections.noTemplatesFoundDescription')}</p>
           <Button 
             variant="primary" 
             as={Link} 
             to="/inspection/create"
           >
             <Plus size={18} />
-            Add Template
+            {t('inspections.addTemplate')}
           </Button>
         </EmptyState>
       ) : (
@@ -944,25 +957,26 @@ const InspectionLevelList = ({
                 <AccordionRoot type="single" collapsible>
                   <Accordion.Item value={level._id || level.id} style={{width: '100%'}}>
                     <AccordionTrigger>
-                      <AccordionHeader>
-                        <div style={{display: 'flex', alignItems: 'center', width: '48px', marginRight: '12px'}}>
+                      <AccordionHeader $isRTL={isRTL}>
+                        <div style={{display: 'flex', alignItems: 'center', width: '48px', marginRight: isRTL ? '0px' : '12px', marginLeft: isRTL ? '12px' : '0px'}}>
                           <LevelIcon>
                             <Layers size={20} />
                           </LevelIcon>
                         </div>
                         <LevelDetails>
-                          <h3 style={{textAlign: 'left'}}>{level.name}</h3>
-                          <p style={{textAlign: 'left'}}>{level.description || 'No description provided'}</p>
+                          <h3 style={{textAlign: isRTL ? 'right' : 'left'}}>{level.name}</h3>
+                          <p style={{textAlign: isRTL ? 'right' : 'left'}}>{level.description || t('common.noDescriptionProvided')}</p>
                         </LevelDetails>
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '8px',
-                          marginLeft: 'auto'
+                          marginLeft: isRTL ? '0px' : 'auto',
+                          marginRight: isRTL ? 'auto' : '0px'
                         }}>
                           {level.status && (
                             <StatusBadge type={level.type || 'marina_operator'}>
-                              {level.status.charAt(0).toUpperCase() + level.status.slice(1) || 'Active'}
+                              {translateStatus(level.status) || t('common.active')}
                             </StatusBadge>
                           )}
                           <ChevronDown size={20} className="accordion-chevron" />
@@ -976,32 +990,32 @@ const InspectionLevelList = ({
                             <Layers size={18} />
                             <div>
                               <strong>{subLevelCount}</strong>
-                              <span>Levels</span>
+                              <span>{t('common.levels')}</span>
                             </div>
                           </StatItem>
                           <StatItem>
                             <ListChecks size={18} />
                             <div>
                               <strong>{questionCount}</strong>
-                              <span>Questions</span>
+                              <span>{t('common.questions')}</span>
                             </div>
                           </StatItem>
                           <StatItem>
                             <Calendar size={18} />
                             <div>
                               <strong>{new Date(level.createdAt).toLocaleDateString()}</strong>
-                              <span>Created</span>
+                              <span>{t('common.created')}</span>
                             </div>
                           </StatItem>
                         </LevelStats>
                         <LevelActions>
                           <Button as={Link} to={`/inspection/${level._id || level.id}`} variant="secondary">
                             <Eye size={16} />
-                            View
+                            {t('common.view')}
                           </Button>
                           <Button as={Link} to={`/inspection/${level._id || level.id}/edit`} variant="secondary">
                             <Edit size={16} />
-                            Edit
+                            {t('common.edit')}
                           </Button>
                           <Button 
                             variant="danger"
@@ -1012,7 +1026,7 @@ const InspectionLevelList = ({
                             }}
                           >
                             <Trash2 size={16} />
-                            Delete
+                            {t('common.delete')}
                           </Button>
                           <Button 
                             variant="secondary"
@@ -1025,12 +1039,12 @@ const InspectionLevelList = ({
                             {level.status === 'active' ? (
                               <>
                                 <Download size={16} />
-                                Unpublish
+                                {t('common.unpublish')}
                               </>
                             ) : (
                               <>
                                 <Upload size={16} />
-                                Publish
+                                {t('common.publish')}
                               </>
                             )}
                           </Button>

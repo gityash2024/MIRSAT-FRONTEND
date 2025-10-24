@@ -12,6 +12,7 @@ import {
   Key,
   Server
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import GeneralSettings from './GeneralSettings';
 import NotificationSettings from './NotificationSettings';
@@ -102,15 +103,15 @@ const ContentSection = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;
 
-const menuItems = [
-  { id: 'general', label: 'General', icon: SettingsIcon },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'localization', label: 'Localization', icon: Globe },
-  { id: 'api', label: 'API Settings', icon: Database },
-  { id: 'email', label: 'Email Settings', icon: Mail },
-  { id: 'users', label: 'User Settings', icon: Users },
-  { id: 'permissions', label: 'Permissions', icon: Lock },
+const getMenuItems = (t) => [
+  { id: 'general', label: t('common.general'), icon: SettingsIcon },
+  { id: 'notifications', label: t('common.notifications'), icon: Bell },
+  { id: 'security', label: t('common.security'), icon: Shield },
+  { id: 'localization', label: t('common.localization'), icon: Globe },
+  { id: 'api', label: t('common.apiSettings'), icon: Database },
+  { id: 'email', label: t('common.emailSettings'), icon: Mail },
+  { id: 'users', label: t('common.userSettings'), icon: Users },
+  { id: 'permissions', label: t('common.permissions'), icon: Lock },
 ];
 
 // Create a SettingsSkeleton component
@@ -198,6 +199,7 @@ const SettingsSkeleton = () => (
 );
 
 const Settings = () => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState('general');
   const [loading, setLoading] = useState(true);
 
@@ -242,15 +244,15 @@ const Settings = () => {
       <Header>
         <PageTitle>
           <SettingsIcon size={24} />
-          Settings
+          {t('common.settings')}
         </PageTitle>
-        <SubTitle>Manage your application settings and preferences</SubTitle>
+        <SubTitle>{t('common.manageApplicationSettings')}</SubTitle>
       </Header>
 
       <ContentGrid>
         <Sidebar>
           <MenuList>
-            {menuItems.map(item => (
+            {getMenuItems(t).map(item => (
               <MenuItem
                 key={item.id}
                 active={activeSection === item.id}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import boat from '../assets/boat.jpeg';
@@ -218,6 +219,7 @@ const Footer = styled.div`
 `;
 
 const ForgotPassword = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -280,7 +282,7 @@ const ForgotPassword = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <Title>Reset Password</Title>
+            <Title>{t('auth.resetPassword')}</Title>
             <Description>
               Enter your email address and we'll send you a link to reset your password.
             </Description>
