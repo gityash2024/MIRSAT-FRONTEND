@@ -1508,10 +1508,64 @@ const TaskForm = ({
   
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // If template/inspection level is being changed, auto-fill asset field
+    if (name === 'inspectionLevel') {
+      if (value) {
+        const selectedTemplate = inspectionLevels?.find(level => level._id === value);
+        if (selectedTemplate && selectedTemplate.type) {
+          // Find assets that match the template type
+          const matchingAssets = assets?.filter(asset => asset.type === selectedTemplate.type);
+          
+          if (matchingAssets && matchingAssets.length > 0) {
+            // Auto-select the first matching asset
+            const firstMatchingAsset = matchingAssets[0];
+            setFormData(prev => ({
+              ...prev,
+              [name]: value,
+              asset: firstMatchingAsset._id || firstMatchingAsset.id
+            }));
+            return;
+          } else {
+            // No matching assets found, clear asset field
+            setFormData(prev => ({
+              ...prev,
+              [name]: value,
+              asset: ''
+            }));
+            return;
+          }
+        }
+      } else {
+        // Template cleared, reset asset field
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          asset: ''
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // Function to check for duplicate asset assignments
+  const checkDuplicateAssetAssignment = async (assetId) => {
+    if (!assetId) return false;
+    
+    try {
+      // This would need to be implemented in the backend API
+      // For now, we'll add a client-side warning
+      console.log('Checking for duplicate asset assignment:', assetId);
+      return false; // Placeholder - implement actual check when backend is ready
+    } catch (error) {
+      console.error('Error checking duplicate asset assignment:', error);
+      return false;
+    }
   };
   
   const handleCancel = () => {
@@ -1816,14 +1870,70 @@ const TaskForm = ({
             name="asset"
             value={formData.asset}
             onChange={handleChange}
+            disabled={true}
+            style={{
+              backgroundColor: '#f5f5f5',
+              cursor: 'not-allowed',
+              opacity: 0.7
+            }}
           >
-            <option value="">{t('tasks.selectAssetOptional')}</option>
+            <option value="">{formData.inspectionLevel ? t('tasks.assetAutoSelected') : t('tasks.assetDisabledSelectTemplateFirst')}</option>
             {assets?.map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
                 {asset.displayName || asset.uniqueId} - {asset.type}
               </option>
             ))}
           </Select>
+          {!formData.inspectionLevel && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#6b7280', 
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              {t('tasks.selectTemplateFirstToAutoSelectAsset')}
+            </div>
+          )}
+          {formData.inspectionLevel && formData.asset && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#16a34a', 
+              marginTop: '4px',
+              fontStyle: 'italic',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <Check size={12} />
+              {t('tasks.assetAutoSelectedFromTemplate')}
+            </div>
+          )}
+          {formData.inspectionLevel && !formData.asset && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#f59e0b', 
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              {t('tasks.noMatchingAssetFound')}
+            </div>
+          )}
+          {formData.inspectionLevel && formData.asset && (() => {
+            const selectedAsset = assets?.find(asset => (asset._id || asset.id) === formData.asset);
+            return selectedAsset ? (
+              <div style={{ 
+                fontSize: '11px', 
+                color: '#374151', 
+                marginTop: '2px',
+                padding: '4px 8px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '4px',
+                border: '1px solid #e0f2fe'
+              }}>
+                <strong>{t('tasks.selectedAsset')}:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
+              </div>
+            ) : null;
+          })()}
         </FormGroup>
       </FormRow>
 

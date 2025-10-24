@@ -1552,7 +1552,14 @@
     "madeAvailableForReportDownload": "Made available for report download",
     "movedToArchiveSection": "Moved to the Archive section in your tasks list",
     "noLongerEditable": "No longer editable",
-    "thisActionCannotBeUndone": "This action cannot be undone. Please ensure all inspection work is complete."
+    "thisActionCannotBeUndone": "This action cannot be undone. Please ensure all inspection work is complete.",
+    "assetAutoSelectedFromTemplate": "Asset automatically selected based on template type",
+    "noMatchingAssetFound": "No matching asset found for this template type",
+    "selectedAsset": "Selected Asset",
+    "selectTemplateFirstToEnableAsset": "Please select a template first to enable asset selection",
+    "assetDisabledSelectTemplateFirst": "Select template first to enable asset selection",
+    "assetAutoSelected": "Asset auto-selected",
+    "selectTemplateFirstToAutoSelectAsset": "Select template first to auto-select matching asset"
   },
   "reports": {
     "title": "Reports",
