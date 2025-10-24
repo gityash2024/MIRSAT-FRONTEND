@@ -1559,7 +1559,8 @@
     "selectTemplateFirstToEnableAsset": "Please select a template first to enable asset selection",
     "assetDisabledSelectTemplateFirst": "Select template first to enable asset selection",
     "assetAutoSelected": "Asset auto-selected",
-    "selectTemplateFirstToAutoSelectAsset": "Select template first to auto-select matching asset"
+    "selectTemplateFirstToAutoSelectAsset": "Select template first to auto-select matching asset",
+    "fileUploadedSuccessfully": "File uploaded successfully"
   },
   "reports": {
     "title": "Reports",

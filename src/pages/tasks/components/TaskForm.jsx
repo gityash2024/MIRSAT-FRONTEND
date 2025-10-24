@@ -1579,16 +1579,15 @@ const TaskForm = ({
     try {
       setIsUploading(true);
       
-      // Create a FormData object
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // If task already exists, include the task ID
-      const payload = initialData._id 
-        ? { id: initialData._id, file } 
-        : { file };
+      // Use the same upload approach for both create and edit modes
+      // For create mode, we'll use the general upload endpoint
+      const payload = initialData._id || initialData.id
+        ? { id: initialData._id || initialData.id, file } 
+        : { file }; // No ID for create mode - will use general upload endpoint
       
       console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('Upload payload:', payload);
+      
       const result = await dispatch(uploadTaskAttachment(payload)).unwrap();
       
       if (result && result.data) {
@@ -1596,15 +1595,14 @@ const TaskForm = ({
           ...prev,
           attachments: [...prev.attachments, result.data]
         }));
+        toast.success(t('tasks.fileUploadedSuccessfully'));
       } else {
         toast.error(t('tasks.failedToUploadFile'));
       }
     } catch (error) {
       console.error('Error uploading file:', error);
       console.error('Upload error details:', error.message);
-      if (!error.message) {
-        toast.error(t('tasks.errorUploadingFile'));
-      }
+      toast.error(t('tasks.errorUploadingFile'));
     } finally {
       setIsUploading(false);
       // Reset the file input
@@ -1950,111 +1948,115 @@ const TaskForm = ({
         </ToggleSwitch>
       </FormGroup>
 
-      <AdvancedToggle 
-        type="button" 
-        onClick={(e) => {
-          e.preventDefault(); // Prevent form submission
-          setShowAdvanced(!showAdvanced);
-        }}
-      >
-        <span>{t('tasks.advancedOptions')}</span>
-        {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </AdvancedToggle>
-      
-      {showAdvanced && (
+      {/* Only show Advanced Options in edit mode */}
+      {(initialData._id || initialData.id) && (
         <>
-          <FormGroup>
-            <Label>{t('tasks.attachments')}</Label>
-            <AttachmentList>
-              {formData.attachments.map((attachment, index) => {
-                console.log('Attachment data:', attachment); // Debug log
-                
-                const isImage = attachment.contentType?.startsWith('image/') || 
-                               attachment.type?.startsWith('image/') || 
-                               attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
-                const isDocument = attachment.contentType?.includes('pdf') || 
-                                  attachment.contentType?.includes('document') ||
-                                  attachment.type?.includes('pdf') || 
-                                  attachment.type?.includes('document') ||
-                                  attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
-                
-                console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
-                
-                return (
-                  <AttachmentItem key={index}>
-                    {isImage ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img 
-                          src={attachment.url} 
-                          alt={attachment.filename || 'Preview'} 
-                          style={{ 
-                            width: '32px', 
-                            height: '32px', 
-                            objectFit: 'cover', 
-                            borderRadius: '4px',
-                            border: '1px solid #e2e8f0'
-                          }}
-                          onError={(e) => {
-                            console.log('Image failed to load:', attachment.url);
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                        />
-                        <File size={16} style={{ display: 'none' }} />
-                        <span>{attachment.filename || 'Image'}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <File size={16} />
-                        <span>{attachment.filename || 'Attachment'}</span>
-                      </>
-                    )}
-                    <AttachmentActions>
-                      <IconButton 
-                        type="button" 
-                        title={t('common.remove')}
-                        onClick={() => handleRemoveAttachment(index)}
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                      {attachment.url && (
-                        <IconButton 
-                          type="button" 
-                          as="a" 
-                          href={attachment.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          title={isImage ? t('common.viewImage') : isDocument ? t('common.openDocument') : t('common.openFile')}
-                        >
-                          <ExternalLink size={14} />
-                        </IconButton>
-                      )}
-                    </AttachmentActions>
-                  </AttachmentItem>
-                );
-              })}
-              
-              <AttachmentUpload>
-                <input 
-                  type="file" 
-                  id="file-upload" 
-                  onChange={handleAttachmentChange} 
-                  style={{ display: 'none' }}
-                />
-                <UploadButton 
-                  type="button" 
-                  disabled={isUploading}
-                  onClick={() => document.getElementById('file-upload').click()}
-                >
-                  {isUploading ? <Spinner size={16} /> : <Plus size={16} />}
-                  <span>{isUploading ? t('common.uploading') : t('tasks.addAttachment')}</span>
-                </UploadButton>
-              </AttachmentUpload>
-            </AttachmentList>
-          </FormGroup>
+          <AdvancedToggle 
+            type="button" 
+            onClick={(e) => {
+              e.preventDefault(); // Prevent form submission
+              setShowAdvanced(!showAdvanced);
+            }}
+          >
+            <span>{t('tasks.advancedOptions')}</span>
+            {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </AdvancedToggle>
+          
+          {showAdvanced && (
+            <>
+              <FormGroup>
+                <Label>{t('tasks.attachments')}</Label>
+                <AttachmentList>
+                  {formData.attachments.map((attachment, index) => {
+                    console.log('Attachment data:', attachment); // Debug log
+                    
+                    const isImage = attachment.contentType?.startsWith('image/') || 
+                                   attachment.type?.startsWith('image/') || 
+                                   attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+                    const isDocument = attachment.contentType?.includes('pdf') || 
+                                      attachment.contentType?.includes('document') ||
+                                      attachment.type?.includes('pdf') || 
+                                      attachment.type?.includes('document') ||
+                                      attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
+                    
+                    console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
+                    
+                    return (
+                      <AttachmentItem key={index}>
+                        {isImage ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.filename || 'Preview'} 
+                              style={{ 
+                                width: '32px', 
+                                height: '32px', 
+                                objectFit: 'cover', 
+                                borderRadius: '4px',
+                                border: '1px solid #e2e8f0'
+                              }}
+                              onError={(e) => {
+                                console.log('Image failed to load:', attachment.url);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <File size={16} style={{ display: 'none' }} />
+                            <span>{attachment.filename || 'Image'}</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <File size={16} />
+                            <span>{attachment.filename || 'Attachment'}</span>
+                          </div>
+                        )}
+                        <AttachmentActions>
+                          <IconButton 
+                            type="button" 
+                            title={t('common.remove')}
+                            onClick={() => handleRemoveAttachment(index)}
+                          >
+                            <Trash2 size={14} />
+                          </IconButton>
+                          {attachment.url && (
+                            <IconButton 
+                              type="button" 
+                              as="a" 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              title={isImage ? t('common.viewImage') : isDocument ? t('common.openDocument') : t('common.openFile')}
+                            >
+                              <ExternalLink size={14} />
+                            </IconButton>
+                          )}
+                        </AttachmentActions>
+                      </AttachmentItem>
+                    );
+                  })}
+                  
+                  <AttachmentUpload>
+                    <input 
+                      type="file" 
+                      id="file-upload" 
+                      onChange={handleAttachmentChange} 
+                      style={{ display: 'none' }}
+                    />
+                    <UploadButton 
+                      type="button" 
+                      disabled={isUploading}
+                      onClick={() => document.getElementById('file-upload').click()}
+                    >
+                      {isUploading ? <Spinner size={16} /> : <Plus size={16} />}
+                      <span>{isUploading ? t('common.uploading') : t('tasks.addAttachment')}</span>
+                    </UploadButton>
+                  </AttachmentUpload>
+                </AttachmentList>
+              </FormGroup>
+            </>
+          )}
         </>
       )}
-      
       
       <PreInspectionQuestions 
         questions={formData.preInspectionQuestions} 

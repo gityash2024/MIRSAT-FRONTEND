@@ -1458,7 +1458,8 @@
     "selectTemplateFirstToEnableAsset": "يرجى اختيار قالب أولاً لتمكين اختيار الأصل",
     "assetDisabledSelectTemplateFirst": "اختر قالباً أولاً لتمكين اختيار الأصل",
     "assetAutoSelected": "تم اختيار الأصل تلقائياً",
-    "selectTemplateFirstToAutoSelectAsset": "اختر قالباً أولاً لاختيار الأصل المطابق تلقائياً"
+    "selectTemplateFirstToAutoSelectAsset": "اختر قالباً أولاً لاختيار الأصل المطابق تلقائياً",
+    "fileUploadedSuccessfully": "تم رفع الملف بنجاح"
   },
   "reports": {
     "title": "التقارير",
