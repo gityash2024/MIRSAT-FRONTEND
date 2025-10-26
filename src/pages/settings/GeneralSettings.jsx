@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   Building2, 
   MapPin, 
@@ -195,6 +196,7 @@ const WarningMessage = styled.div`
 `;
 
 const GeneralSettings = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     companyName: 'MIRSAT Portal',
     address: '6733 Abu Bakr As Seddiq, AlTaawon Dist',
@@ -260,9 +262,9 @@ const GeneralSettings = () => {
     <Container>
       <Section>
         <div>
-          <SectionTitle>Organization Details</SectionTitle>
+          <SectionTitle>{t('settings.organizationDetails')}</SectionTitle>
           <SectionDescription>
-            Update your organization information and branding
+            {t('settings.organizationDescription')}
           </SectionDescription>
         </div>
 
@@ -270,118 +272,118 @@ const GeneralSettings = () => {
           <FormGroup>
             <Label>
               <Building2 size={16} className="icon" />
-              Company Name
+              {t('settings.companyName')}
             </Label>
             <Input
               type="text"
               name="companyName"
               value={formData.companyName}
               onChange={handleChange}
-              placeholder="Enter company name"
+              placeholder={t('settings.enterCompanyName')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <MapPin size={16} className="icon" />
-              Address
+              {t('settings.address')}
             </Label>
             <Input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              placeholder="Enter address"
+              placeholder={t('settings.enterAddress')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <MapPin size={16} className="icon" />
-              City
+              {t('settings.city')}
             </Label>
             <Input
               type="text"
               name="city"
               value={formData.city}
               onChange={handleChange}
-              placeholder="Enter city"
+              placeholder={t('settings.enterCity')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <Globe size={16} className="icon" />
-              Country
+              {t('settings.country')}
             </Label>
             <Input
               type="text"
               name="country"
               value={formData.country}
               onChange={handleChange}
-              placeholder="Enter country"
+              placeholder={t('settings.enterCountry')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <Phone size={16} className="icon" />
-              Phone Number
+              {t('settings.phoneNumber')}
             </Label>
             <Input
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="Enter phone number"
+              placeholder={t('settings.enterPhoneNumber')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <Mail size={16} className="icon" />
-              Email Address
+              {t('settings.emailAddress')}
             </Label>
             <Input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter email address"
+              placeholder={t('settings.enterEmailAddress')}
             />
           </FormGroup>
 
           <FormGroup>
             <Label>
               <Globe size={16} className="icon" />
-              Website
+              {t('settings.website')}
             </Label>
             <Input
               type="url"
               name="website"
               value={formData.website}
               onChange={handleChange}
-              placeholder="Enter website URL"
+              placeholder={t('settings.enterWebsiteURL')}
             />
           </FormGroup>
         </FormGrid>
 
         <FormGroup>
-          <Label>Company Description</Label>
+          <Label>{t('settings.companyDescription')}</Label>
           <Textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Enter company description"
+            placeholder={t('settings.enterCompanyDescription')}
           />
         </FormGroup>
       </Section>
 
       <Section>
         <div>
-          <SectionTitle>Company Logo</SectionTitle>
+          <SectionTitle>{t('settings.companyLogo')}</SectionTitle>
           <SectionDescription>
-            Upload your company logo for branding purposes
+            {t('settings.logoDescription')}
           </SectionDescription>
         </div>
 
@@ -418,7 +420,7 @@ const GeneralSettings = () => {
             disabled={!hasChanges || isSubmitting}
           >
             <Save size={16} />
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? t('common.saving') : t('common.saveChanges')}
           </Button>
         </ButtonGroup>
       </Section>

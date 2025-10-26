@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -277,6 +279,8 @@ const CalendarViewSkeleton = () => (
 );
 
 const CalendarView = () => {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -476,13 +480,13 @@ const CalendarView = () => {
           assignedToArray = [userId];
         } else if (userId) {
           console.error('Invalid user ID format:', userId);
-          toast.error('Invalid user selected. Please select a valid user.');
+          toast.error(t('invalidUserSelection'));
           return;
         }
       }
       
       if (assignedToArray.length === 0) {
-        toast.error('Please select at least one user to assign the task to.');
+        toast.error(t('selectUserRequired'));
         return;
       }
       
@@ -505,7 +509,7 @@ const CalendarView = () => {
       
       await dispatch(createTask(taskData)).unwrap();
       loadEvents(); // Reload events after adding
-      toast.success('Event added successfully');
+      toast.success(t('eventAddedSuccessfully'));
     } catch (error) {
       console.error('Failed to add event:', error);
       toast.error(`Failed to add event: ${error.message || 'Unknown error'}`);
@@ -524,13 +528,13 @@ const CalendarView = () => {
           assignedToArray = [userId];
         } else if (userId) {
           console.error('Invalid user ID format for update:', userId);
-          toast.error('Invalid user selected. Please select a valid user.');
+          toast.error(t('invalidUserSelection'));
           return;
         }
       }
       
       if (assignedToArray.length === 0) {
-        toast.error('Please select at least one user to assign the task to.');
+        toast.error(t('selectUserRequired'));
         return;
       }
       
@@ -552,7 +556,7 @@ const CalendarView = () => {
       
       await dispatch(updateTask({ id: eventData.id, data: taskData })).unwrap();
       loadEvents(); // Reload events after updating
-      toast.success('Event updated successfully');
+      toast.success(t('eventUpdatedSuccessfully'));
     } catch (error) {
       console.error('Failed to update event:', error);
       toast.error(`Failed to update event: ${error.message || 'Unknown error'}`);
@@ -564,11 +568,50 @@ const CalendarView = () => {
       // Actually delete the task instead of just marking it as cancelled
       await dispatch(deleteTask(eventId)).unwrap();
       loadEvents(); // Reload events after deleting
-      toast.success('Event deleted successfully');
+      toast.success(t('eventDeletedSuccessfully'));
     } catch (error) {
       console.error('Failed to delete event:', error);
       toast.error('Failed to delete event');
     }
+  };
+
+  // Calendar configuration with translations
+  const calendarConfig = {
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: "dayGridMonth",
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    buttonText: {
+      today: t('today'),
+      month: t('month'),
+      week: t('week'),
+      day: t('day')
+    },
+    dayHeaderFormat: { weekday: 'short' },
+    dayHeaderContent: (arg) => {
+      const dayNames = {
+        'Sun': t('sunday'),
+        'Mon': t('monday'),
+        'Tue': t('tuesday'),
+        'Wed': t('wednesday'),
+        'Thu': t('thursday'),
+        'Fri': t('friday'),
+        'Sat': t('saturday')
+      };
+      return dayNames[arg.text] || arg.text;
+    },
+    selectable: true,
+    selectMirror: true,
+    dayMaxEvents: true,
+    weekends: true,
+    select: handleDateSelect,
+    eventClick: handleEventClick,
+    eventContent: renderEventContent,
+    height: "auto",
+    direction: isRTL ? 'rtl' : 'ltr'
   };
 
   return (
@@ -590,32 +633,18 @@ const CalendarView = () => {
 
       <CalendarWrapper>
         {loading && !cachedEvents.length ? (
-          <LoadingIndicator>Loading calendar events...</LoadingIndicator>
+          <LoadingIndicator>{t('loadingEvents')}</LoadingIndicator>
         ) : (
           <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            }}
+            {...calendarConfig}
             events={cachedEvents.length > 0 ? cachedEvents : transformTasksToEvents(tasks)}
-            selectable={true}
-            selectMirror={true}
-            dayMaxEvents={true}
-            weekends={true}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            height="auto"
           />
         )}
       </CalendarWrapper>
       
       <PaginationContainer>
         <PageInfo>
-          Showing {tasks?.length || 0} of {tasks?.length || pagination.total || 0} events
+          {t('showing')} {tasks?.length || 0} {t('of')} {tasks?.length || pagination.total || 0} {t('events')}
         </PageInfo>
         
         <PageSelector>
@@ -623,35 +652,35 @@ const CalendarView = () => {
             onClick={() => handlePageChange(1)} 
             disabled={pagination.page <= 1}
           >
-            First
+            {t('first')}
           </PageButton>
           <PageButton 
             onClick={() => handlePageChange(pagination.page - 1)} 
             disabled={pagination.page <= 1}
           >
-            Previous
+            {t('previous')}
           </PageButton>
           
-          <PageInfo>Page {pagination.page} of {Math.max(Math.ceil((tasks?.length || pagination.total) / pagination.limit) || 1, 1)}</PageInfo>
+          <PageInfo>{t('page')} {pagination.page} {t('of')} {Math.max(Math.ceil((tasks?.length || pagination.total) / pagination.limit) || 1, 1)}</PageInfo>
           
           <PageButton 
             onClick={() => handlePageChange(pagination.page + 1)} 
             disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
-            Next
+            {t('next')}
           </PageButton>
           <PageButton 
             onClick={() => handlePageChange(Math.ceil((tasks?.length || pagination.total) / pagination.limit))} 
             disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
-            Last
+            {t('last')}
           </PageButton>
           
           <LimitSelector value={pagination.limit} onChange={handleLimitChange}>
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
+            <option value={10}>10 {t('perPage')}</option>
+            <option value={25}>25 {t('perPage')}</option>
+            <option value={50}>50 {t('perPage')}</option>
+            <option value={100}>100 {t('perPage')}</option>
           </LimitSelector>
         </PageSelector>
       </PaginationContainer>

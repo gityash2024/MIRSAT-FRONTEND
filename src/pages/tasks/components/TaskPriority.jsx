@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ArrowDown, Flag, MoreHorizontal } from 'lucide-react';
 
 const PriorityBadge = styled.span`
@@ -38,6 +39,7 @@ const PriorityBadge = styled.span`
 `;
 
 const TaskPriority = ({ priority }) => {
+  const { t } = useTranslation();
   const getIcon = () => {
     switch (priority?.toLowerCase()) {
       case 'high':
@@ -51,10 +53,25 @@ const TaskPriority = ({ priority }) => {
     }
   };
 
+  const getPriorityText = () => {
+    if (!priority) return t('common.none');
+    
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return t('common.high');
+      case 'medium':
+        return t('common.medium');
+      case 'low':
+        return t('common.low');
+      default:
+        return priority;
+    }
+  };
+
   return (
     <PriorityBadge priority={priority}>
       {getIcon()}
-      {priority || 'None'}
+      {getPriorityText()}
     </PriorityBadge>
   );
 };

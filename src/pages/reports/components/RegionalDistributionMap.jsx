@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { Map, AlertTriangle, Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const MapContainer = styled(motion.div)`
@@ -196,6 +197,7 @@ const CustomTooltip = ({ active, payload }) => {
 const COLORS = ['var(--color-navy)', '#1565c0', '#1976d2', '#1e88e5', '#2196f3'];
 
 const RegionalDistributionMap = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [regionalData, setRegionalData] = useState({
     data: [],
@@ -208,6 +210,16 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
     loading: true,
     error: null
   });
+
+  const translateRegionName = (region) => {
+    switch (region) {
+      case 'India': return t('common.india');
+      case 'test logs': return t('common.testLogs');
+      case 'General': return t('common.general');
+      case 'Saudi Arabia': return t('common.saudiArabia');
+      default: return region;
+    }
+  };
 
   useEffect(() => {
     const fetchRegionalData = async () => {
@@ -260,9 +272,9 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
       <Header>
         <Title>
           <Map size={20} />
-          Regional Distribution
+          {t('common.regionalDistribution')}
         </Title>
-        <Subtitle>Distribution of templates and compliance across regions</Subtitle>
+        <Subtitle>{t('common.distributionOfTemplates')}</Subtitle>
       </Header>
 
       {regionalData.loading ? (
@@ -281,6 +293,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
                   dataKey="region" 
                   tick={{ fill: '#64748b' }}
                   axisLine={{ stroke: '#e2e8f0' }}
+                  tickFormatter={(value) => translateRegionName(value)}
                 />
                 <YAxis 
                   tick={{ fill: '#64748b' }}
@@ -324,12 +337,12 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
           <MetricsList>
             <MetricCard color="var(--color-navy)">
               <MetricHeader>
-                <MetricName>Total Templates</MetricName>
+                <MetricName>{t('common.totalTemplates')}</MetricName>
                 <Activity size={16} color="var(--color-navy)" />
               </MetricHeader>
               <MetricValue>
                 {regionalData.metrics.totalInspections.toLocaleString()}
-                <MetricUnit>templates</MetricUnit>
+                <MetricUnit>{t('common.templates')}</MetricUnit>
               </MetricValue>
             </MetricCard>
 
@@ -346,12 +359,12 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
 
             <MetricCard color="#f59e0b">
               <MetricHeader>
-                <MetricName>Total Issues</MetricName>
+                <MetricName>{t('common.totalIssues')}</MetricName>
                 <AlertTriangle size={16} color="#f59e0b" />
               </MetricHeader>
               <MetricValue>
                 {regionalData.metrics.totalIssues}
-                <MetricUnit>issues</MetricUnit>
+                <MetricUnit>{t('common.issues')}</MetricUnit>
               </MetricValue>
             </MetricCard>
           </MetricsList>

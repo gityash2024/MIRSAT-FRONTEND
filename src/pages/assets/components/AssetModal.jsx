@@ -1,6 +1,7 @@
 // pages/assets/components/AssetModal.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createAsset, updateAsset } from '../../../store/slices/assetSlice';
@@ -154,6 +155,7 @@ const Button = styled.button`
 `;
 
 const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
   
@@ -205,25 +207,25 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     const newErrors = {};
     
     if (!formData.uniqueId) {
-      newErrors.uniqueId = 'Unique ID is required';
+      newErrors.uniqueId = t('assets.uniqueIdRequired');
     } else if (isNaN(formData.uniqueId) || Number(formData.uniqueId) <= 0) {
-      newErrors.uniqueId = 'Unique ID must be a positive number';
+      newErrors.uniqueId = t('assets.uniqueIdMustBePositive');
     }
     
     if (!formData.type) {
-      newErrors.type = 'Type is required';
+      newErrors.type = t('assets.typeRequired');
     }
     
     if (!formData.displayName?.trim()) {
-      newErrors.displayName = 'Display name is required';
+      newErrors.displayName = t('assets.displayNameRequired');
     }
     
     if (!formData.city?.trim()) {
-      newErrors.city = 'City is required';
+      newErrors.city = t('assets.cityRequired');
     }
     
     if (!formData.location?.trim()) {
-      newErrors.location = 'Location is required';
+      newErrors.location = t('assets.locationRequired');
     }
     
     setErrors(newErrors);
@@ -266,7 +268,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         const assetId = asset._id || asset.id;
         if (!assetId) {
           console.error('No valid asset ID found:', asset);
-          throw new Error('Asset ID is missing');
+          throw new Error(t('assets.assetIdMissing'));
         }
         
         // Update existing asset
@@ -297,11 +299,11 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
       // Handle specific error cases
       if (error.message && error.message.includes('duplicate') || 
           error.message && error.message.includes('already exists')) {
-        setErrors({ uniqueId: 'An asset with this ID already exists' });
+        setErrors({ uniqueId: t('assets.assetIdAlreadyExists') });
       } else if (error.message && error.message.includes('validation')) {
-        setErrors({ general: 'Please check all required fields' });
+        setErrors({ general: t('assets.checkRequiredFields') });
       } else {
-        setErrors({ general: 'Failed to save asset. Please try again.' });
+        setErrors({ general: t('assets.failedToSaveAsset') });
       }
     } finally {
       setIsSubmitting(false);
@@ -339,7 +341,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader>
-              <ModalTitle>{asset ? 'Edit Asset' : 'Add New Asset'}</ModalTitle>
+              <ModalTitle>{asset ? t('common.editAsset') : t('common.addNewAsset')}</ModalTitle>
               <CloseButton onClick={handleClose} disabled={isSubmitting}>
                 <X size={20} />
               </CloseButton>
@@ -361,14 +363,14 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               )}
 
               <FormGroup>
-                <Label htmlFor="uniqueId">Unique ID *</Label>
+                <Label htmlFor="uniqueId">{t('common.uniqueId')} *</Label>
                 <Input
                   type="number"
                   id="uniqueId"
                   name="uniqueId"
                   value={formData.uniqueId}
                   onChange={handleChange}
-                  placeholder="Enter unique ID"
+                  placeholder={t('common.enterUniqueId')}
                   disabled={isSubmitting}
                   min="1"
                 />
@@ -376,7 +378,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               </FormGroup>
               
               <FormGroup>
-                <Label htmlFor="type">Type *</Label>
+                <Label htmlFor="type">{t('common.type')} *</Label>
                 <Select
                   id="type"
                   name="type"
@@ -384,7 +386,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   onChange={handleChange}
                   disabled={isSubmitting}
                 >
-                  <option value="">Select asset type</option>
+                  <option value="">{t('common.selectAssetType')}</option>
                   {assetTypes.map(type => {
                     const typeId = getAssetTypeId(type);
                     return (
@@ -403,42 +405,42 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               </FormGroup>
               
               <FormGroup>
-                <Label htmlFor="displayName">Display Name *</Label>
+                <Label htmlFor="displayName">{t('common.displayName')} *</Label>
                 <Input
                   type="text"
                   id="displayName"
                   name="displayName"
                   value={formData.displayName}
                   onChange={handleChange}
-                  placeholder="Enter display name"
+                  placeholder={t('common.enterDisplayName')}
                   disabled={isSubmitting}
                 />
                 {errors.displayName && <ErrorText>{errors.displayName}</ErrorText>}
               </FormGroup>
               
               <FormGroup>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">{t('common.city')} *</Label>
                 <Input
                   type="text"
                   id="city"
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
-                  placeholder="Enter city"
+                  placeholder={t('common.enterCity')}
                   disabled={isSubmitting}
                 />
                 {errors.city && <ErrorText>{errors.city}</ErrorText>}
               </FormGroup>
               
               <FormGroup>
-                <Label htmlFor="location">Location *</Label>
+                <Label htmlFor="location">{t('common.location')} *</Label>
                 <Input
                   type="text"
                   id="location"
                   name="location"
                   onChange={handleChange}
                   value={formData.location}
-                  placeholder="Enter location"
+                  placeholder={t('common.enterLocation')}
                   disabled={isSubmitting}
                 />
                 {errors.location && <ErrorText>{errors.location}</ErrorText>}
@@ -446,15 +448,15 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
             </ModalBody>
             
             <ModalFooter>
-              <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
-                Cancel
-              </Button>
+                <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+                  {t('common.cancel')}
+                </Button>
               <Button 
                 variant="primary" 
                 onClick={handleSubmit} 
                 disabled={isSubmitting || assetTypes.length === 0}
               >
-                {isSubmitting ? 'Saving...' : asset ? 'Update Asset' : 'Create Asset'}
+                {isSubmitting ? t('common.saving') : asset ? t('common.updateAsset') : t('common.createAsset')}
               </Button>
             </ModalFooter>
           </ModalContainer>

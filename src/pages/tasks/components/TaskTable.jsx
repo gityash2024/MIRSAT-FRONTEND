@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
@@ -12,12 +13,14 @@ import usePermissions from '../../../hooks/usePermissions';
 import { deleteTask } from '../../../store/slices/taskSlice';
 import Skeleton from '../../../components/ui/Skeleton';
 import { themeColors, getStatusColor } from '../../../utils/themeUtils';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  width: 100%;
 `;
 
 const Table = styled.table`
@@ -26,7 +29,7 @@ const Table = styled.table`
 
   th, td {
     padding: 16px;
-    text-align: left;
+    text-align: ${props => props.$isRTL ? 'right' : 'left'};
     border-bottom: 1px solid var(--color-gray-light);
     white-space: nowrap;
     overflow: hidden;
@@ -478,13 +481,13 @@ const TaskTableSkeleton = () => {
         <thead>
           <tr>
             <th style={{ width: '50px' }}>#</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Assignees</th>
-            <th>Deadline</th>
-            <th>Progress</th>
-            <th style={{ width: '100px' }}>Actions</th>
+            <th>{t('tasks.title')}</th>
+            <th>{t('common.status')}</th>
+            <th>{t('common.priority')}</th>
+            <th>{t('tasks.assignees')}</th>
+            <th>{t('calendar.deadline')}</th>
+            <th>{t('common.progress')}</th>
+            <th style={{ width: '100px' }}>{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -538,19 +541,21 @@ const TaskTableSkeleton = () => {
 };
 
 const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
   
   const hasQuestions = task.preInspectionQuestions && task.preInspectionQuestions.length > 0;
   
   const getTypeLabel = (type) => {
     switch(type) {
-      case 'yesno': return 'Yes/No';
-      case 'text': return 'Text';
-      case 'number': return 'Number';
-      case 'select': return 'Select';
-      case 'multiple_choice': return 'Multiple Choice';
-      case 'compliance': return 'Compliance';
-      case 'date': return 'Date';
+      case 'yesno': return t('common.yesNo');
+      case 'text': return t('common.text');
+      case 'number': return t('common.number');
+      case 'select': return t('common.select');
+      case 'multiple_choice': return t('common.multipleChoice');
+      case 'compliance': return t('common.compliance');
+      case 'date': return t('common.date');
       default: return type;
     }
   };
@@ -561,7 +566,7 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
         <ModalHeader>
           <ModalTitle>
             <Database size={18} /> 
-            Pre-Inspection Questions for: {task.title}
+            {t('common.preInspectionQuestionsFor')} {task.title}
           </ModalTitle>
           <CloseButton onClick={onClose}>
             <X size={20} />
@@ -571,7 +576,7 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
         {!hasQuestions ? (
           <NoQuestionsMessage>
             <Database size={24} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <p>No pre-inspection questions have been added to this task.</p>
+            <p>{t('tasks.noPreInspectionQuestionsAdded')}</p>
           </NoQuestionsMessage>
         ) : (
           <>
@@ -580,7 +585,7 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
                 <QuestionHeader>
                   <QuestionText>
                     {index + 1}. {question.text}
-                    {question.required && <RequiredTag>Required</RequiredTag>}
+                    {question.required && <RequiredTag>{t('common.required')}</RequiredTag>}
                   </QuestionText>
                   <QuestionType>{getTypeLabel(question.type)}</QuestionType>
                 </QuestionHeader>
@@ -590,7 +595,7 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
                     {question.type === 'compliance' ? (
                       question.options.map((option, i) => (
                         <ComplianceOption key={i} variant={option}>
-                          {option === 'Full compliance' && <CheckCircle size={14} />}
+                          {option === t('tasks.fullCompliance') && <CheckCircle size={14} />}
                           {option}
                         </ComplianceOption>
                       ))
@@ -611,6 +616,8 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
 };
 
 const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
@@ -706,7 +713,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
     } catch (error) {
       console.error('Error deleting task:', error);
       if (!error.message) {
-        toast.error('Failed to delete task');
+        toast.error(t('tasks.failedToDeleteTask'));
       }
     }
   };
@@ -754,15 +761,15 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
     <>
       <TableContainer>
         {!sortedTasks.length ? (
-          <NoDataMessage>No tasks found matching your criteria.</NoDataMessage>
+          <NoDataMessage>{t('tasks.noTasksFoundMatchingCriteria')}</NoDataMessage>
         ) : (
-          <Table>
+          <Table $isRTL={isRTL}>
           <thead>
             <tr>
               <th style={{ width: '50px', textAlign: 'center' }}>#</th>
               <th onClick={() => handleSort('title')}>
                 <HeaderContent>
-                  <HeaderText>Task Name</HeaderText>
+                  <HeaderText>{t('common.taskName')}</HeaderText>
                   {sortConfig.key === 'title' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -776,7 +783,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('inspectionLevel')}>
                 <HeaderContent>
-                  <HeaderText>Template</HeaderText>
+                  <HeaderText>{t('common.template')}</HeaderText>
                   {sortConfig.key === 'inspectionLevel' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -790,7 +797,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('asset')}>
                 <HeaderContent>
-                  <HeaderText>Asset</HeaderText>
+                  <HeaderText>{t('common.asset')}</HeaderText>
                   {sortConfig.key === 'asset' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -802,10 +809,10 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                   )}
                 </HeaderContent>
               </th>
-              <th>Sublevels</th>
+              <th>{t('common.sublevels')}</th>
               <th onClick={() => handleSort('assignedTo')}>
                 <HeaderContent>
-                  <HeaderText>Assignee</HeaderText>
+                  <HeaderText>{t('common.assignee')}</HeaderText>
                   {sortConfig.key === 'assignedTo' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -819,7 +826,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('priority')}>
                 <HeaderContent>
-                  <HeaderText>Priority</HeaderText>
+                  <HeaderText>{t('common.priority')}</HeaderText>
                   {sortConfig.key === 'priority' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -833,7 +840,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('status')}>
                 <HeaderContent>
-                  <HeaderText>Status</HeaderText>
+                  <HeaderText>{t('common.status')}</HeaderText>
                   {sortConfig.key === 'status' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -847,7 +854,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('deadline')}>
                 <HeaderContent>
-                  <HeaderText>Due Date</HeaderText>
+                  <HeaderText>{t('calendar.dueDate')}</HeaderText>
                   {sortConfig.key === 'deadline' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -861,7 +868,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               {/* <th onClick={() => handleSort('overallProgress')}>
                 <HeaderContent>
-                  <HeaderText>Progress</HeaderText>
+                  <HeaderText>{t('common.progress')}</HeaderText>
                   {sortConfig.key === 'overallProgress' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
@@ -873,7 +880,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                   )}
                 </HeaderContent>
               </th> */}
-              <th>Actions</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -889,7 +896,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 <td>
                   {task.asset ? (
                     <span title={`${task.asset.displayName || task.asset.name} - ${task.asset.type || ''}`}>
-                      {task.asset.displayName || task.asset.name || 'Unknown'} 
+                      {task.asset.displayName || task.asset.name || t('logs.unknown')} 
                       {task.asset.uniqueId && <small style={{ color: '#666', display: 'block' }}>{task.asset.uniqueId}</small>}
                     </span>
                   ) : '--'}
@@ -942,7 +949,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                     {hasPreInspectionQuestions(task) && (
                       <ActionButton 
                         onClick={() => handleShowPreInspectionQuestions(task)}
-                        title="View pre-template questions"
+                        title={t('tasks.viewPreTemplateQuestions')}
                         style={{
                           background: '#e0f2fe',
                           color: '#0284c7'
@@ -963,14 +970,14 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
           <PaginationInfo>
             {pagination && pagination.total !== undefined && pagination.total > 0 ? (
               <>
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} {pagination.total === 1 ? 'task' : 'tasks'}
+                {t('common.showing')} {((pagination.page - 1) * pagination.limit) + 1} {t('common.to')}{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} {t('common.of')}{' '}
+                {pagination.total} {pagination.total === 1 ? t('common.task') : t('common.tasks')}
               </>
             ) : pagination && pagination.total === 0 ? (
-              <>Showing 0 tasks</>
+              <>{t('common.showing')} 0 {t('common.tasks')}</>
             ) : (
-              <>Showing {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}</>
+              <>{t('common.showing')} {sortedTasks.length} {sortedTasks.length === 1 ? t('common.task') : t('common.tasks')}</>
             )}
           </PaginationInfo>
           
@@ -1034,16 +1041,16 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       {deleteConfirm && (
         <DeleteConfirmDialog>
           <DialogContent>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>{t('common.deleteTask')}</DialogTitle>
             <DialogMessage>
-              Are you sure you want to delete "{deleteConfirm.title}"? This action cannot be undone.
+              {t('common.deleteTaskConfirm')} "{deleteConfirm.title}"? {t('common.thisActionCannotBeUndone')}.
             </DialogMessage>
             <DialogActions>
               <DialogButton onClick={() => setDeleteConfirm(null)}>
-                Cancel
+                {t('common.cancel')}
               </DialogButton>
               <DialogButton variant="danger" onClick={handleConfirmDelete}>
-                Delete Task
+                {t('common.delete')}
               </DialogButton>
             </DialogActions>
           </DialogContent>
@@ -1055,7 +1062,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
           <SublevelsModalContent>
             <SublevelsModalHeader>
               <SublevelsModalTitle>
-                {sublevelsModal.inspectionLevel?.name || 'Inspection Sublevels'}
+                {sublevelsModal.inspectionLevel?.name || t('tasks.inspectionSublevels')}
               </SublevelsModalTitle>
               <SublevelsModalCloseButton onClick={() => setSublevelsModal(null)}>
                 &times;

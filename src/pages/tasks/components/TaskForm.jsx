@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
 import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
@@ -636,6 +637,7 @@ const PreInspectionQuestions = ({
   initialQuestions = [],
   isEditMode = false 
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
@@ -775,13 +777,13 @@ const PreInspectionQuestions = ({
     
     // Add default options based on type
     if (newType === 'multiple_choice') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : [t('common.option1'), t('common.option2'), t('common.option3')];
     } else if (newType === 'compliance') {
       updatedQuestion.options = [
-        'Full compliance',
-        'Partial compliance',
-        'Non-compliant',
-        'Not applicable'
+        t('common.fullCompliance'),
+        t('common.partialCompliance'),
+        t('common.nonCompliant'),
+        t('common.notApplicable')
       ];
       
       // Add default scores for compliance options
@@ -791,24 +793,24 @@ const PreInspectionQuestions = ({
       };
       
       updatedQuestion.scores = {
-        'Full compliance': 2,
-        'Partial compliance': 1,
-        'Non-compliant': 0,
-        'Not applicable': 0
+        [t('common.fullCompliance')]: 2,
+        [t('common.partialCompliance')]: 1,
+        [t('common.nonCompliant')]: 0,
+        [t('common.notApplicable')]: 0
       };
     } else if (newType === 'select') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : [t('common.option1'), t('common.option2'), t('common.option3')];
     } else if (newType === 'yesno') {
       // Add default scores for Yes/No
-      updatedQuestion.options = ['Yes', 'No', 'N/A'];
+      updatedQuestion.options = [t('common.yes'), t('common.no'), t('common.na')];
       updatedQuestion.scoring = {
         enabled: true,
         max: 2
       };
       updatedQuestion.scores = {
-        'Yes': 2,
-        'No': 0,
-        'N/A': 0
+        [t('common.yes')]: 2,
+        [t('common.no')]: 0,
+        [t('common.na')]: 0
       };
     } else {
       // Reset options if changing to a type that doesn't need them
@@ -827,13 +829,13 @@ const PreInspectionQuestions = ({
   
   const getTypeLabel = (type) => {
     switch(type) {
-      case 'yesno': return 'Yes/No';
-      case 'text': return 'Text';
-      case 'number': return 'Number';
-      case 'select': return 'Select';
-      case 'multiple_choice': return 'Multiple Choice';
-      case 'compliance': return 'Compliance';
-      case 'date': return 'Date';
+      case 'yesno': return t('common.yesNo');
+      case 'text': return t('common.text');
+      case 'number': return t('common.number');
+      case 'select': return t('common.select');
+      case 'multiple_choice': return t('common.multipleChoice');
+      case 'compliance': return t('common.compliance');
+      case 'date': return t('common.date');
       default: return type;
     }
   };
@@ -843,7 +845,7 @@ const PreInspectionQuestions = ({
       <QuestionHeader>
         <QuestionTitle>
           <Database size={18} />
-          {isEditMode ? 'Add More Pre-Inspection Questions' : 'Pre-Inspection Questions'} ({questions.length})
+          {isEditMode ? t('tasks.addMorePreInspectionQuestions') : t('tasks.preInspectionQuestions')} ({questions.length})
           {/* {isEditMode && (
             <div style={{ 
               fontSize: '12px', 
@@ -874,7 +876,7 @@ const PreInspectionQuestions = ({
               setShowLibrary(!showLibrary);
               setShowAddManual(false);
             }}>
-              {showLibrary ? 'Close Library' : 'Select from Library'}
+              {showLibrary ? t('tasks.closeLibrary') : t('tasks.selectFromLibrary')}
               {showLibrary ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </LibraryButton>
             
@@ -914,7 +916,7 @@ const PreInspectionQuestions = ({
             setShowAddManual(!showAddManual);
             setShowLibrary(false);
           }}>
-            {showAddManual ? 'Cancel' : 'Add Manually'}
+            {showAddManual ? t('common.cancel') : t('tasks.addManually')}
             {showAddManual ? <X size={16} /> : <Plus size={16} />}
           </LibraryButton>
         </div>
@@ -930,45 +932,45 @@ const PreInspectionQuestions = ({
           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
         }}>
           <FormGroup>
-            <Label>Question Text <span style={{ color: 'red' }}>*</span></Label>
+            <Label>{t('tasks.questionText')} <span style={{ color: 'red' }}>*</span></Label>
             <TextArea
               value={newQuestion.text}
               onChange={(e) => setNewQuestion(prev => ({ ...prev, text: e.target.value }))}
-              placeholder="Enter question text"
+              placeholder={t('tasks.enterQuestionText')}
               rows={2}
             />
           </FormGroup>
           
           <FormGroup style={{ marginTop: '16px' }}>
-            <Label>Question Type</Label>
+            <Label>{t('tasks.questionType')}</Label>
             <Select
               value={newQuestion.type}
               onChange={handleTypeChange}
             >
-              <option value="text">Text</option>
-              <option value="number">Number</option>
-              <option value="date">Date</option>
-              <option value="yesno">Yes/No</option>
-              <option value="select">Select</option>
-              <option value="multiple_choice">Multiple Choice</option>
-              <option value="compliance">Compliance</option>
+              <option value="text">{t('tasks.text')}</option>
+              <option value="number">{t('tasks.number')}</option>
+              <option value="date">{t('tasks.date')}</option>
+              <option value="yesno">{t('tasks.yesNo')}</option>
+              <option value="select">{t('tasks.select')}</option>
+              <option value="multiple_choice">{t('tasks.multipleChoice')}</option>
+              <option value="compliance">{t('tasks.compliance')}</option>
             </Select>
           </FormGroup>
           
           <FormGroup style={{ marginTop: '16px' }}>
-            <Label>Requirement Type</Label>
+            <Label>{t('tasks.requirementType')}</Label>
             <Select
               value={newQuestion.requirementType || 'mandatory'}
               onChange={(e) => setNewQuestion(prev => ({ ...prev, requirementType: e.target.value }))}
             >
-              <option value="mandatory">Mandatory</option>
-              <option value="recommended">Recommended</option>
+              <option value="mandatory">{t('tasks.mandatory')}</option>
+              <option value="recommended">{t('tasks.recommended')}</option>
             </Select>
           </FormGroup>
           
           {/* Weight field similar to InspectionLevelForm */}
           <FormGroup style={{ marginTop: '16px' }}>
-            <Label>Question Weight</Label>
+            <Label>{t('tasks.questionWeight')}</Label>
             <Input
               type="number"
               value={newQuestion.weight !== undefined ? newQuestion.weight : 1}
@@ -980,7 +982,7 @@ const PreInspectionQuestions = ({
                 }));
               }}
               min="0"
-              placeholder="Question weight"
+              placeholder={t('tasks.questionWeightPlaceholder')}
             />
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
               Set to 0 for non-scored questions
@@ -996,7 +998,7 @@ const PreInspectionQuestions = ({
                 alignItems: 'center',
                 marginBottom: '12px'
               }}>
-                <Label>Options</Label>
+                <Label>{t('tasks.options')}</Label>
                 {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
                   <button 
                     type="button"
@@ -1025,7 +1027,7 @@ const PreInspectionQuestions = ({
                   <Input 
                     value={newOption}
                     onChange={(e) => setNewOption(e.target.value)}
-                    placeholder="Enter option"
+                    placeholder={t('tasks.enterOption')}
                     style={{ flex: 1 }}
                   />
                   <Button 
@@ -1052,13 +1054,13 @@ const PreInspectionQuestions = ({
                         textAlign: 'left', 
                         fontSize: '14px',
                         borderBottom: '1px solid #e2e8f0'
-                      }}>Option</th>
+                      }}>{t('tasks.option')}</th>
                       <th style={{ 
                         padding: '12px 16px', 
                         textAlign: 'center', 
                         fontSize: '14px',
                         borderBottom: '1px solid #e2e8f0'
-                      }}>Score</th>
+                      }}>{t('tasks.score')}</th>
                       {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
                         <th style={{ 
                           padding: '12px 16px', 
@@ -1127,7 +1129,7 @@ const PreInspectionQuestions = ({
               onChange={(e) => setNewQuestion(prev => ({ ...prev, required: e.target.checked }))}
               id="required-checkbox"
             />
-            <Label htmlFor="required-checkbox" style={{ marginBottom: 0 }}>Required</Label>
+            <Label htmlFor="required-checkbox" style={{ marginBottom: 0 }}>{t('common.required')}</Label>
           </div>
           
           <div style={{ 
@@ -1153,7 +1155,7 @@ const PreInspectionQuestions = ({
                 fontWeight: '500'
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               type="button" 
@@ -1177,8 +1179,8 @@ const PreInspectionQuestions = ({
       
       {questions.length === 0 && !showAddManual ? (
         <EmptyState>
-          <p>No pre-inspection questions added yet</p>
-          <p>Add questions from the library or manually</p>
+          <p>{t('tasks.noPreInspectionQuestions')}</p>
+          <p>{t('tasks.addQuestionsFromLibrary')}</p>
         </EmptyState>
       ) : (
         <QuestionList>
@@ -1187,7 +1189,7 @@ const PreInspectionQuestions = ({
               <QuestionText>
                 {question.text}
                 <RequiredBadge required={question.required}>
-                  {question.required ? 'Required' : 'Optional'}
+                  {question.required ? t('common.required') : t('common.optional')}
                 </RequiredBadge>
               </QuestionText>
               <QuestionType>
@@ -1221,7 +1223,7 @@ const PreInspectionQuestions = ({
             setShowLibrary(true);
             setShowAddManual(false);
           }}>
-            <Plus size={16} /> Select from Library
+            <Plus size={16} /> {t('tasks.selectFromLibrary')}
           </AddQuestionButton>
           
           <AddQuestionButton type="button" onClick={(e) => {
@@ -1231,7 +1233,7 @@ const PreInspectionQuestions = ({
             setShowAddManual(true);
             setShowLibrary(false);
           }}>
-            <Plus size={16} /> Add Manually
+            <Plus size={16} /> {t('tasks.addManually')}
           </AddQuestionButton>
         </div>
       )}
@@ -1249,6 +1251,7 @@ const TaskForm = ({
   assetsProp = []
 }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const fileInputRef = useRef(null);
   const stateUsers = useSelector(state => state.users.users);
   const stateInspectionLevels = useSelector(state => state.inspectionLevels?.levels?.results);
@@ -1314,7 +1317,7 @@ const TaskForm = ({
     if (!selectedUserId) {
       setErrors(prev => ({
         ...prev,
-        assignedTo: 'User assignment is required'
+        assignedTo: t('tasks.userAssignmentRequired')
       }));
       return;
     }
@@ -1426,7 +1429,7 @@ const TaskForm = ({
       if (initialData && taskId) {
         // Ensure we have a valid ID before attempting update
         if (taskId === 'undefined') {
-          throw new Error('Invalid task ID for update operation');
+          throw new Error(t('tasks.invalidTaskId'));
         }
         
         console.log('Updating task with ID:', taskId);
@@ -1450,7 +1453,7 @@ const TaskForm = ({
           localStorage.removeItem(`task_${taskId}_preinspection`);
           console.log('Cleared localStorage data for task:', taskId);
           
-          toast.success('Task updated successfully');
+          toast.success(t('tasks.taskUpdatedSuccessfully'));
           if (onCancel) onCancel(updateResult); // Pass the updated task back
         }
       } else {
@@ -1470,7 +1473,7 @@ const TaskForm = ({
       }
     } catch (error) {
       console.error('Error in task form submission:', error);
-      toast.error(`Failed to ${initialData?.id || initialData?._id ? 'update' : 'create'} task: ${error.message || 'Error occurred'}`);
+      toast.error(`${initialData?.id || initialData?._id ? t('tasks.failedToUpdateTask') : t('tasks.failedToCreateTask')}: ${error.message || t('tasks.errorOccurred')}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -1480,23 +1483,23 @@ const TaskForm = ({
     const newErrors = {};
     
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = t('tasks.titleRequired');
     }
     
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = t('tasks.descriptionRequired');
     }
     
     if (!formData.dueDate) {
-      newErrors.dueDate = 'Deadline is required';
+      newErrors.dueDate = t('tasks.deadlineRequired');
     }
     
     if (!selectedUserId) {
-      newErrors.assignedTo = 'User assignment is required';
+      newErrors.assignedTo = t('tasks.userAssignmentRequired');
     }
     
     if (!formData.inspectionLevel) {
-      newErrors.inspectionLevel = 'A template must be selected';
+      newErrors.inspectionLevel = t('tasks.templateRequired');
     }
     
     setErrors(newErrors);
@@ -1505,10 +1508,64 @@ const TaskForm = ({
   
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // If template/inspection level is being changed, auto-fill asset field
+    if (name === 'inspectionLevel') {
+      if (value) {
+        const selectedTemplate = inspectionLevels?.find(level => level._id === value);
+        if (selectedTemplate && selectedTemplate.type) {
+          // Find assets that match the template type
+          const matchingAssets = assets?.filter(asset => asset.type === selectedTemplate.type);
+          
+          if (matchingAssets && matchingAssets.length > 0) {
+            // Auto-select the first matching asset
+            const firstMatchingAsset = matchingAssets[0];
+            setFormData(prev => ({
+              ...prev,
+              [name]: value,
+              asset: firstMatchingAsset._id || firstMatchingAsset.id
+            }));
+            return;
+          } else {
+            // No matching assets found, clear asset field
+            setFormData(prev => ({
+              ...prev,
+              [name]: value,
+              asset: ''
+            }));
+            return;
+          }
+        }
+      } else {
+        // Template cleared, reset asset field
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          asset: ''
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // Function to check for duplicate asset assignments
+  const checkDuplicateAssetAssignment = async (assetId) => {
+    if (!assetId) return false;
+    
+    try {
+      // This would need to be implemented in the backend API
+      // For now, we'll add a client-side warning
+      console.log('Checking for duplicate asset assignment:', assetId);
+      return false; // Placeholder - implement actual check when backend is ready
+    } catch (error) {
+      console.error('Error checking duplicate asset assignment:', error);
+      return false;
+    }
   };
   
   const handleCancel = () => {
@@ -1522,16 +1579,15 @@ const TaskForm = ({
     try {
       setIsUploading(true);
       
-      // Create a FormData object
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // If task already exists, include the task ID
-      const payload = initialData._id 
-        ? { id: initialData._id, file } 
-        : { file };
+      // Use the same upload approach for both create and edit modes
+      // For create mode, we'll use the general upload endpoint
+      const payload = initialData._id || initialData.id
+        ? { id: initialData._id || initialData.id, file } 
+        : { file }; // No ID for create mode - will use general upload endpoint
       
       console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('Upload payload:', payload);
+      
       const result = await dispatch(uploadTaskAttachment(payload)).unwrap();
       
       if (result && result.data) {
@@ -1539,15 +1595,14 @@ const TaskForm = ({
           ...prev,
           attachments: [...prev.attachments, result.data]
         }));
+        toast.success(t('tasks.fileUploadedSuccessfully'));
       } else {
-        toast.error('Failed to upload file');
+        toast.error(t('tasks.failedToUploadFile'));
       }
     } catch (error) {
       console.error('Error uploading file:', error);
       console.error('Upload error details:', error.message);
-      if (!error.message) {
-        toast.error('Error uploading file');
-      }
+      toast.error(t('tasks.errorUploadingFile'));
     } finally {
       setIsUploading(false);
       // Reset the file input
@@ -1692,13 +1747,13 @@ const TaskForm = ({
     <Form onSubmit={handleSubmit}>
       <FormRow>
         <FormGroup>
-          <Label>Title</Label>
+          <Label>{t('common.title')}</Label>
           <Input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="Enter task title"
+            placeholder={t('tasks.enterTaskTitle')}
             required
           />
           {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
@@ -1706,12 +1761,12 @@ const TaskForm = ({
       </FormRow>
       
       <FormGroup>
-        <Label>Description</Label>
+        <Label>{t('common.description')}</Label>
         <TextArea
           name="description"
           value={formData.description}
           onChange={handleChange}
-          placeholder="Enter task description"
+          placeholder={t('tasks.enterTaskDescription')}
           rows={4}
           required
         />
@@ -1720,20 +1775,20 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
-          <Label>Priority</Label>
+          <Label>{t('common.priority')}</Label>
           <Select
             name="priority"
             value={formData.priority}
             onChange={handleChange}
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="low">{t('tasks.lowPriority')}</option>
+            <option value="medium">{t('tasks.mediumPriority')}</option>
+            <option value="high">{t('tasks.highPriority')}</option>
           </Select>
         </FormGroup>
         
         <FormGroup>
-          <Label>Deadline</Label>
+          <Label>{t('calendar.deadline')}</Label>
           <DatePicker
             selected={formData.dueDate}
             onChange={date => setFormData(prev => ({ ...prev, dueDate: date }))}
@@ -1741,7 +1796,7 @@ const TaskForm = ({
             timeFormat="HH:mm"
             timeIntervals={15}
             dateFormat="MMMM d, yyyy h:mm aa"
-            placeholderText="Select deadline date and time"
+            placeholderText={t('tasks.selectDeadlineDateTime')}
             minDate={new Date()}
             required
           />
@@ -1750,18 +1805,18 @@ const TaskForm = ({
       </FormRow>
       
       <FormGroup>
-        <Label>Location</Label>
+        <Label>{t('common.location')}</Label>
         <Input
           type="text"
           name="location"
           value={formData.location}
           onChange={handleChange}
-          placeholder="Enter location (optional)"
+          placeholder={t('tasks.enterLocationOptional')}
         />
       </FormGroup>
       
       <FormGroup>
-        <Label>Assigned User</Label>
+        <Label>{t('tasks.assignedUser')}</Label>
         <Select
           name="assignedUser"
           value={selectedUserId}
@@ -1775,7 +1830,7 @@ const TaskForm = ({
           }}
           required
         >
-          <option value="">Select User</option>
+          <option value="">{t('tasks.selectUser')}</option>
           {users?.map(user => {
             const userIdValue = user.id || user._id;
             return (
@@ -1790,14 +1845,14 @@ const TaskForm = ({
       
       <FormRow>
         <FormGroup>
-          <Label>Template</Label>
+          <Label>{t('common.template')}</Label>
           <Select
             name="inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
             required
           >
-            <option value="">Select Template</option>
+            <option value="">{t('tasks.selectTemplate')}</option>
             {inspectionLevels?.filter(level => level.status === 'active').map(level => (
               <option key={level._id} value={level._id}>
                 {level.name}
@@ -1808,19 +1863,75 @@ const TaskForm = ({
         </FormGroup>
         
         <FormGroup>
-          <Label>Asset</Label>
+          <Label>{t('common.asset')}</Label>
           <Select
             name="asset"
             value={formData.asset}
             onChange={handleChange}
+            disabled={true}
+            style={{
+              backgroundColor: '#f5f5f5',
+              cursor: 'not-allowed',
+              opacity: 0.7
+            }}
           >
-            <option value="">Select Asset (Optional)</option>
+            <option value="">{formData.inspectionLevel ? t('tasks.assetAutoSelected') : t('tasks.assetDisabledSelectTemplateFirst')}</option>
             {assets?.map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
                 {asset.displayName || asset.uniqueId} - {asset.type}
               </option>
             ))}
           </Select>
+          {!formData.inspectionLevel && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#6b7280', 
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              {t('tasks.selectTemplateFirstToAutoSelectAsset')}
+            </div>
+          )}
+          {formData.inspectionLevel && formData.asset && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#16a34a', 
+              marginTop: '4px',
+              fontStyle: 'italic',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <Check size={12} />
+              {t('tasks.assetAutoSelectedFromTemplate')}
+            </div>
+          )}
+          {formData.inspectionLevel && !formData.asset && (
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#f59e0b', 
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              {t('tasks.noMatchingAssetFound')}
+            </div>
+          )}
+          {formData.inspectionLevel && formData.asset && (() => {
+            const selectedAsset = assets?.find(asset => (asset._id || asset.id) === formData.asset);
+            return selectedAsset ? (
+              <div style={{ 
+                fontSize: '11px', 
+                color: '#374151', 
+                marginTop: '2px',
+                padding: '4px 8px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '4px',
+                border: '1px solid #e0f2fe'
+              }}>
+                <strong>{t('tasks.selectedAsset')}:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
+              </div>
+            ) : null;
+          })()}
         </FormGroup>
       </FormRow>
 
@@ -1833,115 +1944,119 @@ const TaskForm = ({
               isActive: !prev.isActive
             }))}
           />
-          <span>Active</span>
+          <span>{t('common.active')}</span>
         </ToggleSwitch>
       </FormGroup>
 
-      <AdvancedToggle 
-        type="button" 
-        onClick={(e) => {
-          e.preventDefault(); // Prevent form submission
-          setShowAdvanced(!showAdvanced);
-        }}
-      >
-        <span>Advanced Options</span>
-        {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </AdvancedToggle>
-      
-      {showAdvanced && (
+      {/* Only show Advanced Options in edit mode */}
+      {(initialData._id || initialData.id) && (
         <>
-          <FormGroup>
-            <Label>Attachments</Label>
-            <AttachmentList>
-              {formData.attachments.map((attachment, index) => {
-                console.log('Attachment data:', attachment); // Debug log
-                
-                const isImage = attachment.contentType?.startsWith('image/') || 
-                               attachment.type?.startsWith('image/') || 
-                               attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
-                const isDocument = attachment.contentType?.includes('pdf') || 
-                                  attachment.contentType?.includes('document') ||
-                                  attachment.type?.includes('pdf') || 
-                                  attachment.type?.includes('document') ||
-                                  attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
-                
-                console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
-                
-                return (
-                  <AttachmentItem key={index}>
-                    {isImage ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img 
-                          src={attachment.url} 
-                          alt={attachment.filename || 'Preview'} 
-                          style={{ 
-                            width: '32px', 
-                            height: '32px', 
-                            objectFit: 'cover', 
-                            borderRadius: '4px',
-                            border: '1px solid #e2e8f0'
-                          }}
-                          onError={(e) => {
-                            console.log('Image failed to load:', attachment.url);
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                        />
-                        <File size={16} style={{ display: 'none' }} />
-                        <span>{attachment.filename || 'Image'}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <File size={16} />
-                        <span>{attachment.filename || 'Attachment'}</span>
-                      </>
-                    )}
-                    <AttachmentActions>
-                      <IconButton 
-                        type="button" 
-                        title="Remove"
-                        onClick={() => handleRemoveAttachment(index)}
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                      {attachment.url && (
-                        <IconButton 
-                          type="button" 
-                          as="a" 
-                          href={attachment.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          title={isImage ? "View Image" : isDocument ? "Open Document" : "Open File"}
-                        >
-                          <ExternalLink size={14} />
-                        </IconButton>
-                      )}
-                    </AttachmentActions>
-                  </AttachmentItem>
-                );
-              })}
-              
-              <AttachmentUpload>
-                <input 
-                  type="file" 
-                  id="file-upload" 
-                  onChange={handleAttachmentChange} 
-                  style={{ display: 'none' }}
-                />
-                <UploadButton 
-                  type="button" 
-                  disabled={isUploading}
-                  onClick={() => document.getElementById('file-upload').click()}
-                >
-                  {isUploading ? <Spinner size={16} /> : <Plus size={16} />}
-                  <span>{isUploading ? 'Uploading...' : 'Add Attachment'}</span>
-                </UploadButton>
-              </AttachmentUpload>
-            </AttachmentList>
-          </FormGroup>
+          <AdvancedToggle 
+            type="button" 
+            onClick={(e) => {
+              e.preventDefault(); // Prevent form submission
+              setShowAdvanced(!showAdvanced);
+            }}
+          >
+            <span>{t('tasks.advancedOptions')}</span>
+            {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </AdvancedToggle>
+          
+          {showAdvanced && (
+            <>
+              <FormGroup>
+                <Label>{t('tasks.attachments')}</Label>
+                <AttachmentList>
+                  {formData.attachments.map((attachment, index) => {
+                    console.log('Attachment data:', attachment); // Debug log
+                    
+                    const isImage = attachment.contentType?.startsWith('image/') || 
+                                   attachment.type?.startsWith('image/') || 
+                                   attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+                    const isDocument = attachment.contentType?.includes('pdf') || 
+                                      attachment.contentType?.includes('document') ||
+                                      attachment.type?.includes('pdf') || 
+                                      attachment.type?.includes('document') ||
+                                      attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
+                    
+                    console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
+                    
+                    return (
+                      <AttachmentItem key={index}>
+                        {isImage ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.filename || 'Preview'} 
+                              style={{ 
+                                width: '32px', 
+                                height: '32px', 
+                                objectFit: 'cover', 
+                                borderRadius: '4px',
+                                border: '1px solid #e2e8f0'
+                              }}
+                              onError={(e) => {
+                                console.log('Image failed to load:', attachment.url);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <File size={16} style={{ display: 'none' }} />
+                            <span>{attachment.filename || 'Image'}</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <File size={16} />
+                            <span>{attachment.filename || 'Attachment'}</span>
+                          </div>
+                        )}
+                        <AttachmentActions>
+                          <IconButton 
+                            type="button" 
+                            title={t('common.remove')}
+                            onClick={() => handleRemoveAttachment(index)}
+                          >
+                            <Trash2 size={14} />
+                          </IconButton>
+                          {attachment.url && (
+                            <IconButton 
+                              type="button" 
+                              as="a" 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              title={isImage ? t('common.viewImage') : isDocument ? t('common.openDocument') : t('common.openFile')}
+                            >
+                              <ExternalLink size={14} />
+                            </IconButton>
+                          )}
+                        </AttachmentActions>
+                      </AttachmentItem>
+                    );
+                  })}
+                  
+                  <AttachmentUpload>
+                    <input 
+                      type="file" 
+                      id="file-upload" 
+                      onChange={handleAttachmentChange} 
+                      style={{ display: 'none' }}
+                    />
+                    <UploadButton 
+                      type="button" 
+                      disabled={isUploading}
+                      onClick={() => document.getElementById('file-upload').click()}
+                    >
+                      {isUploading ? <Spinner size={16} /> : <Plus size={16} />}
+                      <span>{isUploading ? t('common.uploading') : t('tasks.addAttachment')}</span>
+                    </UploadButton>
+                  </AttachmentUpload>
+                </AttachmentList>
+              </FormGroup>
+            </>
+          )}
         </>
       )}
-      
       
       <PreInspectionQuestions 
         questions={formData.preInspectionQuestions} 
@@ -1954,7 +2069,7 @@ const TaskForm = ({
       
       <ButtonGroup>
         <Button type="button" variant="secondary" onClick={handleCancel}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="submit" disabled={isSubmitting || isUploading}>
           {isSubmitting ? <Spinner size={16} /> : null}

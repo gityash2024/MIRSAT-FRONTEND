@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronDown, Layers, Plus, Edit, Eye, Trash2, Search, Filter, X, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import InspectionLevelFilters from './InspectionLevelFilters';
 import SubLevelViewModal from './SubLevelViewModal';
 import SubLevelEditModal from './SubLevelEditModal';
@@ -451,6 +452,7 @@ const InspectionLevelTree = ({
   onFilterChange,
   fetchData
 }) => {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -509,7 +511,7 @@ const InspectionLevelTree = ({
         }
         
         await inspectionService.deleteSubLevel(inspectionId, subLevelId);
-        toast.success('Sub-level deleted successfully');
+        toast.success(t('inspections.subLevelDeletedSuccessfully'));
       }
       
       setDeleteModalVisible(false);
@@ -523,7 +525,7 @@ const InspectionLevelTree = ({
       
     } catch (error) {
       console.error('Error deleting node:', error);
-      const errorMsg = error.message || 'Failed to delete';
+      const errorMsg = error.message || t('inspections.failedToDelete');
       setError(errorMsg);
       toast.error(errorMsg);
       setDeleteModalVisible(false);
@@ -632,7 +634,7 @@ const InspectionLevelTree = ({
         <ModalOverlay>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Delete Template</ModalTitle>
+              <ModalTitle>{t('inspections.deleteTemplate')}</ModalTitle>
               <ModalCloseButton 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
@@ -640,14 +642,14 @@ const InspectionLevelTree = ({
                 <X size={20} />
               </ModalCloseButton>
             </ModalHeader>
-            <p>Are you sure you want to delete <strong>{nodeToDelete.name}</strong>?</p>
-            <p>This action cannot be undone.</p>
+            <p>{t('inspections.confirmDeleteTemplate', { name: nodeToDelete.name })}</p>
+            <p>{t('inspections.actionCannotBeUndone')}</p>
             <ModalActions>
               <Button 
                 onClick={() => setDeleteModalVisible(false)}
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 variant="primary" 
@@ -655,7 +657,7 @@ const InspectionLevelTree = ({
                 disabled={loading}
                 style={{ background: '#dc2626' }}
               >
-                {loading ? 'Deleting...' : 'Delete'}
+                {loading ? t('inspections.deleting') : t('common.delete')}
               </Button>
             </ModalActions>
           </ModalContent>
@@ -681,7 +683,7 @@ const InspectionLevelTree = ({
               handleUpdateSubLevel(updatedSubLevel);
             } catch (err) {
               console.error('Error in modal save handler:', err);
-              setError(err.message || 'Failed to update sub-level');
+              setError(err.message || t('inspections.failedToUpdateSubLevel'));
             }
           }}
           loading={loading}
@@ -691,9 +693,9 @@ const InspectionLevelTree = ({
       <Header>
         <PageTitle>
           <Layers size={24} />
-          Template Hierarchy
+          {t('inspections.templateHierarchy')}
         </PageTitle>
-        <SubTitle>View and manage the complete template structure</SubTitle>
+        <SubTitle>{t('inspections.viewAndManageTemplateStructure')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -701,7 +703,7 @@ const InspectionLevelTree = ({
           <Search className="search-icon" size={20} />
           <input
             type="text"
-            placeholder="Search Templates..."
+            placeholder={t('inspections.searchTemplates')}
             value={searchTerm}
             onChange={handleSearch}
             disabled={loading}
@@ -715,7 +717,7 @@ const InspectionLevelTree = ({
             disabled={loading}
           >
             <Filter size={18} />
-            Filters
+            {t('common.filter')}
           </Button>
           <Button 
             variant="primary" 
@@ -724,7 +726,7 @@ const InspectionLevelTree = ({
             disabled={loading}
           >
             <Plus size={18} />
-            Add Template
+            {t('inspections.addTemplate')}
           </Button>
         </ButtonGroup>
       </ActionBar>
@@ -741,7 +743,7 @@ const InspectionLevelTree = ({
           alignItems: 'center'
         }}>
           <div>
-            <strong>Error:</strong> {error}
+            <strong>{t('common.error')}:</strong> {error}
           </div>
           <button 
             onClick={() => setError(null)} 
@@ -771,16 +773,16 @@ const InspectionLevelTree = ({
           <LevelListSkeleton />
         ) : treeData.length === 0 ? (
           <EmptyState>
-            <h3>No Template Found</h3>
-            <p>Create your first template to get started</p>
+            <h3>{t('inspections.noTemplateFound')}</h3>
+            <p>{t('inspections.createFirstTemplate')}</p>
             <Button 
               variant="primary" 
               as={Link} 
               to="/inspection/create"
             >
               <Plus size={18} />
-            Add Template
-              </Button>
+              {t('inspections.addTemplate')}
+            </Button>
           </EmptyState>
         ) : (
           treeData.map((node, index) => (

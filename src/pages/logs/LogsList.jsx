@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
+import { useLanguage } from '../../context/LanguageContext';
 import { 
   Search, 
   Filter, 
@@ -325,7 +327,7 @@ const TableContent = styled.div`
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 140px 100px 120px 100px 120px 100px 80px;
+  grid-template-columns: 60px 1fr 140px 100px 120px 1fr 120px 80px;
   gap: 12px;
   padding: 12px 20px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -335,17 +337,19 @@ const TableHeader = styled.div`
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-align: ${props => props.$isRTL ? 'right' : 'left'};
   
   & > div {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: ${props => props.$isRTL ? 'flex-end' : 'flex-start'};
+    padding: 0 4px;
   }
 `;
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 140px 100px 120px 100px 120px 100px 80px;
+  grid-template-columns: 60px 1fr 140px 100px 120px 1fr 120px 80px;
   gap: 12px;
   padding: 12px 20px;
   border-bottom: 1px solid #f1f5f9;
@@ -376,6 +380,13 @@ const TableRow = styled.div`
   
   &:hover::before {
     background: linear-gradient(135deg, var(--color-teal) 0%, #764ba2 100%);
+  }
+  
+  & > div {
+    display: flex;
+    align-items: center;
+    justify-content: ${props => props.$isRTL ? 'flex-end' : 'flex-start'};
+    padding: 0 4px;
   }
 `;
 
@@ -516,7 +527,7 @@ const DescriptionText = styled.div`
   color: var(--color-gray-medium);
   font-size: 12px;
   line-height: 1.4;
-  max-width: 100px;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -656,6 +667,8 @@ const PageButton = styled.button`
 
 const LogsList = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -960,7 +973,7 @@ const LogsList = () => {
     }
   };
 
-  const truncateText = (text, maxLength = 50) => {
+  const truncateText = (text, maxLength = 80) => {
     if (!text) return 'No description';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
@@ -1007,16 +1020,16 @@ const LogsList = () => {
     return (
       <LogsContainer>
         <Header>
-          <Title>Activity Logs</Title>
-          <Subtitle>Monitor and track all user activities across the platform</Subtitle>
+          <Title>{t('logs.activityLogs')}</Title>
+          <Subtitle>{t('logs.monitorAndTrackActivities')}</Subtitle>
         </Header>
         <EmptyState>
           <AlertCircle size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-          <div>Error loading logs</div>
+          <div>{t('logs.errorLoadingLogs')}</div>
           <div style={{ fontSize: '14px', marginTop: '4px' }}>{error}</div>
           <RefreshButton onClick={handleRefresh} style={{ marginTop: '16px' }}>
             <RefreshCw size={16} />
-            Try Again
+            {t('common.retry')}
           </RefreshButton>
         </EmptyState>
       </LogsContainer>
@@ -1028,7 +1041,7 @@ const LogsList = () => {
       <LogsContainer>
         <LoadingSpinner>
           <RefreshCw size={24} />
-          <span style={{ marginLeft: '8px' }}>Loading logs...</span>
+          <span style={{ marginLeft: '8px' }}>{t('logs.loadingLogs')}</span>
         </LoadingSpinner>
       </LogsContainer>
     );
@@ -1037,8 +1050,8 @@ const LogsList = () => {
   return (
     <LogsContainer>
       <Header>
-        <Title>Activity Logs</Title>
-        <Subtitle>Monitor and track all user activities across the platform</Subtitle>
+        <Title>{t('logs.activityLogs')}</Title>
+        <Subtitle>{t('logs.monitorAndTrackActivities')}</Subtitle>
       </Header>
 
       <StatsGrid>
@@ -1047,7 +1060,7 @@ const LogsList = () => {
             <Activity size={24} />
           </StatIcon>
           <StatValue>{stats.total}</StatValue>
-          <StatLabel>Total Logs</StatLabel>
+          <StatLabel>{t('logs.totalLogs')}</StatLabel>
         </StatCard>
         
         <StatCard color="linear-gradient(135deg, #10b981 0%, #059669 100%)">
@@ -1055,7 +1068,7 @@ const LogsList = () => {
             <Calendar size={24} />
           </StatIcon>
           <StatValue>{stats.today}</StatValue>
-          <StatLabel>Today's Activities</StatLabel>
+          <StatLabel>{t('logs.todaysActivities')}</StatLabel>
         </StatCard>
         
         <StatCard color="linear-gradient(135deg, #f59e0b 0%, var(--color-warning) 100%)">
@@ -1063,7 +1076,7 @@ const LogsList = () => {
             <AlertCircle size={24} />
           </StatIcon>
           <StatValue>{stats.critical}</StatValue>
-          <StatLabel>Critical Events</StatLabel>
+          <StatLabel>{t('logs.criticalEvents')}</StatLabel>
         </StatCard>
         
         <StatCard color="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)">
@@ -1071,7 +1084,7 @@ const LogsList = () => {
             <Users size={24} />
           </StatIcon>
           <StatValue>{stats.users}</StatValue>
-          <StatLabel>Active Users</StatLabel>
+          <StatLabel>{t('logs.activeUsers')}</StatLabel>
         </StatCard>
       </StatsGrid>
 
@@ -1083,7 +1096,7 @@ const LogsList = () => {
             </SearchIcon>
             <SearchInput
               type="text"
-              placeholder="Search logs..."
+              placeholder={t('logs.searchLogs')}
               value={searchTerm}
               onChange={handleSearch}
             />
@@ -1094,24 +1107,24 @@ const LogsList = () => {
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={16} />
-            Filters
+            {t('logs.filters')}
           </FilterButton>
           
           <RefreshButton onClick={handleRefresh} loading={refreshing} disabled={refreshing}>
             <RefreshCw size={16} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            {refreshing ? t('logs.refreshing') : t('logs.refresh')}
           </RefreshButton>
         </ControlsRow>
 
         <FiltersPanel isOpen={showFilters}>
           <FiltersGrid>
             <FilterGroup>
-              <FilterLabel>User</FilterLabel>
+              <FilterLabel>{t('common.user')}</FilterLabel>
               <FilterSelect
                 value={filters.user}
                 onChange={(e) => handleFilterChange('user', e.target.value)}
               >
-                <option value="">All Users</option>
+                <option value="">{t('logs.allUsers')}</option>
                 {users.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.name} ({user.role})
@@ -1121,77 +1134,77 @@ const LogsList = () => {
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>Action</FilterLabel>
+              <FilterLabel>{t('logs.action')}</FilterLabel>
               <FilterSelect
                 value={filters.action}
                 onChange={(e) => handleFilterChange('action', e.target.value)}
               >
-                <option value="">All Actions</option>
-                <option value="task_started">Task Started</option>
-                <option value="task_completed">Task Completed</option>
-                <option value="task_progress_updated">Progress Updated</option>
-                <option value="task_archived">Task Archived</option>
-                <option value="questionnaire_started">Questionnaire Started</option>
-                <option value="questionnaire_completed">Questionnaire Completed</option>
-                <option value="questionnaire_response_updated">Questionnaire Response Updated</option>
-                <option value="task_comment_added">Comment Added</option>
-                <option value="section_comment_added">Section Comment Added</option>
-                <option value="task_attachment_added">Attachment Added</option>
-                <option value="task_signature_added">Signature Added</option>
+                <option value="">{t('logs.allActions')}</option>
+                <option value="task_started">{t('logs.taskStarted')}</option>
+                <option value="task_completed">{t('logs.taskCompleted')}</option>
+                <option value="task_progress_updated">{t('logs.progressUpdated')}</option>
+                <option value="task_archived">{t('logs.taskArchived')}</option>
+                <option value="questionnaire_started">{t('logs.questionnaireStarted')}</option>
+                <option value="questionnaire_completed">{t('logs.questionnaireCompleted')}</option>
+                <option value="questionnaire_response_updated">{t('logs.questionnaireResponseUpdated')}</option>
+                <option value="task_comment_added">{t('logs.commentAdded')}</option>
+                <option value="section_comment_added">{t('logs.sectionCommentAdded')}</option>
+                <option value="task_attachment_added">{t('logs.attachmentAdded')}</option>
+                <option value="task_signature_added">{t('logs.signatureAdded')}</option>
               </FilterSelect>
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>Severity</FilterLabel>
+              <FilterLabel>{t('logs.severity')}</FilterLabel>
               <FilterSelect
                 value={filters.severity}
                 onChange={(e) => handleFilterChange('severity', e.target.value)}
               >
-                <option value="">All Severities</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
+                <option value="">{t('logs.allSeverities')}</option>
+                <option value="low">{t('logs.low')}</option>
+                <option value="medium">{t('logs.medium')}</option>
+                <option value="high">{t('logs.high')}</option>
+                <option value="critical">{t('logs.critical')}</option>
               </FilterSelect>
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>Start Date</FilterLabel>
+              <FilterLabel>{t('logs.startDate')}</FilterLabel>
               <FilterSelect
                 value={filters.startDate}
                 onChange={(e) => handleFilterChange('startDate', e.target.value)}
               >
-                <option value="">All Time</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="week">This Week</option>
-                <option value="lastweek">Last Week</option>
-                <option value="month">This Month</option>
-                <option value="lastmonth">Last Month</option>
-                <option value="custom">Custom Date</option>
+                <option value="">{t('logs.allTime')}</option>
+                <option value="today">{t('common.today')}</option>
+                <option value="yesterday">{t('common.yesterday')}</option>
+                <option value="week">{t('logs.thisWeek')}</option>
+                <option value="lastweek">{t('logs.lastWeek')}</option>
+                <option value="month">{t('logs.thisMonth')}</option>
+                <option value="lastmonth">{t('logs.lastMonth')}</option>
+                <option value="custom">{t('logs.customDate')}</option>
               </FilterSelect>
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>End Date</FilterLabel>
+              <FilterLabel>{t('logs.endDate')}</FilterLabel>
               <FilterSelect
                 value={filters.endDate}
                 onChange={(e) => handleFilterChange('endDate', e.target.value)}
               >
-                <option value="">No End Date</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="week">This Week</option>
-                <option value="lastweek">Last Week</option>
-                <option value="month">This Month</option>
-                <option value="lastmonth">Last Month</option>
-                <option value="custom">Custom Date</option>
+                <option value="">{t('logs.noEndDate')}</option>
+                <option value="today">{t('common.today')}</option>
+                <option value="yesterday">{t('common.yesterday')}</option>
+                <option value="week">{t('logs.thisWeek')}</option>
+                <option value="lastweek">{t('logs.lastWeek')}</option>
+                <option value="month">{t('logs.thisMonth')}</option>
+                <option value="lastmonth">{t('logs.lastMonth')}</option>
+                <option value="custom">{t('logs.customDate')}</option>
               </FilterSelect>
             </FilterGroup>
 
             {filters.startDate === 'custom' && (
               <FilterGroup>
-                <FilterLabel>Custom Start Date</FilterLabel>
+                <FilterLabel>{t('logs.customStartDate')}</FilterLabel>
                 <input
                   type="date"
                   value={filters.customStartDate || ''}
@@ -1210,7 +1223,7 @@ const LogsList = () => {
 
             {filters.endDate === 'custom' && (
               <FilterGroup>
-                <FilterLabel>Custom End Date</FilterLabel>
+                <FilterLabel>{t('logs.customEndDate')}</FilterLabel>
                 <input
                   type="date"
                   value={filters.customEndDate || ''}
@@ -1229,36 +1242,36 @@ const LogsList = () => {
           </FiltersGrid>
           
           <FilterActions>
-            <ClearButton onClick={clearFilters}>Clear All Filters</ClearButton>
+            <ClearButton onClick={clearFilters}>{t('common.clearAllFilters')}</ClearButton>
           </FilterActions>
         </FiltersPanel>
       </ControlsSection>
 
       <TableWrapper>
         <LogsTable>
-          <TableHeader>
-            <div>Sr No</div>
-            <div>User</div>
-            <div>Action</div>
-            <div>Severity</div>
-            <div>Task</div>
-            <div>Description</div>
-            <div>Time</div>
-            <div>Actions</div>
+          <TableHeader $isRTL={isRTL}>
+            <div>{t('logs.srNo')}</div>
+            <div>{t('common.user')}</div>
+            <div>{t('logs.action')}</div>
+            <div>{t('logs.severity')}</div>
+            <div>{t('common.task')}</div>
+            <div>{t('common.description')}</div>
+            <div>{t('common.time')}</div>
+            <div>{t('common.actions')}</div>
           </TableHeader>
 
           <TableContent>
             {logs.length === 0 ? (
               <EmptyState>
                 <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <div>No logs found</div>
+                <div>{t('logs.noLogsFound')}</div>
                 <div style={{ fontSize: '14px', marginTop: '4px' }}>
-                  Try adjusting your search or filter criteria
+                  {t('logs.tryAdjustingSearch')}
                 </div>
               </EmptyState>
             ) : (
               logs.map((log, index) => (
-                <TableRow key={log._id} onClick={() => handleViewLog(log)}>
+                <TableRow key={log._id} $isRTL={isRTL} onClick={() => handleViewLog(log)}>
                   <SerialNumber>
                     {((pagination.page - 1) * pagination.limit) + index + 1}
                   </SerialNumber>
@@ -1291,7 +1304,7 @@ const LogsList = () => {
                     )}
                   </TaskInfo>
                   <DescriptionText title={log.description}>
-                    {truncateText(log.description, 60)}
+                    {truncateText(log.description)}
                   </DescriptionText>
                   <TimeInfo>
                     <Clock size={14} />
@@ -1315,7 +1328,7 @@ const LogsList = () => {
       {pagination.totalPages > 1 && (
         <Pagination>
           <PaginationInfo>
-            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} logs
+            {t('common.showing')} {((pagination.page - 1) * pagination.limit) + 1} {t('common.to')} {Math.min(pagination.page * pagination.limit, pagination.total)} {t('common.of')} {pagination.total} {t('logs.title').toLowerCase()}
           </PaginationInfo>
           
           <PaginationControls>
@@ -1323,7 +1336,7 @@ const LogsList = () => {
               disabled={pagination.page === 1}
               onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
             >
-              Previous
+              {t('common.previous')}
             </PageButton>
             
             {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -1346,7 +1359,7 @@ const LogsList = () => {
               disabled={pagination.page === pagination.totalPages}
               onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
             >
-              Next
+              {t('common.next')}
             </PageButton>
           </PaginationControls>
         </Pagination>

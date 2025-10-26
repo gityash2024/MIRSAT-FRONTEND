@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const AssigneeWrapper = styled.div`
   display: flex;
@@ -72,6 +73,7 @@ const TaskAssignee = ({
   maxDisplay = 3,
   size = 'medium'
 }) => {
+  const { t } = useTranslation();
   const displayAssignees = assignees.slice(0, maxDisplay);
   const remainingCount = assignees.length - maxDisplay;
 
@@ -103,7 +105,7 @@ const TaskAssignee = ({
 
       {assignees.length === 0 && (
         <AssigneeName style={{ color: '#64748b' }}>
-          Unassigned
+          {t('common.unassigned')}
         </AssigneeName>
       )}
     </AssigneeWrapper>

@@ -11,6 +11,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
@@ -133,7 +134,20 @@ const CustomTooltip = ({ active, payload, label }) => {
 const timeRanges = ['1W', '1M', '3M', '6M', '1Y', 'ALL'];
 
 const TaskCompletionChart = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [selectedRange, setSelectedRange] = useState('3M');
+
+  const getTimeRangeLabel = (range) => {
+    switch (range) {
+      case 'ALL': return t('common.all');
+      case '1Y': return t('common.oneYear');
+      case '6M': return t('common.sixMonths');
+      case '3M': return t('common.threeMonths');
+      case '1M': return t('common.oneMonth');
+      case '1W': return t('common.oneWeek');
+      default: return range;
+    }
+  };
   const [chartData, setChartData] = useState({
     data: [],
     summary: {
@@ -197,8 +211,8 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
     >
       <ChartHeader>
         <HeaderLeft>
-          <Title>Task Completion Trends</Title>
-          <Subtitle>Analysis of task completion rates over time</Subtitle>
+          <Title>{t('common.taskCompletionTrends')}</Title>
+          <Subtitle>{t('common.analysisOfTaskCompletion')}</Subtitle>
         </HeaderLeft>
         <ToggleGroup>
           {timeRanges.map(range => (
@@ -207,7 +221,7 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
               active={selectedRange === range}
               onClick={() => setSelectedRange(range)}
             >
-              {range}
+              {getTimeRangeLabel(range)}
             </ToggleButton>
           ))}
         </ToggleGroup>
@@ -215,19 +229,19 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
 
       <MetricsContainer>
         <MetricCard>
-          <MetricLabel>Total Tasks</MetricLabel>
+          <MetricLabel>{t('common.totalTasks')}</MetricLabel>
           <MetricValue>{chartData.summary.totalTasks.toLocaleString()}</MetricValue>
         </MetricCard>
         <MetricCard>
-          <MetricLabel>Avg. Completion Rate</MetricLabel>
+          <MetricLabel>{t('common.avgCompletionRate')}</MetricLabel>
           <MetricValue>{chartData.summary.avgCompletion}%</MetricValue>
         </MetricCard>
         <MetricCard>
-          <MetricLabel>Pending Tasks</MetricLabel>
+          <MetricLabel>{t('common.pendingTasks')}</MetricLabel>
           <MetricValue>{chartData.summary.totalPending.toLocaleString()}</MetricValue>
         </MetricCard>
         <MetricCard>
-          <MetricLabel>Avg. Compliance</MetricLabel>
+          <MetricLabel>{t('common.avgCompliance')}</MetricLabel>
           <MetricValue>{chartData.summary.avgCompliance}%</MetricValue>
         </MetricCard>
       </MetricsContainer>
@@ -273,7 +287,7 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
             <Area
               type="monotone"
               dataKey="total"
-              name="Total Tasks"
+              name={t('common.totalTasks')}
               stroke="var(--color-navy)"
               strokeWidth={2}
               fillOpacity={1}
@@ -282,7 +296,7 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
             <Area
               type="monotone"
               dataKey="completed"
-              name="Completed"
+              name={t('common.completed')}
               stroke="#4caf50"
               strokeWidth={2}
               fillOpacity={1}
@@ -291,7 +305,7 @@ const TaskCompletionChart = ({ dateRange, filters }) => {
             <Area
               type="monotone"
               dataKey="pending"
-              name="Pending"
+              name={t('common.pending')}
               stroke="#ff9800"
               strokeWidth={2}
               fillOpacity={1}

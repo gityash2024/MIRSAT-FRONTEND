@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { Clock, Calendar, AlertTriangle, Activity, CheckCircle, XCircle, Database, MapPin, User, Briefcase } from 'lucide-react';
 
 const Container = styled.div`
@@ -191,7 +192,8 @@ const formatDate = (dateString) => {
 };
 
 const PreInspectionStepForm = ({ task }) => {
-  if (!task) return <div>Loading task details...</div>;
+  const { t } = useTranslation();
+  if (!task) return <div>{t('common.loading')}...</div>;
   
   // Get asset information, handling both ID and populated object
   const getAssetInfo = () => {
@@ -223,7 +225,7 @@ const PreInspectionStepForm = ({ task }) => {
 
   return (
     <Container>
-      <Title>Task Details</Title>
+      <Title>{t('tasks.taskDetails')}</Title>
       <Description>{task.description}</Description>
       
       <MetaGrid>
@@ -259,21 +261,21 @@ const PreInspectionStepForm = ({ task }) => {
         {task.inspectionLevel && (
           <MetaItem>
             <CheckCircle size={16} />
-            <span>Template: <strong>{task.inspectionLevel.name || 'N/A'}</strong></span>
+            <span>{t('tasks.template')}: <strong>{task.inspectionLevel.name || t('common.na')}</strong></span>
           </MetaItem>
         )}
         
         {task.location && (
           <MetaItem>
             <MapPin size={16} />
-            <span>Location: <strong>{task.location}</strong></span>
+            <span>{t('tasks.location')}: <strong>{task.location}</strong></span>
           </MetaItem>
         )}
         
         {task.assignedTo && task.assignedTo.length > 0 && (
           <MetaItem>
             <User size={16} />
-            <span>Assigned To: <strong>
+            <span>{t('tasks.assignedTo')}: <strong>
               {task.assignedTo.map(user => user.name || 'Unknown User').join(', ')}
             </strong></span>
           </MetaItem>
@@ -282,7 +284,7 @@ const PreInspectionStepForm = ({ task }) => {
         {task.createdBy && (
           <MetaItem>
             <Briefcase size={16} />
-            <span>Created By: <strong>{typeof task.createdBy === 'object' ? task.createdBy.name : 'N/A'}</strong></span>
+            <span>{t('tasks.createdBy')}: <strong>{typeof task.createdBy === 'object' ? task.createdBy.name : t('common.na')}</strong></span>
           </MetaItem>
         )}
       </MetaGrid>
@@ -293,24 +295,24 @@ const PreInspectionStepForm = ({ task }) => {
             <Database size={18} />
             Asset Information
           </AssetTitle>
-          <AssetDetail><strong>Asset ID:</strong> {asset.id || 'N/A'}</AssetDetail>
-          <AssetDetail><strong>Asset Name:</strong> {asset.displayName || 'N/A'}</AssetDetail>
-          <AssetDetail><strong>Asset Type:</strong> {asset.type || 'N/A'}</AssetDetail>
+          <AssetDetail><strong>{t('assets.assetId')}:</strong> {asset.id || t('common.na')}</AssetDetail>
+          <AssetDetail><strong>{t('assets.assetName')}:</strong> {asset.displayName || t('common.na')}</AssetDetail>
+          <AssetDetail><strong>{t('assets.assetType')}:</strong> {asset.type || t('common.na')}</AssetDetail>
           
           {asset.uniqueId && (
-            <AssetDetail><strong>Unique ID:</strong> {asset.uniqueId}</AssetDetail>
+            <AssetDetail><strong>{t('assets.uniqueId')}:</strong> {asset.uniqueId}</AssetDetail>
           )}
           
           {asset.serialNumber && (
-            <AssetDetail><strong>Serial Number:</strong> {asset.serialNumber}</AssetDetail>
+            <AssetDetail><strong>{t('assets.serialNumber')}:</strong> {asset.serialNumber}</AssetDetail>
           )}
           
           {asset.location && (
-            <AssetDetail><strong>Location:</strong> {asset.location}</AssetDetail>
+            <AssetDetail><strong>{t('assets.location')}:</strong> {asset.location}</AssetDetail>
           )}
           
           {asset.manufacturer && (
-            <AssetDetail><strong>Manufacturer:</strong> {asset.manufacturer}</AssetDetail>
+            <AssetDetail><strong>{t('assets.manufacturer')}:</strong> {asset.manufacturer}</AssetDetail>
           )}
         </AssetInfo>
       )}

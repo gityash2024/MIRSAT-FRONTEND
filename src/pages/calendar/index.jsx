@@ -1,6 +1,7 @@
 // src/pages/calendar/index.jsx
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { usePermissions } from '../../hooks/usePermissions';
 import CalendarView from './CalendarView';
 import { PERMISSIONS } from '../../utils/permissions';
@@ -8,6 +9,7 @@ import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
 
 const Calendar = () => {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const dispatch = useDispatch();
 
@@ -23,7 +25,7 @@ const Calendar = () => {
         <CalendarView />
       ) : (
         <div style={{ padding: "24px", color: "#666" }}>
-          You don't have permission to view the calendar.
+          {t('calendar.noPermissionToView')}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import {
   Search, Filter, PlayCircle, Clock, CheckCircle, XCircle, 
   Activity, Calendar, AlertTriangle, Loader, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { 
   fetchUserTasks, 
   startUserTask,
@@ -794,6 +795,7 @@ const UserTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -1061,7 +1063,7 @@ const UserTasks = () => {
           <div style={{ textAlign: 'center' }}>
             <Loader size={40} color="var(--color-navy)" />
             <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
-              Task loading...
+              {t('tasks.loadingTasks')}
             </p>
           </div>
         </LoadingContainer>
@@ -1076,7 +1078,7 @@ const UserTasks = () => {
           <ErrorContainer>
             <AlertTriangle size={40} color="#d32f2f" />
             <div>
-              <h3>Error Loading Tasks</h3>
+              <h3>{t('tasks.errorLoadingTasks')}</h3>
               <p>{error}</p>
             </div>
           </ErrorContainer>
@@ -1092,8 +1094,8 @@ const UserTasks = () => {
       <GlassMorphismBlur style={{ bottom: '20%', right: '20%', left: 'auto' }} />
       
             <PageHeader ref={headerRef}>
-        <Title>My Tasks</Title>
-        <Description>View and manage all your assigned tasks</Description>
+        <Title>{t('tasks.myTasks')}</Title>
+        <Description>{t('tasks.viewAndManageTasks')}</Description>
       </PageHeader>
       
       <FilterBar ref={filterBarRef}>
@@ -1102,7 +1104,7 @@ const UserTasks = () => {
           <form onSubmit={handleSearchSubmit} style={{ width: '100%' }}>
             <input 
               type="text" 
-              placeholder="Search tasks..." 
+              placeholder={t('tasks.searchPlaceholder')} 
               value={search}
               onChange={handleSearchChange}
               onKeyPress={handleKeyPress}
@@ -1121,7 +1123,7 @@ const UserTasks = () => {
             }}
           >
             <Filter size={16} />
-            All
+            {t('common.all')}
           </FilterButton>
           <FilterButton 
             onClick={(e) => handleFilterClick('pending', e)}
@@ -1132,7 +1134,7 @@ const UserTasks = () => {
             }}
           >
             <Clock size={16} />
-            Pending
+            {t('tasks.pending')}
           </FilterButton>
           <FilterButton 
             onClick={(e) => handleFilterClick('in_progress', e)}
@@ -1143,7 +1145,7 @@ const UserTasks = () => {
             }}
           >
             <Activity size={16} />
-            In Progress
+            {t('tasks.inProgress')}
           </FilterButton>
           <FilterButton 
             onClick={(e) => handleFilterClick('archived', e)}
@@ -1154,7 +1156,7 @@ const UserTasks = () => {
             }}
           >
             <CheckCircle size={16} />
-            Completed
+            {t('tasks.completed')}
           </FilterButton>
         </ButtonGroup>
       </FilterBar>
@@ -1167,7 +1169,12 @@ const UserTasks = () => {
                 <TaskTitle>{task.title}</TaskTitle>
                 <StatusBadge status={task.status}>
                   <StatusIcon status={task.status} size={14} />
-                  {task.status === 'archived' ? 'Completed' : task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
+                  {task.status === 'archived' ? t('tasks.completed') : 
+                   task.status === 'in_progress' ? t('tasks.inProgress') :
+                   task.status === 'pending' ? t('tasks.pending') :
+                   task.status === 'completed' ? t('tasks.completed') :
+                   task.status === 'overdue' ? t('dashboard.overdue') :
+                   task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
                 </StatusBadge>
               </TaskHeader>
               
@@ -1179,27 +1186,30 @@ const UserTasks = () => {
                   <span style={{ 
                     color: isPastDue(task.deadline) && task.status !== 'completed' ? '#d32f2f' : '#666' 
                   }}>
-                    Due: {formatDate(task.deadline)}
-                    {isPastDue(task.deadline) && task.status !== 'completed' && ' (Overdue)'}
+                    {t('tasks.due')}: {formatDate(task.deadline)}
+                    {isPastDue(task.deadline) && task.status !== 'completed' && ` (${t('tasks.overdue')})`}
                   </span>
                 </TaskDetailRow>
                 
                 <TaskDetailRow>
                   <AlertTriangle size={16} />
-                  Priority: 
+                  {t('tasks.priority')}: 
                   <PriorityBadge priority={task.priority}>
-                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                    {task.priority === 'high' ? t('tasks.high') :
+                     task.priority === 'medium' ? t('tasks.medium') :
+                     task.priority === 'low' ? t('tasks.low') :
+                     task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                   </PriorityBadge>
                 </TaskDetailRow>
 
                 <TaskDetailRow>
                   <Activity size={16} />
-                  Template: {task.inspectionLevel?.name || 'N/A'}
+                  {t('tasks.template')}: {task.inspectionLevel?.name || t('common.notApplicable')}
                 </TaskDetailRow>
 
                 <TaskProgress progress={task.overallProgress || 0}>
                   <div className="progress-header">
-                    <span className="progress-label">Progress</span>
+                    <span className="progress-label">{t('tasks.progress')}</span>
                     <span className="progress-percentage">{task.overallProgress || 0}%</span>
                   </div>
                   <div className="progress-bar">
@@ -1213,7 +1223,7 @@ const UserTasks = () => {
                 <TaskButton 
                   onClick={() => viewTaskDetails(task.id)}
                 >
-                  View Details
+                  {t('common.viewDetails')}
                 </TaskButton>
                 
                 {task.status === 'pending' && (
@@ -1227,7 +1237,7 @@ const UserTasks = () => {
                     ) : (
                       <>
                         <PlayCircle size={16} />
-                        Start Task
+                        {t('tasks.startTask')}
                       </>
                     )}
                   </TaskButton>
@@ -1239,7 +1249,7 @@ const UserTasks = () => {
                     onClick={() => viewTaskDetails(task.id)}
                   >
                     <PlayCircle size={16} />
-                    Continue
+                    {t('tasks.continue')}
                   </TaskButton>
                 )}
               </TaskActions>
@@ -1248,8 +1258,8 @@ const UserTasks = () => {
         </TasksGrid>
       ) : (
         <EmptyTasks ref={emptyTasksRef}>
-          <h3>No tasks found</h3>
-          <p>No tasks match your current filters. Try adjusting your search criteria.</p>
+          <h3>{t('tasks.noTasksFound')}</h3>
+          <p>{t('tasks.noTasksMatchFilters')}</p>
         </EmptyTasks>
       )}
       

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { X, FileText, Download, Calendar, User, Tag } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Z_INDEX } from '../../utils/zIndex';
+import { useTranslation } from 'react-i18next';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -218,6 +219,7 @@ const DocumentNamingModal = ({
   defaultCriteria = []
 }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const [namingCriteria, setNamingCriteria] = useState({
     documentType: true,
@@ -320,7 +322,7 @@ const DocumentNamingModal = ({
         <ModalHeader>
           <ModalTitle>
             <FileText size={20} />
-            Export Document Settings
+            {t('common.exportDocumentSettings')}
           </ModalTitle>
           <CloseButton onClick={onClose}>
             <X size={20} />
@@ -330,7 +332,7 @@ const DocumentNamingModal = ({
         <FormSection>
           <SectionTitle>
             <Tag size={16} />
-            Document Naming Criteria
+            {t('common.documentNamingCriteria')}
           </SectionTitle>
           
           <CriteriaGrid>
@@ -340,7 +342,7 @@ const DocumentNamingModal = ({
                 checked={namingCriteria.documentType}
                 onChange={() => handleCriteriaChange('documentType')}
               />
-              Document Type ({documentType})
+              {t('common.documentType')} ({documentType})
             </CriteriaItem>
             
             <CriteriaItem>
@@ -350,7 +352,7 @@ const DocumentNamingModal = ({
                 onChange={() => handleCriteriaChange('currentDate')}
               />
               <Calendar size={14} />
-              Current Date
+              {t('common.currentDate')}
             </CriteriaItem>
             
             <CriteriaItem>
@@ -359,7 +361,7 @@ const DocumentNamingModal = ({
                 checked={namingCriteria.currentTime}
                 onChange={() => handleCriteriaChange('currentTime')}
               />
-              Current Time
+              {t('common.currentTime')}
             </CriteriaItem>
             
             <CriteriaItem>
@@ -369,7 +371,7 @@ const DocumentNamingModal = ({
                 onChange={() => handleCriteriaChange('username')}
               />
               <User size={14} />
-              Username
+              {t('common.username')}
             </CriteriaItem>
             
             <CriteriaItem>
@@ -378,7 +380,7 @@ const DocumentNamingModal = ({
                 checked={namingCriteria.userRole}
                 onChange={() => handleCriteriaChange('userRole')}
               />
-              User Role
+              {t('common.userRole')}
             </CriteriaItem>
             
             <CriteriaItem>
@@ -387,13 +389,13 @@ const DocumentNamingModal = ({
                 checked={namingCriteria.customText}
                 onChange={() => handleCriteriaChange('customText')}
               />
-              Custom Text
+              {t('common.customText')}
             </CriteriaItem>
           </CriteriaGrid>
 
           {namingCriteria.currentDate && (
             <FormGroup>
-              <Label>Date Format</Label>
+              <Label>{t('common.dateFormat')}</Label>
               <Select 
                 value={dateFormat} 
                 onChange={(e) => setDateFormat(e.target.value)}
@@ -407,7 +409,7 @@ const DocumentNamingModal = ({
 
           {namingCriteria.currentTime && (
             <FormGroup>
-              <Label>Time Format</Label>
+              <Label>{t('common.timeFormat')}</Label>
               <Select 
                 value={timeFormat} 
                 onChange={(e) => setTimeFormat(e.target.value)}
@@ -420,12 +422,12 @@ const DocumentNamingModal = ({
 
           {namingCriteria.customText && (
             <FormGroup>
-              <Label>Custom Text</Label>
+              <Label>{t('common.customText')}</Label>
               <Input
                 type="text"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                placeholder="Enter custom text for filename"
+                placeholder={t('common.enterCustomTextForFilename')}
                 maxLength={50}
               />
             </FormGroup>
@@ -434,7 +436,7 @@ const DocumentNamingModal = ({
 
         <PreviewSection>
           <SectionTitle style={{ marginBottom: '8px', fontSize: '14px' }}>
-            Preview Filename:
+            {t('common.previewFilename')}:
           </SectionTitle>
           <PreviewText>
             {generateFileName()}.{exportFormat}
@@ -443,11 +445,11 @@ const DocumentNamingModal = ({
 
         <ButtonGroup>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={handleExport}>
             <Download size={16} />
-            Export {exportFormat.toUpperCase()}
+            {t('common.exportPDF')}
           </Button>
         </ButtonGroup>
       </ModalContent>

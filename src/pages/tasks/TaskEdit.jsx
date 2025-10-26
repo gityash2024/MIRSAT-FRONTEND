@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import TaskForm from './components/TaskForm';
 import { getTaskById } from '../../store/slices/taskSlice';
@@ -63,6 +64,7 @@ const LoadingContainer = styled.div`
 `;
 
 const TaskEdit = () => {
+  const { t } = useTranslation();
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -77,7 +79,7 @@ const TaskEdit = () => {
       console.log('Task ID from URL params:', taskId);
       loadInitialData();
     } else {
-      toast.error('Missing task ID');
+      toast.error(t('tasks.missingTaskId'));
       navigate('/tasks');
     }
   }, [taskId]);
@@ -86,7 +88,7 @@ const TaskEdit = () => {
     // Load all required data
     try {
       if (!taskId || taskId === 'undefined') {
-        throw new Error('Invalid task ID');
+        throw new Error(t('tasks.invalidTaskId'));
       }
       
       await Promise.all([
@@ -97,7 +99,7 @@ const TaskEdit = () => {
       ]);
     } catch (error) {
       console.error('Error loading task data:', error);
-      toast.error('Failed to load task data');
+      toast.error(t('tasks.failedToLoadTaskData'));
       navigate('/tasks');
     }
   };
@@ -226,7 +228,7 @@ const TaskEdit = () => {
   if (loading || !task) {
     return (
       <PageContainer>
-        <div>Loading...</div>
+        <div>{t('common.loading')}</div>
       </PageContainer>
     );
   }
@@ -234,7 +236,7 @@ const TaskEdit = () => {
   if (!formattedData) {
     return (
       <PageContainer>
-        <div>Error loading task data. Please try again.</div>
+        <div>{t('tasks.errorLoadingTaskDataTryAgain')}</div>
       </PageContainer>
     );
   }
@@ -246,15 +248,15 @@ const TaskEdit = () => {
           <ArrowLeft size={18} />
           Back to Task
         </BackButton>
-        <PageTitle>Edit Task</PageTitle>
-        <SubTitle>Update task details and information</SubTitle>
+        <PageTitle>{t('tasks.editTask')}</PageTitle>
+        <SubTitle>{t('tasks.updateTaskDetailsAndInformation')}</SubTitle>
       </Header>
 
       <FormContainer>
         <TaskForm 
           initialData={formattedData}
           onCancel={handleCancel}
-          submitButtonText="Save Changes"
+          submitButtonText={t('common.saveChanges')}
           isEdit={true}
           usersProp={users}
           inspectionLevelsProp={inspectionLevels?.results || []}

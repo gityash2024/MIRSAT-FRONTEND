@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
   Send, Download, Paperclip, BarChart, TrendingUp, Users,
@@ -739,6 +740,7 @@ const TaskViewSkeleton = () => (
 );
 
 const TaskView = () => {
+  const { t } = useTranslation();
   const { taskId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -883,7 +885,7 @@ const TaskView = () => {
 
   const handleAddComment = async () => {
     if (!taskId) {
-      toast.error('Task ID is missing');
+      toast.error(t('tasks.taskIdMissing'));
       return;
     }
     
@@ -898,10 +900,10 @@ const TaskView = () => {
       })).unwrap();
       console.log('Comment added result:', result);
       setComment('');
-      toast.success('Comment added successfully');
+      toast.success(t('tasks.commentAddedSuccessfully'));
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
+      toast.error(t('tasks.failedToAddComment'));
     } finally {
       setIsSubmitting(false);
     }
@@ -909,7 +911,7 @@ const TaskView = () => {
 
   const handleStatusUpdate = async (newStatus) => {
     if (!taskId) {
-      toast.error('Task ID is missing');
+      toast.error(t('tasks.taskIdMissing'));
       return;
     }
     
@@ -920,16 +922,16 @@ const TaskView = () => {
         status: newStatus 
       })).unwrap();
       console.log('Status update result:', result);
-      toast.success('Task status updated successfully');
+      toast.success(t('tasks.taskStatusUpdatedSuccessfully'));
     } catch (error) {
       console.error('Error updating task status:', error);
-      toast.error('Failed to update task status');
+      toast.error(t('tasks.failedToUpdateTaskStatus'));
     }
   };
 
   const handleFileUpload = async (event) => {
     if (!taskId) {
-      toast.error('Task ID is missing');
+      toast.error(t('tasks.taskIdMissing'));
       return;
     }
     
@@ -1029,8 +1031,8 @@ const TaskView = () => {
               Back to Tasks
             </BackButton>
             <HeaderContent>
-              <PageTitle>Error Loading Task</PageTitle>
-              <SubTitle>Unable to load task details</SubTitle>
+              <PageTitle>{t('tasks.errorLoadingTask')}</PageTitle>
+              <SubTitle>{t('tasks.unableToLoadTaskDetails')}</SubTitle>
             </HeaderContent>
           </HeaderTop>
         </Header>
@@ -1040,7 +1042,7 @@ const TaskView = () => {
             <Card>
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <AlertTriangle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
-                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Failed to Load Task</h3>
+                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>{t('tasks.failedToLoadTask')}</h3>
                 <p style={{ color: '#64748b', marginBottom: '24px' }}>
                   {error || 'An error occurred while loading the task details.'}
                 </p>
@@ -1076,8 +1078,8 @@ const TaskView = () => {
               Back to Tasks
             </BackButton>
             <HeaderContent>
-              <PageTitle>Task Not Found</PageTitle>
-              <SubTitle>The requested task could not be found</SubTitle>
+              <PageTitle>{t('tasks.taskNotFound')}</PageTitle>
+              <SubTitle>{t('tasks.requestedTaskCouldNotBeFound')}</SubTitle>
             </HeaderContent>
           </HeaderTop>
         </Header>
@@ -1087,7 +1089,7 @@ const TaskView = () => {
             <Card>
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <HelpCircle size={48} style={{ color: '#94a3b8', marginBottom: '16px' }} />
-                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Task Not Found</h3>
+                <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>{t('tasks.taskNotFound')}</h3>
                 <p style={{ color: '#64748b', marginBottom: '24px' }}>
                   The task you're looking for doesn't exist or has been removed.
                 </p>
@@ -1192,7 +1194,7 @@ const TaskView = () => {
           </BackButton>
           <HeaderContent>
             <PageTitle>{getTaskDataOrDefault(taskData, 'title', 'Untitled Task')}</PageTitle>
-            <SubTitle>Task Details and Progress</SubTitle>
+            <SubTitle>{t('tasks.taskDetailsAndProgress')}</SubTitle>
           </HeaderContent>
           {hasPermission(PERMISSIONS.TASKS.EDIT_TASKS) && (
             <EditButton onClick={() => navigate(`/tasks/${taskId}/edit`)}>
@@ -1278,19 +1280,19 @@ const TaskView = () => {
                 </div>
               </div>
             </div>
-            <Description> <span style={{ fontWeight: '600', color: 'var(--color-navy)' , fontSize: '16px', marginBottom: '8px'}}>Task Description:</span> {getTaskDataOrDefault(taskData, 'description', 'No description provided')}</Description>
+            <Description> <span style={{ fontWeight: '600', color: 'var(--color-navy)' , fontSize: '16px', marginBottom: '8px'}}>{t('tasks.taskDescription')}:</span> {getTaskDataOrDefault(taskData, 'description', t('tasks.noDescriptionProvided'))}</Description>
 
             <MetaGrid>
               <MetaItem>
                 <Calendar size={16} className="icon" />
                 <div>
-                  <strong>Due Date:</strong> {formatDate(taskData.deadline)}
+                  <strong>{t('calendar.dueDate')}:</strong> {formatDate(taskData.deadline)}
                 </div>
               </MetaItem>
               <MetaItem>
                 <AlertTriangle size={16} className="icon" />
                 <div>
-                  <strong>Priority:</strong> 
+                  <strong>{t('common.priority')}:</strong> 
                   <span style={{ 
                     textTransform: 'capitalize',
                     color: taskData.priority === 'high' ? '#ef4444' : 
@@ -1303,34 +1305,34 @@ const TaskView = () => {
               <MetaItem>
                 <CheckCircleIcon size={16} className="icon" />
                 <div>
-                  <strong>Status:</strong> {getStatusBadge(taskData.status)}
+                  <strong>{t('common.status')}:</strong> {getStatusBadge(taskData.status)}
                 </div>
               </MetaItem>
               <MetaItem>
                 <Database size={16} className="icon" />
                 <div>
-                  <strong>Asset:</strong> {taskData.asset?.displayName || 'No asset assigned'}
+                  <strong>{t('common.asset')}:</strong> {taskData.asset?.displayName || t('tasks.noAssetAssigned')}
                 </div>
               </MetaItem>
               <MetaItem>
                 <User size={16} className="icon" />
                 <div>
-                  <strong>Created By:</strong> {taskData.createdBy?.name || taskData.createdBy?.email || 'Unknown'}
+                  <strong>{t('tasks.createdBy')}:</strong> {taskData.createdBy?.name || taskData.createdBy?.email || t('logs.unknown')}
                 </div>
               </MetaItem>
               <MetaItem>
                 <Calendar size={16} className="icon" />
                 <div>
-                  <strong>Created On:</strong> {formatDate(taskData.createdAt)}
+                  <strong>{t('tasks.createdOn')}:</strong> {formatDate(taskData.createdAt)}
                 </div>
               </MetaItem>
               <MetaItem>
                 <Users size={16} className="icon" />
                 <div>
-                  <strong>Assigned To:</strong> 
+                  <strong>{t('tasks.assignedTo')}:</strong> 
                   {taskData.assignedTo && taskData.assignedTo.length > 0 
                     ? taskData.assignedTo.map(user => user.name).join(', ')
-                    : 'No assignees'
+                    : t('tasks.noAssignees')
                   }
                 </div>
               </MetaItem>
@@ -1338,7 +1340,7 @@ const TaskView = () => {
                 <MetaItem>
                   <MapPin size={16} className="icon" />
                   <div>
-                    <strong>Location:</strong> {taskData.location}
+                    <strong>{t('common.location')}:</strong> {taskData.location}
                   </div>
                 </MetaItem>
               )}
@@ -1424,14 +1426,14 @@ const TaskView = () => {
                       border: '1px solid #e2e8f0'
                     }}>
                       <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
-                        <strong>Total Sections:</strong> {taskData.inspectionLevel.subLevels.length}
+                        <strong>{t('tasks.totalSections')}:</strong> {taskData.inspectionLevel.subLevels.length}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        <strong>Template:</strong> {taskData.inspectionLevel.name || 'Unknown Template'}
+                        <strong>{t('common.template')}:</strong> {taskData.inspectionLevel.name || t('tasks.unknownTemplate')}
                       </div>
                       {taskData.inspectionLevel.description && (
                         <div style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
-                          <strong>Description:</strong> {taskData.inspectionLevel.description}
+                          <strong>{t('common.description')}:</strong> {taskData.inspectionLevel.description}
                         </div>
                       )}
                     </div>
@@ -2216,7 +2218,7 @@ const TaskView = () => {
                   type="text"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Add a comment..."
+                  placeholder={t('tasks.addComment')}
                   style={{
                     flex: 1,
                     padding: '8px 12px',

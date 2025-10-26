@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { X, Layers, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -164,6 +165,7 @@ const Button = styled.button`
 `;
 
 const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: subLevel?.name || '',
     description: subLevel?.description || '',
@@ -192,11 +194,11 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('validation.nameRequired');
     }
     
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = t('validation.descriptionRequired');
     }
     
     setErrors(newErrors);
@@ -251,7 +253,7 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
         <ModalHeader>
           <ModalTitle>
             <Layers size={20} />
-            Edit Sub Level
+            {t('inspections.editSubLevel')}
           </ModalTitle>
           <ModalCloseButton onClick={loading ? null : onClose} disabled={loading}>
             <X size={20} />
@@ -260,7 +262,7 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
         
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('common.name')}</Label>
             <Input
               type="text"
               id="name"
@@ -273,7 +275,7 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
           </FormGroup>
           
           <FormGroup>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('common.description')}</Label>
             <TextArea
               id="description"
               name="description"
@@ -285,7 +287,7 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
           </FormGroup>
           
           <FormGroup>
-            <Label htmlFor="order">Order</Label>
+            <Label htmlFor="order">{t('common.order')}</Label>
             <Input
               type="number"
               id="order"
@@ -302,17 +304,17 @@ const SubLevelEditModal = ({ subLevel, onClose, onSave, loading }) => {
               onClick={loading ? null : onClose}
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               type="submit" 
               variant="primary"
               disabled={loading}
             >
-              {loading ? 'Saving...' : (
+              {loading ? t('common.saving') : (
                 <>
                   <Save size={16} />
-                  Save Changes
+                  {t('common.saveChanges')}
                 </>
               )}
             </Button>

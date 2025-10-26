@@ -10,6 +10,7 @@ import {
   Tooltip
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
@@ -139,6 +140,7 @@ const getScoreColor = (score) => {
 };
 
 const ComplianceChart = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [complianceData, setComplianceData] = useState({
     categories: [],
     loading: true,
@@ -175,6 +177,18 @@ const ComplianceChart = ({ dateRange, filters }) => {
     fetchComplianceData();
   }, [dateRange, filters]);
 
+  const translateCategoryName = (name) => {
+    switch (name) {
+      case 'Safety Protocols': return t('common.safetyProtocols');
+      case 'Documentation': return t('common.documentation');
+      case 'Equipment Standards': return t('common.equipmentStandards');
+      case 'Staff Training': return t('common.staffTraining');
+      case 'Environmental': return t('common.environmental');
+      case 'Procedural': return t('common.procedural');
+      default: return name;
+    }
+  };
+
   const totalScore = complianceData.categories.length > 0 
     ? complianceData.categories.reduce(
         (acc, curr) => acc + (curr.score * curr.weight) / 100,
@@ -189,8 +203,8 @@ const ComplianceChart = ({ dateRange, filters }) => {
       transition={{ duration: 0.5 }}
     >
       <ChartHeader>
-        <Title>Compliance Overview</Title>
-        <Subtitle>Overall compliance score: {totalScore}%</Subtitle>
+        <Title>{t('common.complianceOverview')}</Title>
+        <Subtitle>{t('common.overallComplianceScore')}: {totalScore}%</Subtitle>
       </ChartHeader>
 
       {complianceData.loading ? (
@@ -207,6 +221,7 @@ const ComplianceChart = ({ dateRange, filters }) => {
               <PolarAngleAxis
                 dataKey="name"
                 tick={{ fill: '#64748b', fontSize: 11 }}
+                tickFormatter={(value) => translateCategoryName(value)}
               />
               <PolarRadiusAxis 
                 angle={30} 
@@ -228,7 +243,7 @@ const ComplianceChart = ({ dateRange, filters }) => {
             {complianceData.categories.map(category => (
               <MetricCard key={category.name}>
                 <MetricHeader>
-                  <MetricName>{category.name}</MetricName>
+                  <MetricName>{translateCategoryName(category.name)}</MetricName>
                   <MetricScore score={category.score}>{category.score}%</MetricScore>
                 </MetricHeader>
                 <ProgressBar>

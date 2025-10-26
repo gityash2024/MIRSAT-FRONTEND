@@ -1,7 +1,9 @@
 // pages/assets/components/AssetTable.jsx
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Loader } from 'lucide-react';
+import { useLanguage } from '../../../context/LanguageContext';
 // import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 
 const TableContainer = styled.div`
@@ -9,6 +11,7 @@ const TableContainer = styled.div`
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  width: 100%;
 `;
 
 const Table = styled.table`
@@ -17,7 +20,7 @@ const Table = styled.table`
 
   th, td {
     padding: 16px;
-    text-align: left;
+    text-align: ${props => props.$isRTL ? 'right' : 'left'};
     border-bottom: 1px solid #e0e0e0;
     white-space: nowrap;
     overflow: hidden;
@@ -175,6 +178,8 @@ const AssetTable = ({
   onDelete,
   onViewTasks
 }) => {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   // Helper function to get asset ID (handles both 'id' and '_id' fields)
   const getAssetId = (asset) => {
     return asset._id || asset.id;
@@ -202,36 +207,36 @@ const AssetTable = ({
 
   return (
     <TableContainer>
-      <Table>
+      <Table $isRTL={isRTL}>
         <thead>
           <tr>
             <th style={{ width: '50px', textAlign: 'center' }}>#</th>
             <th>
               <HeaderContent>
-                <HeaderText>Unique ID</HeaderText>
+                <HeaderText>{t('common.uniqueId')}</HeaderText>
               </HeaderContent>
             </th>
             <th>
               <HeaderContent>
-                <HeaderText>Type</HeaderText>
+                <HeaderText>{t('common.type')}</HeaderText>
               </HeaderContent>
             </th>
             <th>
               <HeaderContent>
-                <HeaderText>Display Name</HeaderText>
+                <HeaderText>{t('common.displayName')}</HeaderText>
               </HeaderContent>
             </th>
             <th>
               <HeaderContent>
-                <HeaderText>City</HeaderText>
+                <HeaderText>{t('common.city')}</HeaderText>
               </HeaderContent>
             </th>
             <th>
               <HeaderContent>
-                <HeaderText>Location</HeaderText>
+                <HeaderText>{t('common.location')}</HeaderText>
               </HeaderContent>
             </th>
-            <th>Actions</th>
+            <th>{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -245,7 +250,7 @@ const AssetTable = ({
                     color: 'var(--color-navy)', 
                     fontSize: '16px' 
                   }}>
-                    Assets loading...
+                    {t('assets.loadingAssets')}
                   </p>
                 </LoadingContainer>
               </td>
@@ -253,7 +258,7 @@ const AssetTable = ({
           ) : assets.length === 0 ? (
             <tr>
               <td colSpan={7}>
-                <EmptyState>No assets found. Create a new asset to get started.</EmptyState>
+                <EmptyState>{t('common.noAssetsFound')}</EmptyState>
               </td>
             </tr>
           ) : (
@@ -271,13 +276,13 @@ const AssetTable = ({
                     <ActionButtonGroup>
                       <ActionButton 
                         onClick={() => onViewTasks(asset)}
-                        title="View tasks"
+                        title={t('common.viewTasks')}
                       >
                         <Eye size={16} />
                       </ActionButton>
                       <ActionButton 
                         onClick={() => onEdit(asset)}
-                        title="Edit asset"
+                        title={t('common.editAsset')}
                       >
                         <Edit size={16} />
                       </ActionButton>
@@ -290,7 +295,7 @@ const AssetTable = ({
                           }
                           onDelete(assetId);
                         }}
-                        title="Delete asset"
+                        title={t('common.deleteAsset')}
                       >
                         <Trash size={16} />
                       </ActionButton>
@@ -305,11 +310,11 @@ const AssetTable = ({
       
       {!loading && assets.length > 0 && (
         <PaginationContainer>
-          <PaginationText>
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} assets
-          </PaginationText>
+            <PaginationText>
+              {t('common.showing')} {(pagination.page - 1) * pagination.limit + 1} {t('common.to')}{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} {t('common.of')}{' '}
+              {pagination.total} {t('common.assets')}
+            </PaginationText>
           <PaginationControls>
             <PaginationButton
               disabled={pagination.page === 1}

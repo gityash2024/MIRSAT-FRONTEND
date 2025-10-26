@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import boat from '../assets/boat.jpeg';
@@ -243,6 +244,7 @@ const Footer = styled.div`
 `;
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
@@ -364,7 +366,7 @@ const ResetPassword = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <Title>Set New Password</Title>
+            <Title>{t('auth.setNewPassword')}</Title>
             <Description>
               {resetSuccess 
                 ? 'Your password has been reset successfully!' 

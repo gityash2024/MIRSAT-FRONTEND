@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 
 const FilterContainer = styled.div`
   display: grid;
@@ -38,16 +39,17 @@ const CheckboxGroup = styled.div`
 `;
 
 const UserFilter = ({ filters, setFilters }) => {
+  const { t } = useTranslation();
   const filterOptions = {
     role: [
-      { value: 'admin', label: 'Admin' },
-      { value: 'manager', label: 'Manager' },
-      { value: 'supervisor', label: 'Supervisor' },
-      { value: 'inspector', label: 'Inspector' }
+      { value: 'admin', label: t('common.admin') },
+      { value: 'manager', label: t('common.manager') },
+      { value: 'supervisor', label: t('common.supervisor') },
+      { value: 'inspector', label: t('common.inspector') }
     ],
     status: [
-      { value: 'Active', label: 'Active' },
-      { value: 'Inactive', label: 'Inactive' }
+      { value: 'Active', label: t('common.active') },
+      { value: 'Inactive', label: t('common.inactive') }
     ],
     // department: [
     //   { value: 'field_operations', label: 'Field Operations' },
@@ -70,7 +72,7 @@ const UserFilter = ({ filters, setFilters }) => {
     <FilterContainer>
       {Object.entries(filterOptions).map(([category, options]) => (
         <FilterGroup key={category}>
-          <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+          <h3>{t(`common.${category}`)}</h3>
           <CheckboxGroup>
             {options.map(option => (
               <label key={option.value}>

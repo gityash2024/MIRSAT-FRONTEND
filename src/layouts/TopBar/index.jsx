@@ -6,6 +6,8 @@ import { NotificationDropdown } from '../../pages/notifications';
 import { useNavigate } from 'react-router-dom';
 import useNotification from '../../hooks/useNotification';
 import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
+import LanguageToggle from '../../components/ui/LanguageToggle';
+import { useTranslation } from 'react-i18next';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -175,6 +177,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
   const { unreadCount, fetchNotifications } = useNotification();
+  const { t } = useTranslation();
   const isMobile = window.innerWidth <= 768;
   const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 260 : 70);
   const notificationRef = useRef(null);
@@ -208,6 +211,8 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
       </LeftSection>
       
       <RightSection>
+        <LanguageToggle />
+        
         <TimezoneDropdown />
         
         <NotificationContainer ref={notificationRef}>
@@ -221,8 +226,8 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
         <UserMenuContainer ref={userMenuRef}>
           <UserMenuTrigger onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
             <div className="user-info">
-              <div className="name">{user?.name || 'Inspector'}</div>
-              <div className="role">{user?.role || 'Inspector'}</div>
+              <div className="name">{user?.name || t('common.inspector')}</div>
+              <div className="role">{user?.role || t('common.inspector')}</div>
             </div>
             <User size={20} />
             <ChevronDown size={16} />
@@ -231,7 +236,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
           <UserMenuDropdown isOpen={isUserMenuOpen}>
             <MenuItem onClick={logout} variant="danger">
               <LogOut size={18} className="icon" />
-              Logout
+              {t('common.logout')}
             </MenuItem>
           </UserMenuDropdown>
         </UserMenuContainer>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { X, ChevronDown, ChevronUp, Calendar, Clock, AlertTriangle, CheckCircle, User, Layers } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { fetchTasks } from '../../../store/slices/taskSlice';
@@ -236,6 +237,7 @@ const EmptyState = styled.div`
 
 const AssetTasksModal = ({ isOpen, onClose, asset }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState({});
@@ -292,6 +294,25 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
         return <Clock size={14} />;
     }
   };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'completed':
+        return t('common.completed');
+      case 'pending':
+        return t('common.pending');
+      case 'in_progress':
+        return t('common.inProgress');
+      case 'incomplete':
+        return t('common.incomplete');
+      case 'archived':
+        return t('common.archived');
+      case 'cancelled':
+        return t('common.cancelled');
+      default:
+        return t('common.pending');
+    }
+  };
   
   return (
     <ModalOverlay onClick={(e) => {
@@ -301,7 +322,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
         <ModalHeader>
           <ModalTitle>
             <Layers size={20} />
-            Asset Related Tasks
+            {t('common.assetRelatedTasks')}
           </ModalTitle>
           <CloseButton onClick={onClose}>
             <X size={20} />
@@ -309,19 +330,19 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
         </ModalHeader>
         
         <AssetInfo>
-          <h4 style={{ margin: '12px 0', fontSize: '16px', color: 'var(--color-navy)' }}>Asset Information</h4>
-          <AssetDetail><strong>Name:</strong> {asset.displayName || 'N/A'}</AssetDetail>
-          <AssetDetail><strong>Type:</strong> {asset.type || 'N/A'}</AssetDetail>
-          <AssetDetail><strong>ID:</strong> {asset.uniqueId || 'N/A'}</AssetDetail>
-          <AssetDetail><strong>Location:</strong> {asset.location || 'N/A'}</AssetDetail>
-          {asset.city && <AssetDetail><strong>City:</strong> {asset.city}</AssetDetail>}
-          {asset.manufacturer && <AssetDetail><strong>Manufacturer:</strong> {asset.manufacturer}</AssetDetail>}
-          {asset.serialNumber && <AssetDetail><strong>Serial Number:</strong> {asset.serialNumber}</AssetDetail>}
+          <h4 style={{ margin: '12px 0', fontSize: '16px', color: 'var(--color-navy)' }}>{t('assets.assetInformation')}</h4>
+          <AssetDetail><strong>{t('common.name')}:</strong> {asset.displayName || t('common.notAvailable')}</AssetDetail>
+          <AssetDetail><strong>{t('common.type')}:</strong> {asset.type || t('common.notAvailable')}</AssetDetail>
+          <AssetDetail><strong>{t('common.id')}:</strong> {asset.uniqueId || t('common.notAvailable')}</AssetDetail>
+          <AssetDetail><strong>{t('common.location')}:</strong> {asset.location || t('common.notAvailable')}</AssetDetail>
+          {asset.city && <AssetDetail><strong>{t('common.city')}:</strong> {asset.city}</AssetDetail>}
+          {asset.manufacturer && <AssetDetail><strong>{t('assets.manufacturer')}:</strong> {asset.manufacturer}</AssetDetail>}
+          {asset.serialNumber && <AssetDetail><strong>{t('assets.serialNumber')}:</strong> {asset.serialNumber}</AssetDetail>}
         </AssetInfo>
         
         <TasksContainer>
           <TasksHeader>
-            <TaskTitle>Tasks</TaskTitle>
+            <TaskTitle>{t('common.tasks')}</TaskTitle>
             <TaskCount>{tasks.length}</TaskCount>
           </TasksHeader>
           
@@ -355,7 +376,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                     </TaskItemTitle>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <StatusBadge status={task.status}>
-                        {getStatusIcon(task.status)} {task.status || 'pending'}
+                        {getStatusIcon(task.status)} {getStatusText(task.status)}
                       </StatusBadge>
                       {expandedTasks[taskId] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </div>
@@ -367,20 +388,20 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       
                       <TaskDetail>
                         <Calendar size={16} />
-                        <div>Deadline: {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</div>
+                        <div>{t('calendar.deadline')}: {task.deadline ? new Date(task.deadline).toLocaleDateString() : t('tasks.noDeadline')}</div>
                       </TaskDetail>
                       
                       <TaskDetail>
                         <Layers size={16} />
-                        <div>Template: {task.inspectionLevel?.name || 'N/A'}</div>
+                        <div>{t('common.template')}: {task.inspectionLevel?.name || t('common.notAvailable')}</div>
                       </TaskDetail>
                       
                       <TaskDetail>
                         <User size={16} />
                         <div>
-                          Assigned to: {task.assignedTo?.length > 0 
-                            ? task.assignedTo.map(user => user.name || user.username || 'Unknown').join(', ') 
-                            : 'Unassigned'}
+                          {t('common.assignedTo')}: {task.assignedTo?.length > 0 
+                            ? task.assignedTo.map(user => user.name || user.username || t('common.unknown')).join(', ') 
+                            : t('common.unassigned')}
                         </div>
                       </TaskDetail>
                       
@@ -398,7 +419,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                             }
                           }}
                         >
-                          View Task Details
+                          {t('common.viewTaskDetails')}
                         </TaskButton>
                       </TaskActions>
                     </TaskContent>
@@ -410,8 +431,8 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
           ) : (
             <EmptyState>
               <AlertTriangle size={40} style={{ color: '#94a3b8', marginBottom: '8px' }} />
-              <h4 style={{ margin: '0 0 8px 0', color: '#334155' }}>No tasks found</h4>
-              <p>There are no tasks associated with this asset.</p>
+              <h4 style={{ margin: '0 0 8px 0', color: '#334155' }}>{t('assets.noTasksFound')}</h4>
+              <p>{t('assets.noTasksAssociatedWithAsset')}</p>
             </EmptyState>
           )}
         </TasksContainer>

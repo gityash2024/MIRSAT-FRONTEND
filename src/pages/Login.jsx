@@ -6,40 +6,8 @@ import { useDispatch } from 'react-redux';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
-
-// Translation objects
-const translations = {
-  en: {
-    heading: "Marine services made easier and faster.",
-    subtitle: "Simplify your marine services with an easy-to-use digital application.",
-    signInTitle: "Sign in to your account",
-    emailPlaceholder: "Email*",
-    passwordPlaceholder: "Password*",
-    forgotPassword: "Forgot password?",
-    signInButton: "Sign In",
-    signingInButton: "Signing In...",
-    emailRequired: "Email is required",
-    passwordRequired: "Password is required",
-    copyright: "©2025 Mirsat",
-    english: "English",
-    arabic: "العربية"
-  },
-  ar: {
-    heading: "خدمات بحرية أسهل وأسرع.",
-    subtitle: "بسّط خدماتك البحرية باستخدام تطبيق رقمي سهل الاستخدام.",
-    signInTitle: "تسجيل الدخول إلى حسابك",
-    emailPlaceholder: "*البريد الإلكتروني",
-    passwordPlaceholder: "*كلمة المرور",
-    forgotPassword: "نسيت كلمة المرور؟",
-    signInButton: "تسجيل الدخول",
-    signingInButton: "جاري تسجيل الدخول...",
-    emailRequired: "البريد الإلكتروني مطلوب",
-    passwordRequired: "كلمة المرور مطلوبة",
-    copyright: "©2025 مرساة",
-    english: "English",
-    arabic: "العربية"
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -514,14 +482,12 @@ const Login = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
-  const [language, setLanguage] = useState('en'); // Add language state
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-
-  const t = translations[language]; // Get current translations
-  const isRTL = language === 'ar'; // Check if RTL
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage, isRTL } = useLanguage();
 
   const handleChange = (e) => {
     setFormData({
@@ -544,14 +510,14 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email) newErrors.email = t.emailRequired;
-    if (!formData.password) newErrors.password = t.passwordRequired;
+    if (!formData.email) newErrors.email = t('auth.emailRequired');
+    if (!formData.password) newErrors.password = t('auth.passwordRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const toggleLanguage = (lang) => {
-    setLanguage(lang);
+    changeLanguage(lang);
   };
 
   const handleSubmit = async (e) => {
@@ -581,13 +547,13 @@ const Login = () => {
    }
     } catch (error) {
       // Handle login errors - check for deactivated account
-      let errorMessage = error || 'Login failed. Please try again.';
+      let errorMessage = error || t('auth.loginFailed');
       
       // Check if the error is specifically about deactivated account
       if (typeof error === 'string' && 
           (error.toLowerCase().includes('deactivated') || 
            error.toLowerCase().includes('your account has been deactivated'))) {
-        errorMessage = 'Your account is deactivated or not verified, please contact your administrator';
+        errorMessage = t('auth.accountDeactivated');
         toast.error(errorMessage); // Show toast for deactivated account
         // Don't set apiError to avoid duplicate display
       } else {
@@ -621,8 +587,8 @@ const Login = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          <h1>{t.heading}</h1>
-          <p>{t.subtitle}</p>
+          <h1>{t('auth.heading')}</h1>
+          <p>{t('auth.subtitle')}</p>
         </LeftContent>
 
         <LoginCard
@@ -630,7 +596,7 @@ const Login = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.4 }}
         >
-          <Title>{t.signInTitle}</Title>
+          <Title>{t('auth.signInTitle')}</Title>
           <form onSubmit={handleSubmit}>
             {apiError && (
               <ErrorMessage style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -642,7 +608,7 @@ const Login = () => {
               <Input
                 type="email"
                 name="email"
-                placeholder={t.emailPlaceholder}
+                placeholder={t('auth.emailPlaceholder')}
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -653,7 +619,7 @@ const Login = () => {
               <Input
                 type="password"
                 name="password"
-                placeholder={t.passwordPlaceholder}
+                placeholder={t('auth.passwordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
               />
@@ -661,7 +627,7 @@ const Login = () => {
             </FormGroup>
 
             <ForgotPassword to="/forgot-password">
-              {t.forgotPassword}
+              {t('auth.forgotPassword')}
             </ForgotPassword>
 
             <SubmitButton
@@ -670,7 +636,7 @@ const Login = () => {
               whileTap={{ scale: 0.98 }}
               disabled={isLoading}
             >
-              {isLoading ? t.signingInButton : t.signInButton}
+              {isLoading ? t('auth.signingInButton') : t('auth.signInButton')}
             </SubmitButton>
 
             {/* <SignUpText>
@@ -681,19 +647,19 @@ const Login = () => {
         </LoginCard>
         
         <Footer>
-          {t.copyright}
+          {t('auth.copyright')}
           <LanguageToggle 
-            className={language === 'en' ? 'active' : ''} 
+            className={currentLanguage === 'en' ? 'active' : ''} 
             onClick={() => toggleLanguage('en')}
           >
-            {t.english}
+            {t('common.english')}
           </LanguageToggle>
           <LanguageSeparator>|</LanguageSeparator>
           <LanguageToggle 
-            className={language === 'ar' ? 'active' : ''} 
+            className={currentLanguage === 'ar' ? 'active' : ''} 
             onClick={() => toggleLanguage('ar')}
           >
-            {t.arabic}
+            {t('common.arabic')}
           </LanguageToggle>
         </Footer>
       </ContentWrapper>

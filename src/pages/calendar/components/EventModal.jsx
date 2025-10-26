@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { X, Trash2 } from 'lucide-react';
 
 const ModalOverlay = styled.div`
@@ -195,6 +196,7 @@ const EventModal = ({
   onUpdate,
   onDelete
 }) => {
+  const { t } = useTranslation();
   // Get data from Redux store
   const { users } = useSelector((state) => state.users || { users: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
@@ -217,17 +219,17 @@ const EventModal = ({
 
   // Available statuses and priorities
   const statuses = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'pending', label: t('common.pending') },
+    { value: 'in_progress', label: t('common.inProgress') },
+    { value: 'completed', label: t('common.completed') },
+    { value: 'cancelled', label: t('common.cancelled') }
   ];
 
   const priorities = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
+    { value: 'low', label: t('tasks.lowPriority') },
+    { value: 'medium', label: t('tasks.mediumPriority') },
+    { value: 'high', label: t('tasks.highPriority') },
+    { value: 'urgent', label: t('tasks.urgentPriority') }
   ];
 
   useEffect(() => {
@@ -286,20 +288,20 @@ const EventModal = ({
 
   const validateForm = () => {
     if (!formData.title.trim()) {
-      alert('Title is required');
+      alert(t('titleRequired'));
       return false;
     }
     if (!formData.deadline) {
-      alert('Deadline is required');
+      alert(t('deadlineRequired'));
       return false;
     }
     if (!formData.assignedTo) {
-      alert('Please select a user to assign this task to');
+      alert(t('selectUserRequired'));
       return false;
     }
     // Validate user ID format (MongoDB ObjectId)
     if (formData.assignedTo && !/^[0-9a-fA-F]{24}$/.test(formData.assignedTo)) {
-      alert('Invalid user selection. Please select a valid user.');
+      alert(t('invalidUserSelection'));
       return false;
     }
     return true;
@@ -349,14 +351,14 @@ const EventModal = ({
       <ModalOverlay onClick={onClose}>
         <ModalContent onClick={e => e.stopPropagation()}>
           <ModalHeader>
-            <ModalTitle>Loading...</ModalTitle>
+            <ModalTitle>{t('common.loading')}</ModalTitle>
             <CloseButton onClick={onClose}>
               <X size={20} />
             </CloseButton>
           </ModalHeader>
           <ModalBody>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-              <div>Loading form data...</div>
+              <div>{t('loadingFormData')}</div>
             </div>
           </ModalBody>
         </ModalContent>
@@ -369,7 +371,7 @@ const EventModal = ({
       <ModalContent onClick={e => e.stopPropagation()}>
         <ModalHeader>
           <ModalTitle>
-            {event ? 'Edit Event' : 'Create New Event'}
+            {event ? t('editEvent') : t('createNewEvent')}
           </ModalTitle>
           <CloseButton onClick={onClose}>
             <X size={20} />
@@ -379,19 +381,19 @@ const EventModal = ({
         <ModalBody>
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label>Event Title</Label>
+              <Label>{t('eventTitle')}</Label>
               <Input
                 type="text"
                 value={formData.title}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Enter event title"
+                placeholder={t('enterEventTitle')}
                 required
               />
             </FormGroup>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <FormGroup>
-                <Label>Template</Label>
+                <Label>{t('template')}</Label>
                 <Select
                   value={formData.inspectionLevel}
                   onChange={e => {
@@ -399,7 +401,7 @@ const EventModal = ({
                     setFormData({ ...formData, inspectionLevel: e.target.value });
                   }}
                 >
-                  <option value="">Select Template</option>
+                  <option value="">{t('selectTemplate')}</option>
                   {levels?.results?.filter(level => level.status === 'active').map(level => {
                     const isSelected = level._id === formData.inspectionLevel;
                     console.log(`Template option: ${level.name} (${level._id}) - Selected: ${isSelected}`);
@@ -418,13 +420,13 @@ const EventModal = ({
               </FormGroup>
 
               <FormGroup>
-                <Label>Assignee *</Label>
+                <Label>{t('assignee')} *</Label>
                 <Select
                   value={formData.assignedTo}
                   onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
                   required
                 >
-                  <option value="">Select Assignee (Required)</option>
+                  <option value="">{t('selectAssignee')}</option>
                   {users?.map(user => (
                     <option key={user._id || user.id} value={user._id || user.id}>
                       {user.name}
@@ -436,7 +438,7 @@ const EventModal = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               {/* <FormGroup>
-                <Label>Status</Label>
+                <Label>{t('common.status')}</Label>
                 <Select
                   value={formData.status}
                   onChange={e => setFormData({ ...formData, status: e.target.value })}
@@ -451,7 +453,7 @@ const EventModal = ({
               </FormGroup> */}
 
               <FormGroup>
-                <Label>Priority</Label>
+                <Label>{t('common.priority')}</Label>
                 <Select
                   value={formData.priority}
                   onChange={e => setFormData({ ...formData, priority: e.target.value })}
@@ -468,7 +470,7 @@ const EventModal = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <FormGroup>
-                <Label>Deadline</Label>
+                <Label>{t('deadline')}</Label>
                 <Input
                   type="date"
                   value={formData.deadline}
@@ -478,7 +480,7 @@ const EventModal = ({
               </FormGroup>
 
               <FormGroup>
-                <Label>Asset</Label>
+                <Label>{t('asset')}</Label>
                 <Select
                   value={formData.asset}
                   onChange={e => {
@@ -486,7 +488,7 @@ const EventModal = ({
                     setFormData({ ...formData, asset: e.target.value });
                   }}
                 >
-                  <option value="">Select Asset (Optional)</option>
+                  <option value="">{t('selectAsset')}</option>
                   {assets?.map(asset => {
                     const assetId = asset._id || asset.id;
                     const isSelected = assetId === formData.asset;
@@ -507,21 +509,21 @@ const EventModal = ({
             </div>
 
               <FormGroup>
-              <Label>Location</Label>
+              <Label>{t('common.location')}</Label>
                 <Input
                 type="text"
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Enter location"
+                placeholder={t('enterLocation')}
                 />
               </FormGroup>
 
             <FormGroup>
-              <Label>Description</Label>
+              <Label>{t('common.description')}</Label>
               <Textarea
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter event description"
+                placeholder={t('enterEventDescription')}
               />
             </FormGroup>
           </Form>
@@ -531,7 +533,7 @@ const EventModal = ({
           {event ? (
             <Button type="button" variant="danger" onClick={handleDelete}>
               <Trash2 size={16} style={{ marginRight: '4px' }} />
-              Delete Event
+              {t('deleteEvent')}
             </Button>
           ) : (
             <div /> // Empty div for spacing
@@ -539,16 +541,16 @@ const EventModal = ({
           
           <ButtonGroup>
             <Button type="button" onClick={onClose} disabled={isSubmitting || loading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" variant="primary" onClick={handleSubmit} disabled={isSubmitting || loading}>
               {isSubmitting || loading ? (
                 <>
                   <span style={{ marginRight: '8px' }}>⏳</span>
-                  {event ? 'Updating...' : 'Creating...'}
+                  {event ? t('updating') : t('creating')}
                 </>
               ) : (
-                event ? 'Update Event' : 'Create Event'
+                event ? t('updateEvent') : t('createEvent')
               )}
             </Button>
           </ButtonGroup>

@@ -14,6 +14,7 @@ import ScrollAnimation from '../components/common/ScrollAnimation';
 import Skeleton from '../components/ui/Skeleton';
 import axios from 'axios';
 import FrontendLogger from '../services/frontendLogger.service';
+import { useTranslation } from 'react-i18next';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -326,6 +327,7 @@ const DashboardSkeleton = () => (
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     taskProgress: [],
@@ -385,10 +387,10 @@ const Dashboard = () => {
             </div>
             <div className="value">0</div>
             <div className="label">
-              {index === 0 && 'Total Tasks'}
-              {index === 1 && 'Completed Tasks'}
-              {index === 2 && 'Pending Reviews'}
-              {index === 3 && 'Compliance Score'}
+              {index === 0 && t('dashboard.totalTasks')}
+              {index === 1 && t('dashboard.completedTasks')}
+              {index === 2 && t('dashboard.pendingTasks')}
+              {index === 3 && t('dashboard.complianceScore')}
             </div>
           </StatCard>
         </ScrollAnimation>
@@ -445,7 +447,7 @@ const Dashboard = () => {
         <LoadingContainer>
           <Loader size={40} color="var(--color-navy)" />
           <p style={{ marginTop: '16px', color: 'var(--color-navy)', fontSize: '16px' }}>
-            Dashboard loading...
+            {t('common.loading')}
           </p>
         </LoadingContainer>
       </DashboardContainer>
@@ -456,7 +458,7 @@ const Dashboard = () => {
     <DashboardContainer>
       <ScrollAnimation animation="slideUp">
         <WelcomeText>
-          Welcome back, {user?.name || 'Super Admin'}
+          {t('dashboard.welcome')}, {user?.name || t('common.admin')}
         </WelcomeText>
       </ScrollAnimation>
 
@@ -484,7 +486,7 @@ const Dashboard = () => {
                   ? dashboardData.stats.find(s => s.title === 'Total Tasks')?.value || 0 
                   : 0}
               </div>
-              <div className="label">Total Tasks</div>
+              <div className="label">{t('dashboard.totalTasks')}</div>
             </StatCard>
 
             {/* Completed Tasks Card */}
@@ -497,7 +499,7 @@ const Dashboard = () => {
                   ? dashboardData.stats.find(s => s.title === 'Completed Tasks')?.value || 0 
                   : 0}
               </div>
-              <div className="label">Completed Tasks</div>
+              <div className="label">{t('dashboard.completedTasks')}</div>
             </StatCard>
 
             {/* Pending Reviews Card */}
@@ -510,7 +512,7 @@ const Dashboard = () => {
                   ? dashboardData.stats.find(s => s.title === 'Pending Reviews')?.value || 0 
                   : 0}
               </div>
-              <div className="label">Pending Reviews</div>
+              <div className="label">{t('dashboard.pendingTasks')}</div>
             </StatCard>
 
             {/* Compliance Score Card */}
@@ -523,16 +525,16 @@ const Dashboard = () => {
                   ? dashboardData.stats.find(s => s.title === 'Compliance Score')?.value || '0%' 
                   : '0%'}
               </div>
-              <div className="label">Compliance Score</div>
+              <div className="label">{t('dashboard.complianceScore')}</div>
             </StatCard>
           </div>
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.4}>
           <Card>
-            <CardTitle>Inspector Performance</CardTitle>
+            <CardTitle>{t('dashboard.inspectorPerformance')}</CardTitle>
             {loading && dashboardData.teamPerformance.length === 0 ? (
-              <LoadingSpinner>Loading inspector performance...</LoadingSpinner>
+              <LoadingSpinner>{t('dashboard.loadingInspectorPerformance')}</LoadingSpinner>
             ) : dashboardData.teamPerformance && dashboardData.teamPerformance.length > 0 ? (
               <div>
                 {dashboardData.teamPerformance.map((member, index) => (
@@ -550,7 +552,7 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <EmptyState>No inspector performance data available</EmptyState>
+              <EmptyState>{t('dashboard.noInspectorData')}</EmptyState>
             )}
           </Card>
         </ScrollAnimation>

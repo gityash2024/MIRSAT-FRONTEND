@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle, 
   Clock, 
@@ -59,6 +60,7 @@ const StatusBadge = styled.span`
 `;
 
 const TaskStatus = ({ status }) => {
+  const { t } = useTranslation();
   const getIcon = () => {
     switch (status?.toLowerCase()) {
       case 'completed':
@@ -79,16 +81,29 @@ const TaskStatus = ({ status }) => {
   };
 
   const formatStatus = (status) => {
-    if (!status) return 'Unknown';
+    if (!status) return t('common.unknown');
     
-    // Display 'archived' as 'Completed' for better UX
-    if (status.toLowerCase() === 'archived') {
-      return 'Completed';
+    // Use translation keys for status values
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return t('common.completed');
+      case 'archived':
+        return t('common.completed'); // Display 'archived' as 'Completed' for better UX
+      case 'in_progress':
+        return t('common.inProgress');
+      case 'pending':
+        return t('common.pending');
+      case 'cancelled':
+        return t('common.cancelled');
+      case 'incomplete':
+        return t('common.incomplete');
+      case 'partially_completed':
+        return t('common.partiallyCompleted');
+      default:
+        return status.split('_').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
     }
-    
-    return status.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
   };
 
   return (

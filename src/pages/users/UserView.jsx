@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Edit, User, Mail, Phone, MapPin, Calendar,
   Shield, AlertTriangle, Clock, ClipboardList, CheckCircle2
@@ -280,11 +281,33 @@ const UserViewSkeleton = () => (
 );
 
 const UserView = () => {
+  const { t } = useTranslation();
   const { userId } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Translation functions
+  const translateRole = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'inspector': return t('common.inspector');
+      case 'supervisor': return t('common.supervisor');
+      case 'manager': return t('common.manager');
+      case 'superadmin': return t('common.superAdmin');
+      case 'admin': return t('common.admin');
+      default: return role;
+    }
+  };
+
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'Active': return t('common.active');
+      case 'Inactive': return t('common.inactive');
+      case 'Suspended': return t('common.suspended');
+      default: return status;
+    }
+  };
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -314,7 +337,7 @@ const UserView = () => {
         <ErrorState>{error}</ErrorState>
         <BackButton onClick={() => navigate('/users')}>
           <ArrowLeft size={18} />
-          Back to Users
+          {t('common.backToUsers')}
         </BackButton>
       </PageContainer>
     );
@@ -323,10 +346,10 @@ const UserView = () => {
   if (!user) {
     return (
       <PageContainer>
-        <ErrorState>User not found</ErrorState>
+        <ErrorState>{t('users.userNotFound')}</ErrorState>
         <BackButton onClick={() => navigate('/users')}>
           <ArrowLeft size={18} />
-          Back to Users
+          {t('common.backToUsers')}
         </BackButton>
       </PageContainer>
     );
@@ -334,7 +357,7 @@ const UserView = () => {
 
   const stats = [
     {
-      label: 'Days Active',
+      label: t('common.daysActive'),
       value: Math.floor((new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24))
     }
   ];
@@ -343,7 +366,7 @@ const UserView = () => {
     <PageContainer>
       <BackButton onClick={() => navigate('/users')}>
         <ArrowLeft size={18} />
-        Back to Users
+        {t('common.backToUsers')}
       </BackButton>
 
       <Header>
@@ -353,10 +376,10 @@ const UserView = () => {
             <UserName>{user.name}</UserName>
             <UserRole>
               <Shield size={16} />
-              {user.role}
+              {translateRole(user.role)}
             </UserRole>
             <StatusBadge status={user.isActive ? 'Active' : 'Inactive'}>
-              {user.isActive ? 'Active' : 'Inactive'}
+              {translateStatus(user.isActive ? 'Active' : 'Inactive')}
             </StatusBadge>
           </UserInfo>
         </UserHeader>
@@ -364,7 +387,7 @@ const UserView = () => {
         {hasPermission(PERMISSIONS.USERS.EDIT) && (
           <EditButton to={`/users/${user.id}/edit`}>
             <Edit size={16} />
-            Edit User
+            {t('common.editUser')}
           </EditButton>
         )}
       </Header>
@@ -383,7 +406,7 @@ const UserView = () => {
           <Card>
             <CardTitle>
               <User size={18} className="icon" />
-              Personal Information
+              {t('common.personalInformation')}
             </CardTitle>
             <DetailsList>
               <DetailItem>
@@ -392,15 +415,15 @@ const UserView = () => {
               </DetailItem>
               <DetailItem>
                 <Phone size={16} className="icon" />
-                {user.phone || 'Not provided'}
+                {user.phone || t('common.notProvided')}
               </DetailItem>
               <DetailItem>
                 <MapPin size={16} className="icon" />
-                {user.address || 'Not provided'}
+                {user.address || t('common.notProvided')}
               </DetailItem>
               <DetailItem>
                 <AlertTriangle size={16} className="icon" />
-                Emergency Contact: {user.emergencyContact || 'Not provided'}
+                {t('common.emergencyContact')}: {user.emergencyContact || t('common.notProvided')}
               </DetailItem>
             </DetailsList>
           </Card>
@@ -410,25 +433,25 @@ const UserView = () => {
           <Card>
             <CardTitle>
               <Shield size={18} className="icon" />
-              Role & Permissions
+              {t('common.roleAndPermissions')}
             </CardTitle>
             <DetailsList>
               <DetailItem>
                 <Calendar size={16} className="icon" />
-                Joined: {new Date(user.createdAt).toLocaleDateString()}
+                {t('common.joined')}: {new Date(user.createdAt).toLocaleDateString()}
               </DetailItem>
               <DetailItem>
                 <Clock size={16} className="icon" />
-                Last Active: {formatTimestamp(user.lastLogin)}
+                {t('common.lastActive')}: {formatTimestamp(user.lastLogin)}
               </DetailItem>
               <DetailItem>
                 <ClipboardList size={16} className="icon" />
-                Department: {user.department || 'Not assigned'}
+                {t('common.department')}: {user.department || t('common.notAssigned')}
               </DetailItem>
             </DetailsList>
 
             <CardTitle style={{ marginTop: '24px' }}>
-              Permissions
+              {t('common.permissions')}
             </CardTitle>
             <PermissionList>
               {user.permissions?.map((permission, index) => (

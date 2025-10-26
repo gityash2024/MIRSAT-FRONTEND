@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   FileText, 
   Filter, 
@@ -55,6 +56,7 @@ const GridItem = styled.div`
 `;
 
 const Reports = () => {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),

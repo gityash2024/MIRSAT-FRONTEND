@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   KeyRound, 
   AlertCircle, 
@@ -178,6 +179,7 @@ const InfoText = styled.p`
 `;
 
 const PasswordChangeTab = () => {
+  const { t } = useTranslation();
   const [isChanging, setIsChanging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -210,27 +212,27 @@ const PasswordChangeTab = () => {
 
   const validateForm = () => {
     if (!passwordData.currentPassword) {
-      setMessage({ type: 'error', text: 'Current password is required.' });
+      setMessage({ type: 'error', text: t('profile.currentPasswordRequired') });
       return false;
     }
     
     if (!passwordData.newPassword) {
-      setMessage({ type: 'error', text: 'New password is required.' });
+      setMessage({ type: 'error', text: t('profile.newPasswordRequired') });
       return false;
     }
     
     if (passwordData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'New password must be at least 6 characters long.' });
+      setMessage({ type: 'error', text: t('profile.newPasswordMinLength') });
       return false;
     }
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match.' });
+      setMessage({ type: 'error', text: t('profile.passwordsDoNotMatch') });
       return false;
     }
     
     if (passwordData.currentPassword === passwordData.newPassword) {
-      setMessage({ type: 'error', text: 'New password must be different from current password.' });
+      setMessage({ type: 'error', text: t('profile.newPasswordMustBeDifferent') });
       return false;
     }
     
@@ -258,7 +260,7 @@ const PasswordChangeTab = () => {
       if (response.data.success) {
         setMessage({ 
           type: 'success', 
-          text: response.data.message || 'Password changed successfully.' 
+          text: response.data.message || t('profile.passwordChangedSuccessfully') 
         });
         setPasswordData({
           currentPassword: '',
@@ -282,7 +284,7 @@ const PasswordChangeTab = () => {
       <FormHeader>
         <FormTitle>
           <KeyRound size={20} />
-          Change Password
+          {t('profile.changePassword')}
         </FormTitle>
       </FormHeader>
       
@@ -302,8 +304,7 @@ const PasswordChangeTab = () => {
           <>
             <InfoCard>
               <InfoText>
-                Keep your account secure by regularly updating your password. 
-                Make sure to use a strong password with a mix of letters, numbers, and symbols.
+                {t('profile.passwordSecurityMessage')}
               </InfoText>
             </InfoCard>
             
@@ -314,18 +315,18 @@ const PasswordChangeTab = () => {
                 onClick={startChange}
               >
                 <Lock size={16} />
-                Change Password
+                {t('profile.changePassword')}
               </Button>
             </ButtonGroup>
           </>
         ) : (
           <form onSubmit={handleSubmit}>
             <Description>
-              Enter your current password and choose a new secure password.
+              {t('profile.enterCurrentAndNewPassword')}
             </Description>
             
             <FormGroup>
-              <Label>Current Password *</Label>
+              <Label>{t('profile.currentPassword')} *</Label>
               <Input
                 type="password"
                 name="currentPassword"
@@ -338,7 +339,7 @@ const PasswordChangeTab = () => {
             
             <FormRow>
               <FormGroup>
-                <Label>New Password *</Label>
+                <Label>{t('profile.newPassword')} *</Label>
                 <Input
                   type="password"
                   name="newPassword"
@@ -350,7 +351,7 @@ const PasswordChangeTab = () => {
               </FormGroup>
               
               <FormGroup>
-                <Label>Confirm New Password *</Label>
+                <Label>{t('profile.confirmNewPassword')} *</Label>
                 <Input
                   type="password"
                   name="confirmPassword"
@@ -373,7 +374,7 @@ const PasswordChangeTab = () => {
                 ) : (
                   <>
                     <Save size={16} />
-                    Change Password
+                    {t('profile.changePassword')}
                   </>
                 )}
               </Button>
@@ -383,7 +384,7 @@ const PasswordChangeTab = () => {
                 disabled={isLoading}
               >
                 <X size={16} />
-                Cancel
+                {t('common.cancel')}
               </Button>
             </ButtonGroup>
           </form>

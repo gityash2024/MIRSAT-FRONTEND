@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { X, Search } from 'lucide-react';
 import { setFilters } from '../../../store/slices/taskSlice';
 
@@ -118,24 +119,25 @@ const SearchContainer = styled.div`
   }
 `;
 
-const priorities = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'urgent', label: 'Urgent' }
-];
-
-const statuses = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' }
-];
-
 const CalendarFilters = ({ onFilterChange }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { filters } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
+
+  const priorities = [
+    { value: 'low', label: t('tasks.lowPriority') },
+    { value: 'medium', label: t('tasks.mediumPriority') },
+    { value: 'high', label: t('tasks.highPriority') },
+    { value: 'urgent', label: t('tasks.urgentPriority') }
+  ];
+
+  const statuses = [
+    { value: 'pending', label: t('tasks.pending') },
+    { value: 'in_progress', label: t('tasks.inProgress') },
+    { value: 'completed', label: t('tasks.completed') },
+    { value: 'cancelled', label: t('tasks.cancelled') }
+  ];
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
   
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -193,7 +195,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         <Search className="search-icon" size={18} />
         <input
           type="text"
-          placeholder="Search events..."
+          placeholder={t('searchEvents')}
           value={searchTerm}
           onChange={handleSearchChange}
         />
@@ -201,7 +203,7 @@ const CalendarFilters = ({ onFilterChange }) => {
     
       <FiltersGrid>
         <FilterGroup>
-          <h3>Status</h3>
+          <h3>{t('common.status')}</h3>
           <CheckboxGroup>
             {statuses.map(status => (
               <Checkbox key={status.value}>
@@ -217,7 +219,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Priority</h3>
+          <h3>{t('common.priority')}</h3>
           <CheckboxGroup>
             {priorities.map(priority => (
               <Checkbox key={priority.value}>
@@ -233,7 +235,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Assignee (Inspector)</h3>
+          <h3>{t('assigneeInspector')}</h3>
           <CheckboxGroup>
             {users?.map(user => (
               <Checkbox key={user._id || user.id}>
@@ -249,7 +251,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         </FilterGroup>
 
         <FilterGroup>
-          <h3>Template</h3>
+          <h3>{t('common.template')}</h3>
           <CheckboxGroup>
             {levels?.results?.map(level => (
               <Checkbox key={level._id}>
@@ -269,7 +271,7 @@ const CalendarFilters = ({ onFilterChange }) => {
         <ActiveFilters>
           {filters.search && (
             <FilterTag>
-              Search: {filters.search}
+              {t('common.search')}: {filters.search}
               <button onClick={() => {
                 setSearchTerm('');
                 dispatch(setFilters({ search: '' }));

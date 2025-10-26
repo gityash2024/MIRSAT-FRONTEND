@@ -20,12 +20,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/permissions';
+import { useTranslation } from 'react-i18next';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
   color: white;
   height: 100vh;
-  width: ${props => props.collapsed ? '70px' : '260px'};
+  width: ${props => props.$collapsed ? '70px' : '260px'};
   transition: width 0.3s ease, transform 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -36,23 +37,23 @@ const SidebarContainer = styled.div`
   
   @media (max-width: 768px) {
     width: 260px;
-    transform: translateX(${props => props.collapsed ? '-100%' : '0'});
-    box-shadow: ${props => props.collapsed ? 'none' : '0 0 15px rgba(0, 0, 0, 0.2)'};
+    transform: translateX(${props => props.$collapsed ? '-100%' : '0'});
+    box-shadow: ${props => props.$collapsed ? 'none' : '0 0 15px rgba(0, 0, 0, 0.2)'};
   }
 `;
 
 const Logo = styled.div`
-  padding: 1.5rem ${props => props.collapsed ? '0.75rem' : '1.5rem'};
+  padding: 1.5rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
   display: flex;
   align-items: center;
-  justify-content: ${props => props.collapsed ? 'center' : 'space-between'};
+  justify-content: ${props => props.$collapsed ? 'center' : 'space-between'};
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
   h1 {
-    font-size: ${props => props.collapsed ? '0' : '1.5rem'};
+    font-size: ${props => props.$collapsed ? '0' : '1.5rem'};
     font-weight: 700;
-    opacity: ${props => props.collapsed ? '0' : '1'};
-    width: ${props => props.collapsed ? '0' : 'auto'};
+    opacity: ${props => props.$collapsed ? '0' : '1'};
+    width: ${props => props.$collapsed ? '0' : 'auto'};
     overflow: hidden;
     transition: all 0.3s ease;
     
@@ -98,7 +99,7 @@ const Nav = styled.nav`
 const StyledLink = styled.div`
   display: flex;
   align-items: center;
-  padding: 0.875rem ${props => props.collapsed ? '0.75rem' : '1.5rem'};
+  padding: 0.875rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
   text-decoration: none;
   color: rgba(255, 255, 255, 0.7);
   transition: all 0.3s ease;
@@ -141,8 +142,8 @@ const IconWrapper = styled.div`
 const NavText = styled.span`
   margin-left: 1rem;
   font-size: 0.95rem;
-  opacity: ${props => props.collapsed ? '0' : '1'};
-  width: ${props => props.collapsed ? '0' : 'auto'};
+  opacity: ${props => props.$collapsed ? '0' : '1'};
+  width: ${props => props.$collapsed ? '0' : 'auto'};
   white-space: nowrap;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -158,6 +159,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // ADD OBVIOUS DEBUGGING
   console.log('🚨🚨🚨 REAL SIDEBAR COMPONENT RENDERING!!!');
@@ -182,9 +184,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const userRole = user?.role?.toLowerCase() || 'inspector';
 
   // Define navigation items with required permissions
-  const navigationItems = [
+  const getNavigationItems = () => [
     {
-      title: 'Dashboard',
+      title: t('navigation.dashboard'),
       path: userRole === 'inspector' ? '/user-dashboard' : '/dashboard',
       icon: Home,
       permission: 'view_dashboard', // Old system
@@ -192,7 +194,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager', 'supervisor', 'inspector']
     },
     {
-      title: 'Tasks',
+      title: t('navigation.tasks'),
       path: '/tasks',
       icon: ClipboardList,
       permission: 'view_tasks',
@@ -200,7 +202,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager', 'supervisor']
     },
     {
-      title: 'My Tasks',
+      title: t('tasks.myTasks'),
       path: '/user-tasks',
       icon: ClipboardList,
       permission: 'view_tasks',
@@ -208,7 +210,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['inspector']
     },
     {
-      title: 'Users',
+      title: t('navigation.users'),
       path: '/users',
       icon: Users,
       permission: 'view_users',
@@ -216,7 +218,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager']  // Remove supervisor - no user management
     },
     {
-      title: 'Template',
+      title: t('inspections.title'),
       path: '/inspection',
       icon: ListChecks,
       permission: 'view_inspections',
@@ -224,7 +226,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager']  // Remove supervisor - no template creation
     },
     {
-      title: 'Assets',
+      title: t('navigation.assets'),
       path: '/assets',
       icon: Database,
       permission: 'view_assets',
@@ -232,7 +234,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager']  // Remove supervisor - no asset management
     },
     {
-      title: 'Questionnaires',
+      title: t('navigation.questionnaires'),
       path: '/questionnaire',
       icon: FileText,
       permission: 'view_questionnaires',
@@ -240,7 +242,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager']  // Remove supervisor - no questionnaire management
     },
     {
-      title: 'Calendar',
+      title: t('navigation.calendar'),
       path: '/calendar',
       icon: Calendar,
       permission: 'view_calendar',
@@ -248,7 +250,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager', 'supervisor']  // Keep supervisor - can set schedules
     },
     {
-      title: 'Logs',
+      title: t('navigation.logs'),
       path: '/logs',
       icon: Activity,
       permission: null, // No permission required for logs
@@ -256,7 +258,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['admin', 'manager', 'supervisor']  // Exclude inspector role
     },
     {
-      title: 'Profile',
+      title: t('navigation.profile'),
       path: '/profile',
       icon: User,
       permission: null, // No permission required for profile
@@ -269,6 +271,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   // Get menu items based on role and permissions
   const getMenuItems = () => {
     console.log('🔍 getMenuItems called for role:', userRole);
+    const navigationItems = getNavigationItems();
     
     return navigationItems.filter(item => {
       console.log(`🔍 Checking item: ${item.title} for role: ${userRole}`);
@@ -294,7 +297,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       // For supervisor role, hardcode the 4 specific tabs
       if (userRole === 'supervisor') {
         // Supervisor always sees these 4 tabs regardless of permissions
-        const supervisorTabs = ['Dashboard', 'Tasks', 'Calendar', 'Profile'];
+        const supervisorTabs = [t('navigation.dashboard'), t('navigation.tasks'), t('navigation.calendar'), t('navigation.profile')];
         if (supervisorTabs.includes(item.title)) {
           console.log(`✅ Supervisor access granted for ${item.title} (hardcoded)`);
           return true;
@@ -350,8 +353,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   return (
-    <SidebarContainer collapsed={effectiveCollapsed}>
-      <Logo collapsed={effectiveCollapsed}>
+    <SidebarContainer $collapsed={effectiveCollapsed}>
+      <Logo $collapsed={effectiveCollapsed}>
         {!effectiveCollapsed && <h1>MIRSAT</h1>}
         <ToggleButton onClick={handleToggle}>
           {effectiveCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -363,13 +366,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <StyledLink 
             key={item.path}
             className={isActiveRoute(item.path) ? 'active' : ''}
-            collapsed={effectiveCollapsed}
+            $collapsed={effectiveCollapsed}
             onClick={() => handleNavigation(item.path)}
           >
             <IconWrapper>
               <item.icon size={20} />
             </IconWrapper>
-            <NavText collapsed={effectiveCollapsed}>{item.title}</NavText>
+            <NavText $collapsed={effectiveCollapsed}>{item.title}</NavText>
           </StyledLink>
         ))}
       </Nav>

@@ -12,6 +12,7 @@ import {
   ReferenceLine 
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
@@ -150,6 +151,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const TrendAnalysisChart = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState(['overall', 'safety', 'procedures']);
   const [selectedCategory, setSelectedCategory] = useState('overall');
   const [trendData, setTrendData] = useState({
@@ -165,6 +167,27 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
     loading: true,
     error: null
   });
+
+  const translateMonth = (month) => {
+    switch (month) {
+      case 'May': return t('common.may');
+      case 'Jun': return t('common.jun');
+      case 'Jul': return t('common.jul');
+      case 'Aug': return t('common.aug');
+      case 'Sep': return t('common.sep');
+      case 'Oct': return t('common.oct');
+      default: return month;
+    }
+  };
+
+  const translateCategory = (category) => {
+    switch (category) {
+      case 'overall': return t('common.overall');
+      case 'safety': return t('common.safety');
+      case 'procedures': return t('common.procedural');
+      default: return category;
+    }
+  };
   
   useEffect(() => {
     const fetchTrendData = async () => {
@@ -225,8 +248,8 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
     >
       <ChartHeader>
         <HeaderLeft>
-          <Title>Performance Trend Analysis</Title>
-          <Subtitle>Long-term performance trends and patterns</Subtitle>
+          <Title>{t('common.performanceTrendAnalysis')}</Title>
+          <Subtitle>{t('common.longTermPerformanceTrends')}</Subtitle>
         </HeaderLeft>
         <CategorySelect>
           {categories.map(category => (
@@ -259,6 +282,7 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
                 dataKey="month" 
                 tick={{ fill: '#64748b' }}
                 axisLine={{ stroke: '#e2e8f0' }}
+                tickFormatter={(value) => translateMonth(value)}
               />
               <YAxis
                 domain={[dataMin => Math.floor(dataMin - 5), dataMax => Math.ceil(dataMax + 5)]}
@@ -271,7 +295,7 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
               <Line
                 type="monotone"
                 dataKey={selectedCategory}
-                name={selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                name={translateCategory(selectedCategory)}
                 stroke="var(--color-navy)"
                 strokeWidth={2}
                 dot={{ r: 4 }}
@@ -282,18 +306,18 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
 
           <SummaryMetrics>
             <MetricCard highlight={true}>
-              <MetricLabel>Current Performance</MetricLabel>
+              <MetricLabel>{t('common.currentPerformance')}</MetricLabel>
               <MetricValue>{trendData.metrics.currentValue}%</MetricValue>
               <MetricTrend value={trendData.metrics.trend}>
-                {trendData.metrics.trend > 0 ? '↑' : '↓'} {Math.abs(trendData.metrics.trend)}% vs previous
+                {trendData.metrics.trend > 0 ? '↑' : '↓'} {Math.abs(trendData.metrics.trend)}% {t('common.vsPrevious')}
               </MetricTrend>
             </MetricCard>
             <MetricCard>
-              <MetricLabel>Average Performance</MetricLabel>
+              <MetricLabel>{t('common.averagePerformance')}</MetricLabel>
               <MetricValue>{trendData.metrics.average}%</MetricValue>
             </MetricCard>
             <MetricCard>
-              <MetricLabel>Range</MetricLabel>
+              <MetricLabel>{t('common.range')}</MetricLabel>
               <MetricValue>{trendData.metrics.min}% - {trendData.metrics.max}%</MetricValue>
             </MetricCard>
           </SummaryMetrics>

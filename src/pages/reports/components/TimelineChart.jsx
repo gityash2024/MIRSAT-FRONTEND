@@ -10,6 +10,7 @@ import {
   ChevronRight,
   MoreVertical 
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const TimelineContainer = styled(motion.div)`
@@ -198,12 +199,32 @@ const LoadingContainer = styled.div`
 `;
 
 const TimelineChart = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState('all');
   const [timelineData, setTimelineData] = useState({
     data: [],
     loading: true,
     error: null
   });
+
+  const translateActivityStatus = (status) => {
+    switch (status) {
+      case 'Task created': return t('common.taskCreated');
+      case 'Task completed and archived by inspector': return t('common.taskCompletedAndArchived');
+      case 'Task started': return t('common.taskStarted');
+      default: return status;
+    }
+  };
+
+  const translateStatusTag = (tag) => {
+    switch (tag) {
+      case 'MEDIUM': return t('common.medium');
+      case 'PENDING': return t('common.pending');
+      case 'ARCHIVED': return t('common.archived');
+      case 'IN_PROGRESS': return t('common.inProgress');
+      default: return tag;
+    }
+  };
 
   useEffect(() => {
     const fetchTimelineData = async () => {
@@ -245,14 +266,14 @@ const TimelineChart = ({ dateRange, filters }) => {
       <Header>
         <Title>
           <Clock size={20} />
-          Activity Timeline
+          {t('common.activityTimeline')}
         </Title>
-        <Subtitle>Recent template activities and updates</Subtitle>
+        <Subtitle>{t('common.recentTemplateActivities')}</Subtitle>
       </Header>
 
       <FilterTabs>
         <Tab active={filter === 'all'} onClick={() => setFilter('all')}>
-          All Activities
+          {t('common.allActivities')}
         </Tab>
         {/* <Tab active={filter === 'critical'} onClick={() => setFilter('critical')}>
           Critical Issues
@@ -291,12 +312,12 @@ const TimelineChart = ({ dateRange, filters }) => {
                     {new Date(item.timestamp).toLocaleString()}
                   </TimelineTime>
                 </TimelineHeader>
-                <TimelineDescription>{item.description}</TimelineDescription>
+                <TimelineDescription>{translateActivityStatus(item.description)}</TimelineDescription>
                 {item.tags && (
                   <TimelineTags>
                     {item.tags.map((tag, i) => (
                       <Tag key={i} background={tag.background} color={tag.color}>
-                        {tag.label}
+                        {translateStatusTag(tag.label)}
                       </Tag>
                     ))}
                   </TimelineTags>

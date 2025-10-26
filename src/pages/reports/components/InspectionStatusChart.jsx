@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 const ChartContainer = styled(motion.div)`
@@ -102,13 +103,23 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const CustomLegend = ({ payload }) => {
+const CustomLegend = ({ payload, t }) => {
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'Delayed': return t('common.delayed');
+      case 'Pending': return t('common.pending');
+      case 'In Progress': return t('common.inProgress');
+      case 'Completed': return t('common.completed');
+      default: return status;
+    }
+  };
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', gap: '24px' }}>
       {payload.map((entry, index) => (
         <LegendItem key={entry.value}>
           <LegendColor color={COLORS[index % COLORS.length]} />
-          <span>{entry.value}</span>
+          <span>{translateStatus(entry.value)}</span>
         </LegendItem>
       ))}
     </div>
@@ -116,6 +127,7 @@ const CustomLegend = ({ payload }) => {
 };
 
 const InspectionStatusChart = ({ dateRange, filters }) => {
+  const { t } = useTranslation();
   const [statusData, setStatusData] = useState({
     data: [],
     loading: true,
@@ -159,8 +171,8 @@ const InspectionStatusChart = ({ dateRange, filters }) => {
       transition={{ duration: 0.5 }}
     >
       <ChartHeader>
-        <Title>Template Status Distribution</Title>
-        <Subtitle>Current status breakdown of all templates</Subtitle>
+        <Title>{t('common.templateStatusDistribution')}</Title>
+        <Subtitle>{t('common.currentStatusBreakdown')}</Subtitle>
       </ChartHeader>
 
       {statusData.loading ? (
@@ -193,7 +205,7 @@ const InspectionStatusChart = ({ dateRange, filters }) => {
               </Pie>
               <Tooltip content={<CustomTooltip />} />
               <Legend 
-                content={<CustomLegend />}
+                content={<CustomLegend payload={[]} t={t} />}
                 verticalAlign="bottom" 
                 height={36}
               />
@@ -201,14 +213,26 @@ const InspectionStatusChart = ({ dateRange, filters }) => {
           </ResponsiveContainer>
 
           <StatusList>
-            {statusData.data.map((status, index) => (
-              <StatusItem key={status.name}>
-                <StatusLabel>{status.name}</StatusLabel>
-                <StatusValue style={{ color: COLORS[index % COLORS.length] }}>
-                  {status.value.toLocaleString()}
-                </StatusValue>
-              </StatusItem>
-            ))}
+            {statusData.data.map((status, index) => {
+              const translateStatus = (statusName) => {
+                switch (statusName) {
+                  case 'Delayed': return t('common.delayed');
+                  case 'Pending': return t('common.pending');
+                  case 'In Progress': return t('common.inProgress');
+                  case 'Completed': return t('common.completed');
+                  default: return statusName;
+                }
+              };
+              
+              return (
+                <StatusItem key={status.name}>
+                  <StatusLabel>{translateStatus(status.name)}</StatusLabel>
+                  <StatusValue style={{ color: COLORS[index % COLORS.length] }}>
+                    {status.value.toLocaleString()}
+                  </StatusValue>
+                </StatusItem>
+              );
+            })}
           </StatusList>
         </>
       )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS } from '../../../utils/permissions';
 import { useAuth } from '../../../hooks/useAuth';
@@ -164,7 +165,33 @@ const Button = styled.button`
 `;
 
 const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Save', isSubmitting = false }) => {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
+
+  const translateRole = (roleKey) => {
+    const roleMap = {
+      'INSPECTOR': t('common.inspector'),
+      'SUPERVISOR': t('common.supervisor'),
+      'MANAGER': t('common.manager'),
+      'ADMIN': t('common.admin'),
+      'SUPER_ADMIN': t('common.superAdmin')
+    };
+    return roleMap[roleKey] || roleKey;
+  };
+
+  const translateModuleName = (moduleName) => {
+    const moduleMap = {
+      'ASSETS': t('common.assets'),
+      'TEMPLATE': t('common.template'),
+      'USERS': t('common.users'),
+      'PROFILE': t('common.profile'),
+      'TASKS': t('common.tasks'),
+      'CALENDAR': t('common.calendar'),
+      'DASHBOARD': t('common.dashboard'),
+      'QUESTIONNAIRES': t('common.questionnaires')
+    };
+    return moduleMap[moduleName] || moduleName.replace(/_/g, ' ');
+  };
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -229,12 +256,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     
     // Check if phone number is empty
     if (!cleanPhone) {
-      return 'Phone number is required';
+      return t('common.phoneRequired');
     }
     
     // Check if phone number has valid length (7-15 digits)
     if (cleanPhone.length < 7 || cleanPhone.length > 15) {
-      return 'Phone number must be between 7 and 15 digits';
+      return t('common.phoneLength');
     }
     
     // Check if phone number starts with valid country code or local format
@@ -256,11 +283,11 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.name) newErrors.name = t('common.nameRequired');
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('common.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = t('common.emailInvalid');
     }
     
     // Validate phone number
@@ -269,12 +296,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       newErrors.phone = phoneError;
     }
     
-    if (!formData.role) newErrors.role = 'Role is required';
+    if (!formData.role) newErrors.role = t('common.roleRequired');
     
     if (!(initialData._id || initialData.id)) {
-      if (!formData.password) newErrors.password = 'Password is required';
+      if (!formData.password) newErrors.password = t('common.passwordRequired');
       if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
+        newErrors.confirmPassword = t('common.passwordsDoNotMatch');
       }
     }
 
@@ -371,7 +398,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const renderModulePermissions = () => {
     return (
       <PermissionGroup>
-        <PermissionGroupTitle>Module Access</PermissionGroupTitle>
+        <PermissionGroupTitle>{t('common.moduleAccess')}</PermissionGroupTitle>
         <PermissionList>
           {Object.entries(MODULE_PERMISSIONS).map(([moduleName, permission]) => (
             <PermissionItem key={permission}>
@@ -380,7 +407,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
                 checked={formData.permissions?.includes(permission)}
                 onChange={() => handlePermissionChange(permission)}
               />
-              {moduleName.replace(/_/g, ' ')}
+              {translateModuleName(moduleName)}
             </PermissionItem>
           ))}
         </PermissionList>
@@ -395,25 +422,25 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     <Form onSubmit={handleSubmit}>
       <FormRow>
         <FormGroup>
-          <Label>Full Name</Label>
+          <Label>{t('common.fullName')}</Label>
           <Input
             type="text"
             name="name"
             value={formData.name || ''}
             onChange={handleChange}
-            placeholder="Enter full name"
+            placeholder={t('common.enterFullName')}
           />
           {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
         </FormGroup>
 
         <FormGroup>
-          <Label>Email Address</Label>
+          <Label>{t('common.emailAddress')}</Label>
           <Input
             type="email"
             name="email"
             value={formData.email || ''}
             onChange={handleChange}
-            placeholder="Enter email address"
+            placeholder={t('common.enterEmailAddress')}
           />
           {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
         </FormGroup>
@@ -421,13 +448,13 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
       <FormRow>
         <FormGroup>
-          <Label>Phone Number</Label>
+          <Label>{t('common.phoneNumber')}</Label>
           <Input
             type="tel"
             name="phone"
             value={formData.phone || ''}
             onChange={handleChange}
-            placeholder="Enter phone number (numbers only)"
+            placeholder={t('common.enterPhoneNumber')}
             maxLength="15"
             pattern="[0-9]*"
             inputMode="numeric"
@@ -436,7 +463,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         </FormGroup>
 
         <FormGroup>
-          <Label>Role</Label>
+          <Label>{t('common.role')}</Label>
           <Select
             name="role"
             value={formData.role || ''}
@@ -444,7 +471,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           >
             {Object.entries(ROLES).map(([key, value]) => (
               <option key={value} value={value}>
-                {key.charAt(0) + key.slice(1).toLowerCase()}
+                {translateRole(key)}
               </option>
             ))}
           </Select>
@@ -454,7 +481,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
       <FormRow>
         <FormGroup>
-          <Label>Department</Label>
+          <Label>{t('common.department')}</Label>
           <Select
             name="department"
             value={formData.department || ''}
@@ -465,28 +492,28 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               cursor: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) ? 'not-allowed' : 'pointer'
             }}
           >
-            <option value="">Select Department</option>
-            <option value="Field Operations">Field Operations</option>
-            <option value="Operations Management">Operations Management</option>
-            <option value="Administration">Administration</option>
+            <option value="">{t('common.selectDepartment')}</option>
+            <option value="Field Operations">{t('common.fieldOperations')}</option>
+            <option value="Operations Management">{t('common.operationsManagement')}</option>
+            <option value="Administration">{t('common.administration')}</option>
           </Select>
           {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) && (
             <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
-              Only admins can modify department
+              {t('common.onlyAdminsCanModifyDepartment')}
             </span>
           )}
         </FormGroup>
 
         <FormGroup>
-          <Label>Status</Label>
+          <Label>{t('common.status')}</Label>
           <Select
             name="status"
             value={formData.status || (formData.isActive ? 'active' : 'inactive')}
             onChange={handleChange}
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
+            <option value="active">{t('common.active')}</option>
+            <option value="inactive">{t('common.inactive')}</option>
+            <option value="suspended">{t('common.suspended')}</option>
           </Select>
         </FormGroup>
       </FormRow>
@@ -494,14 +521,14 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       {!isEditMode && (
         <FormRow>
           <FormGroup>
-            <Label>Password</Label>
+            <Label>{t('common.password')}</Label>
             <PasswordWrapper>
               <PasswordInput
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password || ''}
                 onChange={handleChange}
-                placeholder="Enter password"
+                placeholder={t('common.enterPassword')}
               />
               <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -511,14 +538,14 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           </FormGroup>
 
           <FormGroup>
-            <Label>Confirm Password</Label>
+            <Label>{t('common.confirmPassword')}</Label>
             <PasswordWrapper>
               <PasswordInput
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
                 value={formData.confirmPassword || ''}
                 onChange={handleChange}
-                placeholder="Confirm password"
+                placeholder={t('common.confirmPasswordPlaceholder')}
               />
               <PasswordToggle type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -531,31 +558,31 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
       <FormRow>
         <FormGroup>
-          <Label>Address</Label>
+          <Label>{t('common.address')}</Label>
           <Input
             type="text"
             name="address"
             value={formData.address || ''}
             onChange={handleChange}
-            placeholder="Enter address"
+            placeholder={t('common.enterAddress')}
           />
         </FormGroup>
 
         <FormGroup>
-          <Label>Emergency Contact</Label>
+          <Label>{t('common.emergencyContact')}</Label>
           <Input
             type="text"
             name="emergencyContact"
             value={formData.emergencyContact || ''}
             onChange={handleChange}
-            placeholder="Enter emergency contact"
+            placeholder={t('common.enterEmergencyContact')}
           />
         </FormGroup>
       </FormRow>
 
       {showPermissionsSection && (
         <PermissionsSection>
-          <PermissionGroupTitle>Permissions</PermissionGroupTitle>
+          <PermissionGroupTitle>{t('common.permissions')}</PermissionGroupTitle>
           {formData.role === ROLES.MANAGER ? (
             renderModulePermissions()
           ) : (
@@ -568,10 +595,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
       <ButtonGroup>
         <Button type="button" onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="submit" variant="primary" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : submitButtonText}
+          {isSubmitting ? t('common.saving') : submitButtonText}
         </Button>
       </ButtonGroup>
     </Form>

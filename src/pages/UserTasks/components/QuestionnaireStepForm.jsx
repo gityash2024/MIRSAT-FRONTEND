@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle, XCircle, HelpCircle, AlertTriangle, Save, Loader,
   Award, AlertCircle, Info, Clipboard, BarChart2, Layers
@@ -434,6 +435,7 @@ const getQuestionNumber = (question, allQuestions, index) => {
 };
 
 const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestion }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   // Store questions separately from responses
   const [questions, setQuestions] = useState([]);
@@ -603,7 +605,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       // toast.success('Questionnaire saved successfully!');
       if (onSave) onSave(result);
     } catch (error) {
-      toast.error(error.message || 'Failed to save questionnaire');
+      toast.error(error.message || t('questionnaire.failedToSaveQuestionnaire'));
     } finally {
       setIsSubmitting(false);
     }
@@ -614,7 +616,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
     const groups = {};
     
     questions.forEach(q => {
-      const category = q.category || 'General';
+      const category = q.category || t('questionnaire.general');
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -632,7 +634,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
     
     // Filter by category if specified
     if (filteredCategory) {
-      filtered = filtered.filter(q => (q.category || 'General') === filteredCategory);
+      filtered = filtered.filter(q => (q.category || t('questionnaire.general')) === filteredCategory);
     }
     
     // Filter by specific question if specified
@@ -658,8 +660,8 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
         </Title>
         <NoQuestionsMessage>
           <HelpCircle size={48} />
-          <h3>No Questions Available</h3>
-          <p>There are no inspection questions for this task.</p>
+          <h3>{t('questionnaire.noQuestionsAvailable')}</h3>
+          <p>{t('questionnaire.noInspectionQuestionsForTask')}</p>
         </NoQuestionsMessage>
       </Container>
     );
@@ -670,12 +672,12 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       <Container>
         <Title>
           <Clipboard size={20} />
-          {filteredCategory ? `${filteredCategory} Questions` : 'Inspection Questionnaire'}
+          {filteredCategory ? `${filteredCategory} ${t('questionnaire.questions')}` : t('questionnaire.inspectionQuestionnaire')}
         </Title>
         <NoQuestionsMessage>
           <HelpCircle size={48} />
-          <h3>No Questions Found</h3>
-          <p>No questions match the selected filters.</p>
+          <h3>{t('questionnaire.noQuestionsFound')}</h3>
+          <p>{t('questionnaire.noQuestionsMatchFilters')}</p>
         </NoQuestionsMessage>
       </Container>
     );
@@ -687,7 +689,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
     <Container>
       <Title>
         <Clipboard size={20} />
-        {filteredCategory ? `${filteredCategory} Questions` : 'Inspection Questionnaire'}
+        {filteredCategory ? `${filteredCategory} ${t('questionnaire.questions')}` : t('questionnaire.inspectionQuestionnaire')}
       </Title>
       
       {/* If not filtering, show scoring summary */}
@@ -700,7 +702,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
           
           <ScoreGrid>
             <ScoreItem percent={scores.percentage}>
-              <div className="score-label">Overall Compliance</div>
+              <div className="score-label">{t('questionnaire.overallCompliance')}</div>
               <div className="score-value">
                 {scores.achieved} / {scores.total}
                 <span className="score-percent">({scores.percentage}%)</span>
@@ -708,7 +710,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             </ScoreItem>
             
             <ScoreItem>
-              <div className="score-label">Questions</div>
+              <div className="score-label">{t('questionnaire.questions')}</div>
               <div className="score-value">
                 {questions.filter(q => q.mandatory !== false).length} Mandatory 
                 {questions.filter(q => q.mandatory === false).length > 0 && (
@@ -720,22 +722,22 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             </ScoreItem>
             
             <ScoreItem>
-              <div className="score-label">Status</div>
+              <div className="score-label">{t('common.status')}</div>
               <div className="score-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isQuestionnaireCompleted ? (
                   <>
                     <CheckCircle size={16} color="#4caf50" />
-                    <span>Completed</span>
+                    <span>{t('questionnaire.completed')}</span>
                   </>
                 ) : Object.keys(responses).length > 0 ? (
                   <>
                     <AlertCircle size={16} color="#ff9800" />
-                    <span>In Progress</span>
+                    <span>{t('questionnaire.inProgress')}</span>
                   </>
                 ) : (
                   <>
                     <Info size={16} color="#90a4ae" />
-                    <span>Not Started</span>
+                    <span>{t('questionnaire.notStarted')}</span>
                   </>
                 )}
               </div>
@@ -780,7 +782,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
               
               <MandatoryBadge mandatory={question.required !== false}>
                 <Info size={12} />
-                {question.required === false ? 'Optional' : 'Required'}
+                {question.required === false ? t('questionnaire.optional') : t('questionnaire.required')}
               </MandatoryBadge>
               
               {/* Yes/No Questions */}
@@ -892,7 +894,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
               )}
               
               <CommentBox 
-                placeholder="Add a comment (optional)"
+                placeholder={t('questionnaire.addCommentOptional')}
                 value={comment || ''}
                 onChange={(e) => handleCommentChange(questionId, e.target.value)}
                 disabled={isQuestionnaireCompleted}
@@ -906,7 +908,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       {!filteredCategory && !filteredQuestion && (
         <>
           <CommentBox 
-            placeholder="Add general notes about the questionnaire (optional)"
+            placeholder={t('questionnaire.addGeneralNotesOptional')}
             value={globalNotes}
             onChange={(e) => setGlobalNotes(e.target.value)}
             disabled={isQuestionnaireCompleted}
@@ -917,12 +919,12 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             {allAnswered ? (
               <>
                 <CheckCircle size={20} />
-                <p>All required questions have been answered.</p>
+                <p>{t('questionnaire.allRequiredQuestionsAnswered')}</p>
               </>
             ) : (
               <>
                 <AlertTriangle size={20} />
-                <p>Please answer all required questions before proceeding.</p>
+                <p>{t('questionnaire.pleaseAnswerAllRequiredQuestions')}</p>
               </>
             )}
           </ValidationMessage>

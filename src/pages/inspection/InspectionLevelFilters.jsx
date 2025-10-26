@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { X, Check, Tag, ToggleLeft, Flag, Filter, ArrowRight, RefreshCw } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 const FilterContainer = styled.div`
   display: flex;
@@ -280,6 +281,7 @@ const CategoryBadge = styled.span`
 `;
 
 const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) => {
+  const { t } = useTranslation();
   // Use local state to track changes before applying
   const [localFilters, setLocalFilters] = useState({ ...filters });
   // Use ref to track if this is the first render
@@ -290,15 +292,15 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
   const [filterOptions, setFilterOptions] = useState({
     type: [],
     status: [
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' },
-      { value: 'draft', label: 'Draft' },
-      { value: 'archived', label: 'Archived' }
+      { value: 'active', label: t('common.active') },
+      { value: 'inactive', label: t('common.inactive') },
+      { value: 'draft', label: t('common.draft') },
+      { value: 'archived', label: t('common.archived') }
     ],
     priority: [
-      { value: 'high', label: 'High Priority' },
-      { value: 'medium', label: 'Medium Priority' },
-      { value: 'low', label: 'Low Priority' }
+      { value: 'high', label: t('tasks.highPriority') },
+      { value: 'medium', label: t('tasks.mediumPriority') },
+      { value: 'low', label: t('tasks.lowPriority') }
     ]
   });
 
@@ -402,11 +404,11 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
       <FilterHeader>
         <h2>
           <Filter size={18} />
-          Filter Template
+          {t('inspections.filterTemplate')}
         </h2>
         {activeFilterCount > 0 && (
           <span style={{ fontSize: '13px', color: '#6b7280' }}>
-            {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} applied
+            {activeFilterCount} {activeFilterCount === 1 ? t('common.filter') : t('common.filters')} {t('common.applied')}
           </span>
         )}
       </FilterHeader>
@@ -449,14 +451,14 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
           <ActiveFiltersHeader>
             <h4>
               <ArrowRight size={14} />
-              Active Filters
+              {t('inspections.activeFilters')}
             </h4>
             <button 
               onClick={handleClear}
               disabled={loading}
             >
               <RefreshCw size={12} />
-              Clear All
+              {t('common.clearAll')}
             </button>
           </ActiveFiltersHeader>
           <ActiveFilters>
@@ -488,14 +490,14 @@ const InspectionLevelFilters = ({ filters, onFilterChange, onClose, loading }) =
           onClick={onClose}
           disabled={loading}
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button 
           $variant="primary" 
           onClick={handleApply}
           disabled={loading}
         >
-          Apply Filters
+          {t('inspections.applyFilters')}
         </Button>
       </FilterActions>
     </FilterContainer>

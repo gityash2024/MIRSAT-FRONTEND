@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { FileText, Filter, Download, Calendar } from 'lucide-react';
 import DateRangePicker from '../../../components/ui/date-range-picker';
 
@@ -67,15 +68,17 @@ const DateRangeContainer = styled.div`
 `;
 
 const ReportHeader = ({ onToggleFilters, dateRange, onDateRangeChange }) => {
+  const { t } = useTranslation();
+  
   return (
     <Header>
       <TitleSection>
         <PageTitle>
           <FileText size={24} />
-          Comprehensive Analysis and Performance Metrics
+          {t('reports.comprehensiveAnalysis')}
         </PageTitle>
         <PageDescription>
-          Overview of task completion, template status, and team performance
+          {t('reports.overviewDescription')}
         </PageDescription>
       </TitleSection>
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 import { FileText, Download, Share2, Settings, Printer, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
 import InspectionLayout from '../../components/common/InspectionLayout';
 import { inspectionService } from '../../services/inspection.service';
@@ -110,6 +111,7 @@ const LoadingContainer = styled.div`
 const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(true);
   const [template, setTemplate] = useState(null);
@@ -140,7 +142,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       setLoading(false);
     } catch (error) {
       console.error('Error loading template:', error);
-      toast.error('Failed to load template data');
+      toast.error(t('inspections.failedToLoadTemplate'));
       setLoading(false);
     }
   };
@@ -235,18 +237,18 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     }
     
     return {
-      title: templateData.name || 'Inspection Template',
+      title: templateData.name || t('inspections.inspectionTemplate'),
       score: totalScore,
       maxScore: maxScore,
       completedAt: new Date().toLocaleString(),
       sections,
       flaggedItems: [], // These would be items that failed compliance
       metadata: {
-        documentNumber: 'Template ID: ' + (id || 'Unknown'),
-        inspectionLocation: 'Not specified',
+        documentNumber: t('inspections.templateId') + ': ' + (id || t('common.unknown')),
+        inspectionLocation: t('common.notSpecified'),
         inspectionDate: new Date().toLocaleDateString(),
-        inspectorName: 'Not assigned',
-        operatorName: 'Draft Template'
+        inspectorName: t('common.notAssigned'),
+        operatorName: t('inspections.draftTemplate')
       }
     };
   };
@@ -496,12 +498,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       return (
         <NoDataContainer>
           <AlertCircle size={48} color="var(--color-compliance-non)" style={{ marginBottom: '16px' }} />
-          <NoDataTitle>Error displaying report</NoDataTitle>
+          <NoDataTitle>{t('inspections.errorDisplayingReport')}</NoDataTitle>
           <NoDataMessage>
-            There was a problem displaying the report. Please try again later.
+            {t('inspections.reportDisplayError')}
           </NoDataMessage>
           <NoDataButton onClick={handleGoToBuildTab}>
-            Go to Build Tab
+            {t('inspections.goToBuildTab')}
           </NoDataButton>
         </NoDataContainer>
       );
@@ -512,7 +514,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   
   return (
     <InspectionLayout
-      title={template?.name || 'New Inspection Template'}
+      title={template?.name || t('inspections.newInspectionTemplate')}
       onSave={() => {}}
       onPublish={!isCreating ? handlePublish : null}
       baseUrl={baseUrl}
@@ -523,33 +525,33 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
           <ToolbarContainer>
             <ToolbarTitle>
               <FileText size={18} />
-              Report Preview
+              {t('inspections.reportPreview')}
             </ToolbarTitle>
             
             <ToolbarActions>
               <ActionButton onClick={handleDownloadPDF} primary>
                 <Download size={16} />
-                Download PDF
+                {t('inspections.downloadPDF')}
               </ActionButton>
               
               <ActionButton onClick={handleDownloadDOCX}>
                 <Download size={16} />
-                Download DOCX
+                {t('inspections.downloadDOCX')}
               </ActionButton>
               
               <ActionButton>
                 <Share2 size={16} />
-                Share
+                {t('common.share')}
               </ActionButton>
               
               <ActionButton>
                 <Printer size={16} />
-                Print
+                {t('common.print')}
               </ActionButton>
               
               <ActionButton>
                 <Settings size={16} />
-                Settings
+                {t('common.settings')}
               </ActionButton>
             </ToolbarActions>
           </ToolbarContainer>

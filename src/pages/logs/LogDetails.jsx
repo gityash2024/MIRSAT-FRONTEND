@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -377,6 +378,7 @@ const DeviceInfo = styled.div`
 `;
 
 const LogDetails = () => {
+  const { t } = useTranslation();
   const { logId } = useParams();
   const navigate = useNavigate();
   const [log, setLog] = useState(null);
@@ -403,7 +405,7 @@ const LogDetails = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch log details');
+        throw new Error(t('logs.failedToFetchLogDetails'));
       }
 
       const data = await response.json();
@@ -455,25 +457,25 @@ const LogDetails = () => {
 
   const getIPLocation = (ip) => {
     // This is a mock function - in real implementation, you'd use a geolocation API
-    if (ip === '127.0.0.1' || ip === '::1') return 'Local Development';
-    if (ip?.startsWith('192.168.')) return 'Local Network';
-    if (ip?.startsWith('10.')) return 'Private Network';
-    return 'Unknown Location';
+    if (ip === '127.0.0.1' || ip === '::1') return t('logs.localDevelopment');
+    if (ip?.startsWith('192.168.')) return t('logs.localNetwork');
+    if (ip?.startsWith('10.')) return t('logs.privateNetwork');
+    return t('logs.unknownLocation');
   };
 
   const getDeviceInfo = (userAgent) => {
-    if (!userAgent) return 'Unknown Device';
+    if (!userAgent) return t('logs.unknownDevice');
     
     const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
     const isWindows = /Windows/.test(userAgent);
     const isMac = /Mac/.test(userAgent);
     const isLinux = /Linux/.test(userAgent);
     
-    if (isMobile) return 'Mobile Device';
-    if (isWindows) return 'Windows PC';
-    if (isMac) return 'Mac Computer';
-    if (isLinux) return 'Linux Computer';
-    return 'Unknown Device';
+    if (isMobile) return t('logs.mobileDevice');
+    if (isWindows) return t('logs.windowsPC');
+    if (isMac) return t('logs.macComputer');
+    if (isLinux) return t('logs.linuxComputer');
+    return t('logs.unknownDevice');
   };
 
   if (loading) {
@@ -481,7 +483,7 @@ const LogDetails = () => {
       <LogDetailsContainer>
         <LoadingSpinner>
           <Activity className="animate-spin" size={24} />
-          <span style={{ marginLeft: '8px' }}>Loading log details...</span>
+          <span style={{ marginLeft: '8px' }}>{t('logs.loadingLogDetails')}</span>
         </LoadingSpinner>
       </LogDetailsContainer>
     );
@@ -492,7 +494,7 @@ const LogDetails = () => {
       <LogDetailsContainer>
         <ErrorMessage>
           <AlertCircle size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-          <div>Error loading log details</div>
+          <div>{t('logs.errorLoadingLogDetails')}</div>
           <div style={{ fontSize: '14px', marginTop: '4px' }}>{error}</div>
         </ErrorMessage>
       </LogDetailsContainer>
@@ -504,7 +506,7 @@ const LogDetails = () => {
       <LogDetailsContainer>
         <ErrorMessage>
           <Info size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-          <div>Log not found</div>
+          <div>{t('logs.logNotFound')}</div>
         </ErrorMessage>
       </LogDetailsContainer>
     );
@@ -517,7 +519,7 @@ const LogDetails = () => {
           <ArrowLeft size={16} />
           Back to Logs
         </BackButton>
-        <Title>Log Details</Title>
+        <Title>{t('logs.logDetails')}</Title>
       </Header>
 
       <Content>
@@ -587,25 +589,25 @@ const LogDetails = () => {
               Log Information
             </CardTitle>
             <InfoRow>
-              <InfoLabel>Action</InfoLabel>
+              <InfoLabel>{t('logs.action')}</InfoLabel>
               <Badge type={log.action}>
                 {formatAction(log.action)}
               </Badge>
             </InfoRow>
             <InfoRow>
-              <InfoLabel>Module</InfoLabel>
+              <InfoLabel>{t('logs.module')}</InfoLabel>
               <InfoValue style={{ textTransform: 'capitalize' }}>
                 {log.module?.replace('_', ' ')}
               </InfoValue>
             </InfoRow>
             <InfoRow>
-              <InfoLabel>Severity</InfoLabel>
+              <InfoLabel>{t('logs.severity')}</InfoLabel>
               <Badge type={log.severity}>
                 {log.severity}
               </Badge>
             </InfoRow>
             <InfoRow>
-              <InfoLabel>Timestamp</InfoLabel>
+              <InfoLabel>{t('common.timestamp')}</InfoLabel>
               <InfoValue>{formatDate(log.timestamp)}</InfoValue>
             </InfoRow>
           </InfoCard>
@@ -621,9 +623,9 @@ const LogDetails = () => {
                   {log.userId.name?.charAt(0)?.toUpperCase() || 'U'}
                 </UserAvatar>
                 <UserInfo>
-                  <UserName>{log.userId.name || 'Unknown User'}</UserName>
-                  <UserRole>{log.userId.role || 'Unknown Role'}</UserRole>
-                  <UserEmail>{log.userId.email || 'No email'}</UserEmail>
+                  <UserName>{log.userId.name || t('logs.unknownUser')}</UserName>
+                  <UserRole>{log.userId.role || t('logs.unknownRole')}</UserRole>
+                  <UserEmail>{log.userId.email || t('logs.noEmail')}</UserEmail>
                 </UserInfo>
               </UserCard>
             </InfoCard>
@@ -636,12 +638,12 @@ const LogDetails = () => {
                 Task Information
               </CardTitle>
               <TaskCard>
-                <TaskTitle>{log.taskId.title || 'Unknown Task'}</TaskTitle>
+                <TaskTitle>{log.taskId.title || t('logs.unknownTask')}</TaskTitle>
                 <TaskInfo>
-                  <div>Status: {log.taskId.status || 'Unknown'}</div>
-                  <div>Priority: {log.taskId.priority || 'Unknown'}</div>
+                  <div>{t('common.status')}: {log.taskId.status || t('logs.unknown')}</div>
+                  <div>{t('common.priority')}: {log.taskId.priority || t('logs.unknown')}</div>
                   {log.taskId.deadline && (
-                    <div>Deadline: {formatDate(log.taskId.deadline)}</div>
+                    <div>{t('calendar.deadline')}: {formatDate(log.taskId.deadline)}</div>
                   )}
                 </TaskInfo>
               </TaskCard>
@@ -670,7 +672,7 @@ const LogDetails = () => {
               <DeviceInfo>
                 <Monitor size={16} />
                 <div>
-                  <div style={{ fontWeight: '500', fontSize: '14px' }}>Device</div>
+                  <div style={{ fontWeight: '500', fontSize: '14px' }}>{t('logs.device')}</div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>
                     {getDeviceInfo(log.userAgent)}
                   </div>
@@ -679,17 +681,17 @@ const LogDetails = () => {
             )}
 
             <MetadataItem>
-              <InfoLabel>Log ID</InfoLabel>
+              <InfoLabel>{t('logs.logId')}</InfoLabel>
               <InfoValue style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                 {log._id}
               </InfoValue>
             </MetadataItem>
             <MetadataItem>
-              <InfoLabel>Created At</InfoLabel>
+              <InfoLabel>{t('logs.createdAt')}</InfoLabel>
               <InfoValue>{formatDate(log.createdAt)}</InfoValue>
             </MetadataItem>
             <MetadataItem>
-              <InfoLabel>Updated At</InfoLabel>
+              <InfoLabel>{t('logs.updatedAt')}</InfoLabel>
               <InfoValue>{formatDate(log.updatedAt)}</InfoValue>
             </MetadataItem>
           </InfoCard>

@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TaskForm from './components/TaskForm';
 
 const PageContainer = styled.div`
@@ -50,6 +51,7 @@ const FormContainer = styled.div`
 
 const TaskCreate = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleCancel = () => {
     navigate('/tasks');
@@ -60,17 +62,17 @@ const TaskCreate = () => {
       <Header>
         <BackButton onClick={() => navigate('/tasks')}>
           <ArrowLeft size={18} />
-          Back to Tasks
+          {t('common.backToTasks')}
         </BackButton>
-        <PageTitle>Create New Task</PageTitle>
-        <SubTitle>Create a new inspection task</SubTitle>
+        <PageTitle>{t('tasks.createNewTask')}</PageTitle>
+        <SubTitle>{t('tasks.createNewInspectionTask')}</SubTitle>
       </Header>
 
       <FormContainer>
         <TaskForm 
           onCancel={handleCancel} 
           isEdit={false}
-          submitButtonText="Create Task"
+          submitButtonText={t('tasks.createTask')}
         />
       </FormContainer>
     </PageContainer>
