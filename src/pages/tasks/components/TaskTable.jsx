@@ -854,7 +854,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </th>
               <th onClick={() => handleSort('deadline')}>
                 <HeaderContent>
-                  <HeaderText>{t('calendar.dueDate')}</HeaderText>
+                  <HeaderText>{t('tasks.dueDate')}</HeaderText>
                   {sortConfig.key === 'deadline' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (
