@@ -258,7 +258,7 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
               active={selectedCategory === category}
               onClick={() => setSelectedCategory(category)}
             >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
+              {translateCategory(category)}
             </CategoryButton>
           ))}
         </CategorySelect>
