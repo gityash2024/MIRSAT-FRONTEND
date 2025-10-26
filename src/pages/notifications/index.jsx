@@ -62,19 +62,20 @@ export const mockNotifications = [
 
 const DropdownContainer = styled.div`
   position: absolute;
-  right: 0;
+  ${props => props.$isRTL ? 'left: 0;' : 'right: 0;'}
   top: 100%;
   width: 380px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform-origin: top right;
+  transform-origin: ${props => props.$isRTL ? 'top left' : 'top right'};
   transition: all 0.2s ease-in-out;
   opacity: ${props => props.isOpen ? 1 : 0};
   transform: ${props => props.isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-10px)'};
   pointer-events: ${props => props.isOpen ? 'auto' : 'none'};
   z-index: 1000;
+  margin-top: 8px;
 `;
 
 const DropdownHeader = styled.div`
@@ -194,8 +195,9 @@ const ViewAllButton = styled(Link)`
 `;
 
 export const NotificationDropdown = ({ isOpen }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotification();
+  const isRTL = i18n.language === 'ar';
   
   useEffect(() => {
     if (isOpen) {
@@ -208,10 +210,10 @@ export const NotificationDropdown = ({ isOpen }) => {
   };
 
   return (
-    <DropdownContainer isOpen={isOpen}>
+    <DropdownContainer isOpen={isOpen} $isRTL={isRTL}>
       <DropdownHeader>
         <DropdownTitle>{t('notifications.notifications')}</DropdownTitle>
-        <Badge>{unreadCount || 0} New</Badge>
+        <Badge>{unreadCount || 0} {t('notifications.new')}</Badge>
       </DropdownHeader>
 
       <NotificationList>
@@ -230,7 +232,7 @@ export const NotificationDropdown = ({ isOpen }) => {
               <TextContent>
                 <NotificationTitle>{notification.title}</NotificationTitle>
                 <NotificationMessage>{notification.message}</NotificationMessage>
-                <Timestamp>{formatTimestamp(notification.createdAt)}</Timestamp>
+                <Timestamp>{formatTimestamp(notification.createdAt, t)}</Timestamp>
               </TextContent>
             </NotificationContent>
           </NotificationItem>
@@ -238,7 +240,7 @@ export const NotificationDropdown = ({ isOpen }) => {
       </NotificationList>
 
       <ViewAllButton to="/notifications">
-        View All Notifications
+        {t('notifications.viewAllNotifications')}
         <ArrowRight size={16} />
       </ViewAllButton>
     </DropdownContainer>
@@ -477,7 +479,7 @@ const NotificationIcon = ({ type, priority }) => {
   );
 };
 
-const formatTimestamp = (timestamp) => {
+const formatTimestamp = (timestamp, t) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMs = now - date;
@@ -487,13 +489,13 @@ const formatTimestamp = (timestamp) => {
   const diffDays = Math.floor(diffHr / 24);
 
   if (diffSec < 60) {
-    return 'Just now';
+    return t('notifications.justNow');
   } else if (diffMin < 60) {
-    return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+    return `${diffMin} ${t('notifications.minutesAgo')}`;
   } else if (diffHr < 24) {
-    return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`;
+    return `${diffHr} ${t('notifications.hoursAgo')}`;
   } else if (diffDays < 7) {
-    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return `${diffDays} ${t('notifications.daysAgo')}`;
   } else {
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -608,17 +610,17 @@ const NotificationsPage = () => {
         </TitleSection>
         <ActionButtons>
           <FilterButton isActive={filter === 'all'} onClick={() => handleFilterChange('all')}>
-            All
+            {t('notifications.all')}
           </FilterButton>
           <FilterButton isActive={filter === 'unread'} onClick={() => handleFilterChange('unread')}>
-            Unread
+            {t('notifications.unread')}
           </FilterButton>
           <FilterButton isActive={filter === 'read'} onClick={() => handleFilterChange('read')}>
-            Read
+            {t('notifications.read')}
           </FilterButton>
           <ActionButton onClick={handleMarkAllAsRead}>
             <Check size={16} />
-            Mark All Read
+            {t('notifications.markAllAsRead')}
           </ActionButton>
         </ActionButtons>
       </Header>
@@ -642,21 +644,21 @@ const NotificationsPage = () => {
                     <CardMessage>{notification.message}</CardMessage>
                     <CardTimestamp>
                       <Clock size={14} />
-                      {formatTimestamp(notification.createdAt)}
+                      {formatTimestamp(notification.createdAt, t)}
                     </CardTimestamp>
                   </CardContent>
                   <CardActions>
                     {!notification.read && (
                       <ActionIconButton 
                         onClick={() => handleMarkAsRead(notification._id)}
-                        title="Mark as read"
+                        title={t('notifications.markAsReadTitle')}
                       >
                         <Check size={16} />
                       </ActionIconButton>
                     )}
                     <ActionIconButton 
                       onClick={() => handleDeleteNotification(notification._id)}
-                      title="Delete notification"
+                      title={t('notifications.deleteNotificationTitle')}
                     >
                       <X size={16} />
                     </ActionIconButton>
@@ -664,7 +666,7 @@ const NotificationsPage = () => {
                 </NotificationCardContent>
                 {notification.data?.link && (
                   <CardLink to={notification.data.link}>
-                    View Details <ArrowRight size={14} />
+                    {t('notifications.viewDetails')} <ArrowRight size={14} />
                   </CardLink>
                 )}
               </NotificationCard>
@@ -677,14 +679,14 @@ const NotificationsPage = () => {
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               >
-                Previous
+                {t('common.previous')}
               </PaginationButton>
               <PageInfo>{t('notifications.page')} {currentPage} {t('notifications.of')} {totalPages}</PageInfo>
               <PaginationButton 
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               >
-                Next
+                {t('common.next')}
               </PaginationButton>
             </Pagination>
           )}
