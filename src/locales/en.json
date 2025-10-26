@@ -22,6 +22,7 @@
   "month": "Month",
   "week": "Week",
   "day": "Day",
+  "today": "Today",
   "sunday": "Sunday",
   "monday": "Monday",
   "tuesday": "Tuesday",
@@ -78,6 +79,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "add": "Add",
+    "adding": "Adding...",
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
@@ -112,7 +114,9 @@
     "status": "Status",
     "date": "Date",
     "time": "Time",
+    "deadline": "Deadline",
     "name": "Name",
+    "id": "ID",
     "email": "Email",
     "password": "Password",
     "phone": "Phone",
@@ -1264,6 +1268,7 @@
     "completed": "Completed",
     "inProgress": "In Progress",
     "pending": "Pending",
+    "cancelled": "Cancelled",
     "createAndManage": "Create and manage inspection tasks",
     "noSectionSelected": "No Section Selected",
     "selectSectionFromSidebar": "Please select a section from the sidebar to view its details",
@@ -2014,6 +2019,12 @@
     "viewTasks": "View Tasks",
     "editAsset": "Edit Asset",
     "deleteAsset": "Delete Asset",
-    "deleteAssetConfirm": "Are you sure you want to delete this asset? This action cannot be undone."
+    "deleteAssetConfirm": "Are you sure you want to delete this asset? This action cannot be undone.",
+    "assetInformation": "Asset Information",
+    "noTasksFound": "No tasks found",
+    "noTasksAssociatedWithAsset": "No tasks are associated with this asset",
+    "manufacturer": "Manufacturer",
+    "serialNumber": "Serial Number",
+    "type": "Type"
   }
 }

@@ -388,7 +388,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       
                       <TaskDetail>
                         <Calendar size={16} />
-                        <div>{t('calendar.deadline')}: {task.deadline ? new Date(task.deadline).toLocaleDateString() : t('tasks.noDeadline')}</div>
+                        <div>{t('common.deadline')}: {task.deadline ? new Date(task.deadline).toLocaleDateString() : t('tasks.noDeadline')}</div>
                       </TaskDetail>
                       
                       <TaskDetail>

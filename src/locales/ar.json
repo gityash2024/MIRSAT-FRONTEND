@@ -22,6 +22,7 @@
   "month": "شهر",
   "week": "أسبوع",
   "day": "يوم",
+  "today": "اليوم",
   "sunday": "الأحد",
   "monday": "الاثنين",
   "tuesday": "الثلاثاء",
@@ -78,6 +79,7 @@
     "delete": "حذف",
     "edit": "تعديل",
     "add": "إضافة",
+    "adding": "جاري الإضافة...",
     "search": "بحث",
     "filter": "تصفية",
     "export": "تصدير",
@@ -112,7 +114,9 @@
     "status": "الحالة",
     "date": "التاريخ",
     "time": "الوقت",
+    "deadline": "الموعد النهائي",
     "name": "الاسم",
+    "id": "المعرف",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
     "phone": "الهاتف",
@@ -1163,6 +1167,7 @@
     "completed": "مكتمل",
     "inProgress": "قيد التنفيذ",
     "pending": "معلق",
+    "cancelled": "ملغي",
     "createAndManage": "إنشاء وإدارة مهام التفتيش",
     "noSectionSelected": "لم يتم اختيار قسم",
     "selectSectionFromSidebar": "يرجى اختيار قسم من الشريط الجانبي لعرض تفاصيله",
@@ -2090,6 +2095,12 @@
     "viewTasks": "عرض المهام",
     "editAsset": "تعديل الأصل",
     "deleteAsset": "حذف الأصل",
-    "deleteAssetConfirm": "هل أنت متأكد من أنك تريد حذف هذا الأصل؟ لا يمكن التراجع عن هذا الإجراء."
+    "deleteAssetConfirm": "هل أنت متأكد من أنك تريد حذف هذا الأصل؟ لا يمكن التراجع عن هذا الإجراء.",
+    "assetInformation": "معلومات الأصل",
+    "noTasksFound": "لم يتم العثور على مهام",
+    "noTasksAssociatedWithAsset": "لا توجد مهام مرتبطة بهذا الأصل",
+    "manufacturer": "الشركة المصنعة",
+    "serialNumber": "الرقم التسلسلي",
+    "type": "النوع"
   }
 }
