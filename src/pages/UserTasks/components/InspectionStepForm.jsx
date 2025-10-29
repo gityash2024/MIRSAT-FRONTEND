@@ -1204,14 +1204,15 @@ const InspectionStepForm = ({
       // Get max score from question data
       const maxScore = question.scoring?.max || 
         (question.scores ? Math.max(...Object.values(question.scores).filter(v => !isNaN(v))) : 0) || 2;
+      const weight = question.weight || 1;
       
       if (maxScore > 0) {
-        totalPossible += maxScore;
+        totalPossible += (maxScore * weight);
         
         // Get achieved score from responses
         const response = getQuestionResponse(question._id, sectionId);
         if (response && question.scores && question.scores[response] !== undefined) {
-          totalAchieved += question.scores[response];
+          totalAchieved += (question.scores[response] * weight);
         }
       }
     });
