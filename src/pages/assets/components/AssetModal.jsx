@@ -112,6 +112,59 @@ const Select = styled.select`
   }
 `;
 
+const ColorPickerContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const ColorInput = styled.input`
+  width: 60px;
+  height: 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+  }
+`;
+
+const ColorPreview = styled.div`
+  flex: 1;
+  height: 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: ${props => props.color || '#f5f7fb'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => {
+    // Calculate if text should be dark or light based on background brightness
+    const hex = props.color?.replace('#', '') || 'f5f7fb';
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 128 ? '#333' : '#fff';
+  }};
+  font-size: 12px;
+  font-weight: 500;
+`;
+
 const ErrorText = styled.div`
   color: #dc2626;
   font-size: 12px;
@@ -165,6 +218,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     displayName: '',
     city: '',
     location: '',
+    color: '#f5f7fb', // Default light gray color
   });
   
   const [errors, setErrors] = useState({});
@@ -189,6 +243,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         displayName: asset.displayName || '',
         city: asset.city || '',
         location: asset.location || '',
+        color: asset.color || '#f5f7fb',
       });
       setErrors({});
     } else {
@@ -198,6 +253,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         displayName: '',
         city: '',
         location: '',
+        color: '#f5f7fb',
       });
       setErrors({});
     }
@@ -261,6 +317,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         displayName: formData.displayName.trim(),
         city: formData.city.trim(),
         location: formData.location.trim(),
+        color: formData.color || '#f5f7fb',
       };
 
       if (asset) {
@@ -318,6 +375,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         displayName: '',
         city: '',
         location: '',
+        color: '#f5f7fb',
       });
       setErrors({});
       onClose();
@@ -444,6 +502,27 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   disabled={isSubmitting}
                 />
                 {errors.location && <ErrorText>{errors.location}</ErrorText>}
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="color">Row Color</Label>
+                <ColorPickerContainer>
+                  <ColorInput
+                    type="color"
+                    id="color"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    title="Select asset row color"
+                  />
+                  <ColorPreview color={formData.color}>
+                    {formData.color}
+                  </ColorPreview>
+                </ColorPickerContainer>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  This color will be used for the asset row in the listing
+                </div>
               </FormGroup>
             </ModalBody>
             

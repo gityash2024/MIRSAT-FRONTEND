@@ -1282,6 +1282,8 @@ const TaskForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [filteredAssets, setFilteredAssets] = useState(assets || []);
+  const [selectedTemplateType, setSelectedTemplateType] = useState(null);
   
   useEffect(() => {
     if (!initialData?.assignedTo) return;
@@ -1309,6 +1311,24 @@ const TaskForm = ({
       console.error('Error extracting user ID:', error);
     }
   }, [initialData]);
+  
+  // Filter assets based on selected template type
+  useEffect(() => {
+    if (assets && assets.length > 0) {
+      if (formData.inspectionLevel && selectedTemplateType) {
+        // Filter assets that match the template's asset type
+        const filtered = assets.filter(asset => asset.type === selectedTemplateType);
+        setFilteredAssets(filtered);
+        console.log('Filtered assets for template type:', selectedTemplateType, 'Found:', filtered.length);
+      } else if (formData.inspectionLevel && !selectedTemplateType) {
+        // If we have a template but no type info, show all assets
+        setFilteredAssets(assets);
+      } else {
+        // No template selected, show all assets
+        setFilteredAssets(assets);
+      }
+    }
+  }, [formData.inspectionLevel, selectedTemplateType, assets]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1502,6 +1522,11 @@ const TaskForm = ({
       newErrors.inspectionLevel = t('tasks.templateRequired');
     }
     
+    // Require asset selection when template is selected
+    if (formData.inspectionLevel && !formData.asset) {
+      newErrors.asset = 'Please select an asset';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -1509,35 +1534,27 @@ const TaskForm = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // If template/inspection level is being changed, auto-fill asset field
+    // If template/inspection level is being changed, update filtered assets
     if (name === 'inspectionLevel') {
       if (value) {
         const selectedTemplate = inspectionLevels?.find(level => level._id === value);
         if (selectedTemplate && selectedTemplate.type) {
-          // Find assets that match the template type
-          const matchingAssets = assets?.filter(asset => asset.type === selectedTemplate.type);
+          // Set the template type to filter assets
+          setSelectedTemplateType(selectedTemplate.type);
           
-          if (matchingAssets && matchingAssets.length > 0) {
-            // Auto-select the first matching asset
-            const firstMatchingAsset = matchingAssets[0];
-            setFormData(prev => ({
-              ...prev,
-              [name]: value,
-              asset: firstMatchingAsset._id || firstMatchingAsset.id
-            }));
-            return;
-          } else {
-            // No matching assets found, clear asset field
-            setFormData(prev => ({
-              ...prev,
-              [name]: value,
-              asset: ''
-            }));
-            return;
-          }
+          // Clear asset field when template changes
+          setFormData(prev => ({
+            ...prev,
+            [name]: value,
+            asset: ''
+          }));
+          return;
+        } else {
+          setSelectedTemplateType(null);
         }
       } else {
-        // Template cleared, reset asset field
+        // Template cleared, reset asset field and clear type filter
+        setSelectedTemplateType(null);
         setFormData(prev => ({
           ...prev,
           [name]: value,
@@ -1868,15 +1885,22 @@ const TaskForm = ({
             name="asset"
             value={formData.asset}
             onChange={handleChange}
-            disabled={true}
+            required
+            disabled={!formData.inspectionLevel}
             style={{
-              backgroundColor: '#f5f5f5',
-              cursor: 'not-allowed',
-              opacity: 0.7
+              backgroundColor: formData.inspectionLevel ? '#fff' : '#f5f5f5',
+              cursor: formData.inspectionLevel ? 'default' : 'not-allowed',
+              opacity: formData.inspectionLevel ? 1 : 0.7
             }}
           >
-            <option value="">{formData.inspectionLevel ? t('tasks.assetAutoSelected') : t('tasks.assetDisabledSelectTemplateFirst')}</option>
-            {assets?.map(asset => (
+            <option value="">
+              {formData.inspectionLevel 
+                ? filteredAssets.length > 0 
+                  ? 'Select asset' 
+                  : 'No matching assets found for this template type'
+                : 'Select template first'}
+            </option>
+            {filteredAssets.map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
                 {asset.displayName || asset.uniqueId} - {asset.type}
               </option>
@@ -1889,35 +1913,21 @@ const TaskForm = ({
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
-              {t('tasks.selectTemplateFirstToAutoSelectAsset')}
+              Please select a template first to filter available assets
             </div>
           )}
-          {formData.inspectionLevel && formData.asset && (
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#16a34a', 
-              marginTop: '4px',
-              fontStyle: 'italic',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              <Check size={12} />
-              {t('tasks.assetAutoSelectedFromTemplate')}
-            </div>
-          )}
-          {formData.inspectionLevel && !formData.asset && (
+          {formData.inspectionLevel && filteredAssets.length === 0 && (
             <div style={{ 
               fontSize: '12px', 
               color: '#f59e0b', 
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
-              {t('tasks.noMatchingAssetFound')}
+              No matching assets found for template type: {selectedTemplateType || 'Unknown'}
             </div>
           )}
-          {formData.inspectionLevel && formData.asset && (() => {
-            const selectedAsset = assets?.find(asset => (asset._id || asset.id) === formData.asset);
+          {formData.inspectionLevel && formData.asset && filteredAssets.length > 0 && (() => {
+            const selectedAsset = filteredAssets.find(asset => (asset._id || asset.id) === formData.asset);
             return selectedAsset ? (
               <div style={{ 
                 fontSize: '11px', 
@@ -1928,10 +1938,11 @@ const TaskForm = ({
                 borderRadius: '4px',
                 border: '1px solid #e0f2fe'
               }}>
-                <strong>{t('tasks.selectedAsset')}:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
+                <strong>Selected Asset:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
               </div>
             ) : null;
           })()}
+          {errors.asset && <ErrorMessage>{errors.asset}</ErrorMessage>}
         </FormGroup>
       </FormRow>
 

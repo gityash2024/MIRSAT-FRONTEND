@@ -52,6 +52,28 @@ const Table = styled.table`
   }
 `;
 
+const StyledTableRow = styled.tr`
+  background-color: ${props => props.$rowColor || '#ffffff'};
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => {
+      // Lighten the color on hover by blending with white
+      const color = props.$rowColor || '#ffffff';
+      if (color === '#ffffff') return '#f5f7fb';
+      // Create a lighter version by blending with white
+      const hex = color.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const blendR = Math.min(255, Math.floor(r + (255 - r) * 0.3));
+      const blendG = Math.min(255, Math.floor(g + (255 - g) * 0.3));
+      const blendB = Math.min(255, Math.floor(b + (255 - b) * 0.3));
+      return `rgb(${blendR}, ${blendG}, ${blendB})`;
+    }} !important;
+  }
+`;
+
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
@@ -264,8 +286,9 @@ const AssetTable = ({
           ) : (
             assets.map((asset, index) => {
               const assetId = getAssetId(asset);
+              const rowColor = asset.color || '#ffffff';
               return (
-                <tr key={assetId || `asset-${index}`}>
+                <StyledTableRow key={assetId || `asset-${index}`} $rowColor={rowColor}>
                   <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                   <td>{asset.uniqueId || '--'}</td>
                   <td>{asset.type || '--'}</td>
@@ -301,7 +324,7 @@ const AssetTable = ({
                       </ActionButton>
                     </ActionButtonGroup>
                   </ActionsCell>
-                </tr>
+                </StyledTableRow>
               );
             })
           )}
