@@ -2115,6 +2115,7 @@ const calculatePageScore = (page, responses) => {
 
 // Signature Canvas Component for individual questions - moved outside to prevent re-renders
 const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled, onSaveResponse }) => {
+  const { t } = useTranslation();
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const signaturePadRef = useRef(null);
 
