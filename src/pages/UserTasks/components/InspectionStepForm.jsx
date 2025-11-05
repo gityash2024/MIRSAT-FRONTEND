@@ -2928,6 +2928,17 @@ const QuestionText = styled.div`
   font-weight: 500;
   color: #334155;
   flex-grow: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 16px;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const QuestionDescription = styled.div`
@@ -2967,6 +2978,18 @@ const ComplianceButtonGroup = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
+
+  button {
+    @media (max-width: 480px) {
+      flex: 1 1 calc(50% - 3px);
+      max-width: calc(50% - 3px);
+      min-width: 0;
+    }
+  }
 `;
 
 const ComplianceButton = styled.button`

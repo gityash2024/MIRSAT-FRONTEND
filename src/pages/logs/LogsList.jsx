@@ -46,12 +46,33 @@ const LogsContainer = styled.div`
   font-family: '_thesansarab_9750fc', '_thesansarab_Fallback_9750fc', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Header = styled.div`
   margin-bottom: 32px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
@@ -59,6 +80,16 @@ const Title = styled.h1`
   font-weight: 800;
   color: var(--color-navy);
   margin: 0 0 8px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -66,6 +97,16 @@ const Subtitle = styled.p`
   font-size: 16px;
   margin: 0;
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -73,6 +114,21 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 32px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -84,6 +140,9 @@ const StatCard = styled.div`
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   
   &:hover {
     transform: translateY(-2px);
@@ -99,6 +158,16 @@ const StatCard = styled.div`
     height: 3px;
     background: ${props => props.color || 'linear-gradient(135deg, var(--color-teal) 0%, #764ba2 100%)'};
   }
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const StatIcon = styled.div`
@@ -111,6 +180,29 @@ const StatIcon = styled.div`
   justify-content: center;
   color: white;
   margin-bottom: 8px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const StatValue = styled.div`
@@ -118,6 +210,16 @@ const StatValue = styled.div`
   font-weight: 700;
   color: var(--color-navy);
   margin-bottom: 2px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const StatLabel = styled.div`
@@ -126,6 +228,16 @@ const StatLabel = styled.div`
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+  }
 `;
 
 const ControlsSection = styled.div`
@@ -135,6 +247,21 @@ const ControlsSection = styled.div`
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const ControlsRow = styled.div`
@@ -142,12 +269,37 @@ const ControlsRow = styled.div`
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
 `;
 
 const SearchContainer = styled.div`
   position: relative;
   flex: 1;
   min-width: 300px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 200px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    width: 100%;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -158,6 +310,17 @@ const SearchInput = styled.input`
   font-size: 14px;
   transition: all 0.2s ease;
   background: #f8fafc;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px 10px 44px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px 10px 40px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -177,11 +340,36 @@ const SearchIcon = styled.div`
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
+
+  @media (max-width: 768px) {
+    left: 14px;
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (max-width: 480px) {
+    left: 12px;
+    width: 16px;
+    height: 16px;
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const FilterButton = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 20px;
   background: ${props => props.active ? 'var(--color-teal)' : 'white'};
@@ -191,16 +379,39 @@ const FilterButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
+
   &:hover {
     background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
     border-color: ${props => props.active ? 'var(--color-navy)' : '#cbd5e1'};
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const RefreshButton = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 20px;
   background: white;
@@ -211,6 +422,21 @@ const RefreshButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
   
   &:hover {
     background: #f8fafc;
@@ -225,6 +451,11 @@ const RefreshButton = styled.button`
   
   svg {
     animation: ${props => props.loading ? 'spin 1s linear infinite' : 'none'};
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
   
   @keyframes spin {
@@ -240,6 +471,19 @@ const FiltersPanel = styled.div`
   background: #f8fafc;
   border-radius: 12px;
   border: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-top: 16px;
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 12px;
+    padding: 12px;
+  }
 `;
 
 const FiltersGrid = styled.div`
@@ -247,18 +491,50 @@ const FiltersGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
 `;
 
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const FilterLabel = styled.label`
   font-weight: 600;
   color: #374151;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const FilterSelect = styled.select`
@@ -268,6 +544,19 @@ const FilterSelect = styled.select`
   background: white;
   font-size: 14px;
   transition: all 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -280,6 +569,14 @@ const FilterActions = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    justify-content: stretch;
+    gap: 8px;
+  }
 `;
 
 const ClearButton = styled.button`
@@ -291,6 +588,20 @@ const ClearButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
   
   &:hover {
     background: #f8fafc;
@@ -305,6 +616,17 @@ const TableWrapper = styled.div`
   flex-direction: column;
   min-height: 0;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const LogsTable = styled.div`
@@ -317,18 +639,80 @@ const LogsTable = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 10px;
+  }
+`;
+
+const TableScrollContainer = styled.div`
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+
+  @media (max-width: 480px) {
+    /* Calculate height to show all 20 logs: 
+       Header: ~36px + (Row height: ~40px * 20 rows) = ~836px
+       Try to fit as much as possible in viewport */
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+
+    @media (max-width: 480px) {
+      height: 6px;
+      width: 6px;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
 `;
 
 const TableContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 400px);
+  min-width: 800px;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 700px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 600px;
+  }
 `;
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 140px 100px 120px 1fr 120px 80px;
-  gap: 12px;
+  grid-template-columns: 50px 120px 130px 90px 100px 1fr 100px 70px;
+  gap: 10px;
   padding: 12px 20px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 2px solid var(--color-gray-light);
@@ -338,29 +722,75 @@ const TableHeader = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: ${props => props.$isRTL ? 'right' : 'left'};
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 45px 110px 120px 85px 95px 1fr 95px 65px;
+    padding: 10px 16px;
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 40px 100px 110px 80px 90px 1fr 90px 60px;
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
   
   & > div {
     display: flex;
     align-items: center;
     justify-content: ${props => props.$isRTL ? 'flex-end' : 'flex-start'};
     padding: 0 4px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 `;
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 140px 100px 120px 1fr 120px 80px;
-  gap: 12px;
+  grid-template-columns: 50px 120px 130px 90px 100px 1fr 100px 70px;
+  gap: 10px;
   padding: 12px 20px;
   border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 50px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 45px 110px 120px 85px 95px 1fr 95px 65px;
+    padding: 10px 16px;
+    gap: 8px;
+    min-height: 45px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 40px 100px 110px 80px 90px 1fr 90px 60px;
+    padding: 6px 10px;
+    gap: 6px;
+    min-height: 38px;
+  }
   
   &:hover {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     transform: translateX(4px);
+
+    @media (max-width: 480px) {
+      transform: none;
+    }
   }
   
   &:last-child {
@@ -387,6 +817,9 @@ const TableRow = styled.div`
     align-items: center;
     justify-content: ${props => props.$isRTL ? 'flex-end' : 'flex-start'};
     padding: 0 4px;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 `;
 
@@ -394,6 +827,14 @@ const UserInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const UserAvatar = styled.div`
@@ -408,10 +849,27 @@ const UserAvatar = styled.div`
   font-weight: 700;
   font-size: 14px;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
 `;
 
 const UserDetails = styled.div`
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const UserName = styled.div`
@@ -419,6 +877,19 @@ const UserName = styled.div`
   color: var(--color-navy);
   font-size: 13px;
   margin-bottom: 1px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const UserRole = styled.div`
@@ -426,6 +897,19 @@ const UserRole = styled.div`
   font-size: 11px;
   text-transform: capitalize;
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 9px;
+  }
 `;
 
 const ActionBadge = styled.span`
@@ -450,10 +934,29 @@ const ActionBadge = styled.span`
     }
   }};
   color: white;
-  min-width: 100px;
+  min-width: 90px;
+  max-width: 100%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border: none;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 80px;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 70px;
+    padding: 2px 5px;
+    font-size: 9px;
+  }
   
   &:hover {
     transform: translateY(-1px);
@@ -482,9 +985,28 @@ const SeverityBadge = styled.span`
   }};
   color: white;
   min-width: 70px;
+  max-width: 100%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border: none;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 60px;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 50px;
+    padding: 2px 5px;
+    font-size: 9px;
+  }
   
   &:hover {
     transform: translateY(-1px);
@@ -496,6 +1018,14 @@ const TaskInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 2px;
+  }
 `;
 
 const TaskTitle = styled.div`
@@ -506,6 +1036,18 @@ const TaskTitle = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+    max-width: 80px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    max-width: 60px;
+  }
 `;
 
 const TaskStatus = styled.div`
@@ -513,6 +1055,19 @@ const TaskStatus = styled.div`
   color: ${props => props.color || 'var(--color-gray-medium)'};
   text-transform: capitalize;
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 9px;
+  }
 `;
 
 const TaskPriority = styled.div`
@@ -521,6 +1076,19 @@ const TaskPriority = styled.div`
   text-transform: uppercase;
   font-weight: 600;
   margin-top: 2px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 9px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 8px;
+  }
 `;
 
 const DescriptionText = styled.div`
@@ -535,6 +1103,22 @@ const DescriptionText = styled.div`
   display: flex;
   align-items: center;
   height: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+    max-width: 150px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+    max-width: 100px;
+  }
 `;
 
 const TimeInfo = styled.div`
@@ -544,6 +1128,30 @@ const TimeInfo = styled.div`
   color: var(--color-gray-medium);
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 12px;
+      height: 12px;
+    }
+
+    @media (max-width: 480px) {
+      width: 10px;
+      height: 10px;
+    }
+  }
 `;
 
 const SerialNumber = styled.div`
@@ -559,12 +1167,30 @@ const SerialNumber = styled.div`
   height: 20px;
   border: 1px solid #e2e8f0;
   margin: 0 auto;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 16px;
+    font-size: 9px;
+  }
 `;
 
 const Actions = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -578,11 +1204,34 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+  }
   
   &:hover {
     background: var(--color-teal);
     color: white;
     transform: scale(1.1);
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -629,6 +1278,24 @@ const Pagination = styled.div`
   background: white;
   border-top: 1px solid var(--color-gray-light);
   border-radius: 0 0 16px 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 0 0 10px 10px;
+  }
 `;
 
 const PaginationInfo = styled.div`
@@ -636,12 +1303,38 @@ const PaginationInfo = styled.div`
   color: var(--color-gray-medium);
   font-size: 14px;
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    margin-right: 0;
+    margin-bottom: 8px;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const PaginationControls = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
 `;
 
 const PageButton = styled.button`
@@ -653,6 +1346,20 @@ const PageButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 40px;
+  }
   
   &:hover {
     background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
@@ -1249,79 +1956,81 @@ const LogsList = () => {
 
       <TableWrapper>
         <LogsTable>
-          <TableHeader $isRTL={isRTL}>
-            <div>{t('logs.srNo')}</div>
-            <div>{t('common.user')}</div>
-            <div>{t('logs.action')}</div>
-            <div>{t('logs.severity')}</div>
-            <div>{t('common.task')}</div>
-            <div>{t('common.description')}</div>
-            <div>{t('common.time')}</div>
-            <div>{t('common.actions')}</div>
-          </TableHeader>
+          <TableScrollContainer>
+            <TableContent>
+              <TableHeader $isRTL={isRTL}>
+                <div>{t('logs.srNo')}</div>
+                <div>{t('common.user')}</div>
+                <div>{t('logs.action')}</div>
+                <div>{t('logs.severity')}</div>
+                <div>{t('common.task')}</div>
+                <div>{t('common.description')}</div>
+                <div>{t('common.time')}</div>
+                <div>{t('common.actions')}</div>
+              </TableHeader>
 
-          <TableContent>
-            {logs.length === 0 ? (
-              <EmptyState>
-                <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <div>{t('logs.noLogsFound')}</div>
-                <div style={{ fontSize: '14px', marginTop: '4px' }}>
-                  {t('logs.tryAdjustingSearch')}
-                </div>
-              </EmptyState>
-            ) : (
-              logs.map((log, index) => (
-                <TableRow key={log._id} $isRTL={isRTL} onClick={() => handleViewLog(log)}>
-                  <SerialNumber>
-                    {((pagination.page - 1) * pagination.limit) + index + 1}
-                  </SerialNumber>
-                  <UserInfo>
-                    <UserAvatar>
-                      {log.userId?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </UserAvatar>
-                    <UserDetails>
-                      <UserName>{log.userId?.name || 'Unknown User'}</UserName>
-                      <UserRole>{log.userId?.role || 'Unknown Role'}</UserRole>
-                    </UserDetails>
-                  </UserInfo>
-                  <ActionBadge type={getActionType(log.action)}>
-                    {formatAction(log.action)}
-                  </ActionBadge>
-                  <SeverityBadge level={log.severity}>
-                    {log.severity}
-                  </SeverityBadge>
-                  <TaskInfo>
-                    <TaskTitle title={log.taskId?.title || 'No Task'}>
-                      {log.taskId?.title || 'No Task'}
-                    </TaskTitle>
-                    <TaskStatus color={getTaskStatusColor(log.taskId?.status)}>
-                      {log.taskId?.status || 'N/A'}
-                    </TaskStatus>
-                    {log.taskId?.priority && (
-                      <TaskPriority color={getTaskPriorityColor(log.taskId?.priority)}>
-                        {log.taskId?.priority}
-                      </TaskPriority>
-                    )}
-                  </TaskInfo>
-                  <DescriptionText title={log.description}>
-                    {truncateText(log.description)}
-                  </DescriptionText>
-                  <TimeInfo>
-                    <Clock size={14} />
-                    {formatDate(log.timestamp)}
-                  </TimeInfo>
-                  <Actions>
-                    <ActionButton onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewLog(log);
-                    }}>
-                      <Eye size={16} />
-                    </ActionButton>
-                  </Actions>
-                </TableRow>
-              ))
-            )}
-          </TableContent>
+              {logs.length === 0 ? (
+                <EmptyState>
+                  <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                  <div>{t('logs.noLogsFound')}</div>
+                  <div style={{ fontSize: '14px', marginTop: '4px' }}>
+                    {t('logs.tryAdjustingSearch')}
+                  </div>
+                </EmptyState>
+              ) : (
+                logs.map((log, index) => (
+                  <TableRow key={log._id} $isRTL={isRTL} onClick={() => handleViewLog(log)}>
+                    <SerialNumber>
+                      {((pagination.page - 1) * pagination.limit) + index + 1}
+                    </SerialNumber>
+                    <UserInfo>
+                      <UserAvatar>
+                        {log.userId?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </UserAvatar>
+                      <UserDetails>
+                        <UserName>{log.userId?.name || 'Unknown User'}</UserName>
+                        <UserRole>{log.userId?.role || 'Unknown Role'}</UserRole>
+                      </UserDetails>
+                    </UserInfo>
+                    <ActionBadge type={getActionType(log.action)}>
+                      {formatAction(log.action)}
+                    </ActionBadge>
+                    <SeverityBadge level={log.severity}>
+                      {log.severity}
+                    </SeverityBadge>
+                    <TaskInfo>
+                      <TaskTitle title={log.taskId?.title || 'No Task'}>
+                        {log.taskId?.title || 'No Task'}
+                      </TaskTitle>
+                      <TaskStatus color={getTaskStatusColor(log.taskId?.status)}>
+                        {log.taskId?.status || 'N/A'}
+                      </TaskStatus>
+                      {log.taskId?.priority && (
+                        <TaskPriority color={getTaskPriorityColor(log.taskId?.priority)}>
+                          {log.taskId?.priority}
+                        </TaskPriority>
+                      )}
+                    </TaskInfo>
+                    <DescriptionText title={log.description}>
+                      {truncateText(log.description)}
+                    </DescriptionText>
+                    <TimeInfo>
+                      <Clock size={14} />
+                      {formatDate(log.timestamp)}
+                    </TimeInfo>
+                    <Actions>
+                      <ActionButton onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewLog(log);
+                      }}>
+                        <Eye size={16} />
+                      </ActionButton>
+                    </Actions>
+                  </TableRow>
+                ))
+              )}
+            </TableContent>
+          </TableScrollContainer>
         </LogsTable>
       </TableWrapper>
 

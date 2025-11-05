@@ -6,14 +6,42 @@ const FilterContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 14px;
+  }
 `;
 
 const FilterGroup = styled.div`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   h3 {
     font-size: 14px;
     font-weight: 600;
     color: #333;
     margin-bottom: 12px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
   }
 `;
 
@@ -21,6 +49,13 @@ const CheckboxGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 
   label {
     display: flex;
@@ -29,11 +64,31 @@ const CheckboxGroup = styled.div`
     cursor: pointer;
     font-size: 14px;
     color: #666;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 15px;
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 15px;
+      gap: 10px;
+      padding: 4px 0;
+    }
 
     input {
       width: 16px;
       height: 16px;
       cursor: pointer;
+      flex-shrink: 0;
+
+      @media (max-width: 480px) {
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 `;

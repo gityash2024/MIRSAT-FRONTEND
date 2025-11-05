@@ -160,12 +160,34 @@ const PageContainer = styled.div`
   padding: 6px;
   position: relative;
   overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 2px;
+  }
 `;
 
 const MainContent = styled.div`
   max-width: 1600px;
   margin: 0 auto;
   animation: ${fadeIn} 0.6s ease-out;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const TopBar = styled.div`
@@ -183,6 +205,21 @@ const TopBar = styled.div`
     0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.4);
   animation: ${slideIn} 0.5s ease-out;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    margin: 4px;
+    border-radius: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    margin: 2px;
+    border-radius: 12px;
+    gap: 8px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -201,6 +238,20 @@ const BackButton = styled.button`
     0 4px 15px rgba(55, 136, 216, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(55, 136, 216, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 14px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 4px;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -213,11 +264,76 @@ const BackButton = styled.button`
   &:active {
     transform: translateY(0);
   }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+`;
+
+const TopBarLeftSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
+`;
+
+const LiveStatusBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: ${props => props.$paused ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'};
+  border-radius: 8px;
+  font-size: 12px;
+  color: ${props => props.$paused ? '#dc2626' : '#16a34a'};
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 8px;
+    font-size: 10px;
+    gap: 4px;
+  }
 `;
 
 const QuickActions = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    justify-content: stretch;
+    flex-direction: column;
+  }
 `;
 
 const QuickActionButton = styled.button`
@@ -236,6 +352,22 @@ const QuickActionButton = styled.button`
   box-shadow: ${props => props.primary ? 
     '0 4px 15px rgba(55, 136, 216, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 
     '0 2px 8px rgba(0, 0, 0, 0.1)'};
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px;
+    width: 100%;
+    justify-content: center;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -248,6 +380,15 @@ const QuickActionButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -337,6 +478,19 @@ const TaskHeader = styled.div`
   animation: ${fadeIn} 0.6s ease-out 0.1s both;
   position: relative;
   overflow: hidden;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 16px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 2px;
+  }
   
   &::before {
     content: '';
@@ -362,6 +516,19 @@ const TaskTitle = styled.h1`
   background-clip: text;
   line-height: 1.2;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
 `;
 
 const TaskMeta = styled.div`
@@ -369,6 +536,18 @@ const TaskMeta = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-top: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
 `;
 
 const MetaCard = styled.div`
@@ -382,6 +561,20 @@ const MetaCard = styled.div`
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 10px;
+    margin: 2px;
+  }
   
   &:hover {
     transform: translateY(-4px);
@@ -389,6 +582,10 @@ const MetaCard = styled.div`
       0 8px 25px rgba(0, 0, 0, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
     border-color: rgba(55, 136, 216, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-2px);
+    }
   }
 `;
 
@@ -408,6 +605,29 @@ const MetaValue = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const StatusBadge = styled.div`
@@ -420,6 +640,20 @@ const StatusBadge = styled.div`
   font-weight: 600;
   text-transform: capitalize;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
   
   ${props => {
     switch(props.status) {
@@ -448,6 +682,15 @@ const StatusBadge = styled.div`
         `;
     }
   }}
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+    }
+  }
 `;
 
 const PriorityBadge = styled.div`
@@ -460,6 +703,20 @@ const PriorityBadge = styled.div`
   font-weight: 600;
   text-transform: uppercase;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 3px;
+  }
   
   ${props => {
     switch(props.priority) {
@@ -497,6 +754,16 @@ const ContentContainer = styled.div`
   @media (max-width: 1400px) {
     grid-template-columns: 1fr;
   }
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    margin: 2px;
+  }
 `;
 
 const MainPanel = styled.div`
@@ -524,11 +791,36 @@ const TabsContainer = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+    margin: 4px;
+    border-radius: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 12px;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  scrollbar-width: none;
 `;
 
 const TabsWrapper = styled.div`
   display: flex;
   gap: 4px;
+  min-width: max-content;
+
+  @media (max-width: 480px) {
+    gap: 3px;
+  }
 `;
 
 const Tab = styled.button`
@@ -545,6 +837,22 @@ const Tab = styled.button`
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  white-space: nowrap;
+  min-width: max-content;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px;
+    border-radius: 12px;
+  }
   
   ${props => props.active ? css`
     background: linear-gradient(135deg, #3788d8, #2c3e50);
@@ -554,6 +862,10 @@ const Tab = styled.button`
       0 4px 15px rgba(55, 136, 216, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(55, 136, 216, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
   ` : css`
     background: transparent;
     color: #64748b;
@@ -576,6 +888,15 @@ const Tab = styled.button`
       border: none;
     }
   }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const Card = styled.div`
@@ -590,6 +911,20 @@ const Card = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.4);
   transition: all 0.3s ease;
   margin: 6px;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 16px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 12px;
+    margin: 2px;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -598,6 +933,10 @@ const Card = styled.div`
       inset 0 1px 0 rgba(255, 255, 255, 0.4),
       0 2px 6px rgba(0, 0, 0, 0.1);
     border-color: rgba(55, 136, 216, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
   }
 `;
 
@@ -609,9 +948,31 @@ const SectionTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
   
   svg {
     color: #3788d8;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 `;
 
@@ -625,6 +986,20 @@ const ProgressContainer = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 16px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 12px;
+    margin: 2px;
+  }
 `;
 
 const ProgressHeader = styled.div`
@@ -650,6 +1025,16 @@ const ProgressValue = styled.div`
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const ProgressBar = styled.div`
@@ -686,6 +1071,26 @@ const InspectionContainer = styled.div`
   overflow: hidden;
   min-height: 80vh;
   margin: 6px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 16px;
+    margin: 4px;
+    min-height: 70vh;
+    width: calc(100% - 8px);
+    max-width: calc(100% - 8px);
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 12px;
+    margin: 2px;
+    min-height: 60vh;
+    width: calc(100% - 4px);
+    max-width: calc(100% - 4px);
+  }
 `;
 
 const InspectionHeader = styled.div`
@@ -697,6 +1102,23 @@ const InspectionHeader = styled.div`
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const InspectionTitle = styled.h3`
@@ -704,12 +1126,52 @@ const InspectionTitle = styled.h3`
   font-weight: 700;
   color: #1a202c;
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const InspectionControls = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    width: 100%;
+    justify-content: stretch;
+    flex-wrap: nowrap;
+  }
+
+  > * {
+    min-width: 0;
+    flex-shrink: 1;
+
+    @media (max-width: 480px) {
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
 `;
 
 const DropdownContainer = styled.div`
@@ -732,6 +1194,38 @@ const DropdownButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    min-width: 0;
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 13px;
+    gap: 6px;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px;
+    max-width: 100%;
+  }
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
   
   &:hover {
     border-color: #3788d8;
@@ -743,6 +1237,15 @@ const DropdownButton = styled.button`
     outline: none;
     border-color: #3788d8;
     box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.1);
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -794,12 +1297,34 @@ const NavigationButton = styled.button`
   box-shadow: 
     0 4px 15px rgba(55, 136, 216, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+  }
   
   &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 
       0 6px 20px rgba(55, 136, 216, 0.5),
       inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
   }
   
   &:active:not(:disabled) {
@@ -829,15 +1354,39 @@ const NavigationButton = styled.button`
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
       0 0 0 3px rgba(55, 136, 216, 0.2);
   }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const InspectionLayout = styled.div`
   display: flex;
   height: calc(80vh - 80px);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   
   @media (max-width: 1200px) {
     flex-direction: column;
     height: auto;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
   }
 `;
 
@@ -1046,6 +1595,20 @@ const ContentPanel = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const ContentHeader = styled.div`
@@ -1058,6 +1621,20 @@ const ContentHeader = styled.div`
   flex-wrap: wrap;
   gap: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+    gap: 8px;
+  }
 `;
 
 const ContentTitle = styled.h4`
@@ -1083,6 +1660,23 @@ const QuestionsContent = styled.div`
   overflow-y: auto;
   padding: 24px 32px;
   display: block;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const QuestionCard = styled.div`
@@ -1096,6 +1690,23 @@ const QuestionCard = styled.div`
     0 4px 15px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   position: relative;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin: 4px 0 16px 0;
+    border-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin: 3px 0 12px 0;
+    border-radius: 10px;
+  }
   
   &:hover {
     border-color: rgba(55, 136, 216, 0.4);
@@ -1103,6 +1714,10 @@ const QuestionCard = styled.div`
     box-shadow: 
       0 8px 25px rgba(0, 0, 0, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
   }
   
   &::after {
@@ -1124,6 +1739,21 @@ const QuestionHeader = styled.div`
   align-items: flex-start;
   margin-bottom: 16px;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
 `;
 
 const QuestionText = styled.div`
@@ -1132,6 +1762,20 @@ const QuestionText = styled.div`
   color: #1a202c;
   flex: 1;
   line-height: 1.5;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
 `;
 
 const QuestionBadges = styled.div`
@@ -1139,6 +1783,12 @@ const QuestionBadges = styled.div`
   gap: 8px;
   align-items: center;
   flex-shrink: 0;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
 `;
 
 const QuestionBadge = styled.div`
@@ -1175,6 +1825,30 @@ const ScoreBadge = styled.div`
   box-shadow: ${props => props.hasResponse ? 
     '0 2px 8px rgba(39, 174, 96, 0.3)' : 
     '0 2px 8px rgba(0, 0, 0, 0.1)'};
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 2px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 10px;
+      height: 10px;
+    }
+  }
 `;
 
 const InputContainer = styled.div`
@@ -1326,6 +2000,13 @@ const QuestionNumber = styled.div`
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(55, 136, 216, 0.3);
   border: 1px solid rgba(55, 136, 216, 0.3);
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
 `;
 
 const QuestionRow = styled.div`
@@ -1370,37 +2051,6 @@ const CommentsContainer = styled.div`
   max-height: 400px;
   overflow-y: auto;
   margin-bottom: 20px;
-`;
-
-const CommentItem = styled.div`
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
-  padding: 16px;
-  margin: 6px 0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  transition: all 0.3s ease;
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 4px 15px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    border-color: rgba(55, 136, 216, 0.3);
-  }
-`;
-
-const CommentHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-`;
-
-const CommentAuthor = styled.div`
-  font-weight: 600;
-  color: #1a202c;
 `;
 
 const CommentTime = styled.div`
@@ -1508,6 +2158,20 @@ const ScoreCard = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
   margin: 6px;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 16px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 12px;
+    margin: 2px;
+  }
 `;
 
 const ScoreGrid = styled.div`
@@ -1515,6 +2179,18 @@ const ScoreGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-top: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
 `;
 
 const ScoreItem = styled.div`
@@ -1528,6 +2204,20 @@ const ScoreItem = styled.div`
     0 2px 8px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    border-radius: 10px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    border-radius: 8px;
+    margin: 2px;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -1535,6 +2225,10 @@ const ScoreItem = styled.div`
       0 4px 15px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
     border-color: rgba(55, 136, 216, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
   }
 `;
 
@@ -1552,6 +2246,103 @@ const ScoreValue = styled.div`
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
+`;
+
+const MetricGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+`;
+
+const MetricCard = styled.div`
+  background: ${props => props.$bgColor || 'rgba(255, 255, 255, 0.1)'};
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
+`;
+
+const MetricLabel = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+`;
+
+const MetricValue = styled.div`
+  font-size: 28px;
+  font-weight: 800;
+  color: ${props => props.$color || '#3788d8'};
+  margin-bottom: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
+`;
+
+const MetricDescription = styled.div`
+  font-size: 14px;
+  color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const PageScoresContainer = styled.div`
@@ -1561,6 +2352,20 @@ const PageScoresContainer = styled.div`
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 12px;
+  }
 `;
 
 const PageScoreItem = styled.div`
@@ -1576,6 +2381,25 @@ const PageScoreItem = styled.div`
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    border-radius: 10px;
+    margin: 4px 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    border-radius: 8px;
+    margin: 3px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -1583,6 +2407,237 @@ const PageScoreItem = styled.div`
       0 4px 15px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
     border-color: rgba(55, 136, 216, 0.3);
+
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+    }
+  }
+`;
+
+const SectionCommentsContainer = styled.div`
+  margin-top: 32px;
+  padding: 20px;
+  background: rgba(55, 136, 216, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(55, 136, 216, 0.1);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+`;
+
+const SectionCommentsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+`;
+
+const CommentsList = styled.div`
+  margin-bottom: 16px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
+`;
+
+const CommentItem = styled.div`
+  margin-bottom: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+`;
+
+const CommentHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 6px;
+  }
+`;
+
+const CommentAuthor = styled.span`
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
+`;
+
+const CommentDate = styled.span`
+  font-size: 12px;
+  color: #6b7280;
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
+`;
+
+const CommentContent = styled.div`
+  color: #374151;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 14px;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
+`;
+
+const CommentInputContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+`;
+
+const CommentTextarea = styled.textarea`
+  flex: 1;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    font-size: 13px;
+    min-height: 70px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+    min-height: 60px;
+    border-radius: 6px;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #3788d8;
+    box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.1);
+  }
+
+  &:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+`;
+
+const CommentSubmitButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  background: ${props => props.disabled 
+    ? '#9ca3af' 
+    : 'linear-gradient(135deg, #3788d8, #2980b9)'};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 16px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+    border-radius: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(55, 136, 216, 0.3);
   }
 `;
 
@@ -1596,6 +2651,20 @@ const ReportSection = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 16px;
+    margin: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 2px;
+  }
 `;
 
 const ReportHeader = styled.div`
@@ -1674,6 +2743,23 @@ const ModalContent = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
   animation: ${fadeIn} 0.3s ease-out;
+  margin: 20px;
+
+  @media (max-width: 768px) {
+    padding: 24px;
+    border-radius: 16px;
+    width: 95%;
+    max-width: none;
+    margin: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 12px;
+    width: calc(100% - 20px);
+    margin: 10px;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -1689,6 +2775,17 @@ const ModalTitle = styled.h3`
   font-size: 20px;
   font-weight: 700;
   color: #1a202c;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -4479,132 +5576,59 @@ const UserTaskDetail = () => {
                   )}
                   
                   {/* Section Comments - Always show when section is selected */}
-                  <div style={{ 
-                    marginTop: '32px',
-                    padding: '20px',
-                    background: 'rgba(55, 136, 216, 0.02)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(55, 136, 216, 0.1)'
-                  }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px',
-                      marginBottom: '16px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#1a202c'
-                    }}>
+                  <SectionCommentsContainer>
+                    <SectionCommentsHeader>
                       <MessageSquare size={18} />
                       {t('tasks.sectionComments')}
-                    </div>
+                    </SectionCommentsHeader>
                     
                     {/* Existing Comments */}
                     {sectionComments[selectedSection] && sectionComments[selectedSection].length > 0 && (
-                      <div style={{ marginBottom: '16px' }}>
+                      <CommentsList>
                         {sectionComments[selectedSection].map((comment, index) => (
-                          <div key={comment._id || index} style={{
-                            marginBottom: '12px',
-                            padding: '12px',
-                            background: 'white',
-                            borderRadius: '8px',
-                            border: '1px solid #e5e7eb'
-                          }}>
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: '8px'
-                            }}>
-                              <span style={{ 
-                                fontWeight: '600', 
-                                color: '#374151',
-                                fontSize: '14px'
-                              }}>
+                          <CommentItem key={comment._id || index}>
+                            <CommentHeader>
+                              <CommentAuthor>
                                 {comment.user?.name || t('common.unknownUser')}
-                              </span>
-                              <span style={{ 
-                                fontSize: '12px', 
-                                color: '#6b7280'
-                              }}>
+                              </CommentAuthor>
+                              <CommentDate>
                                 {formatDateTime(comment.createdAt)}
-                              </span>
-                            </div>
-                            <div style={{ 
-                              color: '#374151',
-                              lineHeight: '1.5'
-                            }}>
+                              </CommentDate>
+                            </CommentHeader>
+                            <CommentContent>
                               {comment.content}
-                            </div>
-                          </div>
+                            </CommentContent>
+                          </CommentItem>
                         ))}
-                      </div>
+                      </CommentsList>
                     )}
                     
                     {/* Add Comment */}
                     {!isArchivedTask && (
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                        <div style={{ flex: 1 }}>
-                          <textarea
+                      <CommentInputContainer>
+                        <CommentTextarea
                             placeholder={t('tasks.addCommentForSection')}
                             value={sectionCommentTexts[selectedSection] || ''}
                             onChange={(e) => handleSectionCommentTextChange(selectedSection, e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '12px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '8px',
-                              fontSize: '14px',
-                              fontFamily: 'inherit',
-                              resize: 'vertical',
-                              minHeight: '80px'
-                            }}
                             disabled={commentLoadingStates[selectedSection]}
                           />
-                        </div>
-                        <button
+                        <CommentSubmitButton
                           onClick={() => handleSectionCommentSubmit(selectedSection)}
                           disabled={!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]}
-                          style={{
-                            padding: '12px 20px',
-                            background: (!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]) 
-                              ? '#9ca3af' 
-                              : 'linear-gradient(135deg, #3788d8, #2980b9)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: (!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]) 
-                              ? 'not-allowed' 
-                              : 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            minWidth: '100px',
-                            justifyContent: 'center'
-                          }}
                         >
                           {commentLoadingStates[selectedSection] ? (
                             <>
-                              <div style={{
-                                width: '14px',
-                                height: '14px',
-                                border: '2px solid transparent',
-                                borderTop: '2px solid white',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
-                              }} />
-                              {t('common.saving')}
+                              <Loader size={14} />
+                              {t('common.saving') || 'Saving...'}
                             </>
                           ) : (
                             <>
-                              <Send size={16} />
-                              {t('common.comment')}
+                              <Send size={14} />
+                              {t('tasks.comment') || t('common.submit') || 'Comment'}
                             </>
                           )}
-                        </button>
-                      </div>
+                        </CommentSubmitButton>
+                      </CommentInputContainer>
                     )}
                     
                     {/* Archived State Message */}
@@ -4619,7 +5643,7 @@ const UserTaskDetail = () => {
                         {t('tasks.commentsDisabledForArchived')}
                       </div>
                     )}
-                                      </div>
+                  </SectionCommentsContainer>
                   </>
               ) : (
                 <EmptyState>
@@ -4705,26 +5729,14 @@ const UserTaskDetail = () => {
     <PageContainer onClick={() => showPageDropdown && setShowPageDropdown(false)}>
       <MainContent>
         <TopBar>
+          <TopBarLeftSection>
           <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft size={18} />
             {t('common.backToTasks')}
           </BackButton>
           
-          <QuickActions>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {autoUpdateEnabled ? (
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  padding: '8px 12px',
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#16a34a',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
+              <LiveStatusBadge
                 onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
                 title="Click to toggle auto-update"
                 >
@@ -4736,27 +5748,18 @@ const UserTaskDetail = () => {
                     animation: 'pulse 2s infinite'
                   }}></div>
                   Live (5s)
-                </div>
+              </LiveStatusBadge>
               ) : (
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  padding: '8px 12px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#dc2626',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
+              <LiveStatusBadge $paused
                 onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
                 title="Click to enable auto-update"
                 >
                   ⏸ Paused
-                </div>
+              </LiveStatusBadge>
               )}
+          </TopBarLeftSection>
               
+          <QuickActions>
               {/* <QuickActionButton 
                 primary
                 onClick={handleExportReport}
@@ -4765,7 +5768,6 @@ const UserTaskDetail = () => {
                 <Download size={16} />
                 Export Report
               </QuickActionButton> */}
-            </div>
           </QuickActions>
         </TopBar>
         
@@ -5036,67 +6038,41 @@ const UserTaskDetail = () => {
                       <BarChart2 size={20} />
                       {t('tasks.taskMetricsProgress')}
                     </SectionTitle>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                      <div style={{ 
-                        background: 'rgba(55, 136, 216, 0.1)', 
-                        padding: '20px', 
-                        borderRadius: '12px',
-                        textAlign: 'center'
-                      }}>
-                        <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallProgress')}</div>
-                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
+                    <MetricGrid>
+                      <MetricCard $color="blue" $bgColor="rgba(55, 136, 216, 0.1)">
+                        <MetricLabel>{t('tasks.overallProgress')}</MetricLabel>
+                        <MetricValue $color="#3788d8">
                           {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
-                        </div>
-                        <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          {t('tasks.taskCompletion')}
-                        </div>
-                      </div>
+                        </MetricValue>
+                        <MetricDescription>{t('tasks.taskCompletion')}</MetricDescription>
+                      </MetricCard>
                       
-                      <div style={{ 
-                        background: 'rgba(39, 174, 96, 0.1)', 
-                        padding: '20px', 
-                        borderRadius: '12px',
-                        textAlign: 'center'
-                      }}>
-                        <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.complianceScore')}</div>
-                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
+                      <MetricCard $color="green" $bgColor="rgba(39, 174, 96, 0.1)">
+                        <MetricLabel>{t('tasks.complianceScore')}</MetricLabel>
+                        <MetricValue $color="#27ae60">
                           {scores.percentage}%
-                        </div>
-                        <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        </MetricValue>
+                        <MetricDescription>
                           {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
-                        </div>
-                      </div>
+                        </MetricDescription>
+                      </MetricCard>
                       
-                      <div style={{ 
-                        background: 'rgba(243, 156, 18, 0.1)', 
-                        padding: '20px', 
-                        borderRadius: '12px',
-                        textAlign: 'center'
-                      }}>
-                        <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
-                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
+                      <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
+                        <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
+                        <MetricValue $color="#f39c12">
                           {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
-                        </div>
-                        <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          {t('tasks.totalDuration')}
-                        </div>
-                      </div>
+                        </MetricValue>
+                        <MetricDescription>{t('tasks.totalDuration')}</MetricDescription>
+                      </MetricCard>
                       
-                      <div style={{ 
-                        background: 'rgba(44, 62, 80, 0.1)', 
-                        padding: '20px', 
-                        borderRadius: '12px',
-                        textAlign: 'center'
-                      }}>
-                        <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.inspectionPages')}</div>
-                        <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
+                      <MetricCard $color="gray" $bgColor="rgba(44, 62, 80, 0.1)">
+                        <MetricLabel>{t('tasks.inspectionPages')}</MetricLabel>
+                        <MetricValue $color="#2c3e50">
                           {inspectionPages.length}
-                        </div>
-                        <div style={{ fontSize: '14px', color: '#64748b' }}>
-                          {t('tasks.totalSections')}
-                        </div>
-                      </div>
-                    </div>
+                        </MetricValue>
+                        <MetricDescription>{t('tasks.totalSections')}</MetricDescription>
+                      </MetricCard>
+                    </MetricGrid>
                   </Card>
                 )}
                 

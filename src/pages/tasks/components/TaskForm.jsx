@@ -21,14 +21,34 @@ import FrontendLogger from '../../../services/frontendLogger.service';
 const Form = styled.form`
   display: grid;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+  }
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
   }
 `;
 
@@ -36,12 +56,26 @@ const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Input = styled.input`
@@ -50,6 +84,15 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
+
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -65,6 +108,16 @@ const TextArea = styled.textarea`
   min-height: 100px;
   resize: vertical;
   transition: all 0.3s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+    min-height: 80px;
+  }
+
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -79,6 +132,15 @@ const Select = styled.select`
   font-size: 14px;
   background: white;
   transition: all 0.3s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
+
   &:focus {
     outline: none;
     border-color: #1a237e;
@@ -102,6 +164,15 @@ const MultiSelectHeader = styled.div`
   gap: 8px;
   min-height: 42px;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+    min-height: 38px;
+  }
 `;
 
 const SelectedItem = styled.span`
@@ -250,6 +321,26 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-top: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -262,6 +353,26 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
   ${props => props.variant === 'primary' ? `
     background: #1a237e;
     color: white;
@@ -293,6 +404,24 @@ const SectionTitle = styled.h3`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+  }
 `;
 
 const UserSelection = styled.div`
@@ -463,6 +592,20 @@ const QuestionContainer = styled.div`
   border-radius: 12px;
   padding: 20px;
   border: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-top: 16px;
+    border-radius: 8px;
+  }
 `;
 
 const QuestionHeader = styled.div`
@@ -470,6 +613,12 @@ const QuestionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const QuestionTitle = styled.h3`
@@ -479,12 +628,28 @@ const QuestionTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    gap: 6px;
+  }
 `;
 
 const QuestionList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const QuestionItem = styled.div`
@@ -493,11 +658,29 @@ const QuestionItem = styled.div`
   padding: 16px;
   border: 1px solid #e5e7eb;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 6px;
+  }
 `;
 
 const QuestionText = styled.div`
   font-weight: 500;
   margin-bottom: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
 `;
 
 const QuestionType = styled.div`
@@ -546,6 +729,34 @@ const LibraryButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 6px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
   &:hover {
     background: #f9fafb;
     border-color: #d1d5db;
@@ -611,9 +822,18 @@ const AddQuestionButton = styled.button`
   color: #64748b;
   font-size: 14px;
   width: 100%;
+  max-width: 100%;
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 12px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
   &:hover {
     background: #f8fafc;
     border-color: #94a3b8;
@@ -867,8 +1087,19 @@ const PreInspectionQuestions = ({
             ))}
           </div>
         )} */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <LibrarySelector>
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px',
+          flexWrap: 'wrap',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
+        }}>
+          <LibrarySelector style={{ 
+            flex: '1 1 calc(50% - 4px)',
+            minWidth: '0',
+            maxWidth: '100%'
+          }}>
             <LibraryButton type="button" onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -915,6 +1146,10 @@ const PreInspectionQuestions = ({
             console.log('Header manual button clicked');
             setShowAddManual(!showAddManual);
             setShowLibrary(false);
+          }} style={{
+            flex: '1 1 calc(50% - 4px)',
+            minWidth: '0',
+            maxWidth: '100%'
           }}>
             {showAddManual ? t('common.cancel') : t('tasks.addManually')}
             {showAddManual ? <X size={16} /> : <Plus size={16} />}

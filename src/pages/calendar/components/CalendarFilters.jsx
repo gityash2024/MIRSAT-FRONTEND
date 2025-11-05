@@ -12,20 +12,64 @@ const FiltersContainer = styled.div`
   padding: 20px;
   margin-bottom: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const FilterGroup = styled.div`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   h3 {
     font-size: 14px;
     font-weight: 600;
     color: var(--color-navy);
     margin-bottom: 12px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
   }
 `;
 
@@ -35,6 +79,19 @@ const CheckboxGroup = styled.div`
   gap: 8px;
   max-height: 200px;
   overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    max-height: 180px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    max-height: 160px;
+  }
 `;
 
 const Checkbox = styled.label`
@@ -44,11 +101,40 @@ const Checkbox = styled.label`
   cursor: pointer;
   font-size: 14px;
   color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 0;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    gap: 10px;
+    padding: 6px 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    gap: 10px;
+    padding: 6px 0;
+  }
 
   input {
     width: 16px;
     height: 16px;
     cursor: pointer;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 
   &:hover {
@@ -63,6 +149,21 @@ const ActiveFilters = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-top: 12px;
+    padding-top: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 10px;
+    padding-top: 10px;
+    gap: 6px;
+  }
 `;
 
 const FilterTag = styled.div`
@@ -74,6 +175,22 @@ const FilterTag = styled.div`
   border-radius: 4px;
   font-size: 12px;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 12px;
+    gap: 6px;
+  }
 
   button {
     display: flex;
@@ -84,9 +201,21 @@ const FilterTag = styled.div`
     padding: 2px;
     cursor: pointer;
     color: #64748b;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      padding: 4px;
+    }
 
     &:hover {
       color: #ef4444;
+    }
+
+    svg {
+      @media (max-width: 480px) {
+        width: 14px;
+        height: 14px;
+      }
     }
   }
 `;
@@ -94,6 +223,17 @@ const FilterTag = styled.div`
 const SearchContainer = styled.div`
   position: relative;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
   
   input {
     width: 100%;
@@ -102,6 +242,17 @@ const SearchContainer = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      padding: 10px 14px 10px 38px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 10px 12px 10px 36px;
+      font-size: 13px;
+    }
 
     &:focus {
       outline: none;
@@ -116,6 +267,18 @@ const SearchContainer = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 768px) {
+      left: 10px;
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 

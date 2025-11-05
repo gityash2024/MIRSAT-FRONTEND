@@ -7,10 +7,26 @@ import TaskForm from './components/TaskForm';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const Header = styled.div`
   margin-bottom: 24px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -24,6 +40,23 @@ const BackButton = styled.button`
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 16px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    padding: 6px 0;
+    margin-bottom: 12px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   &:hover {
     color: #333;
@@ -35,11 +68,27 @@ const PageTitle = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const SubTitle = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const FormContainer = styled.div`
@@ -47,6 +96,19 @@ const FormContainer = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const TaskCreate = () => {

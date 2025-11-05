@@ -12,11 +12,30 @@ const TableContainer = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
+
+  @media (max-width: 768px) {
+    min-width: 700px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 600px;
+  }
 
   th, td {
     padding: 16px;
@@ -27,6 +46,27 @@ const Table = styled.table`
     text-overflow: ellipsis;
     max-width: 200px;
     position: relative;
+    vertical-align: middle;
+
+    @media (max-width: 768px) {
+      padding: 12px;
+      font-size: 12px;
+      max-width: 150px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 8px 6px;
+      font-size: 11px;
+      max-width: 120px;
+    }
+
+    &:last-child {
+      @media (max-width: 480px) {
+        padding-right: 6px;
+        min-width: 100px;
+        max-width: none;
+      }
+    }
   }
 
   th {
@@ -37,6 +77,14 @@ const Table = styled.table`
     cursor: pointer;
     user-select: none;
     
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
+    
     &:hover {
       background: #e8eaf6;
     }
@@ -45,6 +93,14 @@ const Table = styled.table`
   td {
     font-size: 14px;
     color: #666;
+
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
   }
 
   tbody tr:hover {
@@ -104,6 +160,14 @@ const ActionButtonGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-shrink: 0;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -118,6 +182,23 @@ const ActionButton = styled.button`
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
+  min-width: 28px;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    min-width: 24px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 
   &:hover {
     background: ${props => props.danger ? '#fecaca' : '#e8eaf6'};
@@ -130,17 +211,54 @@ const PaginationContainer = styled.div`
   justify-content: space-between;
   padding: 16px;
   border-top: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  margin-top: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
 `;
 
 const PaginationText = styled.div`
   font-size: 14px;
   color: #666;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    text-align: center;
+  }
 `;
 
 const PaginationControls = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    justify-content: center;
+    gap: 6px;
+  }
 `;
 
 const PaginationButton = styled.button`
@@ -156,6 +274,29 @@ const PaginationButton = styled.button`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.disabled ? 0.5 : 1};
   transition: all 0.2s;
+  min-width: 36px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    font-size: 11px;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 
   &:hover:not(:disabled) {
     background: ${props => props.active ? 'var(--color-navy)' : '#e8eaf6'};
@@ -228,8 +369,9 @@ const AssetTable = ({
   };
 
   return (
-    <TableContainer>
-      <Table $isRTL={isRTL}>
+    <>
+      <TableContainer>
+        <Table $isRTL={isRTL}>
         <thead>
           <tr>
             <th style={{ width: '50px', textAlign: 'center' }}>#</th>
@@ -330,9 +472,10 @@ const AssetTable = ({
           )}
         </tbody>
       </Table>
-      
-      {!loading && assets.length > 0 && (
-        <PaginationContainer>
+    </TableContainer>
+    
+    {!loading && assets.length > 0 && (
+      <PaginationContainer>
             <PaginationText>
               {t('common.showing')} {(pagination.page - 1) * pagination.limit + 1} {t('common.to')}{' '}
               {Math.min(pagination.page * pagination.limit, pagination.total)} {t('common.of')}{' '}
@@ -379,7 +522,7 @@ const AssetTable = ({
           </PaginationControls>
         </PaginationContainer>
       )}
-    </TableContainer>
+    </>
   );
 };
 

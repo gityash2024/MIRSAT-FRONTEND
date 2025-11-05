@@ -16,11 +16,48 @@ import { Map, AlertTriangle, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
+const useResponsiveHeight = () => {
+  const [height, setHeight] = useState(400);
+  
+  useEffect(() => {
+    const updateHeight = () => {
+      if (window.innerWidth <= 480) {
+        setHeight(250);
+      } else if (window.innerWidth <= 768) {
+        setHeight(300);
+      } else {
+        setHeight(400);
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+  
+  return height;
+};
+
 const MapContainer = styled(motion.div)`
   background: white;
   border-radius: 12px;
   padding: 24px;
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -198,6 +235,7 @@ const COLORS = ['var(--color-navy)', '#1565c0', '#1976d2', '#1e88e5', '#2196f3']
 
 const RegionalDistributionMap = ({ dateRange, filters }) => {
   const { t } = useTranslation();
+  const chartHeight = useResponsiveHeight();
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [regionalData, setRegionalData] = useState({
     data: [],
@@ -286,7 +324,7 @@ const RegionalDistributionMap = ({ dateRange, filters }) => {
       ) : (
         <ContentGrid>
           <div>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart data={regionalData.data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis 

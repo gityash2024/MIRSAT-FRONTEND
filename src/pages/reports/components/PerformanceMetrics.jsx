@@ -34,6 +34,23 @@ const MetricCard = styled(motion.div)`
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+    gap: 10px;
+  }
 `;
 
 const MetricHeader = styled.div`

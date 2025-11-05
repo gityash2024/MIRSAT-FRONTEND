@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Globe, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
@@ -8,6 +8,7 @@ const LanguageToggleContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 `;
 
 const LanguageButton = styled.button`
@@ -23,6 +24,20 @@ const LanguageButton = styled.button`
   color: #374151;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px 8px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px 6px;
+    font-size: 11px;
+    gap: 3px;
+  }
 
   &:hover {
     background: rgba(0, 0, 0, 0.05);
@@ -30,12 +45,34 @@ const LanguageButton = styled.button`
 
   .icon {
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+    }
   }
 
   .chevron {
     opacity: 0.5;
     transition: transform 0.3s;
     transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 12px;
+      height: 12px;
+    }
+
+    @media (max-width: 480px) {
+      width: 10px;
+      height: 10px;
+    }
   }
 `;
 
@@ -52,7 +89,12 @@ const LanguageDropdown = styled.div`
   visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   transform: translateY(${props => props.$isOpen ? '0' : '-10px'});
   transition: all 0.3s;
-  z-index: 100;
+  z-index: 1000;
+
+  @media (max-width: 768px) {
+    right: 0;
+    min-width: 140px;
+  }
 `;
 
 const LanguageOption = styled.button`
@@ -93,22 +135,56 @@ const LanguageOption = styled.button`
   }
 `;
 
-const LanguageToggle = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const LanguageToggle = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const { currentLanguage, changeLanguage, languages } = useLanguage();
   const { t } = useTranslation();
+  const containerRef = useRef(null);
+
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
   const currentLang = languages.find(lang => lang.code === currentLanguage);
 
-  const handleLanguageChange = (languageCode) => {
-    changeLanguage(languageCode);
-    setIsOpen(false);
+  const handleToggle = () => {
+    if (isControlled) {
+      if (isOpen) {
+        onClose?.();
+      } else {
+        onOpen?.();
+      }
+    } else {
+      setInternalIsOpen(!internalIsOpen);
+    }
   };
 
+  const handleLanguageChange = (languageCode) => {
+    changeLanguage(languageCode);
+    if (isControlled) {
+      onClose?.();
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
+
+  // Handle click outside for uncontrolled mode
+  useEffect(() => {
+    if (!isControlled) {
+      const handleClickOutside = (event) => {
+        if (containerRef.current && !containerRef.current.contains(event.target)) {
+          setInternalIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isControlled]);
+
   return (
-    <LanguageToggleContainer>
+    <LanguageToggleContainer ref={containerRef}>
       <LanguageButton 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         $isOpen={isOpen}
       >
         <Globe size={16} className="icon" />

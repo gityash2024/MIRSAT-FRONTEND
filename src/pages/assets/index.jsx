@@ -24,10 +24,26 @@ import AlertModal from '../../components/ui/AlertModal';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Header = styled.div`
   margin-bottom: 24px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -35,11 +51,27 @@ const PageTitle = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const SubTitle = styled.p`
   color: #64748b;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionBar = styled.div`
@@ -49,12 +81,35 @@ const ActionBar = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const SearchBox = styled.div`
   position: relative;
   flex: 1;
   max-width: 400px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+  }
 
   input {
     width: 100%;
@@ -63,6 +118,12 @@ const SearchBox = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;
+
+    @media (max-width: 480px) {
+      padding: 8px 14px 8px 36px;
+      font-size: 13px;
+    }
 
     &:focus {
       outline: none;
@@ -77,12 +138,29 @@ const SearchBox = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button`
@@ -95,6 +173,29 @@ const Button = styled.button`
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
   
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);

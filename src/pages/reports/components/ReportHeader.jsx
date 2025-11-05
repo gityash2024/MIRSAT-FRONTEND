@@ -9,6 +9,22 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -21,11 +37,49 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const PageDescription = styled.p`
   color: #64748b;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionButtons = styled.div`

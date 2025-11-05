@@ -1427,6 +1427,7 @@
     "partialCompliance": "امتثال جزئي",
     "nonCompliant": "غير متوافق",
     "sectionComments": "تعليقات القسم",
+    "comment": "تعليق",
     "addCommentForSection": "أضف تعليقاً لهذا القسم...",
     "commentsDisabledForArchived": "التعليقات معطلة للمهام المؤرشفة",
     "overallScore": "النتيجة الإجمالية",
@@ -1536,7 +1537,8 @@
     "searchUsers": "البحث في المستخدمين...",
     "addUser": "إضافة مستخدم",
     "loadingUsers": "جاري تحميل المستخدمين...",
-    "exportAsPDF": "تصدير كـ PDF"
+    "exportAsPDF": "تصدير كـ PDF",
+    "confirmChanges": "تأكيد التغييرات"
   },
   "assets": {
     "title": "الأصول",
@@ -2135,5 +2137,9 @@
     "manufacturer": "الشركة المصنعة",
     "serialNumber": "الرقم التسلسلي",
     "type": "النوع"
+  },
+  "calendar": {
+    "deadline": "الموعد النهائي",
+    "dueDate": "تاريخ الاستحقاق"
   }
 }

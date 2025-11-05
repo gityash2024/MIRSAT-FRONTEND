@@ -26,6 +26,13 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(2px);
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -38,6 +45,20 @@ const ModalContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -46,6 +67,16 @@ const ModalHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 14px 16px;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -53,6 +84,18 @@ const ModalTitle = styled.h3`
   font-weight: 600;
   color: var(--color-navy);
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -67,9 +110,22 @@ const CloseButton = styled.button`
   height: 32px;
   border-radius: 50%;
   transition: background 0.2s;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+  }
   
   &:hover {
     background: #f5f5f5;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 `;
 
@@ -77,10 +133,29 @@ const ModalBody = styled.div`
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const Label = styled.label`
@@ -89,6 +164,13 @@ const Label = styled.label`
   font-weight: 500;
   color: #333;
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
 `;
 
 const Input = styled.input`
@@ -98,6 +180,12 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -110,6 +198,12 @@ const ErrorText = styled.div`
   color: #dc2626;
   font-size: 12px;
   margin-top: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const ModalFooter = styled.div`
@@ -118,6 +212,26 @@ const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 14px 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    padding: 12px 16px;
+    gap: 8px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -128,6 +242,16 @@ const Button = styled.button`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.disabled ? 0.7 : 1};
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
   
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);
@@ -159,6 +283,13 @@ const TypesListTitle = styled.h4`
   font-weight: 600;
   color: #333;
   margin: 0 0 16px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
 `;
 
 const TypesList = styled.div`
@@ -167,6 +298,14 @@ const TypesList = styled.div`
   gap: 8px;
   max-height: 300px;
   overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    max-height: 250px;
+  }
 `;
 
 const TypeItem = styled.div`
@@ -177,6 +316,16 @@ const TypeItem = styled.div`
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   background: #f8fafc;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  gap: 8px;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    gap: 6px;
+  }
   
   &:hover {
     background: #f1f5f9;
@@ -187,11 +336,23 @@ const TypeName = styled.div`
   font-size: 14px;
   color: #333;
   flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const TypeActions = styled.div`
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
 `;
 
 const IconButton = styled.button`
@@ -206,6 +367,19 @@ const IconButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 
   &:hover {
     background: ${props => props.danger ? '#fecaca' : '#c5cae9'};
@@ -217,6 +391,14 @@ const EditableRow = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const EditInput = styled.input`
@@ -225,6 +407,13 @@ const EditInput = styled.input`
   border: 1px solid #c5cae9;
   border-radius: 6px;
   font-size: 14px;
+  min-width: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -423,7 +612,14 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
             <ModalBody>
               <FormGroup>
                 <Label htmlFor="name">{t('common.addNewAssetType')}</Label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box'
+                }}>
                   <Input
                     type="text"
                     id="name"
@@ -431,11 +627,19 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
                     onChange={handleInputChange}
                     placeholder={t('common.enterAssetTypeName')}
                     disabled={isSubmitting}
+                    style={{
+                      flex: '1 1 auto',
+                      minWidth: '150px'
+                    }}
                   />
                   <Button 
                     variant="primary" 
                     onClick={handleAddType} 
                     disabled={isSubmitting || !newTypeName.trim()}
+                    style={{
+                      flex: '0 0 auto',
+                      whiteSpace: 'nowrap'
+                    }}
                   >
                     {isSubmitting ? t('common.adding') : t('common.add')}
                   </Button>

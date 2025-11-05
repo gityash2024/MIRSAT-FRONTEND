@@ -14,6 +14,18 @@ const PageContainer = styled.div`
   padding: 24px;
   max-width: 1000px;
   margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -21,6 +33,23 @@ const PageHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -34,6 +63,32 @@ const BackButton = styled.button`
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 6px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
   
   &:hover {
     background-color: #f1f5f9;
@@ -45,11 +100,33 @@ const Title = styled.h1`
   font-size: 24px;
   color: var(--color-navy);
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button`
@@ -62,6 +139,30 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-size: 14px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
   
   ${props => props.primary && `
     background-color: var(--color-navy);
@@ -96,6 +197,21 @@ const FormCard = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 24px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+  }
 `;
 
 const FormRow = styled.div`
@@ -103,9 +219,19 @@ const FormRow = styled.div`
   grid-template-columns: ${props => props.columns || '1fr'};
   gap: 16px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 10px;
   }
 `;
 
@@ -113,12 +239,29 @@ const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #334155;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Input = styled.input`
@@ -127,6 +270,14 @@ const Input = styled.input`
   border-radius: 4px;
   font-size: 14px;
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -143,6 +294,16 @@ const TextArea = styled.textarea`
   resize: vertical;
   min-height: 100px;
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 80px;
+  }
   
   &:focus {
     outline: none;
@@ -158,6 +319,14 @@ const Select = styled.select`
   font-size: 14px;
   background-color: white;
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -173,6 +342,32 @@ const CardTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const QuestionList = styled.div`
@@ -404,11 +599,21 @@ const QuestionCreate = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <BackButton onClick={() => navigate('/questionnaire')}>
-          <ChevronLeft size={16} />
-          {t('common.backToQuestionLibrary')}
-        </BackButton>
-        <Title>{isEditing ? t('common.editQuestion') : t('common.createQuestion')}</Title>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          flexWrap: 'wrap'
+        }}>
+          <BackButton onClick={() => navigate('/questionnaire')}>
+            <ChevronLeft size={16} />
+            {t('common.backToQuestionLibrary')}
+          </BackButton>
+          <Title style={{ flex: 1, minWidth: 0 }}>{isEditing ? t('common.editQuestion') : t('common.createQuestion')}</Title>
+        </div>
         <ActionButtons>
           <Button 
             primary 
@@ -473,16 +678,43 @@ const QuestionCreate = () => {
         <FormRow>
           <FormGroup>
             <Label>Required</Label>
-            <div style={{ marginTop: '10px' }}>
+            <div style={{ 
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}>
               <input 
                 type="checkbox" 
                 id="required" 
                 name="required" 
                 checked={question.required} 
                 onChange={handleChange}
-                style={{ marginRight: '8px' }}
+                style={{ 
+                  marginRight: '0',
+                  flexShrink: 0,
+                  width: '18px',
+                  height: '18px',
+                  cursor: 'pointer'
+                }}
               />
-              <label htmlFor="required">{t('common.thisQuestionIsRequired')}</label>
+              <label 
+                htmlFor="required"
+                style={{
+                  margin: 0,
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  flex: 1,
+                  minWidth: 0
+                }}
+              >
+                {t('common.thisQuestionIsRequired')}
+              </label>
             </div>
           </FormGroup>
         </FormRow>
@@ -494,14 +726,24 @@ const QuestionCreate = () => {
                 display: 'flex', 
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '8px'
+                marginBottom: '8px',
+                flexWrap: 'wrap',
+                gap: '8px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
-                <Label>Options</Label>
+                <Label style={{ margin: 0, flex: '1 1 auto', minWidth: '120px' }}>Options</Label>
                 {question.answerType !== 'compliance' && (
                   <Button
                     type="button"
                     onClick={addOption}
-                    style={{ padding: '4px 8px', fontSize: '13px' }}
+                    style={{ 
+                      padding: '4px 8px', 
+                      fontSize: '13px',
+                      flex: '0 0 auto',
+                      whiteSpace: 'nowrap'
+                    }}
                     secondary
                   >
                     <Plus size={14} />
@@ -515,14 +757,17 @@ const QuestionCreate = () => {
                   display: 'flex', 
                   gap: '8px',
                   marginBottom: '8px',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box'
                 }}>
                   <Input
                     type="text"
                     value={option}
                     onChange={(e) => updateOption(index, e.target.value)}
                     placeholder={`Option ${index + 1}`}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 0 }}
                     readOnly={question.answerType === 'compliance'}
                   />
                   
@@ -537,7 +782,9 @@ const QuestionCreate = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '8px'
+                        padding: '8px',
+                        flexShrink: 0,
+                        minWidth: '32px'
                       }}
                       type="button"
                     >

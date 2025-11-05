@@ -17,6 +17,18 @@ const PageContainer = styled.div`
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -24,11 +36,22 @@ const PageHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
   }
 `;
 
@@ -39,15 +62,48 @@ const Title = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 
   @media (max-width: 768px) {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: stretch;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
   }
 `;
 
@@ -61,6 +117,30 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-size: 14px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
   
   ${props => props.primary && `
     background-color: var(--color-navy);
@@ -89,6 +169,20 @@ const SearchContainer = styled.div`
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 `;
 
 const SearchInput = styled.div`
@@ -100,12 +194,26 @@ const SearchInput = styled.div`
   padding: 0 12px;
   flex: 1;
   max-width: 400px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+  }
   
   input {
     border: none;
     padding: 10px 8px;
     font-size: 14px;
     width: 100%;
+    box-sizing: border-box;
+
+    @media (max-width: 480px) {
+      padding: 8px 6px;
+      font-size: 13px;
+    }
     
     &:focus {
       outline: none;
@@ -114,6 +222,12 @@ const SearchInput = styled.div`
   
   svg {
     color: #94a3b8;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -165,6 +279,21 @@ const QuestionnairesTable = styled.div`
   margin-bottom: 20px;
   padding-bottom: 20px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    border-radius: 6px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 6px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
 `;
 
 const TableHeader = styled.div`
@@ -203,6 +332,10 @@ const QuestionnaireRow = styled.div`
   gap: 16px;
   transition: background-color 0.2s;
   cursor: pointer;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   
   &:hover {
     background-color: #f8fafc;
@@ -210,18 +343,32 @@ const QuestionnaireRow = styled.div`
   
   @media (max-width: 1024px) {
     grid-template-columns: minmax(200px, 2fr) 120px 120px 120px 50px;
+    gap: 12px;
+    padding: 14px 16px;
   }
   
   @media (max-width: 768px) {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
     gap: 8px;
-    padding: 16px;
   }
 `;
 
 const InfoCell = styled.div`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
   @media (max-width: 768px) {
     width: 100%;
     display: ${props => props.hideOnMobile ? 'none' : 'block'};
@@ -235,12 +382,27 @@ const InfoCell = styled.div`
       margin-bottom: 4px;
     }
   }
+
+  @media (max-width: 480px) {
+    &:before {
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+  }
 `;
 
 const NameContainer = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const IconBackground = styled.div`
@@ -263,18 +425,48 @@ const IconBackground = styled.div`
     props.category === 'environment' ? '#0369A1' :
     props.category === 'quality' ? '#B45309' : '#64748B'
   };
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const NameContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const QuestionnaireName = styled.div`
   font-size: 15px;
   font-weight: 500;
   color: #0f172a;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Description = styled.div`
@@ -285,11 +477,26 @@ const Description = styled.div`
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const QuestionsCount = styled.div`
   font-size: 14px;
   color: #334155;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const StatusBadge = styled.div`
@@ -299,6 +506,12 @@ const StatusBadge = styled.div`
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
   
   ${props => props.status === 'draft' && `
     background-color: #FEF3C7;
@@ -316,16 +529,28 @@ const StatusBadge = styled.div`
 const DateDisplay = styled.div`
   font-size: 14px;
   color: #334155;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const ActionsCell = styled.div`
   position: relative;
+  flex-shrink: 0;
   
   @media (max-width: 768px) {
     align-self: flex-end;
     position: absolute;
     top: 16px;
     right: 16px;
+  }
+
+  @media (max-width: 480px) {
+    top: 12px;
+    right: 12px;
   }
 `;
 
@@ -340,10 +565,23 @@ const ActionsButton = styled.button`
   background: none;
   color: #64748b;
   cursor: pointer;
+  flex-shrink: 0;
+  
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+  }
   
   &:hover {
     background-color: #f1f5f9;
     color: #0f172a;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -358,12 +596,18 @@ const ActionsMenu = styled.div`
   z-index: 1000;
   overflow: visible;
   border: 1px solid #e2e8f0;
+  box-sizing: border-box;
   
-  /* Ensure menu doesn't go off-screen on mobile */
   @media (max-width: 768px) {
     right: auto;
     left: 0;
     transform: translateX(-50%);
+    width: 160px;
+  }
+
+  @media (max-width: 480px) {
+    width: 150px;
+    transform: translateX(-80%);
   }
   
   /* For last row, position above the button */
@@ -418,10 +662,26 @@ const ActionItem = styled.button`
   background: none;
   text-align: left;
   cursor: pointer;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 8px;
+  }
   
   svg {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
   
   &:hover {
@@ -443,16 +703,54 @@ const Pagination = styled.div`
   align-items: center;
   padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    gap: 8px;
+  }
 `;
 
 const PaginationInfo = styled.div`
   font-size: 14px;
   color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const PaginationButtons = styled.div`
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
 `;
 
 const PageButton = styled.button`
@@ -467,6 +765,23 @@ const PageButton = styled.button`
   color: ${props => props.active ? 'white' : '#334155'};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.disabled ? 0.5 : 1};
+  box-sizing: border-box;
+  min-width: 36px;
+  font-size: 14px;
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    font-size: 12px;
+  }
   
   &:hover:not(:disabled) {
     background-color: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};

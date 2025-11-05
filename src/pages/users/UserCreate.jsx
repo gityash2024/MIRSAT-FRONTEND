@@ -13,6 +13,17 @@ import api from '../../services/api';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -44,15 +55,39 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    gap: 8px;
+  }
 
   .icon {
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 20px;
+      height: 20px;
+    }
   }
 `;
 
 const SubTitle = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const CreateConfirmDialog = styled.div`
@@ -66,6 +101,13 @@ const CreateConfirmDialog = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const DialogContent = styled.div`
@@ -74,6 +116,22 @@ const DialogContent = styled.div`
   padding: 24px;
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const DialogTitle = styled.h3`
@@ -81,18 +139,59 @@ const DialogTitle = styled.h3`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
 `;
 
 const DialogMessage = styled.p`
   color: #666;
   font-size: 14px;
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const DialogActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    width: 100%;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`

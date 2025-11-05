@@ -34,6 +34,10 @@ import { toast } from 'react-hot-toast';
 const PageContainer = styled.div`
   min-height: 100vh;
   background: #f8fafc;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 `;
 
 const Header = styled.div`
@@ -43,6 +47,17 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 8px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -74,6 +89,16 @@ const Content = styled.div`
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const TaskCard = styled.div`
@@ -82,6 +107,19 @@ const TaskCard = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const CardHeader = styled.div`
@@ -90,6 +128,17 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 8px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -132,6 +181,17 @@ const StatusBadge = styled.div`
 
 const CardContent = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const InfoGrid = styled.div`

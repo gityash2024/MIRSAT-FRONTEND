@@ -18,6 +18,21 @@ const TimelineContainer = styled(motion.div)`
   border-radius: 12px;
   padding: 24px;
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const Header = styled.div`

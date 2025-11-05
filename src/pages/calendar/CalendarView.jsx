@@ -22,6 +22,18 @@ const CalendarContainer = styled.div`
   padding: 24px;
   background: #f5f7fb;
   min-height: calc(100vh - 64px);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const CalendarWrapper = styled.div`
@@ -30,20 +42,68 @@ const CalendarWrapper = styled.div`
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-top: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 8px;
+  }
 
   .fc {
-    max-width: 100%;
+    min-width: 600px;
     background: white;
     border-radius: 8px;
+
+    @media (max-width: 768px) {
+      min-width: 700px;
+    }
+
+    @media (max-width: 480px) {
+      min-width: 600px;
+    }
     
     .fc-toolbar-title {
       font-size: 1.2em;
       color: var(--color-navy);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+
+      @media (max-width: 768px) {
+        font-size: 1em;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 0.9em;
+      }
     }
 
     .fc-button-primary {
       background-color: var(--color-navy);
       border-color: var(--color-navy);
+      font-size: 14px;
+      padding: 6px 12px;
+      white-space: nowrap;
+
+      @media (max-width: 768px) {
+        font-size: 12px;
+        padding: 5px 10px;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
 
       &:hover {
         background-color: #151b4f;
@@ -62,9 +122,39 @@ const CalendarWrapper = styled.div`
       padding: 2px 4px;
       font-size: 12px;
       cursor: pointer;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      overflow: visible;
+      min-height: 18px;
+      line-height: 1.3;
+
+      @media (max-width: 768px) {
+        font-size: 11px;
+        padding: 2px 4px;
+        min-height: 16px;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 10px;
+        padding: 2px 4px;
+        min-height: 16px;
+      }
 
       &:hover {
         opacity: 0.9;
+      }
+
+      .fc-event-title {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow: visible;
+      }
+
+      .fc-event-time {
+        white-space: nowrap;
+        flex-shrink: 0;
       }
     }
 
@@ -75,12 +165,201 @@ const CalendarWrapper = styled.div`
     .fc-day-header {
       font-weight: 600;
       color: var(--color-navy);
+      font-size: 14px;
+      padding: 8px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+
+      @media (max-width: 768px) {
+        font-size: 12px;
+        padding: 6px 3px;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 11px;
+        padding: 4px 2px;
+      }
     }
 
     .fc-daygrid-day-number {
       color: #333;
       font-weight: 500;
       padding: 8px;
+      font-size: 14px;
+      white-space: nowrap;
+
+      @media (max-width: 768px) {
+        padding: 6px;
+        font-size: 12px;
+      }
+
+      @media (max-width: 480px) {
+        padding: 4px;
+        font-size: 11px;
+      }
+    }
+
+    .fc-toolbar {
+      flex-wrap: wrap;
+      gap: 8px;
+
+      @media (max-width: 480px) {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .fc-toolbar-chunk {
+        @media (max-width: 480px) {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+        }
+      }
+    }
+
+    /* Week and Day view specific styles */
+    .fc-timeGridWeek-view,
+    .fc-timeGridDay-view {
+      .fc-timegrid-slot {
+        min-height: 40px;
+
+        @media (max-width: 768px) {
+          min-height: 35px;
+        }
+
+        @media (max-width: 480px) {
+          min-height: 30px;
+        }
+      }
+
+      .fc-timegrid-event {
+        font-size: 12px;
+        padding: 4px 6px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow: visible;
+        min-height: 20px;
+        line-height: 1.3;
+
+        @media (max-width: 768px) {
+          font-size: 11px;
+          padding: 3px 5px;
+          min-height: 18px;
+        }
+
+        @media (max-width: 480px) {
+          font-size: 10px;
+          padding: 2px 4px;
+          min-height: 16px;
+        }
+
+        .fc-event-title {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+          overflow: visible;
+        }
+
+        .fc-event-time {
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+      }
+
+      .fc-col-header-cell {
+        min-width: 80px;
+
+        @media (max-width: 768px) {
+          min-width: 70px;
+        }
+
+        @media (max-width: 480px) {
+          min-width: 60px;
+        }
+      }
+    }
+
+    /* Month view specific styles */
+    .fc-dayGridMonth-view {
+      .fc-daygrid-day {
+        min-height: 80px;
+
+        @media (max-width: 768px) {
+          min-height: 70px;
+        }
+
+        @media (max-width: 480px) {
+          min-height: 60px;
+        }
+      }
+
+      .fc-daygrid-day-frame {
+        min-height: 80px;
+
+        @media (max-width: 768px) {
+          min-height: 70px;
+        }
+
+        @media (max-width: 480px) {
+          min-height: 60px;
+        }
+      }
+
+      .fc-daygrid-event {
+        margin: 1px 2px;
+        padding: 2px 4px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow: visible;
+        min-height: 16px;
+        line-height: 1.3;
+
+        @media (max-width: 768px) {
+          margin: 1px;
+          padding: 2px 3px;
+          min-height: 14px;
+        }
+
+        @media (max-width: 480px) {
+          margin: 1px;
+          padding: 1px 2px;
+          min-height: 14px;
+        }
+
+        .fc-event-title {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+          overflow: visible;
+        }
+      }
+    }
+
+    /* Scrollbar styling for better UX */
+    &::-webkit-scrollbar {
+      height: 8px;
+
+      @media (max-width: 480px) {
+        height: 6px;
+      }
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+
+      &:hover {
+        background: #94a3b8;
+      }
     }
   }
 `;
@@ -92,6 +371,16 @@ const LoadingIndicator = styled.div`
   height: 200px;
   color: var(--color-navy);
   font-size: 16px;
+
+  @media (max-width: 768px) {
+    height: 150px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    height: 120px;
+    font-size: 13px;
+  }
 `;
 
 const PaginationContainer = styled.div`
@@ -103,12 +392,40 @@ const PaginationContainer = styled.div`
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    margin-top: 16px;
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 12px;
+    padding: 10px;
+  }
 `;
 
 const PageSelector = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const PageButton = styled.button`
@@ -122,6 +439,20 @@ const PageButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 14px;
+
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 10px;
+    font-size: 12px;
+    min-width: 60px;
+  }
 
   &:hover:not(:disabled) {
     background: ${props => props.active ? 'var(--color-navy)' : '#f5f7fb'};
@@ -136,6 +467,18 @@ const PageButton = styled.button`
 const PageInfo = styled.span`
   color: #666;
   font-size: 14px;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const LimitSelector = styled.select`
@@ -145,6 +488,19 @@ const LimitSelector = styled.select`
   background: white;
   font-size: 14px;
   color: #333;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 8px;
+    font-size: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 // Create a CalendarViewSkeleton component
@@ -702,10 +1058,39 @@ const CalendarView = () => {
 
 const renderEventContent = (eventInfo) => {
   return (
-    <>
-      <b>{eventInfo.timeText}</b>
-      <i>{eventInfo.event.title}</i>
-    </>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px',
+      wordWrap: 'break-word',
+      overflowWrap: 'break-word',
+      whiteSpace: 'normal',
+      overflow: 'visible',
+      width: '100%',
+      minWidth: 0
+    }}>
+      {eventInfo.timeText && (
+        <span style={{
+          fontWeight: 'bold',
+          fontSize: '0.85em',
+          whiteSpace: 'nowrap',
+          flexShrink: 0
+        }}>
+          {eventInfo.timeText}
+        </span>
+      )}
+      <span style={{
+        fontStyle: 'italic',
+        fontSize: '0.9em',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+        whiteSpace: 'normal',
+        overflow: 'visible',
+        lineHeight: '1.3'
+      }}>
+        {eventInfo.event.title}
+      </span>
+    </div>
   );
 };
 

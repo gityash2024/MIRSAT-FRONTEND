@@ -63,7 +63,7 @@ export const mockNotifications = [
 const DropdownContainer = styled.div`
   position: absolute;
   ${props => props.$isRTL ? 'left: 0;' : 'right: 0;'}
-  top: 100%;
+  top: calc(100% + 8px);
   width: 380px;
   background: white;
   border-radius: 12px;
@@ -75,7 +75,18 @@ const DropdownContainer = styled.div`
   transform: ${props => props.isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-10px)'};
   pointer-events: ${props => props.isOpen ? 'auto' : 'none'};
   z-index: 1000;
-  margin-top: 8px;
+  margin-top: 0;
+
+  @media (max-width: 768px) {
+    width: calc(100vw - 24px);
+    max-width: 380px;
+    ${props => props.$isRTL ? 'left: 0;' : 'right: 0;'}
+  }
+
+  @media (max-width: 480px) {
+    width: calc(100vw - 16px);
+    max-width: 340px;
+  }
 `;
 
 const DropdownHeader = styled.div`

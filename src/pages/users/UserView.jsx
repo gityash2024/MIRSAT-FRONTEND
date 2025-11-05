@@ -13,6 +13,18 @@ import Skeleton from '../../components/ui/Skeleton';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -26,8 +38,34 @@ const BackButton = styled.button`
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 12px;
+    padding: 6px 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+    gap: 6px;
+  }
+
   &:hover {
     color: #333;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -36,12 +74,40 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-direction: column;
+  }
 `;
 
 const UserHeader = styled.div`
   display: flex;
   gap: 20px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+    width: 100%;
+  }
 `;
 
 const Avatar = styled.div`
@@ -55,6 +121,19 @@ const Avatar = styled.div`
   color: var(--color-navy);
   font-size: 32px;
   font-weight: 600;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+  }
+
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -67,6 +146,18 @@ const UserName = styled.h1`
   font-size: 24px;
   font-weight: 600;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const UserRole = styled.div`
@@ -75,6 +166,23 @@ const UserRole = styled.div`
   gap: 6px;
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -84,6 +192,13 @@ const StatusBadge = styled.span`
   font-weight: 500;
   background: ${props => props.status === 'Active' ? '#e8f5e9' : '#ffebee'};
   color: ${props => props.status === 'Active' ? '#2e7d32' : '#c62828'};
+  white-space: nowrap;
+  display: inline-block;
+
+  @media (max-width: 480px) {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
 `;
 
 const EditButton = styled(Link)`
@@ -100,8 +215,32 @@ const EditButton = styled(Link)`
   cursor: pointer;
   text-decoration: none;
   transition: all 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+    width: 100%;
+    justify-content: center;
+  }
+
   &:hover {
     background: #f5f7fb;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -109,8 +248,21 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
   }
 `;
 
@@ -119,6 +271,19 @@ const Card = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -129,31 +294,95 @@ const CardTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
   .icon {
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const DetailsList = styled.div`
   display: grid;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const DetailItem = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 8px;
+    align-items: center;
+  }
+
   .icon {
     color: var(--color-navy);
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
 const PermissionList = styled.div`
   display: grid;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const PermissionItem = styled.div`
@@ -162,8 +391,28 @@ const PermissionItem = styled.div`
   gap: 8px;
   font-size: 14px;
   color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 6px;
+  }
+
   .icon {
     color: #2e7d32;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -172,6 +421,20 @@ const StatGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -181,14 +444,44 @@ const StatCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
   .label {
     font-size: 13px;
     color: #666;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
   .value {
     font-size: 24px;
     font-weight: 600;
     color: var(--color-navy);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 20px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 18px;
+    }
   }
 `;
 

@@ -47,6 +47,18 @@ import { useLanguage } from '../../context/LanguageContext';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Header = styled.div`
@@ -58,11 +70,27 @@ const PageTitle = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const SubTitle = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionBar = styled.div`
@@ -72,12 +100,37 @@ const ActionBar = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const SearchBox = styled.div`
   position: relative;
   flex: 1;
   max-width: 400px;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+  }
 
   input {
     width: 100%;
@@ -86,6 +139,17 @@ const SearchBox = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      padding: 8px 14px 8px 36px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 8px 12px 8px 32px;
+      font-size: 12px;
+    }
 
     &:focus {
       outline: none;
@@ -100,12 +164,33 @@ const SearchBox = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    flex-direction: column;
+    width: 100%;
+  }
 `;
 
 const Button = styled.button`
@@ -118,6 +203,32 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);
@@ -158,6 +269,20 @@ const DropdownContent = styled.div`
   visibility: ${props => props.show ? 'visible' : 'hidden'};
   transform: translateY(${props => props.show ? '0' : '-10px'});
   transition: all 0.2s ease;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    right: 0;
+    left: auto;
+    min-width: 180px;
+  }
+
+  @media (max-width: 480px) {
+    right: 0;
+    left: auto;
+    min-width: 200px;
+    max-width: calc(100vw - 24px);
+  }
 `;
 
 const DropdownItem = styled.button`
@@ -172,6 +297,22 @@ const DropdownItem = styled.button`
   font-size: 14px;
   text-align: left;
   cursor: pointer;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    padding: 12px 16px;
+    gap: 10px;
+  }
 
   &:hover {
     background: #f5f7fb;
@@ -180,6 +321,12 @@ const DropdownItem = styled.button`
   .icon {
     color: var(--color-navy);
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 
   &:first-child {
@@ -197,16 +344,59 @@ const UserTable = styled.div`
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 700px;
+
+  @media (max-width: 768px) {
+    min-width: 600px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 550px;
+  }
 
   th, td {
     padding: 16px;
     text-align: ${props => props.$isRTL ? 'right' : 'left'};
     border-bottom: 1px solid #e0e0e0;
+    box-sizing: border-box;
+    vertical-align: middle;
+
+    @media (max-width: 768px) {
+      padding: 12px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 8px;
+      font-size: 11px;
+    }
+
+    &:last-child {
+      @media (max-width: 480px) {
+        padding: 8px 4px;
+        min-width: 120px;
+      }
+    }
   }
 
   th {
@@ -214,11 +404,29 @@ const Table = styled.table`
     font-weight: 600;
     color: #333;
     font-size: 14px;
+
+    @media (max-width: 768px) {
+      font-size: 12px;
+      padding: 10px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+      padding: 8px;
+    }
   }
 
   td {
     font-size: 14px;
     color: #666;
+
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
   }
 
   tbody tr:hover {
@@ -233,6 +441,37 @@ const StatusBadge = styled.span`
   font-weight: 500;
   background: ${props => props.status === 'Active' ? '#e8f5e9' : '#ffebee'};
   color: ${props => props.status === 'Active' ? '#2e7d32' : '#c62828'};
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+`;
+
+const RowNumber = styled.td`
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-gray-medium);
+  width: 50px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 40px;
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+
+  @media (max-width: 480px) {
+    width: 35px;
+    font-size: 11px;
+    padding: 6px 4px;
+  }
 `;
 
 const RoleBadge = styled.div`
@@ -241,9 +480,33 @@ const RoleBadge = styled.div`
   gap: 6px;
   font-size: 14px;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    gap: 4px;
+  }
 
   .icon {
     opacity: 0.7;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+    }
   }
 `;
 
@@ -276,6 +539,38 @@ const ActionMenu = styled.div`
   position: relative;
   display: flex;
   gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  select {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      padding: 3px 6px !important;
+      font-size: 11px !important;
+    }
+
+    @media (max-width: 480px) {
+      padding: 2px 4px !important;
+      font-size: 10px !important;
+      max-width: 70px;
+    }
+  }
 `;
 
 const ActionButton = styled.button`
@@ -286,10 +581,40 @@ const ActionButton = styled.button`
   color: #666;
   cursor: pointer;
   transition: all 0.3s;
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+
+  @media (max-width: 768px) {
+    padding: 4px;
+    min-width: 24px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 3px;
+    min-width: 20px;
+  }
 
   &:hover {
     background: #f5f7fb;
     color: var(--color-navy);
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+    }
   }
 `;
 
@@ -337,6 +662,31 @@ const FilterSection = styled.div`
   padding: 20px;
   margin-bottom: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    position: relative;
+    left: 0;
+    right: 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    position: relative;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const DeleteConfirmDialog = styled.div`
@@ -350,6 +700,13 @@ const DeleteConfirmDialog = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const DialogContent = styled.div`
@@ -358,6 +715,22 @@ const DialogContent = styled.div`
   padding: 24px;
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const DialogTitle = styled.h3`
@@ -365,18 +738,84 @@ const DialogTitle = styled.h3`
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
 `;
 
 const DialogMessage = styled.p`
   color: #666;
   font-size: 14px;
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  ul {
+    margin: 10px 0;
+    padding-left: 20px;
+
+    @media (max-width: 480px) {
+      padding-left: 18px;
+      margin: 8px 0;
+    }
+
+    li {
+      margin-bottom: 4px;
+
+      @media (max-width: 480px) {
+        font-size: 12px;
+        margin-bottom: 3px;
+      }
+    }
+  }
+
+  strong {
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
+  }
 `;
 
 const DialogActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    width: 100%;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -392,17 +831,56 @@ const PaginationContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-top: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
 `;
 
 const PaginationInfo = styled.div`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    text-align: center;
+  }
 `;
 
 const PaginationButtons = styled.div`
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: center;
+    gap: 6px;
+  }
 `;
 
 const PaginationButton = styled.button`
@@ -415,6 +893,19 @@ const PaginationButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 32px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+    min-width: 28px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px;
+    min-width: 28px;
+    font-size: 12px;
+  }
 
   &:hover:not(:disabled) {
     background: #f5f5f5;
@@ -423,6 +914,13 @@ const PaginationButton = styled.button`
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -438,6 +936,20 @@ const PageNumberButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  font-size: 14px;
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
 
   &:hover:not(:disabled) {
     background: ${props => props.active ? 'var(--color-navy)' : '#f5f5f5'};
@@ -519,6 +1031,13 @@ const ConfirmModal = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ConfirmModalContent = styled.div`
@@ -528,6 +1047,24 @@ const ConfirmModalContent = styled.div`
   width: 100%;
   max-width: 450px;
   margin: 0 16px;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ConfirmModalTitle = styled.h3`
@@ -538,6 +1075,29 @@ const ConfirmModalTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const ConfirmModalMessage = styled.p`
@@ -545,12 +1105,46 @@ const ConfirmModalMessage = styled.p`
   font-size: 14px;
   margin-bottom: 24px;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  strong {
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
+  }
 `;
 
 const ConfirmModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    width: 100%;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 // UserListSkeleton component - COMMENTED OUT
@@ -1009,7 +1603,7 @@ const UserList = () => {
   // Generate page numbers
   const getPageNumbers = () => {
     const pageNumbers = [];
-    const showPages = 5; // Show at most 5 page numbers
+    const showPages = 3; // Show at most 5 page numbers
     let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
     let endPage = startPage + showPages - 1;
     
@@ -1121,6 +1715,7 @@ const UserList = () => {
         <Table $isRTL={isRTL}>
           <thead>
             <tr>
+              <th style={{ width: '50px', textAlign: 'center' }}>#</th>
               <th>{t('common.userDetails')}</th>
               <th>{t('common.role')}</th>
               <th>{t('common.status')}</th>
@@ -1129,8 +1724,11 @@ const UserList = () => {
             </tr>
           </thead>
           <tbody>
-            {currentUsers.map(user => (
+            {currentUsers.map((user, index) => (
               <tr key={user.id}>
+                <RowNumber>
+                  {(currentPage - 1) * usersPerPage + index + 1}
+                </RowNumber>
                 <td>
                   <UserInfo>
                     <span className="name">{user.name}</span>
@@ -1187,7 +1785,14 @@ const UserList = () => {
                           border: '1px solid #e0e0e0',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          color: user.isActive ? '#22c55e' : '#ef4444'
+                          color: user.isActive ? '#22c55e' : '#ef4444',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                          minWidth: '0',
+                          maxWidth: '80px',
+                          boxSizing: 'border-box',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}
                         title="Quick status change"
                       >
@@ -1218,6 +1823,7 @@ const UserList = () => {
             )}
           </tbody>
         </Table>
+      </UserTable>
         
         {/* Pagination */}
         {filteredUsers.length > 0 && (
@@ -1253,7 +1859,6 @@ const UserList = () => {
             </PaginationButtons>
           </PaginationContainer>
         )}
-      </UserTable>
 
       {deleteConfirm && (
         <DeleteConfirmDialog>

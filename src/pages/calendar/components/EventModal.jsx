@@ -16,6 +16,17 @@ const ModalOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -26,6 +37,18 @@ const ModalContent = styled.div`
   position: relative;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -34,12 +57,37 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px 16px 0 16px;
+  }
 `;
 
 const ModalTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -53,32 +101,85 @@ const CloseButton = styled.button`
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
 
   &:hover {
     background: #f1f5f9;
     color: var(--color-navy);
   }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const ModalBody = styled.div`
   padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const Form = styled.form`
   display: grid;
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Input = styled.input`
@@ -88,6 +189,19 @@ const Input = styled.input`
   font-size: 14px;
   color: var(--color-navy);
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -104,6 +218,19 @@ const Select = styled.select`
   color: var(--color-navy);
   background: white;
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -121,6 +248,21 @@ const Textarea = styled.textarea`
   min-height: 100px;
   resize: vertical;
   transition: all 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 80px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+    min-height: 80px;
+  }
 
   &:focus {
     outline: none;
@@ -135,6 +277,21 @@ const ModalFooter = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
 `;
 
 const Button = styled.button`
@@ -144,6 +301,25 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
 
   ${props => {
     if (props.variant === 'danger') {
@@ -180,11 +356,51 @@ const Button = styled.button`
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    gap: 8px;
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const EventModal = ({
@@ -391,7 +607,7 @@ const EventModal = ({
               />
             </FormGroup>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <FormRow>
               <FormGroup>
                 <Label>{t('template')}</Label>
                 <Select
@@ -434,9 +650,9 @@ const EventModal = ({
                   ))}
                 </Select>
               </FormGroup>
-            </div>
+            </FormRow>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <FormRow>
               {/* <FormGroup>
                 <Label>{t('common.status')}</Label>
                 <Select
@@ -466,9 +682,9 @@ const EventModal = ({
                   ))}
                 </Select>
               </FormGroup>
-            </div>
+            </FormRow>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <FormRow>
               <FormGroup>
                 <Label>{t('deadline')}</Label>
                 <Input
@@ -506,7 +722,7 @@ const EventModal = ({
                   Options: {assets?.length || 0}
                 </small>
               </FormGroup>
-            </div>
+            </FormRow>
 
               <FormGroup>
               <Label>{t('common.location')}</Label>

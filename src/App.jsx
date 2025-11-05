@@ -30,25 +30,34 @@ function App() {
             <BrowserRouter>
               <AppRoutes />
               <Toaster
-                position="bottom-right"
+                position="bottom-center"
                 toastOptions={{
                   duration: 4000,
                   style: {
                     background: '#363636',
                     color: '#fff',
+                    fontSize: '14px',
+                    padding: '12px 16px',
+                    maxWidth: '400px',
+                    borderRadius: '8px',
                   },
                   success: {
                     duration: 3000,
                     style: {
-                      background: 'green',
+                      background: '#10b981',
+                      color: '#fff',
                     },
                   },
                   error: {
                     duration: 4000,
                     style: {
-                      background: 'red',
+                      background: '#ef4444',
+                      color: '#fff',
                     },
                   },
+                }}
+                containerStyle={{
+                  bottom: '20px',
                 }}
               />
             </BrowserRouter>

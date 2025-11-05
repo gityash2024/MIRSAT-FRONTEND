@@ -8,24 +8,57 @@ import { useAuth } from '../../../hooks/useAuth';
 const Form = styled.form`
   display: grid;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+  }
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Input = styled.input`
@@ -35,6 +68,13 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -48,6 +88,8 @@ const PasswordWrapper = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const PasswordInput = styled(Input)`
@@ -74,6 +116,13 @@ const Select = styled.select`
   font-size: 14px;
   background: white;
   transition: all 0.3s;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -89,6 +138,13 @@ const ErrorMessage = styled.span`
 
 const PermissionsSection = styled.div`
   margin-top: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    margin-top: 16px;
+  }
 `;
 
 const PermissionGroup = styled.div`
@@ -106,6 +162,16 @@ const PermissionList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 `;
 
 const PermissionItem = styled.label`
@@ -127,6 +193,21 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -139,6 +220,25 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);

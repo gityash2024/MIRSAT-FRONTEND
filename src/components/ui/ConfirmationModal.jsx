@@ -15,6 +15,16 @@ const ModalOverlay = styled.div`
   justify-content: center;
   z-index: ${Z_INDEX.CONFIRMATION_MODAL};
   padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContainer = styled.div`
@@ -26,6 +36,18 @@ const ModalContainer = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -35,6 +57,21 @@ const ModalHeader = styled.div`
   padding: 24px 24px 0 24px;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px 20px 0 20px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px 16px 0 16px;
+    margin-bottom: 12px;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -45,6 +82,34 @@ const ModalTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const CloseButton = styled.button`
@@ -55,15 +120,43 @@ const CloseButton = styled.button`
   border-radius: 4px;
   color: #6b7280;
   transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
 
   &:hover {
     background: #f3f4f6;
     color: #374151;
   }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const ModalBody = styled.div`
   padding: 0 24px 24px 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 0 20px 20px 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const ModalMessage = styled.p`
@@ -71,12 +164,45 @@ const ModalMessage = styled.p`
   font-size: 14px;
   line-height: 1.5;
   margin: 0 0 24px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const ModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -88,6 +214,25 @@ const Button = styled.button`
   transition: all 0.2s;
   border: 1px solid transparent;
   min-width: 80px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 14px;
+    min-width: 70px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
 
   ${props => props.variant === 'primary' ? `
     background: #dc2626;

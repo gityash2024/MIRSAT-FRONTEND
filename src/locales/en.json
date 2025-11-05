@@ -42,6 +42,7 @@
   "assignee": "Assignee",
   "selectAssignee": "Select assignee (required)",
   "deadline": "Deadline",
+  "dueDate": "Due Date",
   "asset": "Asset",
   "selectAsset": "Select asset (optional)",
   "enterLocation": "Enter location",
@@ -1251,6 +1252,7 @@
     "attachments": "Attachments",
     "comments": "Comments",
     "saveTask": "Save Task",
+    "editTask": "Edit Task",
     "updateTask": "Update Task",
     "deleteTask": "Delete Task",
     "markComplete": "Mark Complete",
@@ -1528,6 +1530,7 @@
     "partialCompliance": "Partial compliance",
     "nonCompliant": "Non-compliant",
     "sectionComments": "Section Comments",
+    "comment": "Comment",
     "addCommentForSection": "Add a comment for this section...",
     "commentsDisabledForArchived": "Comments are disabled for archived tasks",
     "overallScore": "OVERALL SCORE",
@@ -1637,7 +1640,8 @@
     "searchUsers": "Search users...",
     "addUser": "Add User",
     "loadingUsers": "Users loading...",
-    "exportAsPDF": "Export as PDF"
+    "exportAsPDF": "Export as PDF",
+    "confirmChanges": "Confirm Changes"
   },
   "assets": {
     "title": "Assets",
@@ -2044,5 +2048,9 @@
     "manufacturer": "Manufacturer",
     "serialNumber": "Serial Number",
     "type": "Type"
+  },
+  "calendar": {
+    "deadline": "Deadline",
+    "dueDate": "Due Date"
   }
 }

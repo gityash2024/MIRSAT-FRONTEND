@@ -15,11 +15,48 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
+const useResponsiveHeight = () => {
+  const [height, setHeight] = useState(300);
+  
+  useEffect(() => {
+    const updateHeight = () => {
+      if (window.innerWidth <= 480) {
+        setHeight(200);
+      } else if (window.innerWidth <= 768) {
+        setHeight(250);
+      } else {
+        setHeight(300);
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+  
+  return height;
+};
+
 const ChartContainer = styled(motion.div)`
   background: white;
   border-radius: 12px;
   padding: 24px;
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const ChartHeader = styled.div`
@@ -47,6 +84,22 @@ const CategorySelect = styled.div`
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const CategoryButton = styled.button`
@@ -59,6 +112,21 @@ const CategoryButton = styled.button`
   color: ${props => props.active ? 'white' : '#64748b'};
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    width: 100%;
+    text-align: center;
+  }
 
   &:hover {
     background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
@@ -70,6 +138,22 @@ const SummaryMetrics = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
 `;
 
 const MetricCard = styled.div`
@@ -152,8 +236,22 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const TrendAnalysisChart = ({ dateRange, filters }) => {
   const { t } = useTranslation();
+  const chartHeight = useResponsiveHeight();
   const [categories, setCategories] = useState(['overall', 'safety', 'procedures']);
   const [selectedCategory, setSelectedCategory] = useState('overall');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 768 && window.innerWidth > 480);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth <= 480);
+      setIsTablet(window.innerWidth <= 768 && window.innerWidth > 480);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
   const [trendData, setTrendData] = useState({
     data: [],
     metrics: {
@@ -272,22 +370,37 @@ const TrendAnalysisChart = ({ dateRange, filters }) => {
         <LoadingContainer>No trend data available</LoadingContainer>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <LineChart
               data={trendData.data}
-              margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              margin={{ 
+                top: 20, 
+                right: 10, 
+                left: isMobile ? 5 : isTablet ? 10 : 0, 
+                bottom: isMobile ? 30 : isTablet ? 25 : 20 
+              }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: '#64748b' }}
+                tick={{ 
+                  fill: '#64748b',
+                  fontSize: isMobile ? 10 : 12,
+                  angle: isMobile ? -45 : 0,
+                  textAnchor: isMobile ? 'end' : 'middle'
+                }}
                 axisLine={{ stroke: '#e2e8f0' }}
                 tickFormatter={(value) => translateMonth(value)}
+                height={isMobile ? 50 : 30}
               />
               <YAxis
                 domain={[dataMin => Math.floor(dataMin - 5), dataMax => Math.ceil(dataMax + 5)]}
-                tick={{ fill: '#64748b' }}
+                tick={{ 
+                  fill: '#64748b',
+                  fontSize: isMobile ? 10 : 12
+                }}
                 axisLine={{ stroke: '#e2e8f0' }}
+                width={isMobile ? 40 : 50}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />

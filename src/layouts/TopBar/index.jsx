@@ -8,6 +8,7 @@ import useNotification from '../../hooks/useNotification';
 import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
 import LanguageToggle from '../../components/ui/LanguageToggle';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -19,15 +20,19 @@ const TopbarContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0 24px;
-  justify-content: flex-end; /* Change from space-between to flex-end */
+  justify-content: flex-end;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: left 0.3s ease;
   z-index: 50;
   
   @media (max-width: 768px) {
     left: 0;
-    padding: 0 16px;
-    justify-content: space-between; /* Keep space-between only for mobile */
+    padding: 0 12px;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 8px;
   }
 `;
 
@@ -59,10 +64,27 @@ const RightSection = styled.div`
   display: flex;
   align-items: center;
   gap: 20px;
+  min-width: 0;
+  flex-shrink: 1;
+  position: relative;
+  overflow: visible;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const NotificationContainer = styled.div`
   position: relative;
+  overflow: visible;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const NotificationButton = styled.button`
@@ -98,6 +120,7 @@ const NotificationBadge = styled.div`
 
 const UserMenuContainer = styled.div`
   position: relative;
+  overflow: visible;
 `;
 
 const UserMenuTrigger = styled.button`
@@ -110,6 +133,17 @@ const UserMenuTrigger = styled.button`
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    padding: 4px 6px;
+  }
 
   &:hover {
     background: rgba(0, 0, 0, 0.05);
@@ -128,8 +162,22 @@ const UserMenuTrigger = styled.button`
       color: #666;
     }
     
-    @media (max-width: 576px) {
+    @media (max-width: 768px) {
       display: none;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
     }
   }
 `;
@@ -147,7 +195,28 @@ const UserMenuDropdown = styled.div`
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
   transform: translateY(${props => props.isOpen ? '0' : '-10px'});
   transition: all 0.3s;
-  z-index: 100;
+  z-index: 1000;
+  overflow: visible;
+  width: max-content;
+  min-width: 200px;
+  max-width: 300px;
+
+  @media (max-width: 768px) {
+    right: 0;
+    min-width: 180px;
+    max-width: 280px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 160px;
+    max-width: calc(100vw - 16px);
+    width: auto;
+  }
+
+  [dir="rtl"] & {
+    right: auto;
+    left: 0;
+  }
 `;
 
 const MenuItem = styled.button`
@@ -161,6 +230,20 @@ const MenuItem = styled.button`
   cursor: pointer;
   transition: background 0.3s;
   color: ${props => props.variant === 'danger' ? '#dc2626' : '#333'};
+  white-space: nowrap;
+  overflow: visible;
+  min-width: 0;
+  text-align: ${props => props.dir === 'rtl' ? 'right' : 'left'};
+  direction: ${props => props.dir || 'ltr'};
+  flex-wrap: nowrap;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    gap: 10px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
 
   &:hover {
     background: ${props => props.variant === 'danger' ? '#fee2e2' : '#f3f4f6'};
@@ -168,6 +251,18 @@ const MenuItem = styled.button`
 
   .icon {
     opacity: 0.7;
+    flex-shrink: 0;
+    order: ${props => props.dir === 'rtl' ? 2 : 0};
+  }
+
+  span {
+    flex: 1;
+    min-width: 0;
+    overflow: visible;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: ${props => props.dir === 'rtl' ? 'right' : 'left'};
+    order: ${props => props.dir === 'rtl' ? 1 : 1};
   }
 `;
 
@@ -175,9 +270,13 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isTimezoneOpen, setIsTimezoneOpen] = useState(false);
   const { user, logout } = useAuth();
   const { unreadCount, fetchNotifications } = useNotification();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currentLanguage } = useLanguage();
+  const isRTL = currentLanguage === 'ar' || i18n.language === 'ar';
   const isMobile = window.innerWidth <= 768;
   const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 260 : 70);
   const notificationRef = useRef(null);
@@ -187,6 +286,30 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
     // Fetch notifications when the component mounts
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Close all dropdowns except the one being opened
+  const closeAllDropdowns = (except = null) => {
+    if (except !== 'user') setIsUserMenuOpen(false);
+    if (except !== 'notification') setIsNotificationOpen(false);
+    if (except !== 'language') setIsLanguageOpen(false);
+    if (except !== 'timezone') setIsTimezoneOpen(false);
+  };
+
+  const handleUserMenuToggle = () => {
+    const newState = !isUserMenuOpen;
+    if (newState) {
+      closeAllDropdowns('user');
+    }
+    setIsUserMenuOpen(newState);
+  };
+
+  const handleNotificationToggle = () => {
+    const newState = !isNotificationOpen;
+    if (newState) {
+      closeAllDropdowns('notification');
+    }
+    setIsNotificationOpen(newState);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -211,12 +334,26 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
       </LeftSection>
       
       <RightSection>
-        <LanguageToggle />
+        <LanguageToggle 
+          isOpen={isLanguageOpen}
+          onOpen={() => {
+            closeAllDropdowns('language');
+            setIsLanguageOpen(true);
+          }}
+          onClose={() => setIsLanguageOpen(false)}
+        />
         
-        <TimezoneDropdown />
+        <TimezoneDropdown 
+          isOpen={isTimezoneOpen}
+          onOpen={() => {
+            closeAllDropdowns('timezone');
+            setIsTimezoneOpen(true);
+          }}
+          onClose={() => setIsTimezoneOpen(false)}
+        />
         
         <NotificationContainer ref={notificationRef}>
-          <NotificationButton onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
+          <NotificationButton onClick={handleNotificationToggle}>
             <Bell size={20} />
             {unreadCount > 0 && <NotificationBadge>{unreadCount}</NotificationBadge>}
           </NotificationButton>
@@ -224,7 +361,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
         </NotificationContainer>
 
         <UserMenuContainer ref={userMenuRef}>
-          <UserMenuTrigger onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
+          <UserMenuTrigger onClick={handleUserMenuToggle}>
             <div className="user-info">
               <div className="name">{user?.name || t('common.inspector')}</div>
               <div className="role">{user?.role || t('common.inspector')}</div>
@@ -233,10 +370,10 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
             <ChevronDown size={16} />
           </UserMenuTrigger>
 
-          <UserMenuDropdown isOpen={isUserMenuOpen}>
-            <MenuItem onClick={logout} variant="danger">
+          <UserMenuDropdown isOpen={isUserMenuOpen} dir={isRTL ? 'rtl' : 'ltr'}>
+            <MenuItem onClick={logout} variant="danger" dir={isRTL ? 'rtl' : 'ltr'}>
               <LogOut size={18} className="icon" />
-              {t('common.logout')}
+              <span>{t('common.logout')}</span>
             </MenuItem>
           </UserMenuDropdown>
         </UserMenuContainer>

@@ -20,6 +20,18 @@ const DashboardContainer = styled.div`
   min-height: 100vh;
   padding: 24px;
   background-color: var(--color-offwhite);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const WelcomeText = styled.h1`
@@ -27,6 +39,19 @@ const WelcomeText = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 32px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -34,6 +59,18 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -41,6 +78,20 @@ const StatCard = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
 
   .icon-wrapper {
     width: 48px;
@@ -50,6 +101,31 @@ const StatCard = styled.div`
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 480px) {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 10px;
+    }
+
+    svg {
+      @media (max-width: 768px) {
+        width: 20px;
+        height: 20px;
+      }
+
+      @media (max-width: 480px) {
+        width: 18px;
+        height: 18px;
+      }
+    }
   }
 
   .value {
@@ -57,11 +133,35 @@ const StatCard = styled.div`
     font-weight: 700;
     color: var(--color-navy);
     margin: 8px 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 24px;
+      margin: 6px 0;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 20px;
+      margin: 4px 0;
+    }
   }
 
   .label {
     font-size: 14px;
     color: var(--color-gray-medium);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
 `;
 
@@ -69,6 +169,19 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const Card = styled.div`
@@ -76,6 +189,20 @@ const Card = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -83,6 +210,19 @@ const CardTitle = styled.h2`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
 `;
 
 const ProgressBar = styled.div`
@@ -128,6 +268,19 @@ const TeamMemberItem = styled.div`
   padding: 12px;
   border-radius: 8px;
   transition: background-color 0.3s;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
   &:hover {
     background-color: var(--color-offwhite);
@@ -137,6 +290,13 @@ const TeamMemberItem = styled.div`
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    flex: 1;
+
+    @media (max-width: 480px) {
+      gap: 10px;
+      flex: 1 1 100%;
+    }
 
     .avatar {
       width: 40px;
@@ -148,11 +308,36 @@ const TeamMemberItem = styled.div`
       justify-content: center;
       color: var(--color-navy);
       font-weight: 600;
+      flex-shrink: 0;
+
+      @media (max-width: 768px) {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      @media (max-width: 480px) {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
     }
 
     .name {
       font-size: 14px;
       color: var(--color-gray-dark);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      min-width: 0;
+      flex: 1;
+
+      @media (max-width: 768px) {
+        font-size: 13px;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 12px;
+      }
     }
   }
 
@@ -163,6 +348,21 @@ const TeamMemberItem = styled.div`
     color: var(--color-navy);
     font-weight: 500;
     font-size: 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 3px 8px;
+      font-size: 12px;
+      flex: 1 1 auto;
+      text-align: center;
+      min-width: 0;
+    }
   }
 `;
 
@@ -173,6 +373,16 @@ const LoadingSpinner = styled.div`
   height: 200px;
   font-size: 16px;
   color: var(--color-navy);
+
+  @media (max-width: 768px) {
+    height: 150px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    height: 120px;
+    font-size: 13px;
+  }
 `;
 
 const LoadingContainer = styled.div`
@@ -191,12 +401,57 @@ const LoadingContainer = styled.div`
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  @media (max-width: 480px) {
+    min-height: 200px;
+
+    p {
+      font-size: 14px;
+    }
+
+    svg {
+      width: 32px;
+      height: 32px;
+    }
+  }
+`;
+
+const StatsGridContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const EmptyState = styled.div`
   padding: 16px;
   text-align: center;
   color: var(--color-gray-medium);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    font-size: 13px;
+  }
 `;
 
 // Test Notification Button
@@ -475,13 +730,13 @@ const Dashboard = () => {
 
       <ContentGrid>
         <ScrollAnimation animation="slideIn" delay={0.3}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <StatsGridContainer>
             {/* Total Tasks Card */}
-            <StatCard style={{ padding: '16px', margin: 0 }}>
-              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
-                <Calendar size={20} color="var(--color-info)" />
+            <StatCard>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)' }}>
+                <Calendar color="var(--color-info)" />
               </div>
-              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+              <div className="value">
                 {dashboardData.stats && dashboardData.stats.length > 0 
                   ? dashboardData.stats.find(s => s.title === 'Total Tasks')?.value || 0 
                   : 0}
@@ -490,11 +745,11 @@ const Dashboard = () => {
             </StatCard>
 
             {/* Completed Tasks Card */}
-            <StatCard style={{ padding: '16px', margin: 0 }}>
-              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
-                <CheckSquare size={20} color="var(--color-success)" />
+            <StatCard>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)' }}>
+                <CheckSquare color="var(--color-success)" />
               </div>
-              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+              <div className="value">
                 {dashboardData.stats && dashboardData.stats.length > 0 
                   ? dashboardData.stats.find(s => s.title === 'Completed Tasks')?.value || 0 
                   : 0}
@@ -503,11 +758,11 @@ const Dashboard = () => {
             </StatCard>
 
             {/* Pending Reviews Card */}
-            <StatCard style={{ padding: '16px', margin: 0 }}>
-              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
-                <Clock size={20} color="var(--color-warning)" />
+            <StatCard>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)' }}>
+                <Clock color="var(--color-warning)" />
               </div>
-              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+              <div className="value">
                 {dashboardData.stats && dashboardData.stats.length > 0 
                   ? dashboardData.stats.find(s => s.title === 'Pending Reviews')?.value || 0 
                   : 0}
@@ -516,18 +771,18 @@ const Dashboard = () => {
             </StatCard>
 
             {/* Compliance Score Card */}
-            <StatCard style={{ padding: '16px', margin: 0 }}>
-              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)', width: '40px', height: '40px' }}>
-                <ShieldCheck size={20} color="var(--color-teal)" />
+            <StatCard>
+              <div className="icon-wrapper" style={{ backgroundColor: 'var(--color-skyblue)' }}>
+                <ShieldCheck color="var(--color-teal)" />
               </div>
-              <div className="value" style={{ fontSize: '24px', margin: '8px 0' }}>
+              <div className="value">
                 {dashboardData.stats && dashboardData.stats.length > 0 
                   ? dashboardData.stats.find(s => s.title === 'Compliance Score')?.value || '0%' 
                   : '0%'}
               </div>
               <div className="label">{t('dashboard.complianceScore')}</div>
             </StatCard>
-          </div>
+          </StatsGridContainer>
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.4}>

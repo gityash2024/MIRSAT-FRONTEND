@@ -24,6 +24,14 @@ const TasksContainer = styled.div`
   overflow-x: hidden;
   position: relative;
   
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
+  
   &:before {
     content: '';
     position: absolute;
@@ -44,6 +52,14 @@ const PageContainer = styled.div`
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const ErrorContainer = styled.div`
@@ -78,11 +94,27 @@ const Title = styled.h1`
   color: var(--color-navy);
   margin-bottom: 8px;
   text-shadow: 0 1px 2px rgba(26, 35, 126, 0.1);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const Description = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const FilterBar = styled.div`
@@ -102,6 +134,19 @@ const FilterBar = styled.div`
   transform: translateY(20px);
   position: relative;
   z-index: 1;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: stretch;
+  }
   
   &:before {
     content: '';
@@ -122,6 +167,12 @@ const SearchInput = styled.div`
   flex: 1;
   min-width: 200px;
   position: relative;
+  width: 100%;
+
+  @media (max-width: 480px) {
+    min-width: 100%;
+    margin-bottom: 8px;
+  }
   
   input {
     width: 100%;
@@ -133,6 +184,12 @@ const SearchInput = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s ease;
+    box-sizing: border-box;
+
+    @media (max-width: 480px) {
+      padding: 8px 12px 8px 36px;
+      font-size: 13px;
+    }
     
     &:focus {
       outline: none;
@@ -148,6 +205,12 @@ const SearchInput = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -167,11 +230,38 @@ const FilterButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 4px;
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+    min-width: 0;
+    max-width: calc(50% - 4px);
+  }
   
   &:hover {
     background: rgba(255, 255, 255, 0.8);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -182,6 +272,16 @@ const TasksGrid = styled.div`
   opacity: 0;
   position: relative;
   z-index: 1;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const TaskCard = styled.div`
@@ -196,6 +296,11 @@ const TaskCard = styled.div`
   opacity: 0;
   transform: translateY(30px);
   position: relative;
+  min-width: 0;
+  
+  @media (max-width: 480px) {
+    border-radius: 10px;
+  }
   
   &:before {
     content: '';
@@ -215,6 +320,10 @@ const TaskCard = styled.div`
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(26, 35, 126, 0.1);
+
+    @media (max-width: 768px) {
+      transform: translateY(-2px);
+    }
   }
 `;
 
@@ -226,6 +335,13 @@ const TaskHeader = styled.div`
   align-items: center;
   position: relative;
   background: rgba(255, 255, 255, 0.3);
+  gap: 12px;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 8px;
+  }
 `;
 
 const TaskTitle = styled.h3`
@@ -236,6 +352,13 @@ const TaskTitle = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    max-width: 60%;
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -251,6 +374,22 @@ const StatusBadge = styled.span`
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+    }
+  }
   
   ${props => {
     switch(props.status) {
@@ -274,6 +413,12 @@ const TaskBody = styled.div`
   padding: 16px;
   position: relative;
   background: rgba(255, 255, 255, 0.3);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const TaskDescription = styled.p`
@@ -284,19 +429,51 @@ const TaskDescription = styled.p`
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    margin-bottom: 12px;
+    -webkit-line-clamp: 2;
+  }
 `;
 
 const TaskDetailRow = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 12px;
   font-size: 14px;
   color: #666;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    margin-bottom: 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
   
   svg {
     color: var(--color-navy);
     flex-shrink: 0;
+    margin-top: 2px;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  span {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 `;
 
@@ -376,6 +553,14 @@ const TaskActions = styled.div`
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.3);
   position: relative;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 8px;
+    flex-direction: column;
+  }
 `;
 
 const TaskButton = styled.button`
@@ -393,6 +578,17 @@ const TaskButton = styled.button`
   overflow: hidden;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 6px;
+    width: 100%;
+  }
   
   &::after {
     content: '';
@@ -454,6 +650,12 @@ const TaskButton = styled.button`
   
   svg {
     transition: transform 0.3s ease;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
   
   &:hover svg {
@@ -507,6 +709,12 @@ const ButtonGroup = styled.div`
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  width: 100%;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    width: 100%;
+  }
 `;
 
 const Pagination = styled.div`
@@ -592,6 +800,12 @@ const PriorityBadge = styled.span`
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
   
   ${props => {
     switch(props.priority) {
@@ -1193,6 +1407,7 @@ const UserTasks = () => {
                 
                 <TaskDetailRow>
                   <AlertTriangle size={16} />
+                  <span>
                   {t('tasks.priority')}: 
                   <PriorityBadge priority={task.priority}>
                     {task.priority === 'high' ? t('tasks.high') :
@@ -1200,11 +1415,14 @@ const UserTasks = () => {
                      task.priority === 'low' ? t('tasks.low') :
                      task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                   </PriorityBadge>
+                  </span>
                 </TaskDetailRow>
 
                 <TaskDetailRow>
                   <Activity size={16} />
+                  <span>
                   {t('tasks.template')}: {task.inspectionLevel?.name || t('common.notApplicable')}
+                  </span>
                 </TaskDetailRow>
 
                 <TaskProgress progress={task.overallProgress || 0}>

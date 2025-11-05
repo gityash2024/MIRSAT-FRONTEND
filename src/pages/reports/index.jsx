@@ -26,6 +26,18 @@ const ReportsContainer = styled.div`
   padding: 24px;
   min-height: calc(100vh - 64px);
   background: #f5f7fb;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px 5px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 4px;
+  }
 `;
 
 const ReportsGrid = styled.div`
@@ -33,6 +45,19 @@ const ReportsGrid = styled.div`
   grid-template-columns: repeat(12, 1fr);
   gap: 24px;
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+    margin-top: 12px;
+  }
 `;
 
 const GridItem = styled.div`
@@ -41,6 +66,10 @@ const GridItem = styled.div`
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 1536px) {
     grid-column: span ${props => Math.min(props.span + 2, 12)};
@@ -52,6 +81,14 @@ const GridItem = styled.div`
 
   @media (max-width: 1024px) {
     grid-column: span 12;
+  }
+
+  @media (max-width: 768px) {
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px;
   }
 `;
 

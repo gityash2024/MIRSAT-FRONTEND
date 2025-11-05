@@ -19,10 +19,26 @@ import { useTranslation } from 'react-i18next';
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Header = styled.div`
   margin-bottom: 24px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -30,11 +46,27 @@ const PageTitle = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const SubTitle = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionBar = styled.div`
@@ -44,6 +76,21 @@ const ActionBar = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const FilterRow = styled.div`
@@ -54,12 +101,33 @@ const FilterRow = styled.div`
   max-width: 900px;
   flex-wrap: wrap;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const SearchBox = styled.div`
   position: relative;
   flex: 1;
   min-width: 200px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 0;
+    width: 100%;
+  }
 
   input {
     width: 100%;
@@ -68,6 +136,12 @@ const SearchBox = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;
+
+    @media (max-width: 480px) {
+      padding: 8px 14px 8px 36px;
+      font-size: 13px;
+    }
 
     &:focus {
       outline: none;
@@ -82,6 +156,12 @@ const SearchBox = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -90,6 +170,17 @@ const FilterDropdown = styled.div`
   min-width: 160px;
   max-width: 200px;
   flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
 `;
 
 const DropdownButton = styled.button`
@@ -107,6 +198,12 @@ const DropdownButton = styled.button`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 
   &:hover {
     border-color: var(--color-navy);
@@ -220,6 +317,17 @@ const FilterTag = styled.div`
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button`
@@ -232,6 +340,29 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);

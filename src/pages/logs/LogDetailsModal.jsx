@@ -48,6 +48,16 @@ const ModalOverlay = styled.div`
   z-index: 1000;
   padding: 20px;
   animation: fadeIn 0.3s ease-out;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
   
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -66,6 +76,19 @@ const ModalContainer = styled.div`
   animation: slideUp 0.3s ease-out;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    height: 85vh;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    height: 85vh;
+  }
   
   @keyframes slideUp {
     from { 
@@ -88,6 +111,20 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   position: relative;
   overflow: hidden;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    gap: 8px;
+  }
   
   &::before {
     content: '';
@@ -107,6 +144,19 @@ const HeaderContent = styled.div`
   gap: 16px;
   position: relative;
   z-index: 1;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const ActionIcon = styled.div`
@@ -118,20 +168,69 @@ const ActionIcon = styled.div`
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+  }
+
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const HeaderText = styled.div`
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   h2 {
     margin: 0;
     font-size: 24px;
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 20px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 18px;
+    }
   }
   
   p {
     margin: 4px 0 0 0;
     opacity: 0.9;
     font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
 `;
 
@@ -148,10 +247,33 @@ const CloseButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+  }
   
   &:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.05);
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -161,6 +283,9 @@ const ModalBody = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const ContentGrid = styled.div`
@@ -169,6 +294,9 @@ const ContentGrid = styled.div`
   gap: 0;
   flex: 1;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -180,9 +308,26 @@ const MainContent = styled.div`
   border-right: 1px solid var(--color-gray-light);
   overflow-y: auto;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-gray-light);
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
   
   &::-webkit-scrollbar {
     width: 4px;
+
+    @media (max-width: 480px) {
+      width: 3px;
+    }
   }
   
   &::-webkit-scrollbar-track {
@@ -192,11 +337,6 @@ const MainContent = styled.div`
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 2px;
-  }
-  
-  @media (max-width: 768px) {
-    border-right: none;
-    border-bottom: 1px solid var(--color-gray-light);
   }
 `;
 
@@ -208,9 +348,25 @@ const Sidebar = styled.div`
   gap: 20px;
   overflow-y: auto;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    gap: 16px;
+  }
   
   &::-webkit-scrollbar {
     width: 4px;
+
+    @media (max-width: 480px) {
+      width: 3px;
+    }
   }
   
   &::-webkit-scrollbar-track {
@@ -225,6 +381,17 @@ const Sidebar = styled.div`
 
 const Section = styled.div`
   margin-bottom: 32px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 20px;
+  }
   
   &:last-child {
     margin-bottom: 0;
@@ -241,6 +408,37 @@ const SectionTitle = styled.h3`
   gap: 8px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--color-gray-light);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const DescriptionCard = styled.div`
@@ -252,6 +450,23 @@ const DescriptionCard = styled.div`
   line-height: 1.6;
   color: #475569;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
   
   &::before {
     content: '';
@@ -268,6 +483,13 @@ const DescriptionCard = styled.div`
 const DetailsGrid = styled.div`
   display: grid;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const DetailItem = styled.div`
@@ -279,6 +501,22 @@ const DetailItem = styled.div`
   border: 1px solid var(--color-gray-light);
   border-radius: 8px;
   transition: all 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 6px;
+  }
   
   &:hover {
     border-color: #cbd5e1;
@@ -293,6 +531,18 @@ const DetailLabel = styled.span`
   min-width: 120px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    min-width: 0;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const DetailValue = styled.span`
@@ -302,6 +552,19 @@ const DetailValue = styled.span`
   word-break: break-word;
   max-width: 200px;
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    text-align: left;
+    max-width: 100%;
+    width: 100%;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const InfoCard = styled.div`
@@ -310,6 +573,19 @@ const InfoCard = styled.div`
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const CardTitle = styled.h4`
@@ -320,6 +596,27 @@ const CardTitle = styled.h4`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const InfoRow = styled.div`
@@ -328,6 +625,22 @@ const InfoRow = styled.div`
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 0;
+    gap: 4px;
+  }
   
   &:last-child {
     border-bottom: none;
@@ -338,6 +651,17 @@ const InfoLabel = styled.span`
   font-weight: 500;
   color: var(--color-gray-medium);
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const InfoValue = styled.span`
@@ -346,6 +670,19 @@ const InfoValue = styled.span`
   text-align: right;
   max-width: 200px;
   word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    text-align: left;
+    max-width: 100%;
+    width: 100%;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const Badge = styled.span`
@@ -561,6 +898,22 @@ const UserCard = styled.div`
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
   border: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 const UserAvatar = styled.div`
@@ -575,10 +928,31 @@ const UserAvatar = styled.div`
   font-weight: 700;
   font-size: 20px;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
 `;
 
 const UserInfo = styled.div`
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 const UserName = styled.div`
@@ -586,6 +960,16 @@ const UserName = styled.div`
   color: var(--color-navy);
   font-size: 18px;
   margin-bottom: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+  }
 `;
 
 const UserRole = styled.div`
@@ -593,11 +977,31 @@ const UserRole = styled.div`
   font-size: 14px;
   margin-bottom: 2px;
   text-transform: capitalize;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const UserEmail = styled.div`
   color: var(--color-gray-medium);
   font-size: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+  }
 `;
 
 const TaskCard = styled.div`
@@ -606,6 +1010,19 @@ const TaskCard = styled.div`
   border-radius: 12px;
   border: 1px solid #bbf7d0;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
   
   &::before {
     content: '';
@@ -624,6 +1041,18 @@ const TaskTitle = styled.div`
   color: var(--color-navy);
   font-size: 18px;
   margin-bottom: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
 `;
 
 const TaskInfo = styled.div`
@@ -632,23 +1061,64 @@ const TaskInfo = styled.div`
   gap: 8px;
   font-size: 14px;
   color: var(--color-gray-medium);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    font-size: 13px;
+  }
 `;
 
 const TaskInfoRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
 `;
 
 const TaskInfoLabel = styled.span`
   font-weight: 500;
   color: var(--color-gray-medium);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const TaskInfoValue = styled.span`
   color: var(--color-navy);
   font-weight: 600;
   text-transform: capitalize;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const TechnicalInfo = styled.div`

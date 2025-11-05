@@ -16,12 +16,40 @@ const Header = styled.div`
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 `;
 
 const HeaderTop = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const BackButton = styled.button`
@@ -34,14 +62,49 @@ const BackButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   padding: 8px 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 4px 0;
+  }
+
   &:hover {
     color: #333;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const HeaderContent = styled.div`
   flex: 1;
   margin: 0 24px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin: 0;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    margin: 0;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -54,21 +117,78 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const PageDescription = styled.p`
   color: #64748b;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: stretch;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 8px 16px;
   border-radius: 8px;
@@ -77,6 +197,23 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);
@@ -101,6 +238,20 @@ const Button = styled.button`
     cursor: not-allowed;
     pointer-events: none;
   }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const DropdownMenu = styled.div`
@@ -114,6 +265,19 @@ const DropdownMenu = styled.div`
   min-width: 150px;
   overflow: hidden;
   margin-top: 4px;
+
+  @media (max-width: 768px) {
+    right: 0;
+    left: auto;
+    min-width: 140px;
+  }
+
+  @media (max-width: 480px) {
+    right: 0;
+    left: auto;
+    min-width: 130px;
+    max-width: calc(100vw - 24px);
+  }
 `;
 
 const DropdownItem = styled.button`
@@ -128,6 +292,18 @@ const DropdownItem = styled.button`
   gap: 10px;
   font-size: 14px;
   color: #333;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 8px;
+  }
   
   &:hover {
     background: #f5f7fb;
@@ -135,6 +311,12 @@ const DropdownItem = styled.button`
   
   svg {
     color: var(--color-navy);
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 

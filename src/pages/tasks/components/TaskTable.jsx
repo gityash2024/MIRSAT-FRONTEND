@@ -21,11 +21,30 @@ const TableContainer = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
+
+  @media (max-width: 768px) {
+    min-width: 700px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 600px;
+  }
 
   th, td {
     padding: 16px;
@@ -37,6 +56,27 @@ const Table = styled.table`
     max-width: 200px;
     position: relative;
     transition: all 0.2s ease;
+    vertical-align: middle;
+
+    @media (max-width: 768px) {
+      padding: 12px;
+      font-size: 12px;
+      max-width: 150px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 6px 4px;
+      font-size: 11px;
+      max-width: 120px;
+    }
+
+    &:last-child {
+      @media (max-width: 480px) {
+        padding-right: 4px;
+        min-width: 120px;
+        max-width: none;
+      }
+    }
   }
 
   th {
@@ -47,6 +87,14 @@ const Table = styled.table`
     cursor: pointer;
     user-select: none;
     
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
+    
     &:hover {
       background: var(--color-skyblue);
     }
@@ -55,6 +103,14 @@ const Table = styled.table`
   td {
     font-size: 14px;
     color: var(--color-gray-medium);
+
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
   }
 
   tbody tr:hover {
@@ -68,6 +124,22 @@ const DialogContent = styled.div`
   padding: 24px;
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const DialogTitle = styled.h3`
@@ -75,18 +147,58 @@ const DialogTitle = styled.h3`
   font-weight: 600;
   color: var(--color-error);
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
 `;
 
 const DialogMessage = styled.p`
   color: var(--color-gray-medium);
   font-size: 14px;
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const DialogActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+    width: 100%;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const DialogButton = styled.button`
@@ -139,6 +251,14 @@ const ActionsMenu = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-shrink: 0;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -149,6 +269,25 @@ const ActionButton = styled.button`
   color: var(--color-gray-medium);
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+
+  @media (max-width: 480px) {
+    padding: 4px;
+    min-width: 24px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 
   &:hover {
     background: var(--color-offwhite);
@@ -162,16 +301,53 @@ const PaginationContainer = styled.div`
   align-items: center;
   padding: 16px;
   border-top: 1px solid var(--color-gray-light);
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  margin-top: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
 `;
 
 const PaginationInfo = styled.div`
   color: var(--color-gray-medium);
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    text-align: center;
+  }
 `;
 
 const PaginationButtons = styled.div`
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    justify-content: center;
+    gap: 6px;
+  }
 `;
 
 const PaginationButton = styled.button`
@@ -184,6 +360,20 @@ const PaginationButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 36px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+    min-width: 32px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    min-width: 30px;
+    font-size: 11px;
+  }
 
   &:hover:not(:disabled) {
     background: var(--color-offwhite);
@@ -192,6 +382,13 @@ const PaginationButton = styled.button`
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -207,6 +404,12 @@ const DeleteConfirmDialog = styled.div`
   justify-content: center;
   padding: 16px;
   z-index: 1000;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const HeaderContent = styled.div`
@@ -349,6 +552,13 @@ const Modal = styled.div`
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -360,6 +570,20 @@ const ModalContent = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -369,6 +593,13 @@ const ModalHeader = styled.div`
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -378,6 +609,29 @@ const ModalTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const CloseButton = styled.button`
@@ -412,6 +666,16 @@ const QuestionText = styled.div`
   font-weight: 500;
   color: #334155;
   font-size: 16px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const QuestionType = styled.div`
@@ -965,8 +1229,9 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
           </tbody>
         </Table>
         )}
+      </TableContainer>
 
-        <PaginationContainer>
+      <PaginationContainer>
           <PaginationInfo>
             {pagination && pagination.total !== undefined && pagination.total > 0 ? (
               <>
@@ -1036,7 +1301,6 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
             </PaginationButton>
           </PaginationButtons>
         </PaginationContainer>
-      </TableContainer>
 
       {deleteConfirm && (
         <DeleteConfirmDialog>

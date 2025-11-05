@@ -63,6 +63,20 @@ const QuestionText = styled.div`
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding-right: ${props => props.mandatory ? '70px' : '0'};
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+  }
 `;
 
 const MandatoryBadge = styled.div`
@@ -85,6 +99,19 @@ const QuestionOptions = styled.div`
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  button {
+    @media (max-width: 480px) {
+      flex: 1 1 calc(50% - 4px);
+      max-width: calc(50% - 4px);
+      min-width: 0;
+    }
+  }
 `;
 
 const OptionButton = styled.button`

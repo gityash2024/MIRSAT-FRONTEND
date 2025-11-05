@@ -21,6 +21,13 @@ const ModalOverlay = styled(motion.div)`
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(2px);
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContainer = styled(motion.div)`
@@ -30,6 +37,22 @@ const ModalContainer = styled(motion.div)`
   max-width: 500px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -38,6 +61,16 @@ const ModalHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 14px 16px;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -45,6 +78,18 @@ const ModalTitle = styled.h3`
   font-weight: 600;
   color: var(--color-navy);
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -59,18 +104,50 @@ const CloseButton = styled.button`
   height: 32px;
   border-radius: 50%;
   transition: background 0.2s;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+  }
   
   &:hover {
     background: #f5f5f5;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 `;
 
 const ModalBody = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const Label = styled.label`
@@ -79,6 +156,13 @@ const Label = styled.label`
   font-weight: 500;
   color: #333;
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
 `;
 
 const Input = styled.input`
@@ -88,6 +172,12 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -104,6 +194,12 @@ const Select = styled.select`
   font-size: 14px;
   transition: all 0.3s;
   background-color: white;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
   
   &:focus {
     outline: none;
@@ -116,6 +212,13 @@ const ColorPickerContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const ColorInput = styled.input`
@@ -126,6 +229,13 @@ const ColorInput = styled.input`
   cursor: pointer;
   padding: 0;
   background: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    width: 50px;
+    height: 38px;
+  }
   
   &::-webkit-color-swatch-wrapper {
     padding: 0;
@@ -163,12 +273,29 @@ const ColorPreview = styled.div`
   }};
   font-size: 12px;
   font-weight: 500;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 0 8px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    height: 38px;
+    font-size: 11px;
+    padding: 0 6px;
+  }
 `;
 
 const ErrorText = styled.div`
   color: #dc2626;
   font-size: 12px;
   margin-top: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const ModalFooter = styled.div`
@@ -177,6 +304,26 @@ const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 14px 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    padding: 12px 16px;
+    gap: 8px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -187,6 +334,16 @@ const Button = styled.button`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.disabled ? 0.7 : 1};
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
   
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);

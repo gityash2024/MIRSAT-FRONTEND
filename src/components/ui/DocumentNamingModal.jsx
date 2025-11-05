@@ -16,6 +16,13 @@ const ModalOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: ${Z_INDEX.MODAL_OVERLAY};
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -27,6 +34,22 @@ const ModalContent = styled.div`
   margin: 0 16px;
   max-height: 90vh;
   overflow-y: auto;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin: 0;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    margin: 0;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -34,6 +57,16 @@ const ModalHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const ModalTitle = styled.h2`
@@ -43,6 +76,29 @@ const ModalTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 17px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const CloseButton = styled.button`
@@ -53,15 +109,39 @@ const CloseButton = styled.button`
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
 
   &:hover {
     background: #f3f4f6;
     color: #333;
   }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const FormSection = styled.div`
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    margin-bottom: 20px;
+  }
 `;
 
 const SectionTitle = styled.h3`
@@ -72,10 +152,40 @@ const SectionTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const Label = styled.label`
@@ -84,6 +194,13 @@ const Label = styled.label`
   font-weight: 500;
   color: #374151;
   margin-bottom: 6px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
 `;
 
 const Input = styled.input`
@@ -93,6 +210,12 @@ const Input = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -113,6 +236,12 @@ const Select = styled.select`
   font-size: 14px;
   background: white;
   transition: all 0.3s;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 
   &:focus {
     outline: none;
@@ -127,6 +256,14 @@ const PreviewSection = styled.div`
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const PreviewText = styled.div`
@@ -134,6 +271,12 @@ const PreviewText = styled.div`
   font-size: 14px;
   color: #1e293b;
   word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const CriteriaGrid = styled.div`
@@ -141,6 +284,20 @@ const CriteriaGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 `;
 
 const CriteriaItem = styled.label`
@@ -153,6 +310,18 @@ const CriteriaItem = styled.label`
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
 
   &:hover {
     background: #f9fafb;
@@ -161,6 +330,21 @@ const CriteriaItem = styled.label`
   input[type="checkbox"] {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -168,6 +352,24 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Button = styled.button`
@@ -180,6 +382,25 @@ const Button = styled.button`
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);

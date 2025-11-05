@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -21,6 +21,14 @@ const DashboardContainer = styled.div`
   min-height: 100vh;
   padding: 24px;
   background-color: #f5f7fb;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const WelcomeText = styled.h1`
@@ -28,6 +36,18 @@ const WelcomeText = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 32px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -35,6 +55,18 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -42,6 +74,16 @@ const StatCard = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 
   .icon-wrapper {
     width: 48px;
@@ -51,6 +93,13 @@ const StatCard = styled.div`
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 12px;
+    }
   }
 
   .value {
@@ -58,11 +107,22 @@ const StatCard = styled.div`
     font-weight: 700;
     color: var(--color-navy);
     margin: 8px 0;
+    word-wrap: break-word;
+
+    @media (max-width: 480px) {
+      font-size: 24px;
+    }
   }
 
   .label {
     font-size: 14px;
     color: #666;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+    }
   }
 `;
 
@@ -70,6 +130,15 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+  }
 `;
 
 const Card = styled.div`
@@ -77,6 +146,16 @@ const Card = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -87,6 +166,19 @@ const CardTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    margin-bottom: 20px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
 `;
 
 const TaskItem = styled.div`
@@ -98,6 +190,8 @@ const TaskItem = styled.div`
   margin-bottom: 12px;
   background: #f8fafc;
   transition: all 0.2s ease;
+  min-width: 0;
+  gap: 12px;
   
   &:hover {
     background: #f1f5f9;
@@ -105,10 +199,28 @@ const TaskItem = styled.div`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   .task-info {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    flex: 1;
+
+    @media (max-width: 480px) {
+      gap: 8px;
+      width: 100%;
+    }
   }
 
   .status-icon {
@@ -118,23 +230,50 @@ const TaskItem = styled.div`
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 28px;
+      height: 28px;
+    }
   }
 
   .task-name {
     font-size: 15px;
     font-weight: 500;
     color: #333;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
   }
 
   .task-description {
     font-size: 13px;
     color: #666;
     margin-top: 4px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
 
   .task-actions {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
   }
 `;
 
@@ -148,6 +287,14 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  @media (max-width: 480px) {
+    padding: 6px 12px;
+    font-size: 13px;
+    gap: 4px;
+  }
   
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);
@@ -175,11 +322,25 @@ const StatusItem = styled.div`
   margin-bottom: 12px;
   border-left: 4px solid ${props => props.color};
   background: #f8fafc;
+  min-width: 0;
+  
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 6px;
+  }
   
   .status-label {
     font-size: 14px;
     font-weight: 500;
     color: #333;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+    }
   }
   
   .status-count {
@@ -194,6 +355,13 @@ const StatusItem = styled.div`
     justify-content: center;
     font-size: 13px;
     font-weight: 600;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 24px;
+      height: 24px;
+      font-size: 12px;
+    }
   }
 `;
 
@@ -202,11 +370,24 @@ const PerformanceCard = styled.div`
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 12px;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
   
   .metric-title {
     font-size: 14px;
     color: #666;
     margin-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
   }
   
   .metric-value {
@@ -216,6 +397,25 @@ const PerformanceCard = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
+    word-wrap: break-word;
+
+    @media (max-width: 480px) {
+      font-size: 18px;
+      gap: 6px;
+    }
+  }
+`;
+
+const PerformanceCardWrapper = styled.div`
+  margin-top: 24px;
+
+  @media (max-width: 768px) {
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 16px;
   }
 `;
 
@@ -349,13 +549,31 @@ const UserDashboard = () => {
   
   const { dashboardStats, dashboardLoading, error } = useSelector((state) => state.userTasks);
   const { stats, recentTasks, statusCounts, performance } = dashboardStats;
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
 
   useEffect(() => {
     dispatch(fetchUserDashboardStats());
   }, [dispatch]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 480);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleViewTask = (taskId) => {
     navigate(`/user-tasks/${taskId}`);
+  };
+
+  const truncateText = (text, maxLength = 60) => {
+    if (!text) return '';
+    const truncateLength = isMobile ? 40 : maxLength;
+    return text.length > truncateLength 
+      ? `${text.substring(0, truncateLength)}...` 
+      : text;
   };
 
   const getStatusIcon = (status) => {
@@ -541,12 +759,10 @@ const UserDashboard = () => {
                     >
                       {getStatusIcon(task.status)}
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div className="task-name">{task.title}</div>
                       <div className="task-description">
-                        {task.description.length > 60 
-                          ? `${task.description.substring(0, 60)}...` 
-                          : task.description}
+                        {truncateText(task.description)}
                       </div>
                     </div>
                   </div>
@@ -592,7 +808,8 @@ const UserDashboard = () => {
             )}
           </Card>
 
-          <Card style={{ marginTop: '24px' }}>
+          <PerformanceCardWrapper>
+            <Card className="performance-card">
             <CardTitle>
               <TrendingUp size={20} />
               {t('dashboard.performanceMetrics')}
@@ -632,6 +849,7 @@ const UserDashboard = () => {
               </EmptyState>
             )}
           </Card>
+          </PerformanceCardWrapper>
         </div>
       </ContentGrid>
     </DashboardContainer>

@@ -13,15 +13,64 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
+const useResponsiveHeight = () => {
+  const [height, setHeight] = useState(300);
+  
+  useEffect(() => {
+    const updateHeight = () => {
+      if (window.innerWidth <= 480) {
+        setHeight(200);
+      } else if (window.innerWidth <= 768) {
+        setHeight(250);
+      } else {
+        setHeight(300);
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+  
+  return height;
+};
+
 const ChartContainer = styled(motion.div)`
   background: white;
   border-radius: 12px;
   padding: 24px;
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 8px;
+  }
 `;
 
 const ChartHeader = styled.div`
   margin-bottom: 24px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const Title = styled.h3`
@@ -29,11 +78,33 @@ const Title = styled.h3`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const Subtitle = styled.p`
   font-size: 14px;
   color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const MetricsList = styled.div`
@@ -41,6 +112,17 @@ const MetricsList = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-top: 24px;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
 `;
 
 const MetricCard = styled.div`
@@ -141,6 +223,7 @@ const getScoreColor = (score) => {
 
 const ComplianceChart = ({ dateRange, filters }) => {
   const { t } = useTranslation();
+  const chartHeight = useResponsiveHeight();
   const [complianceData, setComplianceData] = useState({
     categories: [],
     loading: true,
@@ -215,7 +298,7 @@ const ComplianceChart = ({ dateRange, filters }) => {
         <LoadingContainer>No compliance data available</LoadingContainer>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <RadarChart data={complianceData.categories} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <PolarGrid gridType="polygon" />
               <PolarAngleAxis
