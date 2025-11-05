@@ -29,6 +29,17 @@ const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+  }
 `;
 
 const SummarySection = styled.div`
@@ -36,6 +47,21 @@ const SummarySection = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
 `;
 
 const SummaryCard = styled.div`
@@ -44,6 +70,19 @@ const SummaryCard = styled.div`
   border-radius: 10px;
   border-top: 3px solid ${props => props.color || 'var(--color-navy)'};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 14px;
+    border-radius: 6px;
+  }
 `;
 
 const SummaryLabel = styled.div`
@@ -54,6 +93,32 @@ const SummaryLabel = styled.div`
   font-weight: 600;
   color: ${props => props.color || 'var(--color-navy)'};
   margin-bottom: 16px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
+  }
 `;
 
 const SummaryValue = styled.div`
@@ -61,20 +126,52 @@ const SummaryValue = styled.div`
   font-weight: 700;
   color: var(--color-navy);
   margin-bottom: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const SummaryDescription = styled.div`
   font-size: 13px;
   color: var(--color-gray-medium);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const ContentGrid = styled.div`
   display: grid;
   // grid-template-columns: 3fr 2fr;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
   }
 `;
 
@@ -83,6 +180,19 @@ const Card = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -93,6 +203,33 @@ const CardTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 16px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const LevelHierarchy = styled.div`
@@ -251,6 +388,437 @@ const QuestionItem = styled.div`
   
   &:last-child {
     border-bottom: none;
+  }
+`;
+
+// Accordion styled components for pages and sections
+const PageAccordionContainer = styled.div`
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
+`;
+
+const PageAccordionHeader = styled.div`
+  background: var(--color-navy);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  strong {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: 15px;
+
+    @media (max-width: 768px) {
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+    }
+  }
+
+  span {
+    font-size: 13px;
+    opacity: 0.7;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+
+    @media (max-width: 768px) {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+    }
+  }
+`;
+
+const PageAccordionContent = styled.div`
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 0 0 6px 6px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 0 0 4px 4px;
+  }
+`;
+
+const PageDescription = styled.div`
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  background: #f8fafc;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+`;
+
+const SectionAccordionContainer = styled.div`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+const SectionAccordionHeader = styled.div`
+  background: #f1f5f9;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  strong {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: 14px;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
+  }
+
+  span {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 10px;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+
+    @media (max-width: 768px) {
+      width: 14px;
+      height: 14px;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 480px) {
+      width: 12px;
+      height: 12px;
+      margin-right: 4px;
+    }
+  }
+`;
+
+const SectionAccordionContent = styled.div`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+const SectionDescription = styled.div`
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  background: #f8fafc;
+  font-style: italic;
+  color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+`;
+
+const QuestionsList = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+const QuestionListItem = styled.li`
+  padding: 12px 16px 12px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: white;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 10px 14px 10px 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px 10px 16px;
+  }
+`;
+
+const QuestionItemContent = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+`;
+
+const QuestionNumberBadge = styled.div`
+  min-width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    min-width: 22px;
+    height: 22px;
+    font-size: 11px;
+    border-radius: 11px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
+    border-radius: 10px;
+  }
+`;
+
+const QuestionTextContent = styled.div`
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+const QuestionTextDisplay = styled.div`
+  font-size: 14px;
+  margin-bottom: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+`;
+
+const QuestionDescriptionDisplay = styled.div`
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+`;
+
+const QuestionOptionsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    margin-top: 4px;
+  }
+`;
+
+const QuestionOptionBadge = styled.div`
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+`;
+
+const EmptyStateMessage = styled.div`
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  background: white;
+  font-style: italic;
+  font-size: 13px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    font-size: 11px;
   }
 `;
 
@@ -762,48 +1330,27 @@ const InspectionLevelView = () => {
           const isPageExpanded = expandedNodes[pageId];
           
           return (
-            <div key={pageId} style={{ marginBottom: '16px' }}>
-              <div 
-                style={{
-                  background: 'var(--color-navy)',
-                  color: 'white',
-                  padding: '12px 16px',
-                  borderRadius: '8px 8px 0 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer'
-                }}
-                onClick={() => toggleNodeExpanded(pageId)}
-              >
+            <PageAccordionContainer key={pageId}>
+              <PageAccordionHeader onClick={() => toggleNodeExpanded(pageId)}>
                 {isPageExpanded ? (
-                  <ChevronDown size={18} style={{ marginRight: '8px' }} />
+                  <ChevronDown />
                 ) : (
-                  <ChevronRight size={18} style={{ marginRight: '8px' }} />
+                  <ChevronRight />
                 )}
-                <strong style={{ flex: 1 }}>{t('inspections.page')} {pageIndex + 1}: {page.name}</strong>
+                <strong>{t('inspections.page')} {pageIndex + 1}: {page.name}</strong>
                 {page.sections && (
-                  <span style={{ fontSize: '13px', opacity: 0.7 }}>
+                  <span>
                     {page.sections.length} {page.sections.length !== 1 ? t('inspections.sections') : t('inspections.section')}
                   </span>
                 )}
-              </div>
+              </PageAccordionHeader>
               
               {isPageExpanded && (
-                <div style={{ 
-                  border: '1px solid #e2e8f0', 
-                  borderTop: 'none', 
-                  borderRadius: '0 0 8px 8px',
-                  overflow: 'hidden'
-                }}>
+                <PageAccordionContent>
                   {page.description && (
-                    <div style={{ 
-                      padding: '12px 16px', 
-                      borderBottom: '1px solid #e2e8f0',
-                      fontSize: '14px',
-                      background: '#f8fafc'
-                    }}>
+                    <PageDescription>
                       {page.description}
-                    </div>
+                    </PageDescription>
                   )}
                   
                   {page.sections && page.sections.length > 0 ? (
@@ -813,142 +1360,80 @@ const InspectionLevelView = () => {
                       const questionCount = section.questions?.length || 0;
                       
                       return (
-                        <div key={sectionId}>
-                          <div 
-                            style={{
-                              background: '#f1f5f9',
-                              padding: '10px 16px',
-                              borderBottom: '1px solid #e2e8f0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => toggleNodeExpanded(sectionId)}
-                          >
+                        <SectionAccordionContainer key={sectionId}>
+                          <SectionAccordionHeader onClick={() => toggleNodeExpanded(sectionId)}>
                             {isSectionExpanded ? (
-                              <ChevronDown size={16} style={{ marginRight: '8px' }} />
+                              <ChevronDown />
                             ) : (
-                              <ChevronRight size={16} style={{ marginRight: '8px' }} />
+                              <ChevronRight />
                             )}
-                            <strong style={{ flex: 1 }}>{t('inspections.section')} {sectionIndex + 1}: {section.name}</strong>
+                            <strong>{t('inspections.section')} {sectionIndex + 1}: {section.name}</strong>
                             {questionCount > 0 && (
-                              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                              <span>
                                 {questionCount} {questionCount !== 1 ? t('inspections.questions') : t('inspections.question')}
                               </span>
                             )}
-                          </div>
+                          </SectionAccordionHeader>
                           
                           {isSectionExpanded && (
-                            <div>
+                            <SectionAccordionContent>
                               {section.description && (
-                                <div style={{ 
-                                  padding: '10px 16px', 
-                                  borderBottom: '1px solid #e2e8f0',
-                                  fontSize: '13px',
-                                  background: '#f8fafc',
-                                  fontStyle: 'italic',
-                                  color: '#64748b'
-                                }}>
+                                <SectionDescription>
                                   {section.description}
-                                </div>
+                                </SectionDescription>
                               )}
                               
                               {section.questions && section.questions.length > 0 ? (
-                                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                                <QuestionsList>
                                   {section.questions.map((question, questionIndex) => (
-                                    <li 
+                                    <QuestionListItem 
                                       key={question._id || question.id || `q-${questionIndex}`}
-                                      style={{
-                                        padding: '12px 16px 12px 24px',
-                                        borderBottom: questionIndex < section.questions.length - 1 ? '1px solid #e2e8f0' : 'none',
-                                        background: 'white'
-                                      }}
                                     >
-                                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                        <div style={{ 
-                                          minWidth: '24px', 
-                                          height: '24px', 
-                                          background: '#f1f5f9', 
-                                          color: '#64748b',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          borderRadius: '12px',
-                                          fontSize: '12px',
-                                          fontWeight: '500',
-                                          marginTop: '2px'
-                                        }}>
+                                      <QuestionItemContent>
+                                        <QuestionNumberBadge>
                                           {questionIndex + 1}
-                                        </div>
-                                        <div>
-                                          <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+                                        </QuestionNumberBadge>
+                                        <QuestionTextContent>
+                                          <QuestionTextDisplay>
                                             {question.text}
-                                          </div>
+                                          </QuestionTextDisplay>
                                           {question.description && (
-                                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+                                            <QuestionDescriptionDisplay>
                                               {question.description}
-                                            </div>
+                                            </QuestionDescriptionDisplay>
                                           )}
                                           {question.options && question.options.length > 0 && (
-                                            <div style={{ 
-                                              display: 'flex', 
-                                              flexWrap: 'wrap', 
-                                              gap: '6px',
-                                              marginTop: '8px'
-                                            }}>
+                                            <QuestionOptionsContainer>
                                               {question.options.map((option, optionIndex) => (
-                                                <div 
-                                                  key={optionIndex}
-                                                  style={{
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    background: '#e2e8f0',
-                                                    fontSize: '12px',
-                                                    color: '#475569'
-                                                  }}
-                                                >
+                                                <QuestionOptionBadge key={optionIndex}>
                                                   {option}
-                                                </div>
+                                                </QuestionOptionBadge>
                                               ))}
-                                            </div>
+                                            </QuestionOptionsContainer>
                                           )}
-                                        </div>
-                                      </div>
-                                    </li>
+                                        </QuestionTextContent>
+                                      </QuestionItemContent>
+                                    </QuestionListItem>
                                   ))}
-                                </ul>
+                                </QuestionsList>
                               ) : (
-                                <div style={{ 
-                                  padding: '12px 16px',
-                                  background: 'white',
-                                  color: '#94a3b8',
-                                  textAlign: 'center',
-                                  fontStyle: 'italic',
-                                  fontSize: '13px'
-                                }}>
+                                <EmptyStateMessage>
                                   No questions in this section
-                                </div>
+                                </EmptyStateMessage>
                               )}
-                            </div>
+                            </SectionAccordionContent>
                           )}
-                        </div>
+                        </SectionAccordionContainer>
                       );
                     })
                   ) : (
-                    <div style={{ 
-                      padding: '16px',
-                      textAlign: 'center',
-                      color: '#94a3b8',
-                      background: 'white',
-                      fontStyle: 'italic',
-                      fontSize: '13px'
-                    }}>
+                    <EmptyStateMessage>
                       No sections in this page
-                    </div>
+                    </EmptyStateMessage>
                   )}
-                </div>
+                </PageAccordionContent>
               )}
-            </div>
+            </PageAccordionContainer>
           );
         })}
       </div>

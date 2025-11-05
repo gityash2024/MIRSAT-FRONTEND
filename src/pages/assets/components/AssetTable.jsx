@@ -370,8 +370,8 @@ const AssetTable = ({
 
   return (
     <>
-      <TableContainer>
-        <Table $isRTL={isRTL}>
+    <TableContainer>
+      <Table $isRTL={isRTL}>
         <thead>
           <tr>
             <th style={{ width: '50px', textAlign: 'center' }}>#</th>
@@ -473,9 +473,9 @@ const AssetTable = ({
         </tbody>
       </Table>
     </TableContainer>
-    
-    {!loading && assets.length > 0 && (
-      <PaginationContainer>
+      
+      {!loading && assets.length > 0 && (
+        <PaginationContainer>
             <PaginationText>
               {t('common.showing')} {(pagination.page - 1) * pagination.limit + 1} {t('common.to')}{' '}
               {Math.min(pagination.page * pagination.limit, pagination.total)} {t('common.of')}{' '}

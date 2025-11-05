@@ -226,7 +226,17 @@ const PageContainer = styled.div`
   margin: 0 auto;
   position: relative;
   width: 100%;
-  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px;
+  }
 `;
 
 const Header = styled.header`
@@ -234,16 +244,56 @@ const Header = styled.header`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+    gap: 8px;
+  }
   
   h1 {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 20px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 18px;
+    }
   }
   
   div {
     display: flex;
-  gap: 8px;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 6px;
+    }
   }
 `;
 
@@ -257,9 +307,28 @@ const BackButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   padding: 8px 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 4px 0;
+  }
   
   &:hover {
     color: #334155;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -294,12 +363,37 @@ const FormSection = styled.section`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 24px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+  }
   
   h3 {
     margin-top: 0;
     color: #334155;
     font-size: 18px;
     font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 17px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 16px;
+    }
   }
 `;
 
@@ -308,10 +402,35 @@ const FormRow = styled.div`
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
   
   > * {
     flex: 1;
     min-width: 250px;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      min-width: 200px;
+    }
+
+    @media (max-width: 480px) {
+      min-width: 0;
+      width: 100%;
+      flex: 1 1 100%;
+    }
   }
 `;
 
@@ -319,12 +438,30 @@ const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
   color: #64748b;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Input = styled.input`
@@ -333,6 +470,19 @@ const Input = styled.input`
   border-radius: 4px;
   font-size: 14px;
   transition: border-color 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
   
   &:focus {
     border-color: #94a3b8;
@@ -351,6 +501,21 @@ const TextArea = styled.textarea`
   font-size: 14px;
   resize: vertical;
   transition: border-color 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 80px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+    min-height: 70px;
+  }
   
   &:focus {
     border-color: #94a3b8;
@@ -369,6 +534,19 @@ const Select = styled.select`
   font-size: 14px;
   background-color: white;
   transition: border-color 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 13px;
+  }
   
   &:focus {
     border-color: #94a3b8;
@@ -534,6 +712,17 @@ const Form = styled.form`
 const FormSectionWithTabs = styled(FormSection)`
   padding: 24px 0 0 0;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px 0 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px 0 0 0;
+  }
 `;
 
 const SectionTitle = styled.h3`
@@ -544,6 +733,33 @@ const SectionTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const TabsContainer = styled.div`
@@ -556,6 +772,44 @@ const TabsContainer = styled.div`
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    height: 4px;
+
+    @media (max-width: 480px) {
+      height: 3px;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
 `;
 
 const Tab = styled.div`
@@ -572,6 +826,20 @@ const Tab = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
   
   &:hover {
     color: var(--color-navy);
@@ -589,6 +857,16 @@ const Tab = styled.div`
     font-size: 14px;
     cursor: pointer;
     margin-left: 4px;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+      margin-left: 2px;
+    }
     
     &:hover {
       color: #b91c1c;
@@ -607,10 +885,36 @@ const TabCount = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    border-radius: 9px;
+  }
 `;
 
 const TabContent = styled.div`
   padding: 0 24px 24px 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 0 20px 20px 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 12px 12px 12px;
+  }
 `;
 
 const FormGrid = styled.div`
@@ -659,10 +963,37 @@ const IconButton = styled.button`
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: fit-content;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px;
+  }
 
   &:hover {
     background: #f5f7fb;
     color: var(--color-navy);
+  }
+  
+  svg {
+    flex-shrink: 0;
+    
+    @media (max-width: 768px) {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -671,12 +1002,55 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const TabNavigationButtons = styled.div`
   display: flex;
   justify-content: space-between;
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const DiscardButton = styled(Button)`
@@ -1140,6 +1514,11 @@ const Modal = styled.div`
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(2px);
+  
+  @media (max-width: 480px) {
+    align-items: flex-end;
+    padding: 0;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -1152,6 +1531,21 @@ const ModalContent = styled.div`
   overflow-y: auto;
   padding: 0;
   border: 1px solid #e2e8f0;
+  
+  @media (max-width: 768px) {
+    width: 95%;
+    max-width: 95%;
+    border-radius: 8px;
+    max-height: 90vh;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -1161,8 +1555,18 @@ const ModalHeader = styled.div`
   margin-bottom: 0;
   padding: 24px 24px 16px 24px;
   border-bottom: 1px solid #e2e8f0;
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 12px 12px 0 0;
+  
+  @media (max-width: 768px) {
+    padding: 20px 20px 14px 20px;
+    border-radius: 8px 8px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px 16px 12px 16px;
+    border-radius: 0;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -1170,6 +1574,18 @@ const ModalTitle = styled.h3`
   font-weight: 600;
   color: var(--color-navy);
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const ModalClose = styled.button`
@@ -1178,13 +1594,31 @@ const ModalClose = styled.button`
   color: #64748b;
   cursor: pointer;
   font-size: 24px;
-  padding: 0;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+    padding: 4px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    padding: 4px;
+  }
   
   &:hover {
     color: var(--color-navy);
+    background: #f1f5f9;
+  }
+  
+  svg {
+    flex-shrink: 0;
   }
 `;
 
@@ -1484,33 +1918,132 @@ const QuestionTable = styled.div`
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 20px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    height: 4px;
+
+    @media (max-width: 480px) {
+      height: 3px;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
 `;
 
 const QuestionTableHeader = styled.div`
   display: grid;
-  grid-template-columns: 40px 1fr 260px 120px;
+  grid-template-columns: 40px 1fr 200px 100px;
   background: #f1f5f9;
   padding: 12px 16px;
   font-weight: 500;
   color: #334155;
   font-size: 14px;
   border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 35px 1fr 140px 90px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 30px 1fr 100px 100px;
+    padding: 8px 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  > div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
 `;
 
 const QuestionTableRow = styled.div`
   display: grid;
-  grid-template-columns: 40px 1fr 260px 120px;
+  grid-template-columns: 40px 1fr 200px 100px;
   padding: 12px 16px;
   background: white;
   border-bottom: 1px solid #e2e8f0;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 35px 1fr 140px 90px;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 30px 1fr 100px 100px;
+    padding: 8px 6px;
+    gap: 4px;
+    align-items: flex-start;
+  }
   
   &:hover {
     background: #f8fafc;
   }
-
+  
   &:last-child {
     border-bottom: none;
+  }
+
+  > div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+    overflow: hidden;
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
+  }
+  
+  /* Question text column - allow truncation */
+  > div:nth-child(2) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 `;
 
@@ -1534,6 +2067,19 @@ const QuestionActionsMenu = styled.div`
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 `;
 
 const QuestionNumber = styled.div`
@@ -1818,24 +2364,73 @@ const QuestionItemComponent = ({
         }}
         style={{ width: '100%' }}
       >
-        <QuestionTableRow>
-          <DragHandleIcon>
+        <QuestionTableRow onClick={() => setExpanded(!expanded)}>
+          <DragHandleIcon
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <Move size={18} />
           </DragHandleIcon>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <QuestionNumber>
-              {questionIndex + 1}. {question.text || t('common.untitledQuestion')}
-              {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '4px',
+            minWidth: 0,
+            maxWidth: '100%',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+          }}>
+            <QuestionNumber style={{ 
+              minWidth: 0,
+              maxWidth: '100%',
+              overflow: 'hidden'
+            }}>
+              <span style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: '#64748b',
+                transition: 'transform 0.2s ease',
+                transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                width: '20px',
+                height: '20px'
+              }}>
+                <ChevronDown size={16} />
+              </span>
+              <span style={{ 
+                flex: 1, 
+                minWidth: 0, 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {questionIndex + 1}. {question.text || t('common.untitledQuestion')}
+                {question.required !== false && <span style={{ color: 'red', marginLeft: '4px', flexShrink: 0 }}>*</span>}
+              </span>
             </QuestionNumber>
             {question.description && (
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
+              <div style={{ 
+                fontSize: '13px', 
+                color: '#64748b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+                maxWidth: '100%'
+              }}>
                 {question.description}
               </div>
             )}
           </div>
           
-          <div>
+          <div style={{ 
+            minWidth: 0,
+            maxWidth: '100%',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+          }}>
             <div style={{ 
               padding: '6px 12px', 
               backgroundColor: '#f1f5f9', 
@@ -1845,34 +2440,52 @@ const QuestionItemComponent = ({
               gap: '6px',
               fontSize: '13px',
               color: '#334155',
-              fontWeight: '500'
-            }}>
-              {question.answerType === 'yesno' && <ToggleLeft size={14} />}
-              {question.answerType === 'text' && <FileText size={14} />}
-              {question.answerType === 'multiple' && <List size={14} />}
-              {question.answerType === 'compliance' && <CheckCircle size={14} />}
-              {question.answerType === 'date' && <Calendar size={14} />}
-              {getAnswerTypeLabel(question.answerType)}
+              fontWeight: '500',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}
+            className="answer-type-badge"
+            >
+              {question.answerType === 'yesno' && <ToggleLeft size={14} style={{ flexShrink: 0 }} />}
+              {question.answerType === 'text' && <FileText size={14} style={{ flexShrink: 0 }} />}
+              {question.answerType === 'multiple' && <List size={14} style={{ flexShrink: 0 }} />}
+              {question.answerType === 'compliance' && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
+              {question.answerType === 'date' && <Calendar size={14} style={{ flexShrink: 0 }} />}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {getAnswerTypeLabel(question.answerType)}
+              </span>
             </div>
           </div>
           
-          <QuestionActionsMenu>
+          <QuestionActionsMenu onClick={(e) => e.stopPropagation()}>
             <IconButton 
-              onClick={() => setExpanded(!expanded)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
               title={expanded ? "Collapse" : "Expand"}
             >
               {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </IconButton>
             
             <IconButton
-              onClick={() => onMoveQuestion && onMoveQuestion(questionIndex, question)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveQuestion && onMoveQuestion(questionIndex, question);
+              }}
               title="Move to another section"
             >
               <ArrowUpRight size={18} />
             </IconButton>
             
             <IconButton
-              onClick={() => setShowDeleteModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteModal(true);
+              }}
               title="Delete Question"
               style={{ 
                 color: '#ef4444',
@@ -1882,11 +2495,14 @@ const QuestionItemComponent = ({
                 gap: '4px',
                 background: '#fee2e2',
                 border: '1px solid #fecaca',
-                borderRadius: '4px'
+                borderRadius: '4px',
+                flexShrink: 0,
+                minWidth: 'fit-content'
               }}
+              className="delete-button"
             >
-              <Trash2 size={16} />
-              <span style={{ fontSize: '12px', fontWeight: '500' }}>{t('common.delete')}</span>
+              <Trash2 size={16} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }} className="delete-text">{t('common.delete')}</span>
             </IconButton>
           </QuestionActionsMenu>
         </QuestionTableRow>
@@ -1899,17 +2515,32 @@ const QuestionItemComponent = ({
           background: '#f8fafc',
           borderBottom: '1px solid #e2e8f0',
           width: '100%',
+          maxWidth: '100%',
           overflow: 'visible',
-          minWidth: '800px'
-        }}>
+          boxSizing: 'border-box'
+        }}
+        className="question-expanded-container"
+        >
           <div style={{ 
             display: 'flex', 
             gap: '20px', 
             alignItems: 'flex-start',
             width: '100%',
-            minHeight: '400px'
-          }}>
-            <div style={{ flex: '1', minWidth: '0' }}>
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            flexWrap: 'wrap'
+          }}
+          className="question-expanded-content"
+          >
+            <div style={{ 
+              flex: '1', 
+              minWidth: '0',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}
+            className="question-expanded-main"
+            >
               <FormGroup>
                 <Label>{t('common.questionText')}</Label>
                 <Input
@@ -1950,7 +2581,7 @@ const QuestionItemComponent = ({
 
               
               {/* Add weight input field after answer type */}
-              <FormGroup style={{ marginTop: '16px' }}>
+              <FormGroup style={{ marginTop: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <Label>{t('common.questionWeight')}</Label>
                 <Input
                   type="text"
@@ -1966,25 +2597,30 @@ const QuestionItemComponent = ({
                   }}
                   placeholder="Question weight"
                 />
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   {t('common.setToZeroForNonScoredQuestions')}
                 </div>
               </FormGroup>
               
               {/* Options editor for multiple choice or compliance questions */}
               {['multiple', 'compliance'].includes(question.answerType) && (
-                <FormGroup style={{ marginTop: '16px' }}>
+                <FormGroup style={{ marginTop: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between',
-                    alignItems: 'center' 
-                  }}>
-                    <Label>Options</Label>
+                  alignItems: 'center',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                    <Label style={{ flex: 1, minWidth: 0 }}>Options</Label>
                     {question.answerType === 'multiple' && (
                       <Button
                     type="button"
                     onClick={addOption}
-                        style={{ padding: '4px 8px', fontSize: '13px' }}
+                        style={{ padding: '4px 8px', fontSize: '13px', flexShrink: 0, whiteSpace: 'nowrap' }}
                       >
                         <Plus size={14} />
                         Add Option
@@ -1992,20 +2628,24 @@ const QuestionItemComponent = ({
                     )}
                 </div>
                 
-                  <div style={{ marginTop: '12px' }}>
+                  <div style={{ marginTop: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 {(question.options || []).map((option, index) => (
                   <div key={index} style={{ 
                     display: 'flex', 
                     gap: '8px',
-                        marginBottom: '8px',
-                        alignItems: 'center'
+                    marginBottom: '8px',
+                    alignItems: 'center',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    flexWrap: 'wrap'
                   }}>
                         <Input
                       type="text"
                       value={option}
                       onChange={(e) => updateOption(index, e.target.value)}
                       placeholder={`Option ${index + 1}`}
-                          style={{ flex: 1 }}
+                          style={{ flex: 1, minWidth: 0 }}
                           readOnly={question.answerType === 'compliance'}
                         />
                         
@@ -2030,14 +2670,14 @@ const QuestionItemComponent = ({
                               }
                             });
                           }}
-                          style={{ width: '80px' }}
+                          style={{ width: '80px', flexShrink: 0 }}
                           placeholder="Score"
                         />
                         
                         {question.answerType === 'multiple' && (
                           <IconButton
                       onClick={() => removeOption(index)}
-                            style={{ color: '#ef4444' }}
+                            style={{ color: '#ef4444', flexShrink: 0 }}
                             title="Remove Option"
                           >
                             <X size={18} />
@@ -2053,8 +2693,18 @@ const QuestionItemComponent = ({
               {question.answerType === 'yesno' && (
                 <FormGroup style={{ marginTop: '16px' }}>
                   <Label>{t('common.scoring')}</Label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '8px' }}>
-                    <div>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: '12px', 
+                    marginTop: '8px',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                  className="scoring-grid"
+                  >
+                    <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       <Label style={{ fontSize: '13px' }}>{t('common.yesScore')}</Label>
                       <Input
                         type="text"
@@ -2082,7 +2732,7 @@ const QuestionItemComponent = ({
                         placeholder="Enter score"
                       />
                     </div>
-                    <div>
+                    <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       <Label style={{ fontSize: '13px' }}>{t('common.noScore')}</Label>
                       <Input
                         type="text"
@@ -2110,7 +2760,7 @@ const QuestionItemComponent = ({
                         placeholder="Enter score"
                       />
                     </div>
-                    <div>
+                    <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       <Label style={{ fontSize: '13px' }}>{t('common.naScore')}</Label>
                       <Input
                         type="text"
@@ -2148,7 +2798,9 @@ const QuestionItemComponent = ({
               minWidth: '320px', 
               maxWidth: '320px',
               flexShrink: 0
-            }}>
+            }}
+            className="question-expanded-sidebar"
+            >
             <div style={{ 
                 padding: '16px', 
                 border: '1px solid #e2e8f0',
@@ -2156,11 +2808,21 @@ const QuestionItemComponent = ({
                 background: 'white',
                 marginBottom: '16px',
                 width: '100%',
+                maxWidth: '100%',
                 boxSizing: 'border-box'
               }}>
-                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>{t('common.questionSettings')}</div>
+                <div style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '600', 
+                  marginBottom: '12px',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box'
+                }}>{t('common.questionSettings')}</div>
                 
-                <FormGroup style={{ marginBottom: '16px' }}>
+                <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.requirementType')}</Label>
                   <Select
                     name="requirementType"
@@ -2173,19 +2835,26 @@ const QuestionItemComponent = ({
                   </Select>
                 </FormGroup>
 
-                <FormGroup style={{ marginBottom: '16px' }}>
+                <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.required')}</Label>
-                  <div style={{ marginTop: '10px' }}>
+                  <div style={{ marginTop: '10px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                     <input 
                       type="checkbox" 
                       id={`required-settings-${questionIndex}`}
                       name="required" 
                       checked={question.required !== false} 
                       onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
-                      style={{ marginRight: '8px' }}
+                      style={{ marginRight: '8px', flexShrink: 0 }}
                       disabled={loading}
                     />
-                    <label htmlFor={`required-settings-${questionIndex}`} style={{ fontSize: '14px', color: '#334155' }}>
+                    <label htmlFor={`required-settings-${questionIndex}`} style={{ 
+                      fontSize: '14px', 
+                      color: '#334155',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      flex: 1,
+                      minWidth: 0
+                    }}>
                       {t('common.thisQuestionIsRequired')}
                     </label>
                   </div>
@@ -2205,7 +2874,7 @@ const QuestionItemComponent = ({
               </div>
                 </FormGroup> */}
                 
-                <FormGroup>
+                <FormGroup style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.maxPossibleScore')}</Label>
                   <Input
                     type="text"
@@ -2214,11 +2883,23 @@ const QuestionItemComponent = ({
                     style={{
                       backgroundColor: '#f8fafc',
                       color: '#64748b',
-                      cursor: 'not-allowed'
+                      cursor: 'not-allowed',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box'
                     }}
                     placeholder="Auto-calculated"
                   />
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#64748b', 
+                    marginTop: '4px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box'
+                  }}>
                     {t('common.automaticallyCalculatedFromScoring')}
                   </div>
                 </FormGroup>
@@ -2596,6 +3277,8 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
     return activities[0].timestamp;
   };
   
+  const isMobile = window.innerWidth <= 480;
+  
   return (
     <div style={{
       position: 'fixed',
@@ -2605,33 +3288,51 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: isMobile ? 'flex-end' : 'center',
       justifyContent: 'center',
-      zIndex: 1000
-    }}>
+      zIndex: 1000,
+      padding: isMobile ? '0' : '20px 16px 16px 16px',
+      boxSizing: 'border-box'
+    }}
+    onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}
+    >
       <div style={{
         backgroundColor: 'white',
-        borderRadius: '8px',
+        borderRadius: isMobile ? '12px 12px 0 0' : '8px',
         width: '550px',
-        maxWidth: '95%',
-        maxHeight: '85vh',
+        maxWidth: '100%',
+        maxHeight: isMobile ? '85vh' : '85vh',
         overflowY: 'auto',
-        padding: '24px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-      }}>
+        overflowX: 'hidden',
+        padding: isMobile ? '16px' : '24px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        boxSizing: 'border-box'
+      }}
+      onClick={(e) => e.stopPropagation()}
+      >
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '16px',
           borderBottom: '1px solid #e2e8f0',
-          paddingBottom: '12px'
+          paddingBottom: '12px',
+          flexWrap: 'wrap',
+          gap: '8px'
         }}>
           <h2 style={{ 
             margin: 0, 
             fontSize: '20px', 
             fontWeight: '600',
-            color: 'var(--color-navy)'
+            color: 'var(--color-navy)',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            flex: 1,
+            minWidth: 0
           }}>{t('common.templateActivity')}</h2>
           <button
             onClick={onClose}
@@ -2640,7 +3341,14 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               border: 'none',
               cursor: 'pointer',
               fontSize: '20px',
-              color: '#64748b'
+              color: '#64748b',
+              flexShrink: 0,
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px'
             }}
           >
             &times;
@@ -2817,6 +3525,7 @@ const MoveQuestionModal = ({
   currentSetIndex,
   onMoveQuestion 
 }) => {
+  const { t } = useTranslation();
   const [targetSetIndex, setTargetSetIndex] = useState(currentSetIndex);
   const [targetLevelId, setTargetLevelId] = useState(null);
   
@@ -2843,88 +3552,131 @@ const MoveQuestionModal = ({
   const targetSet = allSets[targetSetIndex] || {};
   const flattenedLevels = getFlattenedLevels(targetSet.subLevels || []);
   
+  if (!isOpen) return null;
+  
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Move Question">
-      <div style={{ padding: '20px' }}>
-        <FormGroup style={{ marginBottom: '16px' }}>
-          <Label>Question to Move</Label>
-          <div style={{ 
-            padding: '12px', 
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            background: '#f8fafc'
-          }}>
-            {question?.text || t('common.untitledQuestion')}
-          </div>
-        </FormGroup>
+    <Modal onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <ModalContent 
+        onClick={(e) => e.stopPropagation()}
+        className="move-question-modal"
+      >
+        <ModalHeader>
+          <ModalTitle>Move Question</ModalTitle>
+          <ModalClose onClick={onClose}>
+            <X size={20} />
+          </ModalClose>
+        </ModalHeader>
         
-        <FormGroup style={{ marginBottom: '16px' }}>
-          <Label>Select Target Page</Label>
-          <Select
-            value={targetSetIndex}
-            onChange={(e) => {
-              setTargetSetIndex(parseInt(e.target.value));
-              setTargetLevelId(null); // Reset selected level when changing set
-            }}
-          >
-            {allSets.map((set, idx) => (
-              <option key={set.id || idx} value={idx}>
-                {set.name || `Page ${idx + 1}`}
-              </option>
-            ))}
-          </Select>
-        </FormGroup>
-        
-        <FormGroup style={{ marginBottom: '24px' }}>
-          <Label>Select Target Section</Label>
-          {flattenedLevels.length > 0 ? (
+        <div style={{ 
+          padding: '20px',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          minHeight: '200px'
+        }}
+        className="move-question-modal-body"
+        >
+          <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <Label>Question to Move</Label>
+            <div style={{ 
+              padding: '12px', 
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              background: '#ffffff',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}>
+              {question?.text || t('common.untitledQuestion')}
+            </div>
+          </FormGroup>
+          
+          <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <Label>Select Target Page</Label>
             <Select
-              value={targetLevelId || ''}
-              onChange={(e) => setTargetLevelId(e.target.value)}
+              value={targetSetIndex}
+              onChange={(e) => {
+                setTargetSetIndex(parseInt(e.target.value));
+                setTargetLevelId(null); // Reset selected level when changing set
+              }}
             >
-              <option value="">-- Select a section --</option>
-              {flattenedLevels.map((level) => (
-                <option key={level.id} value={level.id}>
-                  {level.name}
+              {allSets.map((set, idx) => (
+                <option key={set.id || idx} value={idx}>
+                  {set.name || `Page ${idx + 1}`}
                 </option>
               ))}
             </Select>
-          ) : (
-            <div style={{ 
-              padding: '12px', 
-              color: '#64748b',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0',
-              textAlign: 'center'
-            }}>
-              No sections available in this page. Please create a section first.
-            </div>
-          )}
-        </FormGroup>
-        
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <Button type="button" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => {
-              if (!targetLevelId) {
-                toast.error('Please select a target section');
-          return;
-              }
-              
-              onMoveQuestion(questionIndex, question, targetSetIndex, targetLevelId);
-              onClose();
-            }}
-            disabled={!targetLevelId}
+          </FormGroup>
+          
+          <FormGroup style={{ marginBottom: '24px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <Label>Select Target Section</Label>
+            {flattenedLevels.length > 0 ? (
+              <Select
+                value={targetLevelId || ''}
+                onChange={(e) => setTargetLevelId(e.target.value)}
+              >
+                <option value="">-- Select a section --</option>
+                {flattenedLevels.map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.name}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <div style={{ 
+                padding: '12px', 
+                color: '#64748b',
+                background: '#ffffff',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}>
+                No sections available in this page. Please create a section first.
+              </div>
+            )}
+          </FormGroup>
+          
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            gap: '8px',
+            flexWrap: 'wrap',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}
+          className="move-question-modal-actions"
           >
-            Move Question
-          </Button>
+            <Button type="button" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                if (!targetLevelId) {
+                  toast.error('Please select a target section');
+                  return;
+                }
+                
+                onMoveQuestion(questionIndex, question, targetSetIndex, targetLevelId);
+                onClose();
+              }}
+              disabled={!targetLevelId}
+            >
+              Move Question
+            </Button>
+          </div>
         </div>
-      </div>
+      </ModalContent>
     </Modal>
   );
 };
@@ -3015,18 +3767,18 @@ const MobilePreviewPanel = ({
     switch (question.answerType || question.type) {
       case 'yesno':
         return (
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>Yes</span>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: '1 1 calc(33.333% - 8px)', minWidth: 0, wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>Yes</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>No</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: '1 1 calc(33.333% - 8px)', minWidth: 0, wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>No</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>N/A</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: '1 1 calc(33.333% - 8px)', minWidth: 0, wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>N/A</span>
             </label>
           </div>
         );
@@ -3038,30 +3790,32 @@ const MobilePreviewPanel = ({
             disabled
             style={{
               width: '100%',
+              maxWidth: '100%',
               padding: '8px 12px',
               border: '1px solid #e2e8f0',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              boxSizing: 'border-box'
             }}
           />
         );
       case 'compliance':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>Full Compliance</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>Full Compliance</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>Partial Compliance</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>Partial Compliance</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>Non-Compliance</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>Non-Compliance</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="radio" name={`question-${question.id || question._id}`} disabled />
-              <span>Not Applicable</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <input type="radio" name={`question-${question.id || question._id}`} disabled style={{ flexShrink: 0 }} />
+              <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>Not Applicable</span>
             </label>
           </div>
         );
@@ -3072,10 +3826,12 @@ const MobilePreviewPanel = ({
             disabled 
             style={{ 
               width: '100%',
+              maxWidth: '100%',
               padding: '8px 12px',
               border: '1px solid #e2e8f0',
               borderRadius: '4px',
-              backgroundColor: 'white'
+              backgroundColor: 'white',
+              boxSizing: 'border-box'
             }}
           >
             <option value="">Select an option</option>
@@ -3086,11 +3842,11 @@ const MobilePreviewPanel = ({
         );
       case 'checkbox':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             {(question.options || ['Option 1', 'Option 2']).map((option, i) => (
-              <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="checkbox" disabled />
-                <span>{option}</span>
+              <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                <input type="checkbox" disabled style={{ flexShrink: 0 }} />
+                <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>{option}</span>
               </label>
             ))}
           </div>
@@ -3102,9 +3858,11 @@ const MobilePreviewPanel = ({
             disabled
             style={{
               width: '100%',
+              maxWidth: '100%',
               padding: '8px 12px',
               border: '1px solid #e2e8f0',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              boxSizing: 'border-box'
             }}
           />
         );
@@ -3116,9 +3874,11 @@ const MobilePreviewPanel = ({
             disabled
             style={{
               width: '100%',
+              maxWidth: '100%',
               padding: '8px 12px',
               border: '1px solid #e2e8f0',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              boxSizing: 'border-box'
             }}
           />
         );
@@ -3152,12 +3912,16 @@ const MobilePreviewPanel = ({
       right: 0,
       bottom: 0,
       width: '375px',
+      maxWidth: '100vw',
       backgroundColor: '#f1f5f9',
       boxShadow: '-2px 0 10px rgba(0, 0, 0, 0.1)',
       display: 'flex',
       flexDirection: 'column',
       zIndex: 100,
-      borderLeft: '1px solid #e2e8f0'
+      borderLeft: '1px solid #e2e8f0',
+      overflowX: 'hidden',
+      overflowY: 'hidden',
+      boxSizing: 'border-box'
     }}>
       {/* Mobile emulator header */}
       <div style={{
@@ -3167,21 +3931,30 @@ const MobilePreviewPanel = ({
         borderTopRightRadius: '16px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexShrink: 0,
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
         </div>
-        <div style={{ color: 'white', fontSize: '12px' }}>{t('common.mobilePreview')}</div>
+        <div style={{ color: 'white', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('common.mobilePreview')}</div>
         <button
           onClick={onClose}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: 'white'
+            color: 'white',
+            flexShrink: 0,
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           <X size={16} />
@@ -3195,10 +3968,14 @@ const MobilePreviewPanel = ({
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        flexShrink: 0
       }}>
-        <div style={{ fontWeight: '600', fontSize: '18px' }}>MIRSAT</div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ fontWeight: '600', fontSize: '18px', wordWrap: 'break-word', overflowWrap: 'break-word', minWidth: 0, flex: 1 }}>MIRSAT</div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           <User size={16} />
           <div style={{ 
             width: '8px', 
@@ -3214,11 +3991,15 @@ const MobilePreviewPanel = ({
         padding: '16px',
         backgroundColor: 'white',
         borderBottom: '1px solid #e2e8f0',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        flexShrink: 0
       }}>
-        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {formData.name || t('common.untitledTemplate')}
         </h2>
-        <div style={{ fontSize: '13px', color: '#64748b' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {formData.description || t('common.noDescriptionProvided')}
         </div>
       </div>
@@ -3230,7 +4011,11 @@ const MobilePreviewPanel = ({
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        flexShrink: 0
       }}>
         <button
           onClick={prevPage}
@@ -3242,13 +4027,14 @@ const MobilePreviewPanel = ({
             cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
             padding: '4px 8px',
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexShrink: 0
           }}
         >
           <ChevronLeft size={20} />
         </button>
         
-        <div style={{ fontWeight: '500' }}>
+        <div style={{ fontWeight: '500', wordWrap: 'break-word', overflowWrap: 'break-word', textAlign: 'center', flex: 1, minWidth: 0, padding: '0 8px' }}>
           {formData.pages.length > 0 ? `${t('common.page')} ${currentPage + 1} ${t('common.of')} ${formData.pages.length}` : t('common.noPages')}
         </div>
         
@@ -3262,7 +4048,8 @@ const MobilePreviewPanel = ({
             cursor: currentPage >= formData.pages.length - 1 ? 'not-allowed' : 'pointer',
             padding: '4px 8px',
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexShrink: 0
           }}
         >
           <ChevronRight size={20} />
@@ -3275,8 +4062,12 @@ const MobilePreviewPanel = ({
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           padding: '16px',
-          height: 'calc(100vh - 180px)' // Set explicit height for scrolling
+          height: 'calc(100vh - 180px)',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}
       >
         <div style={{
@@ -3284,13 +4075,16 @@ const MobilePreviewPanel = ({
           borderRadius: '8px',
           padding: '16px',
           marginBottom: '16px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             {currentPageData.name || `${t('common.page')} ${currentPage + 1}`}
           </h3>
           {currentPageData.description && (
-            <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px' }}>
+            <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               {currentPageData.description}
             </p>
           )}
@@ -3308,7 +4102,10 @@ const MobilePreviewPanel = ({
               borderRadius: '8px',
               marginBottom: '16px',
               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
             }}>
               {/* Section header */}
               <div 
@@ -3320,32 +4117,47 @@ const MobilePreviewPanel = ({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  flexWrap: 'wrap',
+                  gap: '8px'
                 }}
               >
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ 
                     fontWeight: '600', 
                     fontSize: '16px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box'
                   }}>
-                    {section.name || `${t('common.section')} ${sectionIndex + 1}`}
+                    <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word', flex: 1, minWidth: 0 }}>
+                      {section.name || `${t('common.section')} ${sectionIndex + 1}`}
+                    </span>
                     <span style={{ 
                       fontSize: '12px', 
                       padding: '2px 8px', 
                       backgroundColor: '#dbeafe',
                       color: '#1e40af',
                       borderRadius: '12px',
-                      fontWeight: 'normal'
+                      fontWeight: 'normal',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
                     }}>
                       {section.questions?.length || 0} Q
                     </span>
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   {/* Section score */}
                   <div style={{
                     fontWeight: '600',
@@ -3353,7 +4165,8 @@ const MobilePreviewPanel = ({
                     backgroundColor: '#eff6ff',
                     padding: '4px 8px',
                     borderRadius: '4px',
-                    fontSize: '13px'
+                    fontSize: '13px',
+                    whiteSpace: 'nowrap'
                   }}>
                     {sectionScore} {t('common.pts')}
                   </div>
@@ -3365,9 +4178,9 @@ const MobilePreviewPanel = ({
               
               {/* Section content (only visible when expanded) */}
               {isExpanded && (
-                <div style={{ padding: '16px' }}>
+                <div style={{ padding: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   {section.description && (
-                    <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px' }}>
+                    <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       {section.description}
                     </p>
                   )}
@@ -3383,7 +4196,10 @@ const MobilePreviewPanel = ({
                         border: '1px solid #e2e8f0',
                         borderRadius: '6px',
                         marginBottom: questionIndex < section.questions.length - 1 ? '12px' : '0',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box'
                       }}>
                         {/* Question header */}
                         <div 
@@ -3395,7 +4211,12 @@ const MobilePreviewPanel = ({
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            width: '100%',
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
+                            flexWrap: 'wrap',
+                            gap: '8px'
                           }}
                         >
                           <div style={{ 
@@ -3404,7 +4225,8 @@ const MobilePreviewPanel = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            flex: 1
+                            flex: 1,
+                            minWidth: 0
                           }}>
                             <span style={{ 
                               minWidth: '24px', 
@@ -3416,24 +4238,26 @@ const MobilePreviewPanel = ({
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontSize: '12px',
-                              fontWeight: '600'
+                              fontWeight: '600',
+                              flexShrink: 0
                             }}>
                               {questionIndex + 1}
                             </span>
-                            <span style={{ flex: 1 }}>
+                            <span style={{ flex: 1, minWidth: 0, wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {question.text || t('common.untitledQuestion')}
                               {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
                             </span>
                           </div>
                           
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                             <div style={{
                               fontWeight: '500',
                               color: '#0e7490',
                               backgroundColor: '#ecfeff',
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              fontSize: '12px'
+                              fontSize: '12px',
+                              whiteSpace: 'nowrap'
                             }}>
                               {questionScore} {t('common.pts')}
                             </div>
@@ -3443,15 +4267,15 @@ const MobilePreviewPanel = ({
                         
                         {/* Question content */}
                         {isQuestionExpanded && (
-                          <div style={{ padding: '12px' }}>
+                          <div style={{ padding: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                             {question.description && (
-                              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>
+                              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                                 {question.description}
                               </div>
                             )}
                             
                             {/* Answer input */}
-                            <div style={{ marginBottom: '12px' }}>
+                            <div style={{ marginBottom: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                               {renderQuestionInput(question)}
                             </div>
                             
@@ -3460,7 +4284,10 @@ const MobilePreviewPanel = ({
                               backgroundColor: '#f8fafc',
                               padding: '10px',
                               borderRadius: '6px',
-                              fontSize: '12px'
+                              fontSize: '12px',
+                              width: '100%',
+                              maxWidth: '100%',
+                              boxSizing: 'border-box'
                             }}>
                               <div style={{ fontWeight: '600', marginBottom: '4px', color: '#334155' }}>
                                 {t('common.scoring')}
@@ -3553,11 +4380,14 @@ const MobilePreviewPanel = ({
             textAlign: 'center',
             backgroundColor: 'white',
             borderRadius: '8px',
-            color: '#94a3b8'
+            color: '#94a3b8',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}>
-            <div style={{ marginBottom: '8px' }}>
+            <div style={{ marginBottom: '8px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <FileText size={36} style={{ color: '#cbd5e1', margin: '0 auto 12px' }} />
-              <div>No sections found on this page</div>
+              <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>No sections found on this page</div>
             </div>
           </div>
         )}
@@ -3574,10 +4404,35 @@ const InspectionFormRow = styled.div`
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-direction: column;
+  }
   
   > * {
     flex: 1;
     min-width: 250px;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      min-width: 200px;
+    }
+
+    @media (max-width: 480px) {
+      min-width: 0;
+      width: 100%;
+      flex: 1 1 100%;
+    }
   }
 `;
 
@@ -3585,6 +4440,14 @@ const InspectionFormGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const InspectionFormSection = styled.section`
@@ -3593,12 +4456,37 @@ const InspectionFormSection = styled.section`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 24px;
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+  }
   
   h3 {
     margin-top: 0;
     color: #334155;
     font-size: 18px;
     font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 17px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 16px;
+    }
   }
 `;
 
@@ -3738,13 +4626,52 @@ const InspectionEmptyState = styled.div`
 
 // Add these styled component definitions after other styled components and before the component functions
 
+const PagesQuestionsContent = styled.div`
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
+`;
+
 const SectionsWrapper = styled.div`
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 12px;
+  }
   
   h4 {
     margin-bottom: 16px;
     font-size: 16px;
     color: var(--color-navy);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
   }
 `;
 
@@ -3839,15 +4766,58 @@ const TabEmptyState = styled.div`
   background: #f9f9f9;
   border-radius: 8px;
   text-align: center;
-  
-  svg {
-    color: #ccc;
-    margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 24px 12px;
+    border-radius: 4px;
   }
   
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 28px;
+      height: 28px;
+    }
+
+    @media (max-width: 480px) {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
   p {
-    margin-bottom: 16px;
-    color: #666;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
+  }
+
+  button {
+    @media (max-width: 480px) {
+      width: 100%;
+      max-width: 100%;
+      justify-content: center;
+    }
   }
 `;
 
@@ -3876,6 +4846,40 @@ const SectionTabsContainer = styled.div`
   overflow-x: auto;
   margin-bottom: 16px;
   border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+  }
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    height: 4px;
+
+    @media (max-width: 480px) {
+      height: 3px;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
 `;
 
 const SectionTab = styled.div`
@@ -3890,6 +4894,20 @@ const SectionTab = styled.div`
   align-items: center;
   gap: 8px;
   position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+  }
   
   &:hover {
     color: var(--color-navy);
@@ -3906,6 +4924,16 @@ const SectionTab = styled.div`
     font-size: 14px;
     cursor: pointer;
     margin-left: 4px;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+      margin-left: 2px;
+    }
     
     &:hover {
       color: #b91c1c;
@@ -5055,7 +6083,7 @@ const InspectionLevelForm = () => {
     <>
       {renderPageTabs()}
       
-      <div style={{ padding: '24px' }}>
+      <PagesQuestionsContent>
         <InspectionFormRow>
           <InspectionFormGroup>
             <Label>Page Name</Label>
@@ -5077,7 +6105,17 @@ const InspectionLevelForm = () => {
         </InspectionFormRow>
         
         <SectionsWrapper>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '16px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
             <h4>{t('common.templateLevels')}</h4>
             <Button onClick={addSection}>
               <Plus size={16} style={{ marginRight: '4px' }} />
@@ -5090,7 +6128,12 @@ const InspectionLevelForm = () => {
               {renderSectionTabs(activePageIndex)}
               
               {formData.pages[activePageIndex].sections[activeSectionTab] && (
-                <div>
+                <div style={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  overflowX: 'hidden'
+                }}>
                   <InspectionFormRow>
                     <InspectionFormGroup>
                       <Label>{t('common.templateLevelName')}</Label>
@@ -5111,8 +6154,24 @@ const InspectionLevelForm = () => {
                     </InspectionFormGroup>
                   </InspectionFormRow>
                   
-                  <div style={{ marginTop: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ 
+                    marginTop: '24px',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    overflowX: 'hidden'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginBottom: '16px',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
                       <h5>{t('common.questions')}</h5>
                       <Button onClick={() => addQuestion(activeSectionTab)}>
                         <Plus size={16} style={{ marginRight: '4px' }} />
@@ -5167,7 +6226,7 @@ const InspectionLevelForm = () => {
             </TabEmptyState>
           )}
         </SectionsWrapper>
-      </div>
+      </PagesQuestionsContent>
     </>
   )}
 
@@ -5239,44 +6298,60 @@ const InspectionLevelForm = () => {
       <div style={{
         display: 'flex',
         borderBottom: '1px solid #e0e0e0',
-        marginBottom: '20px'
+        marginBottom: '20px',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin'
       }}>
         <div 
-            style={{
+          style={{
             padding: '12px 20px',
             cursor: 'pointer',
             borderBottom: activeTab === 'basic-info' ? '2px solid var(--color-navy)' : '2px solid transparent',
             color: activeTab === 'basic-info' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'basic-info' ? '500' : 'normal'
+            fontWeight: activeTab === 'basic-info' ? '500' : 'normal',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
           onClick={() => setActiveTab('basic-info')}
         >
           {t('common.basicInformation')}
         </div>
         <div 
-                style={{ 
+          style={{ 
             padding: '12px 20px',
             cursor: 'pointer',
             borderBottom: activeTab === 'pages-questions' ? '2px solid var(--color-navy)' : '2px solid transparent',
             color: activeTab === 'pages-questions' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'pages-questions' ? '500' : 'normal'
+            fontWeight: activeTab === 'pages-questions' ? '500' : 'normal',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
           onClick={() => setActiveTab('pages-questions')}
         >
           {t('common.pagesAndQuestions')}
         </div>
         <div 
-                style={{ 
+          style={{ 
             padding: '12px 20px',
             cursor: 'pointer',
             borderBottom: activeTab === 'report' ? '2px solid var(--color-navy)' : '2px solid transparent',
             color: activeTab === 'report' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'report' ? '500' : 'normal'
+            fontWeight: activeTab === 'report' ? '500' : 'normal',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
           onClick={() => setActiveTab('report')}
         >
           {t('common.report')}
-              </div>
+        </div>
       </div>
       
       {isGuideOpen && (
@@ -5287,46 +6362,79 @@ const InspectionLevelForm = () => {
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
+          display: 'flex',
+          alignItems: window.innerWidth <= 480 ? 'flex-end' : 'center',
           justifyContent: 'center',
-          zIndex: 1000
-        }}>
-                  <div style={{ 
+          zIndex: 1000,
+          padding: window.innerWidth <= 480 ? '0' : '20px 16px 16px 16px',
+          boxSizing: 'border-box'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            toggleGuide();
+          }
+        }}
+        >
+          <div style={{ 
             backgroundColor: 'white',
-            borderRadius: '8px',
+            borderRadius: window.innerWidth <= 480 ? '12px 12px 0 0' : '8px',
             width: '700px',
-            maxWidth: '90%',
+            maxWidth: '100%',
             maxHeight: '80vh',
             overflowY: 'auto',
-            padding: '24px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-          }}>
-                  <div style={{ 
-                    display: 'flex', 
+            overflowX: 'hidden',
+            padding: window.innerWidth <= 480 ? '16px' : '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxSizing: 'border-box'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ 
+              display: 'flex', 
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '16px',
               borderBottom: '1px solid #e2e8f0',
-              paddingBottom: '16px'
+              paddingBottom: '16px',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: 'var(--color-navy)' }}>
-                <HelpCircle size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                {t('common.templateCreationGuide')}
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: '20px', 
+                fontWeight: '600', 
+                color: 'var(--color-navy)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                flex: 1,
+                minWidth: 0
+              }}>
+                <HelpCircle size={20} style={{ flexShrink: 0 }} />
+                <span>{t('common.templateCreationGuide')}</span>
               </h2>
-                      <button
+              <button
                 onClick={toggleGuide}
-                        style={{
+                style={{
                   background: 'none',
                   border: 'none',
-                          cursor: 'pointer',
+                  cursor: 'pointer',
                   fontSize: '20px',
-                  color: '#64748b'
+                  color: '#64748b',
+                  flexShrink: 0,
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px'
                 }}
               >
                 &times;
-                    </button>
-                  </div>
+              </button>
+            </div>
                 
                 <div style={{ marginBottom: '20px' }}>
               <p style={{ marginTop: 0, color: '#64748b' }}>{t('common.followTheseStepsToCreate')}</p>

@@ -33,6 +33,22 @@ const StatusBadge = styled.span`
   color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
     props.type === 'yacht_chartering' ? '#1565c0' : 
     props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 2px 5px;
+    font-size: 10px;
+  }
 `;
 const DropdownContent = styled.div`
   display: ${props => props.show ? 'block' : 'none'};
@@ -45,6 +61,20 @@ const DropdownContent = styled.div`
   border-radius: 8px;
   overflow: hidden;
   margin-top: 5px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    min-width: 160px;
+    right: 0;
+    left: auto;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 150px;
+    max-width: calc(100vw - 24px);
+    right: 0;
+    left: auto;
+  }
 `;
 
 const DropdownItem = styled.a`
@@ -55,10 +85,34 @@ const DropdownItem = styled.a`
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
   &:hover {
     background-color: #f8fafc;
     color: var(--color-navy);
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -80,10 +134,33 @@ const flattenSubLevels = (subLevels, level = 0) => {
 
 const PageContainer = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Header = styled.div`
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -94,11 +171,47 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const SubTitle = styled.p`
   color: #666;
   font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const ActionBar = styled.div`
@@ -108,12 +221,33 @@ const ActionBar = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
 `;
 
 const SearchBox = styled.div`
   position: relative;
   flex: 1;
   max-width: 400px;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 
   input {
     width: 100%;
@@ -122,6 +256,17 @@ const SearchBox = styled.div`
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.3s;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      padding: 8px 14px 8px 38px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 8px 12px 8px 36px;
+      font-size: 13px;
+    }
 
     &:focus {
       outline: none;
@@ -136,12 +281,38 @@ const SearchBox = styled.div`
     top: 50%;
     transform: translateY(-50%);
     color: #666;
+
+    @media (max-width: 768px) {
+      left: 10px;
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      left: 10px;
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 8px;
+  }
 `;
 
 const Button = styled.button`
@@ -151,10 +322,37 @@ const Button = styled.button`
   font-weight: 500;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.3s;
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 
   ${props => props.variant === 'primary' ? `
     background: var(--color-navy);
@@ -183,6 +381,17 @@ const Button = styled.button`
 const LevelGrid = styled.div`
   display: grid;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
+  }
 `;
 
 const LevelCard = styled.div`
@@ -191,6 +400,17 @@ const LevelCard = styled.div`
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 10px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px;
+  }
 
   &:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -204,6 +424,19 @@ const AccordionHeader = styled.div`
   width: 100%;
   padding: 20px;
   text-align: ${props => props.$isRTL ? 'right' : 'left'};
+  flex-wrap: wrap;
+  gap: 12px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 8px;
+  }
 `;
 
 const LevelInfo = styled.div`
@@ -211,6 +444,19 @@ const LevelInfo = styled.div`
   gap: 12px;
   align-items: flex-start;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    flex-direction: column;
+  }
 `;
 
 const LevelIcon = styled.div`
@@ -223,11 +469,44 @@ const LevelIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
+  svg {
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const LevelDetails = styled.div`
   flex: 1;
   text-align: left;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
   
   h3 {
     font-size: 16px;
@@ -237,6 +516,16 @@ const LevelDetails = styled.div`
     margin-top: 0;
     padding-left: 0;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
   }
 
   p {
@@ -245,6 +534,16 @@ const LevelDetails = styled.div`
     margin: 0;
     padding-left: 0;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
 `;
 
@@ -252,6 +551,18 @@ const LevelActions = styled.div`
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    width: 100%;
+    justify-content: flex-start;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -262,6 +573,20 @@ const ActionButton = styled.button`
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px;
+    font-size: 12px;
+  }
 
   &:hover {
     background: #f5f7fb;
@@ -271,6 +596,13 @@ const ActionButton = styled.button`
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -389,6 +721,17 @@ const ModalOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    align-items: flex-end;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -398,6 +741,22 @@ const ModalContent = styled.div`
   width: 450px;
   max-width: 90vw;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 12px 12px 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -405,12 +764,34 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
 `;
 
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const ModalCloseButton = styled.button`
@@ -419,9 +800,17 @@ const ModalCloseButton = styled.button`
   color: #666;
   cursor: pointer;
   padding: 4px;
+  flex-shrink: 0;
   
   &:hover {
     color: #333;
+  }
+
+  svg {
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
   }
 `;
 
@@ -430,12 +819,44 @@ const ModalActions = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const AccordionItemContent = styled.div`
   padding: 0 20px 20px;
   background: #f9fafc;
   border-top: 1px solid #edf2f7;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 0 16px 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 12px 12px;
+  }
 `;
 
 const LevelStats = styled.div`
@@ -444,6 +865,25 @@ const LevelStats = styled.div`
   align-items: center;
   margin-bottom: 16px;
   padding: 16px 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+    padding: 12px 0;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 10px;
+    padding: 10px 0;
+    gap: 8px;
+  }
 `;
 
 const StatItem = styled.div`
@@ -456,15 +896,44 @@ const StatItem = styled.div`
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   min-width: 100px;
+  flex: 1;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    min-width: 80px;
+    flex: 1 1 calc(33.333% - 8px);
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+  }
 
   svg {
     width: 18px;
     height: 18px;
     color: #4a5568;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 
   div {
     text-align: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   strong {
@@ -472,11 +941,31 @@ const StatItem = styled.div`
     font-weight: 600;
     color: var(--color-navy);
     display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
   }
 
   span {
     font-size: 12px;
     color: #718096;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    @media (max-width: 768px) {
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 10px;
+    }
   }
 `;
 

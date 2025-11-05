@@ -394,7 +394,7 @@ const FilterButton = styled.button`
     width: 100%;
     min-width: 0;
   }
-
+  
   &:hover {
     background: ${props => props.active ? 'var(--color-navy)' : '#f8fafc'};
     border-color: ${props => props.active ? 'var(--color-navy)' : '#cbd5e1'};
@@ -666,7 +666,7 @@ const TableScrollContainer = styled.div`
        Header: ~36px + (Row height: ~40px * 20 rows) = ~836px
        Try to fit as much as possible in viewport */
     max-height: calc(100vh - 150px);
-    overflow-y: auto;
+  overflow-y: auto;
   }
 
   /* Scrollbar styling */
@@ -1958,78 +1958,78 @@ const LogsList = () => {
         <LogsTable>
           <TableScrollContainer>
             <TableContent>
-              <TableHeader $isRTL={isRTL}>
-                <div>{t('logs.srNo')}</div>
-                <div>{t('common.user')}</div>
-                <div>{t('logs.action')}</div>
-                <div>{t('logs.severity')}</div>
-                <div>{t('common.task')}</div>
-                <div>{t('common.description')}</div>
-                <div>{t('common.time')}</div>
-                <div>{t('common.actions')}</div>
-              </TableHeader>
+          <TableHeader $isRTL={isRTL}>
+            <div>{t('logs.srNo')}</div>
+            <div>{t('common.user')}</div>
+            <div>{t('logs.action')}</div>
+            <div>{t('logs.severity')}</div>
+            <div>{t('common.task')}</div>
+            <div>{t('common.description')}</div>
+            <div>{t('common.time')}</div>
+            <div>{t('common.actions')}</div>
+          </TableHeader>
 
-              {logs.length === 0 ? (
-                <EmptyState>
-                  <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                  <div>{t('logs.noLogsFound')}</div>
-                  <div style={{ fontSize: '14px', marginTop: '4px' }}>
-                    {t('logs.tryAdjustingSearch')}
-                  </div>
-                </EmptyState>
-              ) : (
-                logs.map((log, index) => (
-                  <TableRow key={log._id} $isRTL={isRTL} onClick={() => handleViewLog(log)}>
-                    <SerialNumber>
-                      {((pagination.page - 1) * pagination.limit) + index + 1}
-                    </SerialNumber>
-                    <UserInfo>
-                      <UserAvatar>
-                        {log.userId?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </UserAvatar>
-                      <UserDetails>
-                        <UserName>{log.userId?.name || 'Unknown User'}</UserName>
-                        <UserRole>{log.userId?.role || 'Unknown Role'}</UserRole>
-                      </UserDetails>
-                    </UserInfo>
-                    <ActionBadge type={getActionType(log.action)}>
-                      {formatAction(log.action)}
-                    </ActionBadge>
-                    <SeverityBadge level={log.severity}>
-                      {log.severity}
-                    </SeverityBadge>
-                    <TaskInfo>
-                      <TaskTitle title={log.taskId?.title || 'No Task'}>
-                        {log.taskId?.title || 'No Task'}
-                      </TaskTitle>
-                      <TaskStatus color={getTaskStatusColor(log.taskId?.status)}>
-                        {log.taskId?.status || 'N/A'}
-                      </TaskStatus>
-                      {log.taskId?.priority && (
-                        <TaskPriority color={getTaskPriorityColor(log.taskId?.priority)}>
-                          {log.taskId?.priority}
-                        </TaskPriority>
-                      )}
-                    </TaskInfo>
-                    <DescriptionText title={log.description}>
-                      {truncateText(log.description)}
-                    </DescriptionText>
-                    <TimeInfo>
-                      <Clock size={14} />
-                      {formatDate(log.timestamp)}
-                    </TimeInfo>
-                    <Actions>
-                      <ActionButton onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewLog(log);
-                      }}>
-                        <Eye size={16} />
-                      </ActionButton>
-                    </Actions>
-                  </TableRow>
-                ))
-              )}
-            </TableContent>
+            {logs.length === 0 ? (
+              <EmptyState>
+                <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                <div>{t('logs.noLogsFound')}</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>
+                  {t('logs.tryAdjustingSearch')}
+                </div>
+              </EmptyState>
+            ) : (
+              logs.map((log, index) => (
+                <TableRow key={log._id} $isRTL={isRTL} onClick={() => handleViewLog(log)}>
+                  <SerialNumber>
+                    {((pagination.page - 1) * pagination.limit) + index + 1}
+                  </SerialNumber>
+                  <UserInfo>
+                    <UserAvatar>
+                      {log.userId?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </UserAvatar>
+                    <UserDetails>
+                      <UserName>{log.userId?.name || 'Unknown User'}</UserName>
+                      <UserRole>{log.userId?.role || 'Unknown Role'}</UserRole>
+                    </UserDetails>
+                  </UserInfo>
+                  <ActionBadge type={getActionType(log.action)}>
+                    {formatAction(log.action)}
+                  </ActionBadge>
+                  <SeverityBadge level={log.severity}>
+                    {log.severity}
+                  </SeverityBadge>
+                  <TaskInfo>
+                    <TaskTitle title={log.taskId?.title || 'No Task'}>
+                      {log.taskId?.title || 'No Task'}
+                    </TaskTitle>
+                    <TaskStatus color={getTaskStatusColor(log.taskId?.status)}>
+                      {log.taskId?.status || 'N/A'}
+                    </TaskStatus>
+                    {log.taskId?.priority && (
+                      <TaskPriority color={getTaskPriorityColor(log.taskId?.priority)}>
+                        {log.taskId?.priority}
+                      </TaskPriority>
+                    )}
+                  </TaskInfo>
+                  <DescriptionText title={log.description}>
+                    {truncateText(log.description)}
+                  </DescriptionText>
+                  <TimeInfo>
+                    <Clock size={14} />
+                    {formatDate(log.timestamp)}
+                  </TimeInfo>
+                  <Actions>
+                    <ActionButton onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewLog(log);
+                    }}>
+                      <Eye size={16} />
+                    </ActionButton>
+                  </Actions>
+                </TableRow>
+              ))
+            )}
+          </TableContent>
           </TableScrollContainer>
         </LogsTable>
       </TableWrapper>

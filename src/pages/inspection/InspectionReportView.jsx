@@ -16,6 +16,17 @@ const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    gap: 20px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+  }
 `;
 
 const ToolbarContainer = styled.div`
@@ -27,6 +38,25 @@ const ToolbarContainer = styled.div`
   padding: 12px 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
 `;
 
 const ToolbarTitle = styled.div`
@@ -36,16 +66,53 @@ const ToolbarTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    gap: 6px;
+    width: 100%;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `;
 
 const ToolbarActions = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    gap: 8px;
+    justify-content: stretch;
+  }
 `;
 
 const ActionButton = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 8px 12px;
   border-radius: 6px;
@@ -56,6 +123,33 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 13px;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
   
   &:hover {
     background-color: ${props => props.primary ? 'var(--color-navy-dark)' : 'var(--color-offwhite)'};
@@ -67,6 +161,16 @@ const ReportPreviewContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    margin: 0;
+  }
 `;
 
 const NoDataContainer = styled.div`
@@ -76,17 +180,56 @@ const NoDataContainer = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin-top: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+    margin-top: 20px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 24px 12px;
+    margin-top: 16px;
+    border-radius: 4px;
+  }
 `;
 
 const NoDataTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 8px;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
 `;
 
 const NoDataMessage = styled.p`
   color: var(--color-gray-medium);
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const NoDataButton = styled.button`
@@ -98,6 +241,20 @@ const NoDataButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+    max-width: 100%;
+  }
   
   &:hover {
     background-color: var(--color-navy-dark);
@@ -106,6 +263,47 @@ const NoDataButton = styled.button`
 
 const LoadingContainer = styled.div`
   padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
+`;
+
+const IconWrapper = styled.div`
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
+
+  svg {
+    width: 48px;
+    height: 48px;
+
+    @media (max-width: 768px) {
+      width: 40px;
+      height: 40px;
+    }
+
+    @media (max-width: 480px) {
+      width: 36px;
+      height: 36px;
+    }
+  }
 `;
 
 const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
@@ -475,7 +673,9 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     if (isCreating || !reportData) {
       return (
         <NoDataContainer>
-          <FileText size={48} color="var(--color-gray-light)" style={{ marginBottom: '16px' }} />
+          <IconWrapper>
+            <FileText color="var(--color-gray-light)" />
+          </IconWrapper>
           <NoDataTitle>No report data available yet</NoDataTitle>
           <NoDataMessage>
             You need to build your template before previewing the report.
@@ -497,7 +697,9 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       console.error('Error rendering report preview:', error);
       return (
         <NoDataContainer>
-          <AlertCircle size={48} color="var(--color-compliance-non)" style={{ marginBottom: '16px' }} />
+          <IconWrapper>
+            <AlertCircle color="var(--color-compliance-non)" />
+          </IconWrapper>
           <NoDataTitle>{t('inspections.errorDisplayingReport')}</NoDataTitle>
           <NoDataMessage>
             {t('inspections.reportDisplayError')}

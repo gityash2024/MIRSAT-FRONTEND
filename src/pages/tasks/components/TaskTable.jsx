@@ -1231,7 +1231,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
         )}
       </TableContainer>
 
-      <PaginationContainer>
+        <PaginationContainer>
           <PaginationInfo>
             {pagination && pagination.total !== undefined && pagination.total > 0 ? (
               <>

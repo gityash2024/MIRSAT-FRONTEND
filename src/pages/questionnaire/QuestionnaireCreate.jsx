@@ -608,10 +608,10 @@ const QuestionCreate = () => {
           boxSizing: 'border-box',
           flexWrap: 'wrap'
         }}>
-          <BackButton onClick={() => navigate('/questionnaire')}>
-            <ChevronLeft size={16} />
-            {t('common.backToQuestionLibrary')}
-          </BackButton>
+        <BackButton onClick={() => navigate('/questionnaire')}>
+          <ChevronLeft size={16} />
+          {t('common.backToQuestionLibrary')}
+        </BackButton>
           <Title style={{ flex: 1, minWidth: 0 }}>{isEditing ? t('common.editQuestion') : t('common.createQuestion')}</Title>
         </div>
         <ActionButtons>

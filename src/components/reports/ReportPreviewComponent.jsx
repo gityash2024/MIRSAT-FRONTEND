@@ -27,18 +27,52 @@ const PreviewContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
   border: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    max-width: 100%;
+  }
 `;
 
 const PreviewHeader = styled.div`
   padding: 24px;
   background-color: var(--color-navy);
   color: white;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const LogoContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const Logo = styled.img`
@@ -48,6 +82,18 @@ const Logo = styled.img`
   background-color: white;
   border-radius: 8px;
   padding: 12px;
+
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+    padding: 10px;
+  }
+
+  @media (max-width: 480px) {
+    width: 80px;
+    height: 80px;
+    padding: 8px;
+  }
 `;
 
 const ReportTitle = styled.h1`
@@ -55,6 +101,18 @@ const ReportTitle = styled.h1`
   text-align: center;
   margin-bottom: 16px;
   font-weight: 700;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
 `;
 
 const ReportSubtitle = styled.div`
@@ -62,11 +120,35 @@ const ReportSubtitle = styled.div`
   font-size: 14px;
   opacity: 0.8;
   margin-bottom: 20px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
 `;
 
 const OverviewSection = styled.div`
   padding: 24px;
   border-bottom: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 4px;
+    border-bottom: none;
+  }
 `;
 
 const OverviewHeader = styled.div`
@@ -77,15 +159,46 @@ const OverviewHeader = styled.div`
   font-size: 18px;
   font-weight: 600;
   color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 17px;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+    }
+  }
 `;
 
 const OverviewGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 10px;
   }
 `;
 
@@ -97,6 +210,19 @@ const StatCard = styled.div`
   flex-direction: column;
   align-items: center;
   text-align: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 4px;
+  }
 `;
 
 const StatValue = styled.div`
@@ -104,6 +230,18 @@ const StatValue = styled.div`
   font-weight: 700;
   color: var(--color-navy);
   margin: 8px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+    margin: 6px 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+    margin: 4px 0;
+  }
 `;
 
 const StatLabel = styled.div`
@@ -111,6 +249,16 @@ const StatLabel = styled.div`
   color: var(--color-gray-medium);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+  }
 `;
 
 const CircleScore = styled.div`
@@ -129,6 +277,21 @@ const CircleScore = styled.div`
     if (props.score >= 40) return 'var(--color-compliance-partial)';
     return 'var(--color-compliance-non)';
   }};
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 70px;
+    height: 70px;
+    font-size: 20px;
+    margin: 10px 0;
+  }
+
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+    font-size: 18px;
+    margin: 8px 0;
+  }
 `;
 
 const MetadataSection = styled.div`
@@ -137,9 +300,21 @@ const MetadataSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 4px;
+    border-bottom: none;
   }
 `;
 
@@ -147,22 +322,62 @@ const MetadataItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    gap: 3px;
+  }
 `;
 
 const MetadataLabel = styled.div`
   font-size: 12px;
   color: var(--color-gray-medium);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const MetadataValue = styled.div`
   font-size: 14px;
   color: var(--color-navy);
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const FlaggedItemsSection = styled.div`
   padding: 24px;
   border-bottom: 1px solid var(--color-gray-light);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 4px;
+    border-bottom: none;
+  }
 `;
 
 const FlaggedItemsHeader = styled.div`
@@ -170,6 +385,20 @@ const FlaggedItemsHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+    gap: 6px;
+  }
   
   h2 {
     font-size: 18px;
@@ -178,6 +407,29 @@ const FlaggedItemsHeader = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 17px;
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 16px;
+      gap: 6px;
+    }
+
+    svg {
+      flex-shrink: 0;
+
+      @media (max-width: 480px) {
+        width: 16px;
+        height: 16px;
+      }
+    }
   }
   
   .count {
@@ -191,6 +443,21 @@ const FlaggedItemsHeader = styled.div`
     border-radius: 14px;
     font-size: 14px;
     font-weight: 600;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      width: 22px;
+      height: 22px;
+      border-radius: 11px;
+      font-size: 11px;
+    }
   }
 `;
 
@@ -200,17 +467,53 @@ const FlaggedItem = styled.div`
   padding: 16px;
   margin-bottom: 12px;
   border-left: 3px solid var(--color-compliance-non);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border-left: 2px solid var(--color-compliance-non);
+  }
 `;
 
 const FlaggedItemHeader = styled.div`
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    margin-bottom: 6px;
+    gap: 6px;
+  }
 `;
 
 const FlaggedItemCategory = styled.div`
   font-size: 13px;
   color: var(--color-gray-medium);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const FlaggedItemContent = styled.div`
@@ -218,6 +521,21 @@ const FlaggedItemContent = styled.div`
   color: var(--color-navy);
   font-weight: 500;
   margin-bottom: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
 `;
 
 const FlaggedItemFooter = styled.div`
@@ -226,10 +544,35 @@ const FlaggedItemFooter = styled.div`
   align-items: center;
   font-size: 12px;
   color: var(--color-gray-medium);
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+    gap: 6px;
+  }
 `;
 
 const SectionsSection = styled.div`
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 4px;
+  }
 `;
 
 const SectionsHeader = styled.div`
@@ -237,6 +580,20 @@ const SectionsHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+    gap: 6px;
+  }
   
   h2 {
     font-size: 18px;
@@ -245,11 +602,45 @@ const SectionsHeader = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: 768px) {
+      font-size: 17px;
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 16px;
+      gap: 6px;
+    }
+
+    svg {
+      flex-shrink: 0;
+
+      @media (max-width: 480px) {
+        width: 16px;
+        height: 16px;
+      }
+    }
   }
 `;
 
 const SectionItem = styled.div`
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 10px;
+  }
 `;
 
 const SectionItemHeader = styled.div`
@@ -260,6 +651,23 @@ const SectionItemHeader = styled.div`
   padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    border-radius: 6px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    border-radius: 4px;
+    gap: 6px;
+  }
   
   &:hover {
     background-color: var(--color-skyblue);
@@ -273,6 +681,20 @@ const SectionItemTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 6px;
+  }
   
   .section-number {
     display: inline-flex;
@@ -285,6 +707,21 @@ const SectionItemTitle = styled.div`
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      font-size: 10px;
+    }
   }
 `;
 
@@ -292,6 +729,19 @@ const SectionScore = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
   
   .score-display {
     font-size: 14px;
@@ -301,11 +751,45 @@ const SectionScore = styled.div`
       if (props.score >= 40) return 'var(--color-compliance-partial)';
       return 'var(--color-compliance-non)';
     }};
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px;
+    }
   }
   
   .percentage {
     font-size: 12px;
     color: var(--color-gray-medium);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 10px;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 480px) {
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 
@@ -319,6 +803,66 @@ const SectionItemContent = styled.div`
   opacity: ${props => props.isOpen ? '1' : '0'};
   overflow: hidden;
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: ${props => props.isOpen ? '14px' : '0'};
+    border-radius: 0 0 6px 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: ${props => props.isOpen ? '12px 4px' : '0'};
+    border-radius: 0 0 4px 4px;
+    border: none;
+    border-top: 1px solid var(--color-gray-light);
+  }
+`;
+
+const SectionItemInner = styled.div`
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    padding: 10px 0;
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const SectionItemTitleText = styled.div`
+  font-size: 14px;
+  color: var(--color-navy);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    width: 100%;
+  }
 `;
 
 const ActionButtons = styled.div`
@@ -639,18 +1183,12 @@ const ReportPreviewComponent = ({
               
               <SectionItemContent isOpen={openSection === section.id}>
                 {(section.items || []).map((item, itemIndex) => (
-                  <div key={item.title || itemIndex} style={{ 
-                    padding: '12px 0', 
-                    borderBottom: '1px solid var(--color-gray-light)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-navy)' }}>{item.title || `Item ${itemIndex + 1}`}</div>
+                  <SectionItemInner key={item.title || itemIndex}>
+                    <SectionItemTitleText>{item.title || `Item ${itemIndex + 1}`}</SectionItemTitleText>
                     <StatusBadge status={item.status || 'not_applicable'}>
                       <StatusIcon status={item.status || 'not_applicable'} />
                     </StatusBadge>
-                  </div>
+                  </SectionItemInner>
                 ))}
               </SectionItemContent>
             </SectionItem>

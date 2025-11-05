@@ -43,7 +43,7 @@ const CalendarWrapper = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   margin-top: 24px;
   width: 100%;
-  max-width: 100%;
+    max-width: 100%;
   box-sizing: border-box;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
