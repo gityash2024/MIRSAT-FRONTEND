@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import useNotification from '../../hooks/useNotification';
+import { useSelector } from 'react-redux';
+import { ROLES } from '../../utils/permissions';
 
 // Mock data for fallback
 export const mockNotifications = [
@@ -208,7 +210,9 @@ const ViewAllButton = styled(Link)`
 export const NotificationDropdown = ({ isOpen }) => {
   const { t, i18n } = useTranslation();
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotification();
+  const user = useSelector((state) => state.auth.user);
   const isRTL = i18n.language === 'ar';
+  const isInspector = user?.role === ROLES.INSPECTOR;
   
   useEffect(() => {
     if (isOpen) {
@@ -216,8 +220,15 @@ export const NotificationDropdown = ({ isOpen }) => {
     }
   }, [isOpen, fetchNotifications]);
 
-  const handleNotificationClick = (notificationId) => {
-    markAsRead(notificationId);
+  const handleNotificationClick = (notificationId, e) => {
+    if (isInspector) {
+      e.preventDefault();
+      e.stopPropagation();
+      markAsRead(notificationId);
+    } else {
+      // For other roles, allow navigation but still mark as read
+      markAsRead(notificationId);
+    }
   };
 
   return (
@@ -231,9 +242,9 @@ export const NotificationDropdown = ({ isOpen }) => {
         {notifications.slice(0, 3).map((notification) => (
           <NotificationItem 
             key={notification._id}
-            to={notification.data?.link || '/notifications'}
+            to={isInspector ? '/notifications' : (notification.data?.link || '/notifications')}
             isUnread={!notification.read}
-            onClick={() => handleNotificationClick(notification._id)}
+            onClick={(e) => handleNotificationClick(notification._id, e)}
           >
             <NotificationContent>
               <NotificationIcon 
@@ -241,9 +252,16 @@ export const NotificationDropdown = ({ isOpen }) => {
                 priority={notification.data?.priority || 'medium'} 
               />
               <TextContent>
-                <NotificationTitle>{notification.title}</NotificationTitle>
-                <NotificationMessage>{notification.message}</NotificationMessage>
-                <Timestamp>{formatTimestamp(notification.createdAt, t)}</Timestamp>
+                {(() => {
+                  const { translatedTitle, translatedMessage } = translateNotification(notification, t);
+                  return (
+                    <>
+                      <NotificationTitle>{translatedTitle}</NotificationTitle>
+                      <NotificationMessage>{translatedMessage}</NotificationMessage>
+                      <Timestamp>{formatTimestamp(notification.createdAt, t)}</Timestamp>
+                    </>
+                  );
+                })()}
               </TextContent>
             </NotificationContent>
           </NotificationItem>
@@ -365,10 +383,25 @@ const ActionIconButton = styled.button`
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 
   &:hover {
     background: #f1f5f9;
     color: var(--color-navy);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.2);
   }
 `;
 
@@ -516,6 +549,82 @@ const formatTimestamp = (timestamp, t) => {
   }
 };
 
+// Helper function to translate notification titles and messages
+const translateNotification = (notification, t) => {
+  const { title, message, type } = notification;
+  let translatedTitle = title;
+  let translatedMessage = message;
+
+  // Translate title based on common patterns
+  if (title === 'New Task Assigned' || title === 'New Task Assignment') {
+    translatedTitle = title === 'New Task Assigned' 
+      ? t('notifications.newTaskAssigned')
+      : t('notifications.newTaskAssignment');
+  } else if (title === 'Task Status Updated') {
+    translatedTitle = t('notifications.taskStatusUpdated');
+  } else if (title === 'Task Deadline Approaching') {
+    translatedTitle = t('notifications.taskDeadlineApproaching');
+  } else if (title === 'Role Permissions Updated') {
+    translatedTitle = t('notifications.rolePermissionsUpdated');
+  } else if (title === 'Test Notification') {
+    translatedTitle = t('notifications.testNotification');
+  }
+
+  // Translate message based on patterns
+  // Pattern: "You have been assigned to the task: {taskName}"
+  const assignedTaskMatch = message.match(/You have been assigned to the task:\s*(.+)/);
+  if (assignedTaskMatch) {
+    const taskName = assignedTaskMatch[1].trim();
+    translatedMessage = t('notifications.youHaveBeenAssignedToTask', { taskName });
+  }
+  // Pattern: "Task "{taskName}" status has been updated to {status}"
+  else if (message.includes('status has been updated to')) {
+    const statusMatch = message.match(/Task\s+"([^"]+)"\s+status has been updated to\s+(.+)/);
+    if (statusMatch) {
+      const taskName = statusMatch[1];
+      let status = statusMatch[2].trim();
+      // Translate status if it's a common status value
+      const statusTranslations = {
+        'pending': t('common.pending'),
+        'in progress': t('common.inProgress'),
+        'inProgress': t('common.inProgress'),
+        'completed': t('common.completed'),
+        'cancelled': t('common.cancelled'),
+        'overdue': t('dashboard.overdue')
+      };
+      status = statusTranslations[status.toLowerCase()] || status;
+      translatedMessage = t('notifications.taskStatusUpdatedTo', { taskName, status });
+    }
+  }
+  // Pattern: "Task "{taskName}" is due in {hours} hours"
+  else if (message.includes('is due in') && message.includes('hours')) {
+    const dueMatch = message.match(/Task\s+"([^"]+)"\s+is due in\s+(\d+)\s+hours/);
+    if (dueMatch) {
+      const taskName = dueMatch[1];
+      const hours = dueMatch[2];
+      translatedMessage = t('notifications.taskDueInHours', { taskName, hours });
+    }
+  }
+  // Pattern: "Your role "{roleName}" has been updated with new permissions"
+  else if (message.includes('role') && message.includes('updated with new permissions')) {
+    const roleMatch = message.match(/Your role\s+"([^"]+)"\s+has been updated with new permissions/);
+    if (roleMatch) {
+      const roleName = roleMatch[1];
+      translatedMessage = t('notifications.roleUpdatedWithPermissions', { roleName });
+    }
+  }
+  // Pattern: "This is a test notification created at {timestamp}"
+  else if (message.includes('This is a test notification created at')) {
+    const timestampMatch = message.match(/This is a test notification created at\s+(.+)/);
+    if (timestampMatch) {
+      const timestamp = timestampMatch[1].trim();
+      translatedMessage = t('notifications.testNotificationMessage', { timestamp });
+    }
+  }
+
+  return { translatedTitle, translatedMessage };
+};
+
 const NotificationCard = styled.div`
   padding: 16px;
   background: white;
@@ -536,6 +645,8 @@ const CardActions = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  z-index: 5;
 `;
 
 const ActionButton = styled.button`
@@ -560,6 +671,8 @@ const ActionButton = styled.button`
 
 const NotificationsPage = () => {
   const { t } = useTranslation();
+  const user = useSelector((state) => state.auth.user);
+  const isInspector = user?.role === ROLES.INSPECTOR;
   const { 
     notifications, 
     loading, 
@@ -588,16 +701,36 @@ const NotificationsPage = () => {
     loadNotifications();
   }, [fetchNotifications, currentPage]);
 
-  const handleMarkAsRead = (id) => {
-    markAsRead(id);
+  const handleMarkAsRead = async (id, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      await markAsRead(id);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllAsRead();
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const handleDeleteNotification = (id) => {
-    deleteNotification(id);
+  const handleDeleteNotification = async (id, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      await deleteNotification(id);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
   const handleFilterChange = (newFilter) => {
@@ -606,11 +739,15 @@ const NotificationsPage = () => {
   };
 
   // Filter notifications based on selected filter
-  const filteredNotifications = filter === 'all' 
-    ? notifications 
-    : filter === 'unread' 
-      ? notifications.filter(n => !n.read) 
-      : notifications.filter(n => n.read);
+  const filteredNotifications = React.useMemo(() => {
+    if (filter === 'all') {
+      return notifications;
+    } else if (filter === 'unread') {
+      return notifications.filter(n => !n.read);
+    } else {
+      return notifications.filter(n => n.read);
+    }
+  }, [notifications, filter]);
 
   return (
     <NotificationContainer>
@@ -651,31 +788,50 @@ const NotificationsPage = () => {
                     />
                   </CardIconWrapper>
                   <CardContent>
-                    <CardTitle>{notification.title}</CardTitle>
-                    <CardMessage>{notification.message}</CardMessage>
-                    <CardTimestamp>
-                      <Clock size={14} />
-                      {formatTimestamp(notification.createdAt, t)}
-                    </CardTimestamp>
+                    {(() => {
+                      const { translatedTitle, translatedMessage } = translateNotification(notification, t);
+                      return (
+                        <>
+                          <CardTitle>{translatedTitle}</CardTitle>
+                          <CardMessage>{translatedMessage}</CardMessage>
+                          <CardTimestamp>
+                            <Clock size={14} />
+                            {formatTimestamp(notification.createdAt, t)}
+                          </CardTimestamp>
+                        </>
+                      );
+                    })()}
                   </CardContent>
-                  <CardActions>
+                  <CardActions onClick={(e) => e.stopPropagation()}>
                     {!notification.read && (
                       <ActionIconButton 
-                        onClick={() => handleMarkAsRead(notification._id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMarkAsRead(notification._id, e);
+                        }}
                         title={t('notifications.markAsReadTitle')}
+                        type="button"
+                        aria-label={t('notifications.markAsReadTitle')}
                       >
                         <Check size={16} />
                       </ActionIconButton>
                     )}
                     <ActionIconButton 
-                      onClick={() => handleDeleteNotification(notification._id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteNotification(notification._id, e);
+                      }}
                       title={t('notifications.deleteNotificationTitle')}
+                      type="button"
+                      aria-label={t('notifications.deleteNotificationTitle')}
                     >
                       <X size={16} />
                     </ActionIconButton>
                   </CardActions>
                 </NotificationCardContent>
-                {notification.data?.link && (
+                {notification.data?.link && !isInspector && (
                   <CardLink to={notification.data.link}>
                     {t('notifications.viewDetails')} <ArrowRight size={14} />
                   </CardLink>

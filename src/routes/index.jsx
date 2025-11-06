@@ -91,7 +91,6 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/notifications" element={<Notifications />} />
           
           <Route path="/tasks" element={<Tasks />}>
             <Route index element={<TaskList />} />
@@ -156,6 +155,7 @@ const AppRoutes = () => {
       {/* Common Routes for All Authenticated Users */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/logs/*" element={<LogsList />} />
         </Route>

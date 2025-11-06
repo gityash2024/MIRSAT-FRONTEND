@@ -72,7 +72,7 @@ const useNotification = () => {
 
   // Mark a notification as read
   const markAsRead = useCallback(async (notificationId) => {
-    if (!token || !notificationId) return;
+    if (!token || !notificationId) return Promise.resolve();
 
     try {
       const response = await api.put(`/notifications/${notificationId}/read`);
@@ -84,15 +84,18 @@ const useNotification = () => {
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
+        return Promise.resolve(response.data);
       }
+      return Promise.resolve(response.data);
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      return Promise.reject(error);
     }
   }, [token]);
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
-    if (!token) return;
+    if (!token) return Promise.resolve();
 
     try {
       const response = await api.put('/notifications/read-all');
@@ -100,23 +103,34 @@ const useNotification = () => {
       if (response.data.success) {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         setUnreadCount(0);
+        return Promise.resolve(response.data);
       }
+      return Promise.resolve(response.data);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      return Promise.reject(error);
     }
   }, [token]);
 
   // Delete a notification
   const deleteNotification = useCallback(async (notificationId) => {
-    if (!token || !notificationId) return;
+    if (!token || !notificationId) return Promise.resolve();
 
     try {
-      await api.delete(`/notifications/${notificationId}`);
+      const response = await api.delete(`/notifications/${notificationId}`);
       
-      setNotifications(prev => prev.filter(n => n._id !== notificationId));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update unread count properly by checking if deleted notification was unread
+      setNotifications(prev => {
+        const deleted = prev.find(n => n._id === notificationId);
+        if (deleted && !deleted.read) {
+          setUnreadCount(count => Math.max(0, count - 1));
+        }
+        return prev.filter(n => n._id !== notificationId);
+      });
+      return Promise.resolve(response.data);
     } catch (error) {
       console.error('Error deleting notification:', error);
+      return Promise.reject(error);
     }
   }, [token]);
 

@@ -1068,13 +1068,14 @@ const InspectionContainer = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  overflow: hidden;
+  overflow: visible;
   min-height: 80vh;
   margin: 6px;
   min-width: 0;
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 
   @media (max-width: 768px) {
     border-radius: 16px;
@@ -1106,7 +1107,9 @@ const InspectionHeader = styled.div`
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
 
   @media (max-width: 768px) {
     padding: 16px 20px;
@@ -1178,6 +1181,7 @@ const DropdownContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
+  z-index: 10000;
 `;
 
 const DropdownButton = styled.button`
@@ -1251,7 +1255,7 @@ const DropdownButton = styled.button`
 
 const DropdownMenu = styled.div`
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: white;
@@ -1260,7 +1264,7 @@ const DropdownMenu = styled.div`
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  z-index: 9999;
+  z-index: 10001;
   max-height: 300px;
   overflow-y: auto;
 `;
@@ -3237,7 +3241,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
     if (!signaturePadRef.current) return;
 
     if (signaturePadRef.current.isEmpty()) {
-      toast.error('Please provide a signature before saving');
+      toast.error(t('tasks.pleaseProvideSignatureBeforeSaving'));
       return;
     }
 
@@ -4136,7 +4140,7 @@ const UserTaskDetail = () => {
         commentBoxRef.current.style.height = 'auto';
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to add comment');
+      toast.error(error.message || t('tasks.failedToAddComment'));
     }
   };
 
@@ -4171,10 +4175,10 @@ const UserTaskDetail = () => {
       // Clear the comment text
       setSectionCommentTexts(prev => ({ ...prev, [sectionId]: '' }));
       
-      toast.success('Comment added successfully');
+      toast.success(t('tasks.commentAddedSuccessfully'));
     } catch (error) {
       console.error('Error adding section comment:', error);
-      toast.error('Failed to add comment');
+      toast.error(t('tasks.failedToAddComment'));
     } finally {
       setCommentLoadingStates(prev => ({ ...prev, [sectionId]: false }));
     }
@@ -4202,9 +4206,9 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
       
-      toast.success('Progress updated successfully');
+      toast.success(t('tasks.progressUpdatedSuccessfully'));
     } catch (err) {
-      toast.error('Failed to update progress');
+      toast.error(t('tasks.failedToUpdateProgress'));
     } finally {
       setRefreshLoading(false);
     }
@@ -4215,12 +4219,12 @@ const UserTaskDetail = () => {
     
     if (!currentTask.signature) {
       setShowSignatureModal(true);
-      toast.info('Please provide your signature before downloading the report.');
+      toast.info(t('tasks.pleaseProvideSignatureBeforeDownloading'));
       return;
     }
     
     try {
-      toast.loading('Generating report...');
+      toast.loading(t('tasks.generatingReport'));
       
       const completionPercentage = calculateTaskCompletionPercentage();
       
@@ -4243,12 +4247,12 @@ const UserTaskDetail = () => {
       })).unwrap();
       
       toast.dismiss();
-      toast.success('Report exported successfully');
+      toast.success(t('tasks.reportExportedSuccessfully'));
       
       return result;
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToExportReport')}: ${error.message || t('common.error')}`);
     }
   };
 
@@ -4265,7 +4269,7 @@ const UserTaskDetail = () => {
 
   const handleSubmitAndDownloadLater = async () => {
     try {
-      toast.loading('Submitting inspection for later download...');
+      toast.loading(t('tasks.submittingInspectionForLaterDownload'));
       
       // Archive the task without downloading
       await dispatch(archiveTask(currentTask._id)).unwrap();
@@ -4274,23 +4278,23 @@ const UserTaskDetail = () => {
       await dispatch(fetchUserTaskDetails(currentTask._id));
       
       toast.dismiss();
-      toast.success('Inspection submitted successfully! You can download reports later from the archived tasks.');
+      toast.success(t('tasks.inspectionSubmittedSuccessfully'));
       
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to submit inspection: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToSubmitInspection')}: ${error.message || t('common.error')}`);
     }
   };
 
   const handleConfirmDownload = async () => {
     if (!documentName.trim()) {
-      toast.error('Please enter a document name');
+      toast.error(t('tasks.pleaseEnterDocumentName'));
       return;
     }
 
     try {
       setShowDocumentNamingModal(false);
-      toast.loading(`Generating ${selectedReportFormat.toUpperCase()} report...`);
+      toast.loading(t('tasks.generatingReportFormat', { format: selectedReportFormat.toUpperCase() }));
       
       let result;
       
@@ -4319,14 +4323,14 @@ const UserTaskDetail = () => {
       }
       
       toast.dismiss();
-      toast.success(`${selectedReportFormat.toUpperCase()} report generated successfully`);
+      toast.success(t('tasks.reportFormatGeneratedSuccessfully', { format: selectedReportFormat.toUpperCase() }));
       
       // Here you would handle the actual download with the custom filename
       // For now, we'll use the existing export functionality
       
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to generate ${selectedReportFormat.toUpperCase()} report: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToGenerateReportFormat', { format: selectedReportFormat.toUpperCase() })}: ${error.message || t('common.error')}`);
     }
   };
 
@@ -4365,7 +4369,7 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
       
-      toast.success('Response saved successfully');
+      toast.success(t('tasks.responseSavedSuccessfully'));
       
       const completionPercentage = calculateTaskCompletionPercentage();
       
@@ -4399,7 +4403,7 @@ const UserTaskDetail = () => {
       }
       
     } catch (error) {
-      toast.error(`Failed to save response: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
     } finally {
       setResponseLoading(false);
     }
@@ -4471,12 +4475,12 @@ const UserTaskDetail = () => {
   
   const handleSaveSignature = async () => {
     if (!signatureImage) {
-      toast.error('Please provide a signature before saving');
+      toast.error(t('tasks.pleaseProvideSignatureBeforeSaving'));
       return;
     }
     
     try {
-      toast.loading('Saving signature...');
+      toast.loading(t('tasks.savingSignature'));
       
       // Stop timer permanently when task is signed
       const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
@@ -4516,19 +4520,19 @@ const UserTaskDetail = () => {
       }, 500);
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to save signature: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToSaveSignature')}: ${error.message || t('common.error')}`);
     }
   };
 
   // New Save and Submit functionality for compliance completion
   const handleSaveAndSubmit = async () => {
     if (!signatureImage) {
-      toast.error('Please provide a signature before submitting');
+      toast.error(t('tasks.pleaseProvideSignatureBeforeSubmitting'));
       return;
     }
     
     try {
-      toast.loading('Saving and submitting compliance data...');
+      toast.loading(t('tasks.savingAndSubmittingComplianceData'));
       
       // Stop timer permanently when task is submitted
       const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
@@ -4574,7 +4578,7 @@ const UserTaskDetail = () => {
       await dispatch(fetchUserTaskDetails(currentTask._id));
       
       toast.dismiss();
-      toast.success('Compliance data submitted successfully! Inspection completed.');
+      toast.success(t('tasks.complianceDataSubmittedSuccessfully'));
       setShowSignatureModal(false);
       
       // Clear signature image after successful save
@@ -4590,7 +4594,7 @@ const UserTaskDetail = () => {
       
     } catch (error) {
       toast.dismiss();
-      toast.error(`Failed to submit compliance data: ${error.message || 'Unknown error'}`);
+      toast.error(`${t('tasks.failedToSubmitComplianceData')}: ${error.message || t('common.error')}`);
     }
   };
 
@@ -4603,7 +4607,7 @@ const UserTaskDetail = () => {
     
     if (actualProgress < 100) {
       toast.error(
-        `⚠️ Task must be 100% completed before archiving.\n\nCurrent progress: ${actualProgress}%\n\nPlease complete all inspection sections to proceed.`,
+        t('tasks.taskMustBeCompletedBeforeArchiving', { progress: actualProgress }),
         {
           duration: 8000,
           style: {
@@ -4631,7 +4635,7 @@ const UserTaskDetail = () => {
   const handleConfirmArchive = async () => {
     try {
       setIsArchiving(true);
-      toast.loading('Completing and archiving inspection...');
+      toast.loading(t('tasks.completingAndArchivingInspection'));
 
       // Archive the task
       await dispatch(archiveTask(currentTask._id)).unwrap();
@@ -4640,7 +4644,7 @@ const UserTaskDetail = () => {
       await dispatch(fetchUserTaskDetails(currentTask._id));
 
       toast.dismiss();
-      toast.success('🎉 Inspection completed and archived successfully!');
+      toast.success(t('tasks.inspectionCompletedAndArchivedSuccessfully'));
       setShowArchiveModal(false);
       
       // Reset signature flag
@@ -4840,10 +4844,10 @@ const UserTaskDetail = () => {
                       reader.onload = (event) => {
                         const base64Data = event.target.result;
                         onSaveResponse(questionId, base64Data);
-                        toast.success('File uploaded successfully!');
+                        toast.success(t('tasks.fileUploadedSuccessfully'));
                       };
                       reader.onerror = () => {
-                        toast.error('Failed to read file');
+                        toast.error(t('tasks.failedToReadFile'));
                       };
                       reader.readAsDataURL(file);
                     }}
@@ -4937,7 +4941,7 @@ const UserTaskDetail = () => {
                               stream.getTracks().forEach(track => track.stop());
                               document.body.removeChild(modal);
                               
-                              toast.success('Photo captured successfully!');
+                              toast.success(t('tasks.photoCapturedSuccessfully'));
                             }, 'image/jpeg', 0.8);
                           };
                           
@@ -4954,10 +4958,10 @@ const UserTaskDetail = () => {
                         })
                         .catch(err => {
                           console.error('Camera access denied:', err);
-                          toast.error('Camera access denied. Please allow camera permissions.');
+                          toast.error(t('tasks.cameraAccessDenied'));
                         });
                       } else {
-                        toast.error('Camera not supported on this device');
+                        toast.error(t('tasks.cameraNotSupported'));
                       }
                     }}
                     style={{
@@ -6796,7 +6800,7 @@ const UserTaskDetail = () => {
         <ModalOverlay>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
-              <ModalTitle>Sign Final Report</ModalTitle>
+              <ModalTitle>{t('tasks.signFinalReport')}</ModalTitle>
               <CloseButton onClick={() => setShowSignatureModal(false)}>
                 <X size={20} />
               </CloseButton>
@@ -6804,7 +6808,7 @@ const UserTaskDetail = () => {
             
             <div>
               <p style={{ marginBottom: '20px', color: '#64748b', fontSize: '14px' }}>
-                Please provide your signature to complete the inspection report.
+                {t('tasks.pleaseProvideSignature')}
               </p>
               
               <SignatureTabs>
@@ -6812,13 +6816,13 @@ const UserTaskDetail = () => {
                   active={signatureMethod === 'draw'} 
                   onClick={() => setSignatureMethod('draw')}
                 >
-                  Draw Signature
+                  {t('tasks.drawSignature')}
                 </SignatureTab>
                 <SignatureTab 
                   active={signatureMethod === 'upload'} 
                   onClick={() => setSignatureMethod('upload')}
                 >
-                  Upload Signature
+                  {t('tasks.uploadSignature')}
                 </SignatureTab>
               </SignatureTabs>
               
@@ -6874,7 +6878,7 @@ const UserTaskDetail = () => {
                       color: '#64748b'
                     }}>
                       <Upload size={40} />
-                      <span>Click to upload signature image</span>
+                      <span>{t('tasks.clickToUploadSignatureImage')}</span>
                     </div>
                   )}
                   <input
@@ -6892,14 +6896,14 @@ const UserTaskDetail = () => {
               {signatureMethod === 'draw' && (
                 <ClearButton onClick={handleClearSignature}>
                   {/* <Rotate3dIcon size={16} /> */}
-                  Clear
+                  {t('common.clear')}
                 </ClearButton>
               )}
               
               {signatureMethod === 'upload' && (
                 <UploadButton onClick={handleSignatureUpload}>
                   <Upload size={16} />
-                  Upload Image
+                  {t('tasks.uploadImage')}
                 </UploadButton>
               )}
               
@@ -6922,7 +6926,7 @@ const UserTaskDetail = () => {
                 }}
               >
                 <CheckCircle size={16} />
-                Save & Submit
+                {t('tasks.saveAndSubmit')}
               </SaveButton>
             </SignatureActions>
           </ModalContent>
@@ -6962,14 +6966,14 @@ const UserTaskDetail = () => {
                     fontWeight: '600', 
                     color: '#16a34a' 
                   }}>
-                    Ready to Complete
+                    {t('tasks.readyToComplete')}
                   </h3>
                   <p style={{ 
                     margin: '4px 0 0 0', 
                     color: '#64748b', 
                     fontSize: '14px' 
                   }}>
-                    This inspection has been signed and is ready to be archived.
+                    {t('tasks.inspectionSignedAndReadyToArchive')}
                   </p>
                 </div>
               </div>
@@ -7034,12 +7038,12 @@ const UserTaskDetail = () => {
                 {isArchiving ? (
                   <>
                     <Loader size={16} />
-                    Archiving...
+                    {t('tasks.archiving')}
                   </>
                 ) : (
                   <>
                     <CheckCircle size={16} />
-                    Complete & Archive
+                    {t('tasks.completeAndArchive')}
                   </>
                 )}
               </QuickActionButton>

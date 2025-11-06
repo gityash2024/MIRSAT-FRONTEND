@@ -1364,7 +1364,7 @@ const InspectionStepForm = ({
       }));
     }, 1000);
     
-    toast.success('Timer started');
+    toast.success(t('tasks.timerStarted'));
   };
   
   const stopTimer = (subLevelId) => {
@@ -1374,7 +1374,7 @@ const InspectionStepForm = ({
     }
     
     setActiveTimers(prev => ({ ...prev, [subLevelId]: false }));
-    toast.success('Timer stopped');
+    toast.success(t('tasks.timerStopped'));
   };
   
   // Ensure we have the proper data structure for rendering
@@ -1410,20 +1410,20 @@ const InspectionStepForm = ({
     
     // Basic validation
     if (file.size > 5 * 1024 * 1024) { // 5MB
-      toast.error('File size should be less than 5MB');
+      toast.error(t('tasks.fileSizeShouldBeLessThan5MB'));
       return;
     }
     
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Only JPG, PNG and GIF images are allowed');
+      toast.error(t('tasks.onlyJpgPngGifAllowed'));
       return;
     }
     
     // Set uploading state
     setUploadingPhotos(prev => ({ ...prev, [subLevelId]: true }));
     
-    toast.loading('Uploading file...');
+    toast.loading(t('tasks.uploadingFile'));
     
     try {
       // Use the Redux action to upload the file
@@ -1433,7 +1433,7 @@ const InspectionStepForm = ({
       })).unwrap();
       
       toast.dismiss();
-      toast.success('File uploaded successfully');
+      toast.success(t('tasks.fileUploadedSuccessfully'));
       
       // Add to photos state for this sublevel
       const fileUrl = result.attachments?.[result.attachments.length - 1]?.url || '';
@@ -1453,7 +1453,7 @@ const InspectionStepForm = ({
     } catch (error) {
       toast.dismiss();
       console.error('File upload error:', error);
-      toast.error('Failed to upload file: ' + (error.message || 'Unknown error'));
+      toast.error(`${t('tasks.failedToUploadFile')}: ${error.message || t('common.error')}`);
     } finally {
       // Remove uploading state
       setUploadingPhotos(prev => ({ ...prev, [subLevelId]: false }));
@@ -1499,7 +1499,7 @@ const InspectionStepForm = ({
     // Check if deadline has passed
     const isDeadlinePassed = task && task.deadline && new Date(task.deadline) < new Date();
     if (isDeadlinePassed) {
-      toast.error('Cannot update: task deadline has passed');
+      toast.error(t('tasks.cannotUpdateTaskDeadlinePassed'));
       return;
     }
     
@@ -1511,14 +1511,14 @@ const InspectionStepForm = ({
       // Check if template requires photos
       if (task.inspectionLevel?.completionCriteria?.requiredPhotos && 
          (!subLevelPhotos || subLevelPhotos.length === 0)) {
-        toast.error('Please add at least one photo before completing this item');
+        toast.error(t('tasks.pleaseAddAtLeastOnePhoto'));
         return;
       }
       
       // Check if template requires notes
       if (task.inspectionLevel?.completionCriteria?.requiredNotes && 
          (!subLevelNotes || subLevelNotes.trim() === '')) {
-        toast.error('Please add notes before completing this item');
+        toast.error(t('tasks.pleaseAddNotes'));
         return;
       }
     }
@@ -1558,7 +1558,7 @@ const InspectionStepForm = ({
         }
       })).unwrap();
       
-      toast.success(`Checkpoint status updated`);
+      toast.success(t('tasks.checkpointStatusUpdated'));
       if (onUpdateProgress) onUpdateProgress(updatedTask);
       
       // Update local compliance status
@@ -1575,7 +1575,7 @@ const InspectionStepForm = ({
         stopTimer(subLevelId);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to update checkpoint status');
+      toast.error(error.message || t('tasks.failedToUpdateCheckpointStatus'));
     } finally {
       setLoading(prev => ({ ...prev, [subLevelId]: false }));
     }
@@ -2352,13 +2352,13 @@ const InspectionStepForm = ({
     Promise.all([updateProgressPromise, updateQuestionnairePromise])
       .then(([updatedTask]) => {
         if (onUpdateProgress) onUpdateProgress(updatedTask);
-        toast.success(`Response recorded: ${value}${scoreMsg}`);
+        toast.success(t('tasks.responseRecorded', { value, score: scoreMsg }));
         // Recalculate scores
         calculateScores();
         setLoading(prev => ({ ...prev, [sectionId]: false }));
       })
       .catch(error => {
-        toast.error(`Failed to save response: ${error.message || 'Unknown error'}`);
+        toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
         setLoading(prev => ({ ...prev, [sectionId]: false }));
       });
   };
@@ -2368,7 +2368,7 @@ const InspectionStepForm = ({
     // Check if deadline has passed
     const isDeadlinePassed = task && task.deadline && new Date(task.deadline) < new Date();
     if (isDeadlinePassed) {
-      toast.error('Cannot update: task deadline has passed');
+      toast.error(t('tasks.cannotUpdateTaskDeadlinePassed'));
       return;
     }
   
@@ -2381,7 +2381,7 @@ const InspectionStepForm = ({
       section?.subLevels?.find(ssl => ssl._id === sectionId);
     
     if (!subLevel || !subLevel.questions || subLevel.questions.length === 0) {
-      toast.error('No questions found for this section');
+      toast.error(t('tasks.noQuestionsFoundForSection'));
       return;
     }
     
@@ -2413,7 +2413,7 @@ const InspectionStepForm = ({
     }
     
     if (!allRequiredAnswered) {
-      toast.error('Please answer all required questions before submitting');
+      toast.error(t('tasks.pleaseAnswerAllRequiredQuestions'));
       return;
     }
     
@@ -2453,7 +2453,7 @@ const InspectionStepForm = ({
         responses // Include the question responses
       })).unwrap();
       
-      toast.success(`Section submitted successfully`);
+      toast.success(t('tasks.sectionSubmittedSuccessfully'));
       if (onUpdateProgress) onUpdateProgress(updatedTask);
       
       // Update local compliance status
@@ -2470,7 +2470,7 @@ const InspectionStepForm = ({
         stopTimer(sectionId);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to submit section');
+      toast.error(error.message || t('tasks.failedToSubmitSection'));
     } finally {
       setLoading(prev => ({ ...prev, [sectionId]: false }));
     }
