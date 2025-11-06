@@ -13,8 +13,18 @@ import { useLanguage } from '../../context/LanguageContext';
 const TopbarContainer = styled.div`
   position: fixed;
   top: 0;
-  right: 0;
-  left: ${props => props.sidebarWidth}px;
+  ${props => props.$isRTL 
+    ? `
+      right: ${props.sidebarWidth}px;
+      left: 0;
+      transition: right 0.3s ease;
+    `
+    : `
+      left: ${props.sidebarWidth}px;
+      right: 0;
+      transition: left 0.3s ease;
+    `
+  }
   height: 64px;
   background: white;
   display: flex;
@@ -22,11 +32,11 @@ const TopbarContainer = styled.div`
   padding: 0 24px;
   justify-content: flex-end;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: left 0.3s ease;
   z-index: 50;
   
   @media (max-width: 768px) {
     left: 0;
+    right: 0;
     padding: 0 12px;
     justify-content: space-between;
   }
@@ -275,10 +285,9 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { user, logout } = useAuth();
   const { unreadCount, fetchNotifications } = useNotification();
   const { t, i18n } = useTranslation();
-  const { currentLanguage } = useLanguage();
-  const isRTL = currentLanguage === 'ar' || i18n.language === 'ar';
+  const { isRTL } = useLanguage();
   const isMobile = window.innerWidth <= 768;
-  const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 260 : 70);
+  const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 280 : 70);
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
 
@@ -326,7 +335,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   }, []);
 
   return (
-    <TopbarContainer sidebarWidth={sidebarWidth}>
+    <TopbarContainer sidebarWidth={sidebarWidth} $isRTL={isRTL}>
       <LeftSection>
         <HamburgerButton onClick={toggleSidebar}>
           <Menu size={24} />

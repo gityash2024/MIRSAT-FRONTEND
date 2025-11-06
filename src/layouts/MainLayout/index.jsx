@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -32,11 +33,15 @@ const Overlay = styled.div`
 const MainContentWrapper = styled.div`
   flex: 1;
   min-width: 0;
-  margin-left: ${props => props.sidebarWidth}px;
-  transition: margin-left 0.3s ease;
+  ${props => props.$isRTL 
+    ? `margin-right: ${props.sidebarWidth}px;` 
+    : `margin-left: ${props.sidebarWidth}px;`
+  }
+  transition: ${props => props.$isRTL ? 'margin-right' : 'margin-left'} 0.3s ease;
   
   @media (max-width: 768px) {
     margin-left: 0;
+    margin-right: 0;
   }
 `;
 
@@ -59,12 +64,13 @@ const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+  const { isRTL } = useLanguage();
 
   console.log("MainLayout rendering, path:", location.pathname);
   
   const getSidebarWidth = () => {
     if (isMobile) return 0;
-    return isSidebarOpen ? 260 : 70;
+    return isSidebarOpen ? 280 : 70;
   };
 
   useEffect(() => {
@@ -117,7 +123,7 @@ const MainLayout = () => {
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      <MainContentWrapper sidebarWidth={getSidebarWidth()}>
+      <MainContentWrapper sidebarWidth={getSidebarWidth()} $isRTL={isRTL}>
         <Topbar 
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
