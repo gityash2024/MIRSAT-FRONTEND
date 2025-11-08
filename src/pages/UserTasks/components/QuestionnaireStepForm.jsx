@@ -561,6 +561,13 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
     const mandatoryQuestions = questions.filter(q => q.mandatory !== false);
     
     mandatoryQuestions.forEach(question => {
+      // CRITICAL FIX: Only score Yes/No and Compliance question types
+      const questionType = question.type || question.answerType;
+      const scorableTypes = ['yesno', 'compliance'];
+      if (!scorableTypes.includes(questionType)) {
+        return; // Skip text, signature, date, number, file, and other non-scorable types
+      }
+      
       const questionId = question._id || question.id;
       const response = currentResponses[questionId];
       const weight = question.weight || 1;
@@ -569,6 +576,12 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       totalPoints += (2 * weight);
       
       if (response) {
+        // Skip if response is "Not Applicable"
+        if (response === 'na' || response === 'not_applicable' || response === 'Not applicable') {
+          totalPoints -= (2 * weight); // Don't count NA questions
+          return;
+        }
+        
         // Use template-defined scores if available
         if (question.scores && typeof question.scores === 'object') {
           // Get the score for this specific response from the template
@@ -580,8 +593,6 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             achievedPoints += (2 * weight); // Full compliance = 2 points
           } else if (response === 'partial_compliance') {
             achievedPoints += (1 * weight); // Partial compliance = 1 point
-          } else if (response === 'na' || response === 'not_applicable') {
-            totalPoints -= (2 * weight); // Don't count NA questions
           }
         }
       }

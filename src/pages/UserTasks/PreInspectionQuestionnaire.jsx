@@ -393,6 +393,13 @@ const PreInspectionStepForm = ({ task }) => {
       const questions = task.questions.filter(q => q.requirementType !== 'recommended');
       
       questions.forEach(question => {
+        // CRITICAL FIX: Only score Yes/No and Compliance question types
+        const questionType = question.type || question.answerType;
+        const scorableTypes = ['yesno', 'compliance'];
+        if (!scorableTypes.includes(questionType)) {
+          return; // Skip text, signature, date, number, file, and other non-scorable types
+        }
+        
         const questionId = question._id || question.id;
         const responseKey = Object.keys(responses || {}).find(key => 
           key.includes(questionId) || key.endsWith(questionId)
@@ -403,6 +410,12 @@ const PreInspectionStepForm = ({ task }) => {
           const weight = question.weight || 1;
           
           totalQuestionPoints += (2 * weight); // Max score is 2 per question
+          
+          // Skip if response is "Not Applicable"
+          if (response === 'na' || response === 'not_applicable' || response === 'Not applicable') {
+            totalQuestionPoints -= (2 * weight); // Don't count NA questions
+            return;
+          }
           
           // Use template-defined scores if available
           if (question.scores && typeof question.scores === 'object') {
@@ -415,8 +428,6 @@ const PreInspectionStepForm = ({ task }) => {
               achievedQuestionPoints += (2 * weight);
             } else if (response === 'partial_compliance') {
               achievedQuestionPoints += (1 * weight);
-            } else if (response === 'na' || response === 'not_applicable') {
-              totalQuestionPoints -= (2 * weight); // Don't count NA questions
             }
           }
         }

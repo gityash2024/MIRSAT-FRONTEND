@@ -1856,6 +1856,22 @@ const ScoreBadge = styled.div`
 `;
 
 const InputContainer = styled.div`
+  ${props => props.$isUnanswered && props.$isRequired ? css`
+    background-color: #fee2e2 !important;
+    border: 2px solid #dc2626 !important;
+    border-radius: 8px;
+    padding: 8px;
+    animation: pulse 2s infinite;
+    
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
+      }
+    }
+  ` : ''}
   margin-top: 16px;
 `;
 
@@ -1898,6 +1914,22 @@ const OptionsContainer = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+  ${props => props.$isUnanswered && props.$isRequired ? css`
+    background-color: #fee2e2 !important;
+    border: 2px solid #dc2626 !important;
+    border-radius: 8px;
+    padding: 12px;
+    animation: pulse 2s infinite;
+    
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
+      }
+    }
+  ` : ''}
 `;
 
 const OptionButton = styled.button`
@@ -3116,7 +3148,17 @@ const calculateSectionScore = (section, responses) => {
   let totalAchieved = 0;
   
   section.questions.forEach(question => {
-    if (question.mandatory === false || question.required === false) return;
+    // CRITICAL FIX: Exclude recommended questions from scoring
+    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+      return; // Skip recommended/non-mandatory questions
+    }
+    
+    // CRITICAL FIX: Only score Yes/No and Compliance question types
+    const questionType = question.type || question.answerType;
+    const scorableTypes = ['yesno', 'compliance'];
+    if (!scorableTypes.includes(questionType)) {
+      return; // Skip text, signature, date, number, file, and other non-scorable types
+    }
     
     const questionId = question._id || question.id;
     let responseKey = null;
@@ -3149,35 +3191,16 @@ const calculateSectionScore = (section, responses) => {
         totalAchieved += responseScore * weight;
       } else {
         // Fallback to old logic if no template scores defined
-        const questionType = question.type || question.answerType;
-        
+        // Only process compliance and yesno types (already filtered above)
         if (questionType === 'compliance' || questionType === 'yesno') {
           if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
             totalAchieved += (maxScore * weight);
           } else if (response === 'partial_compliance' || response === 'Partial compliance') {
             totalAchieved += (maxScore / 2 * weight);
           }
-        } else if (questionType === 'checkbox' || questionType === 'multiple') {
-          if (Array.isArray(response) && response.length > 0) {
-            totalAchieved += (maxScore * weight);
-          }
-        } else if (questionType === 'file') {
-          if (response && response.trim() !== '') {
-            totalAchieved += (maxScore * weight);
-          }
-        } else if (questionType === 'text' || questionType === 'signature') {
-          if (response && response?.trim() !== '') {
-            totalAchieved += (maxScore * weight);
-          }
-        } else if (questionType === 'number' || questionType === 'date') {
-          if (response) {
-            totalAchieved += (maxScore * weight);
-          }
-        } else {
-          if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-            totalAchieved += (maxScore * weight);
-          }
         }
+        // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
+        // These should NEVER be scored
       }
     }
   });
@@ -3515,6 +3538,9 @@ const UserTaskDetail = () => {
   const [responseLoading, setResponseLoading] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
   
+  // CRITICAL FIX: Track unanswered required questions for validation
+  const [unansweredRequiredQuestions, setUnansweredRequiredQuestions] = useState(new Set());
+  
   // Section comments state
   const [sectionComments, setSectionComments] = useState({});
   const [sectionCommentTexts, setSectionCommentTexts] = useState({});
@@ -3578,6 +3604,12 @@ const UserTaskDetail = () => {
         page.sections.forEach(section => {
           if (section.questions) {
             section.questions.forEach(question => {
+              // CRITICAL FIX: Only count required questions in progress calculation
+              // Exclude recommended questions
+              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+                return; // Skip recommended/non-mandatory questions
+              }
+              
               totalQuestions++;
               
               const questionId = question._id || question.id;
@@ -3585,14 +3617,18 @@ const UserTaskDetail = () => {
               
               if (taskToUse.questionnaireResponses) {
                 if (taskToUse.questionnaireResponses[questionId] !== undefined) {
-                  hasResponse = true;
+                  const response = taskToUse.questionnaireResponses[questionId];
+                  // Count as answered if response exists and is not empty
+                  hasResponse = response !== null && response !== undefined && response !== '';
                 } else {
                   const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key => 
                     key.includes(questionId) || key.endsWith(questionId)
                   );
                   
                   if (responseKey) {
-                    hasResponse = true;
+                    const response = taskToUse.questionnaireResponses[responseKey];
+                    // Count as answered if response exists and is not empty
+                    hasResponse = response !== null && response !== undefined && response !== '';
                   }
                 }
               }
@@ -4334,11 +4370,29 @@ const UserTaskDetail = () => {
     }
   };
 
+  // CRITICAL FIX: Add debounce timer refs for text input saves
+  const debounceTimersRef = useRef({});
+  const pendingSavesRef = useRef(new Set());
+
   const handleInputChange = (questionId, value) => {
     setLocalInputValues(prev => ({
       ...prev,
       [questionId]: value
     }));
+    
+    // CRITICAL FIX: Clear existing debounce timer for this question
+    if (debounceTimersRef.current[questionId]) {
+      clearTimeout(debounceTimersRef.current[questionId]);
+    }
+    
+    // CRITICAL FIX: Set new debounce timer (500ms delay)
+    debounceTimersRef.current[questionId] = setTimeout(() => {
+      // Only save if value is not empty or if it was previously saved
+      if (value !== '' || currentTask?.questionnaireResponses?.[questionId]) {
+        handleSaveInspectionResponse(questionId, value);
+      }
+      delete debounceTimersRef.current[questionId];
+    }, 500);
   };
 
   const handleSaveInspectionResponse = async (questionId, value) => {
@@ -4346,7 +4400,13 @@ const UserTaskDetail = () => {
       return;
     }
     
+    // CRITICAL FIX: Prevent duplicate saves (race condition protection)
+    if (pendingSavesRef.current.has(questionId)) {
+      return; // Already saving this question
+    }
+    
     try {
+      pendingSavesRef.current.add(questionId);
       setResponseLoading(true);
       
       // Store current state before API calls
@@ -4405,6 +4465,7 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
     } finally {
+      pendingSavesRef.current.delete(questionId);
       setResponseLoading(false);
     }
   };
@@ -4598,8 +4659,126 @@ const UserTaskDetail = () => {
     }
   };
 
+  // CRITICAL FIX: Validate all required questions are answered
+  const validateRequiredQuestions = useCallback(() => {
+    if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
+      return { isValid: false, unansweredQuestions: [] };
+    }
+    
+    const unansweredQuestions = [];
+    
+    inspectionPages.forEach(page => {
+      if (page.sections) {
+        page.sections.forEach(section => {
+          if (section.questions) {
+            section.questions.forEach(question => {
+              // Only check required questions (exclude recommended)
+              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+                return; // Skip recommended/non-mandatory questions
+              }
+              
+              const questionId = question._id || question.id;
+              let hasResponse = false;
+              
+              if (currentTask.questionnaireResponses) {
+                if (currentTask.questionnaireResponses[questionId] !== undefined) {
+                  const response = currentTask.questionnaireResponses[questionId];
+                  hasResponse = response !== null && response !== undefined && response !== '';
+                } else {
+                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key => 
+                    key.includes(questionId) || key.endsWith(questionId)
+                  );
+                  
+                  if (responseKey) {
+                    const response = currentTask.questionnaireResponses[responseKey];
+                    hasResponse = response !== null && response !== undefined && response !== '';
+                  }
+                }
+              }
+              
+              if (!hasResponse) {
+                unansweredQuestions.push({
+                  questionId,
+                  questionText: question.text || question.question || 'Question',
+                  sectionId: section._id,
+                  sectionName: section.name || 'Section'
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // Also check pre-inspection questions
+    if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
+      currentTask.preInspectionQuestions.forEach(question => {
+        if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+          return; // Skip recommended
+        }
+        
+        const questionId = question._id || question.id;
+        const hasResponse = currentTask.questionnaireResponses && 
+          currentTask.questionnaireResponses[questionId] !== undefined &&
+          currentTask.questionnaireResponses[questionId] !== null &&
+          currentTask.questionnaireResponses[questionId] !== '';
+        
+        if (!hasResponse) {
+          unansweredQuestions.push({
+            questionId,
+            questionText: question.text || question.question || 'Question',
+            sectionId: 'pre-inspection',
+            sectionName: 'Pre-Inspection'
+          });
+        }
+      });
+    }
+    
+    return {
+      isValid: unansweredQuestions.length === 0,
+      unansweredQuestions
+    };
+  }, [currentTask, inspectionPages]);
+
   // Handle Complete & Archive functionality
   const handleCompleteAndArchive = async () => {
+    // CRITICAL FIX: Validate all required questions first
+    const validation = validateRequiredQuestions();
+    
+    if (!validation.isValid) {
+      // Set unanswered questions for highlighting
+      const unansweredIds = new Set(validation.unansweredQuestions.map(q => q.questionId));
+      setUnansweredRequiredQuestions(unansweredIds);
+      
+      // Show error message
+      toast.error(
+        `Please fill the highlighted questions before completing the inspection. ${validation.unansweredQuestions.length} required question(s) are unanswered.`,
+        {
+          duration: 10000,
+          style: {
+            maxWidth: '500px',
+            whiteSpace: 'pre-line',
+            backgroundColor: '#fee2e2',
+            border: '2px solid #dc2626'
+          }
+        }
+      );
+      
+      // Scroll to first unanswered question
+      if (validation.unansweredQuestions.length > 0) {
+        const firstUnanswered = validation.unansweredQuestions[0];
+        const questionElement = document.querySelector(`[data-question-id="${firstUnanswered.questionId}"]`);
+        if (questionElement) {
+          questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      
+      return;
+    }
+    
+    // Clear any previous highlighting
+    setUnansweredRequiredQuestions(new Set());
+    
     // Check task completion percentage first - use the same calculation as the UI
     const dbProgress = currentTask?.overallProgress || 0;
     const calculatedProgress = calculateTaskCompletionPercentage();
@@ -4710,15 +4889,33 @@ const UserTaskDetail = () => {
         const complianceOptions = question.options?.length > 0 
           ? question.options 
           : [t('tasks.fullCompliance'), t('tasks.partialCompliance'), t('tasks.nonCompliant'), t('common.notApplicable')];
-        
+        const isComplianceUnanswered = unansweredRequiredQuestions.has(questionId) && 
+          (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
+          (!response || response === '');
         return (
-          <OptionsContainer>
+          <OptionsContainer 
+            $isUnanswered={isComplianceUnanswered} 
+            $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
+            data-question-id={questionId}
+          >
             {complianceOptions.map((option, optIndex) => (
               <OptionButton 
                 key={optIndex}
                 selected={response === option}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && onSaveResponse(questionId, option)}
+                onClick={() => {
+                  if (!isDisabled) {
+                    onSaveResponse(questionId, option);
+                    // Clear highlighting when user selects an option
+                    if (unansweredRequiredQuestions.has(questionId)) {
+                      setUnansweredRequiredQuestions(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(questionId);
+                        return newSet;
+                      });
+                    }
+                  }
+                }}
               >
                 {option}
               </OptionButton>
@@ -4730,15 +4927,33 @@ const UserTaskDetail = () => {
         const yesNoOptions = question.options?.length > 0 
           ? question.options 
           : [t('common.yes'), t('common.no'), t('common.notApplicable')];
-        
+        const isYesNoUnanswered = unansweredRequiredQuestions.has(questionId) && 
+          (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
+          (!response || response === '');
         return (
-          <OptionsContainer>
+          <OptionsContainer 
+            $isUnanswered={isYesNoUnanswered} 
+            $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
+            data-question-id={questionId}
+          >
             {yesNoOptions.map((option, optIndex) => (
               <OptionButton 
                 key={optIndex}
                 selected={response === option}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && onSaveResponse(questionId, option)}
+                onClick={() => {
+                  if (!isDisabled) {
+                    onSaveResponse(questionId, option);
+                    // Clear highlighting when user selects an option
+                    if (unansweredRequiredQuestions.has(questionId)) {
+                      setUnansweredRequiredQuestions(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(questionId);
+                        return newSet;
+                      });
+                    }
+                  }
+                }}
               >
                 {option}
               </OptionButton>
@@ -4803,7 +5018,16 @@ const UserTaskDetail = () => {
               <select
                 value={response || ''}
                 onChange={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
+                onBlur={(e) => {
+                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
+                  if (debounceTimersRef.current[questionId]) {
+                    clearTimeout(debounceTimersRef.current[questionId]);
+                    delete debounceTimersRef.current[questionId];
+                  }
+                  if (!isDisabled && e.target.value !== undefined) {
+                    onSaveResponse(questionId, e.target.value);
+                  }
+                }}
                 disabled={isDisabled}
               >
                 <option value="">Select an option</option>
@@ -5070,15 +5294,41 @@ const UserTaskDetail = () => {
         );
         
       case 'text':
+        const isTextUnanswered = unansweredRequiredQuestions.has(questionId) && 
+          (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
+          (!displayValue || displayValue === '');
         return (
-          <InputContainer>
+          <InputContainer 
+            $isUnanswered={isTextUnanswered} 
+            $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
+            data-question-id={questionId}
+          >
             <InputGroup>
               <input
                 type="text"
                 placeholder="Enter your response"
                 value={displayValue || ''}
-                onChange={(e) => handleInputChange(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
+                onChange={(e) => {
+                  handleInputChange(questionId, e.target.value);
+                  // Clear highlighting when user starts typing
+                  if (unansweredRequiredQuestions.has(questionId)) {
+                    setUnansweredRequiredQuestions(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(questionId);
+                      return newSet;
+                    });
+                  }
+                }}
+                onBlur={(e) => {
+                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
+                  if (debounceTimersRef.current[questionId]) {
+                    clearTimeout(debounceTimersRef.current[questionId]);
+                    delete debounceTimersRef.current[questionId];
+                  }
+                  if (!isDisabled && e.target.value !== undefined) {
+                    onSaveResponse(questionId, e.target.value);
+                  }
+                }}
                 disabled={isDisabled}
               />
             </InputGroup>
@@ -5086,15 +5336,40 @@ const UserTaskDetail = () => {
         );
         
       case 'number':
+        const isNumberUnanswered = unansweredRequiredQuestions.has(questionId) && 
+          (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
+          (!displayValue || displayValue === '');
         return (
-          <InputContainer>
+          <InputContainer 
+            $isUnanswered={isNumberUnanswered} 
+            $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
+            data-question-id={questionId}
+          >
             <InputGroup>
               <input
                 type="number"
                 placeholder="Enter a number"
                 value={displayValue || ''}
-                onChange={(e) => handleInputChange(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
+                onChange={(e) => {
+                  handleInputChange(questionId, e.target.value);
+                  if (unansweredRequiredQuestions.has(questionId)) {
+                    setUnansweredRequiredQuestions(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(questionId);
+                      return newSet;
+                    });
+                  }
+                }}
+                onBlur={(e) => {
+                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
+                  if (debounceTimersRef.current[questionId]) {
+                    clearTimeout(debounceTimersRef.current[questionId]);
+                    delete debounceTimersRef.current[questionId];
+                  }
+                  if (!isDisabled && e.target.value !== undefined) {
+                    onSaveResponse(questionId, e.target.value);
+                  }
+                }}
                 disabled={isDisabled}
               />
             </InputGroup>
@@ -5102,14 +5377,39 @@ const UserTaskDetail = () => {
         );
         
       case 'date':
+        const isDateUnanswered = unansweredRequiredQuestions.has(questionId) && 
+          (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
+          (!displayValue || displayValue === '');
         return (
-          <InputContainer>
+          <InputContainer 
+            $isUnanswered={isDateUnanswered} 
+            $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
+            data-question-id={questionId}
+          >
             <InputGroup>
               <input
                 type="date"
                 value={displayValue || ''}
-                onChange={(e) => handleInputChange(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
+                onChange={(e) => {
+                  handleInputChange(questionId, e.target.value);
+                  if (unansweredRequiredQuestions.has(questionId)) {
+                    setUnansweredRequiredQuestions(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(questionId);
+                      return newSet;
+                    });
+                  }
+                }}
+                onBlur={(e) => {
+                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
+                  if (debounceTimersRef.current[questionId]) {
+                    clearTimeout(debounceTimersRef.current[questionId]);
+                    delete debounceTimersRef.current[questionId];
+                  }
+                  if (!isDisabled && e.target.value !== undefined) {
+                    onSaveResponse(questionId, e.target.value);
+                  }
+                }}
                 disabled={isDisabled}
               />
             </InputGroup>
@@ -5160,7 +5460,16 @@ const UserTaskDetail = () => {
                 placeholder={`Enter your ${questionType || 'text'} response`}
                 value={displayValue || ''}
                 onChange={(e) => handleInputChange(questionId, e.target.value)}
-                onBlur={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
+                onBlur={(e) => {
+                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
+                  if (debounceTimersRef.current[questionId]) {
+                    clearTimeout(debounceTimersRef.current[questionId]);
+                    delete debounceTimersRef.current[questionId];
+                  }
+                  if (!isDisabled && e.target.value !== undefined) {
+                    onSaveResponse(questionId, e.target.value);
+                  }
+                }}
                 disabled={isDisabled}
               />
             </InputGroup>
@@ -5510,10 +5819,19 @@ const UserTaskDetail = () => {
                         }
                       }
                       
-                      const maxScore = question.scoring?.max || 2;
+                      // CRITICAL FIX: Determine if question is scorable
+                      const questionType = question.type || question.answerType;
+                      const scorableTypes = ['yesno', 'compliance'];
+                      const isScorable = scorableTypes.includes(questionType) && 
+                        question.requirementType !== 'recommended' && 
+                        question.mandatory !== false && 
+                        question.required !== false;
+                      
+                      const maxScore = isScorable ? (question.scoring?.max || 2) : 0;
                       let achievedScore = 0;
                       
-                      if (response !== undefined && response !== null) {
+                      // CRITICAL FIX: Only calculate score for scorable questions
+                      if (isScorable && response !== undefined && response !== null) {
                         // Use template-defined scores if available
                         if (question.scores && typeof question.scores === 'object') {
                           // Get the score for this specific response from the template
@@ -5521,27 +5839,16 @@ const UserTaskDetail = () => {
                           achievedScore = responseScore;
                         } else {
                           // Fallback to old logic if no template scores defined
-                          const questionType = question.type || question.answerType;
-                          
+                          // Only process compliance and yesno types (already filtered above)
                           if (questionType === 'compliance' || questionType === 'yesno') {
                             if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
                               achievedScore = maxScore;
                             } else if (response === 'partial_compliance' || response === 'Partial compliance') {
                               achievedScore = maxScore / 2;
                             }
-                          } else if (questionType === 'checkbox' || questionType === 'multiple') {
-                            if (Array.isArray(response) && response.length > 0) {
-                              achievedScore = maxScore;
-                            }
-                          } else if (['file', 'text', 'signature', 'number', 'date'].includes(questionType)) {
-                            if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-                              achievedScore = maxScore;
-                            }
-                          } else {
-                            if (response && (typeof response === 'string'? response.trim() !== '' : true)) {
-                              achievedScore = maxScore;
-                            }
                           }
+                          // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
+                          // These should NEVER be scored
                         }
                       }
                       
@@ -5560,10 +5867,13 @@ const UserTaskDetail = () => {
                               {/* <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
                                 {question.required === false ? 'Optional' : 'Required'}
                               </QuestionBadge> */}
-                              <ScoreBadge hasResponse={achievedScore > 0}>
-                                <Star size={14} />
-                                {achievedScore}/{maxScore}
-                              </ScoreBadge>
+                              {/* CRITICAL FIX: Only show score badge for scorable questions */}
+                              {isScorable && (
+                                <ScoreBadge hasResponse={achievedScore > 0}>
+                                  <Star size={14} />
+                                  {achievedScore}/{maxScore}
+                                </ScoreBadge>
+                              )}
                             </QuestionBadges>
                           </QuestionHeader>
                           

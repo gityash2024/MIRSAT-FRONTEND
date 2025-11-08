@@ -131,6 +131,18 @@ function processTaskDataForPDF(taskData) {
     let totalMax = 0;
 
     filteredQuestions.forEach((question) => {
+      // CRITICAL FIX: Exclude recommended questions from scoring
+      if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+        return; // Skip recommended/non-mandatory questions
+      }
+      
+      // CRITICAL FIX: Only score Yes/No and Compliance question types
+      const questionType = question.type || question.answerType;
+      const scorableTypes = ['yesno', 'compliance'];
+      if (!scorableTypes.includes(questionType)) {
+        return; // Skip text, signature, date, number, file, and other non-scorable types
+      }
+      
       const questionId = question._id?.toString() || question.id?.toString();
       if (!questionId) return;
 
@@ -158,7 +170,7 @@ function processTaskDataForPDF(taskData) {
         }
       }
 
-      // Calculate scores
+      // Calculate scores - only for scorable questions
       const weight = question.weight || 1;
       const maxScore = question.scoring?.max || 2;
       const maxPointsForQuestion = maxScore * weight;
@@ -170,48 +182,32 @@ function processTaskDataForPDF(taskData) {
         if (response === 'not_applicable' || response === 'na' || response === 'N/A' || response === 'Not applicable') {
           isNA = true;
         } else {
-          const questionType = question.type || question.answerType;
-          
-          if (questionType === 'compliance' || questionType === 'yesno') {
-            if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || 
-                response === 'Full Compliance' || response === 'Full compliance') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            } else if (response === 'partial_compliance' || response === 'Partial Compliance' || 
-                      response === 'Partial compliance') {
-              earnedPointsForQuestion = maxPointsForQuestion / 2;
-            }
-          } else if (questionType === 'checkbox' || questionType === 'multiple') {
-            if (Array.isArray(response) && response.length > 0) {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'file') {
-            if (typeof response === 'string' && response.trim() !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'text' || questionType === 'signature') {
-            if (typeof response === 'string' && response.trim() !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'number') {
-            if (response !== '' && !isNaN(response)) {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'date') {
-            if (response && typeof response === 'string' && response !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
+          // Use template-defined scores if available
+          if (question.scores && typeof question.scores === 'object') {
+            const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+            earnedPointsForQuestion = responseScore * weight;
           } else {
-            if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-              earnedPointsForQuestion = maxPointsForQuestion;
+            // Fallback to old logic if no template scores defined
+            // Only process compliance and yesno types (already filtered above)
+            if (questionType === 'compliance' || questionType === 'yesno') {
+              if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || 
+                  response === 'Full Compliance' || response === 'Full compliance') {
+                earnedPointsForQuestion = maxPointsForQuestion;
+              } else if (response === 'partial_compliance' || response === 'Partial Compliance' || 
+                        response === 'Partial compliance') {
+                earnedPointsForQuestion = maxPointsForQuestion / 2;
+              }
             }
+            // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
+            // These should NEVER be scored
           }
         }
       }
 
       if (!isNA) {
         totalAchieved += earnedPointsForQuestion;
+        totalMax += maxPointsForQuestion;
       }
-      totalMax += maxPointsForQuestion;
     });
 
     const percentage = totalMax > 0 ? Math.round((totalAchieved / totalMax) * 100) : 0;
@@ -501,64 +497,57 @@ export const generateTaskPDF = (taskData) => {
       const commentKey = `c-${questionId}`;
       const comment = taskData.questionnaireResponses ? taskData.questionnaireResponses[commentKey] || '' : '';
       
-      // Calculate scores
+      // CRITICAL FIX: Determine if question is scorable
+      const questionType = question.type || question.answerType;
+      const scorableTypes = ['yesno', 'compliance'];
+      const isRecommended = question.requirementType === 'recommended' || question.mandatory === false || question.required === false;
+      const isScorable = scorableTypes.includes(questionType) && !isRecommended;
+      
+      // Calculate scores - only for scorable questions
       const weight = question.weight || 1;
-      const maxScore = question.scoring?.max || 2;
+      const maxScore = isScorable ? (question.scoring?.max || 2) : 0;
       const maxPointsForQuestion = maxScore * weight;
       
       let earnedPointsForQuestion = 0;
       let isNA = false;
       
-      if (response !== null && response !== undefined) {
+      // CRITICAL FIX: Only calculate score for scorable questions
+      if (isScorable && response !== null && response !== undefined) {
         if (response === 'not_applicable' || response === 'na' || response === 'N/A' || response === 'Not applicable') {
           isNA = true;
         } else {
-          const questionType = question.type || question.answerType;
-          
-          if (questionType === 'compliance' || questionType === 'yesno') {
-            if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || 
-                response === 'Full Compliance' || response === 'Full compliance') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            } else if (response === 'partial_compliance' || response === 'Partial Compliance' || 
-                      response === 'Partial compliance') {
-              earnedPointsForQuestion = maxPointsForQuestion / 2;
-            }
-          } else if (questionType === 'checkbox' || questionType === 'multiple') {
-            if (Array.isArray(response) && response.length > 0) {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'file') {
-            if (typeof response === 'string' && response.trim() !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'text' || questionType === 'signature') {
-            if (typeof response === 'string' && response.trim() !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'number') {
-            if (response !== '' && !isNaN(response)) {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
-          } else if (questionType === 'date') {
-            if (response && typeof response === 'string' && response !== '') {
-              earnedPointsForQuestion = maxPointsForQuestion;
-            }
+          // Use template-defined scores if available
+          if (question.scores && typeof question.scores === 'object') {
+            const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
+            earnedPointsForQuestion = responseScore * weight;
           } else {
-            if (response && (typeof response === 'string' ? response.trim() !== '' : true)) {
-              earnedPointsForQuestion = maxPointsForQuestion;
+            // Fallback to old logic if no template scores defined
+            // Only process compliance and yesno types (already filtered above)
+            if (questionType === 'compliance' || questionType === 'yesno') {
+              if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || 
+                  response === 'Full Compliance' || response === 'Full compliance') {
+                earnedPointsForQuestion = maxPointsForQuestion;
+              } else if (response === 'partial_compliance' || response === 'Partial Compliance' || 
+                        response === 'Partial compliance') {
+                earnedPointsForQuestion = maxPointsForQuestion / 2;
+              }
             }
+            // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
+            // These should NEVER be scored
           }
         }
       }
       
+      // Add all questions to categories (including non-scorable) but mark them appropriately
       categories[category].push({
         id: questionId,
         text: question.text || question.question || 'No question text available',
         response,
         comment,
         earned: earnedPointsForQuestion,
-        max: maxPointsForQuestion,
-        isNA
+        max: maxPointsForQuestion, // Will be 0 for non-scorable questions
+        isNA,
+        isScorable // Add flag to identify scorable questions
       });
     });
 
@@ -598,7 +587,10 @@ export const generateTaskPDF = (taskData) => {
           responseText = 'No response';
         }
 
-        const scoreText = question.isNA ? 'N/A' : `${question.earned}/${question.max}`;
+        // Score - only show for scorable questions
+        const scoreText = question.isNA ? 'N/A' : 
+                         (question.isScorable && question.max > 0) ? `${question.earned}/${question.max}` : 
+                         'N/A'; // Show N/A for non-scorable questions
         
         return [
           question.text,

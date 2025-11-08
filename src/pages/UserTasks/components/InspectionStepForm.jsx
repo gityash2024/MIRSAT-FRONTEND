@@ -1201,6 +1201,18 @@ const InspectionStepForm = ({
     questions.forEach(question => {
       if (!question) return;
       
+      // CRITICAL FIX: Exclude recommended questions from scoring
+      if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+        return; // Skip recommended/non-mandatory questions
+      }
+      
+      // CRITICAL FIX: Only score Yes/No and Compliance question types
+      const questionType = question.type || question.answerType;
+      const scorableTypes = ['yesno', 'compliance'];
+      if (!scorableTypes.includes(questionType)) {
+        return; // Skip text, signature, date, number, file, and other non-scorable types
+      }
+      
       // Get max score from question data
       const maxScore = question.scoring?.max || 
         (question.scores ? Math.max(...Object.values(question.scores).filter(v => !isNaN(v))) : 0) || 2;
@@ -1262,6 +1274,18 @@ const InspectionStepForm = ({
             // Calculate score for each question
             subLevel.questions.forEach(question => {
               if (!question || !question._id) return;
+              
+              // CRITICAL FIX: Exclude recommended questions from scoring
+              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+                return; // Skip recommended/non-mandatory questions
+              }
+              
+              // CRITICAL FIX: Only score Yes/No and Compliance question types
+              const questionType = question.type || question.answerType;
+              const scorableTypes = ['yesno', 'compliance'];
+              if (!scorableTypes.includes(questionType)) {
+                return; // Skip text, signature, date, number, file, and other non-scorable types
+              }
               
               // Get max score from question data
               const maxScore = question.scoring?.max || 
@@ -2212,6 +2236,18 @@ const InspectionStepForm = ({
   
   // Add calculateQuestionScore inside the component
   const calculateQuestionScore = (question, sectionId) => {
+    // CRITICAL FIX: Exclude recommended questions from scoring
+    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+      return { achieved: 0, total: 0, percentage: 0 };
+    }
+    
+    // CRITICAL FIX: Only score Yes/No and Compliance question types
+    const questionType = question.type || question.answerType;
+    const scorableTypes = ['yesno', 'compliance'];
+    if (!scorableTypes.includes(questionType)) {
+      return { achieved: 0, total: 0, percentage: 0 }; // Text, signature, date, etc. should never be scored
+    }
+    
     if (!question || !question.scoring || !question.scoring.enabled) {
       return { achieved: 0, total: question?.scoring?.max || 0, percentage: 0 };
     }
