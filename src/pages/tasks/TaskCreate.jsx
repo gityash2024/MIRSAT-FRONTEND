@@ -127,12 +127,11 @@ const TaskCreate = () => {
           {t('common.backToTasks')}
         </BackButton>
         <PageTitle>{t('tasks.createNewTask')}</PageTitle>
-        <SubTitle>{t('tasks.createNewInspectionTask')}</SubTitle>
       </Header>
 
       <FormContainer>
-        <TaskForm 
-          onCancel={handleCancel} 
+        <TaskForm
+          onCancel={handleCancel}
           isEdit={false}
           submitButtonText={t('tasks.createTask')}
         />
