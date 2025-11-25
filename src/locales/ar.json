@@ -1292,7 +1292,14 @@
     "noTasksAssociatedWithAsset": "لا توجد مهام مرتبطة بهذا الأصل",
     "manufacturer": "الشركة المصنعة",
     "serialNumber": "الرقم التسلسلي",
-    "type": "النوع"
+    "type": "النوع",
+    "allTypes": "جميع الأنواع",
+    "allCities": "جميع المدن",
+    "sortBy": "ترتيب حسب",
+    "uniqueIdAsc": "المعرف الفريد (تصاعدي)",
+    "uniqueIdDesc": "المعرف الفريد (تنازلي)",
+    "filterByType": "تصفية حسب النوع",
+    "filterByCity": "تصفية حسب المدينة"
   },
   "questionnaires": {
     "title": "الاستبيانات",
@@ -1580,6 +1587,10 @@
     "testNotificationMessage": "هذا إشعار تجريبي تم إنشاؤه في {{timestamp}}"
   },
   "calendar": {
+    "createNewEvent": "إنشاء تفتيش جديد",
+    "editEvent": "تعديل التفتيش",
+    "createEvent": "إنشاء التفتيش",
+    "updateEvent": "تحديث التفتيش",
     "deadline": "الموعد النهائي",
     "dueDate": "تاريخ الاستحقاق"
   },

@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Download,
   Filter,
   Loader
@@ -76,18 +76,14 @@ const SubTitle = styled.p`
 
 const ActionBar = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 16px;
+  margin-bottom: 24px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
     gap: 12px;
     margin-bottom: 16px;
   }
@@ -95,6 +91,41 @@ const ActionBar = styled.div`
   @media (max-width: 480px) {
     gap: 10px;
     margin-bottom: 12px;
+  }
+`;
+
+const FiltersRow = styled.div`
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
+`;
+
+const ButtonsRow = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
   }
 `;
 
@@ -144,6 +175,44 @@ const SearchBox = styled.div`
       width: 16px;
       height: 16px;
     }
+  }
+`;
+
+
+
+const FilterDropdown = styled.div`
+  min-width: 180px;
+  
+  @media (max-width: 768px) {
+    flex: 1;
+    min-width: 150px;
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-sizing: border-box;
+  
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  &:hover {
+    border-color: var(--color-navy);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
   }
 `;
 
@@ -242,7 +311,7 @@ const AssetList = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
-  
+
   // Safe selector with fallback values to prevent crashes on refresh
   const { assets, loading, pagination, error } = useSelector(state => ({
     assets: state.assets?.assets || [],
@@ -255,7 +324,7 @@ const AssetList = () => {
     },
     error: state.assets?.error || null
   }));
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
@@ -266,7 +335,9 @@ const AssetList = () => {
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
-  
+  const [assetTypes, setAssetTypes] = useState([]);
+  const [uniqueCities, setUniqueCities] = useState([]);
+
   // Modal states for custom confirmations and alerts
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState(null);
@@ -277,20 +348,29 @@ const AssetList = () => {
     // Load initial data
     loadAssets();
     loadAssetTypes();
+    loadUniqueCities();
   }, []);
+
+  useEffect(() => {
+    // Update unique cities when assets change
+    if (assets && assets.length > 0) {
+      const cities = [...new Set(assets.map(a => a.city).filter(Boolean))];
+      setUniqueCities(cities.sort());
+    }
+  }, [assets]);
 
   useEffect(() => {
     // Debounced search effect
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
-    
+
     const timeout = setTimeout(() => {
       loadAssets();
     }, 500); // 500ms debounce
-    
+
     setSearchTimeout(timeout);
-    
+
     return () => {
       if (timeout) clearTimeout(timeout);
     };
@@ -312,9 +392,63 @@ const AssetList = () => {
 
   const loadAssetTypes = async () => {
     try {
-      await dispatch(fetchAssetTypes()).unwrap();
+      const result = await dispatch(fetchAssetTypes()).unwrap();
+      if (result && result.data) {
+        setAssetTypes(result.data);
+      }
     } catch (error) {
       console.error('Error loading asset types:', error);
+    }
+  };
+
+  const loadUniqueCities = async () => {
+    try {
+      // Get unique cities from current assets
+      if (assets && assets.length > 0) {
+        const cities = [...new Set(assets.map(a => a.city).filter(Boolean))];
+        setUniqueCities(cities.sort());
+      }
+    } catch (error) {
+      console.error('Error loading cities:', error);
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    const newFilters = {
+      ...filters,
+      [key]: value || undefined
+    };
+    // Remove undefined values
+    Object.keys(newFilters).forEach(k => {
+      if (newFilters[k] === undefined || newFilters[k] === '') {
+        delete newFilters[k];
+      }
+    });
+    setFilters(newFilters);
+    // Reset to page 1 when filters change
+    if (pagination.page !== 1) {
+      dispatch(setPage(1));
+    }
+  };
+
+  const handleSortChange = (value) => {
+    const newFilters = { ...filters };
+
+    if (!value || value === '') {
+      // Clear sort
+      delete newFilters.sortBy;
+      delete newFilters.sortOrder;
+    } else {
+      // Set sort
+      const [sortBy, sortOrder] = value.split('-');
+      newFilters.sortBy = sortBy;
+      newFilters.sortOrder = sortOrder;
+    }
+
+    setFilters(newFilters);
+    // Reset to page 1
+    if (pagination.page !== 1) {
+      dispatch(setPage(1));
     }
   };
 
@@ -339,7 +473,7 @@ const AssetList = () => {
 
   const handleConfirmExport = async (fileName) => {
     if (!pendingExport) return;
-    
+
     try {
       // Update the export action to use the custom filename
       await dispatch(exportAssets(fileName)).unwrap();
@@ -380,14 +514,14 @@ const AssetList = () => {
       showAlertModal('Error', 'Cannot delete asset - no ID provided', 'error');
       return;
     }
-    
+
     setAssetToDelete(id);
     setShowDeleteConfirm(true);
   };
 
   const confirmDelete = async () => {
     if (!assetToDelete) return;
-    
+
     try {
       await dispatch(deleteAsset(assetToDelete)).unwrap();
       // Reload assets after successful deletion
@@ -429,17 +563,17 @@ const AssetList = () => {
           <PageTitle>{t('common.assetManagement')}</PageTitle>
           <SubTitle>{t('common.manageAssetsEfficiently')}</SubTitle>
         </Header>
-        <div style={{ 
-          padding: '40px', 
-          textAlign: 'center', 
-          background: '#fef2f2', 
-          border: '1px solid #fecaca', 
+        <div style={{
+          padding: '40px',
+          textAlign: 'center',
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
           borderRadius: '8px',
           color: '#b91c1c'
         }}>
           <p><strong>{t('common.errorLoadingAssets')}:</strong> {error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             style={{
               padding: '8px 16px',
               background: 'var(--color-navy)',
@@ -465,47 +599,94 @@ const AssetList = () => {
       </Header>
 
       <ActionBar>
-        <SearchBox>
-          <Search className="search-icon" size={20} />
-          <input 
-            type="text" 
-            placeholder={t('common.searchAssets')} 
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-        </SearchBox>
+        <FiltersRow>
+          <SearchBox>
+            <Search className="search-icon" size={20} />
+            <input
+              type="text"
+              placeholder={t('common.searchAssets')}
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </SearchBox>
 
-        <ButtonGroup>
-          <Button 
-            variant="secondary" 
+          {/* Asset Type Filter */}
+          <FilterDropdown>
+            <Select
+              value={filters.type || ''}
+              onChange={(e) => handleFilterChange('type', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">{t('assets.allTypes')}</option>
+              {assetTypes.map(type => (
+                <option key={type._id || type.id} value={type.name}>
+                  {type.name}
+                </option>
+              ))}
+            </Select>
+          </FilterDropdown>
+
+          {/* City Filter */}
+          <FilterDropdown>
+            <Select
+              value={filters.city || ''}
+              onChange={(e) => handleFilterChange('city', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">{t('assets.allCities')}</option>
+              {uniqueCities.map(city => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </Select>
+          </FilterDropdown>
+
+          {/* Unique ID Sort */}
+          <FilterDropdown>
+            <Select
+              value={filters.sortBy && filters.sortOrder ? `${filters.sortBy}-${filters.sortOrder}` : ''}
+              onChange={(e) => handleSortChange(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">{t('assets.sortBy')}</option>
+              <option value="uniqueId-asc">{t('assets.uniqueIdAsc')}</option>
+              <option value="uniqueId-desc">{t('assets.uniqueIdDesc')}</option>
+            </Select>
+          </FilterDropdown>
+        </FiltersRow>
+
+        <ButtonsRow>
+          <Button
+            variant="secondary"
             onClick={handleOpenTypeModal}
             disabled={loading}
           >
             <Plus size={18} />
             {t('common.addAssetType')}
           </Button>
-          
-          <Button 
-            variant="secondary" 
+
+          <Button
+            variant="secondary"
             onClick={handleExport}
             disabled={loading || assets.length === 0}
           >
             <Download size={18} />
             {t('common.export')}
           </Button>
-          
-          <Button 
-            variant="primary" 
+
+          <Button
+            variant="primary"
             onClick={() => handleOpenModal()}
             disabled={loading}
           >
             <Plus size={18} />
             {t('common.addAsset')}
           </Button>
-        </ButtonGroup>
+        </ButtonsRow>
       </ActionBar>
 
-      <AssetTable 
+      <AssetTable
         assets={assets}
         loading={loading}
         pagination={pagination}
@@ -514,28 +695,28 @@ const AssetList = () => {
         onDelete={handleDelete}
         onViewTasks={handleViewTasks}
       />
-      
+
       {isModalOpen && (
-        <AssetModal 
-          isOpen={isModalOpen} 
-          onClose={handleCloseModal} 
+        <AssetModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
           asset={currentAsset}
           onSuccess={handleAssetSuccess}
         />
       )}
-      
+
       {isTypeModalOpen && (
-        <AssetTypeModal 
-          isOpen={isTypeModalOpen} 
-          onClose={handleCloseTypeModal} 
+        <AssetTypeModal
+          isOpen={isTypeModalOpen}
+          onClose={handleCloseTypeModal}
           onSuccess={handleTypeModalSuccess}
         />
       )}
 
       {isTasksModalOpen && selectedAsset && (
-        <AssetTasksModal 
-          isOpen={isTasksModalOpen} 
-          onClose={() => setIsTasksModalOpen(false)} 
+        <AssetTasksModal
+          isOpen={isTasksModalOpen}
+          onClose={() => setIsTasksModalOpen(false)}
           asset={selectedAsset}
         />
       )}

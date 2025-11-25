@@ -527,13 +527,13 @@ const TaskList = () => {
   const { t } = useTranslation();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
-  
+
   // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
     console.log('TaskList: Tasks updated:', tasks?.map(t => ({ id: t.id, progress: t.overallProgress })));
     console.log('TaskList: Pagination data:', pagination);
   }, [tasks, pagination]);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
@@ -558,7 +558,7 @@ const TaskList = () => {
   useEffect(() => {
     // Initialize filters if they don't exist
     if (!filters) {
-      dispatch(setFilters({ 
+      dispatch(setFilters({
         status: [],
         priority: [],
         assignedTo: [],
@@ -567,12 +567,12 @@ const TaskList = () => {
         search: ''
       }));
     }
-    
+
     // Initialize pagination if it doesn't exist
     if (!pagination) {
       dispatch(setPagination({ page: 1, limit: 10, total: 0, pages: 0 }));
     }
-    
+
     // Load necessary data for filters
     dispatch(fetchAssets());
     dispatch(fetchUsers());
@@ -581,7 +581,7 @@ const TaskList = () => {
 
   useEffect(() => {
     loadTasks();
-}, [dispatch, filters, pagination?.page, pagination?.limit]);
+  }, [dispatch, filters, pagination?.page, pagination?.limit]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -615,16 +615,16 @@ const TaskList = () => {
         limit: pagination?.limit || 10,
         sortBy: '-createdAt' // Ensure latest tasks appear first
       };
-      
+
       // First fetch tasks
       const result = await dispatch(fetchTasks(queryParams));
-      
+
       // If tasks were fetched successfully, fetch progress data
       if (result.type === 'tasks/fetchTasks/fulfilled' && result.payload?.data) {
         const taskIds = result.payload.data
           .map(task => task.id)
           .filter(id => id && id !== 'undefined' && typeof id === 'string' && id.length > 0);
-        
+
         if (taskIds.length > 0) {
           try {
             const progressResult = await dispatch(fetchTasksProgressData(taskIds));
@@ -644,16 +644,16 @@ const TaskList = () => {
     const timeoutId = setTimeout(() => {
       dispatch(setFilters({ ...filters, search: e.target.value }));
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   };
 
   const handleFilterChange = (category, value) => {
     const currentFilters = Array.isArray(filters[category]) ? [...filters[category]] : [];
-    
+
     // Check if value already exists in the array
     const valueIndex = currentFilters.indexOf(value);
-    
+
     // Toggle the value
     if (valueIndex >= 0) {
       // Remove if exists
@@ -662,18 +662,18 @@ const TaskList = () => {
       // Add if doesn't exist
       currentFilters.push(value);
     }
-    
+
     // Create a new filters object with ALL previous filters plus the updated category
     const updatedFilters = {
       ...filters,
       [category]: currentFilters
     };
-    
+
     console.log(`Filter ${category} updated:`, currentFilters);
-    
+
     // Dispatch the updated filters
     dispatch(setFilters(updatedFilters));
-    
+
     // Reset pagination when filters change
     dispatch(setPagination({ page: 1 }));
   };
@@ -708,7 +708,7 @@ const TaskList = () => {
     return value;
   };
 
-  const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) => 
+  const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) =>
     key !== 'search' && Array.isArray(value) && value.length > 0
   );
 
@@ -747,15 +747,15 @@ const TaskList = () => {
 
   const handleConfirmExport = (fileName) => {
     if (!pendingExport) return;
-    
+
     const { format, data } = pendingExport;
-    
+
     if (format === 'pdf') {
       generatePDFExport(data, fileName);
     } else if (format === 'csv') {
       generateCSVExport(data, fileName);
     }
-    
+
     setShowDocumentModal(false);
     setPendingExport(null);
   };
@@ -763,24 +763,24 @@ const TaskList = () => {
   const generatePDFExport = (tasksData, fileName) => {
     try {
       toast.loading('Generating PDF...');
-      
+
       // Create PDF document
       const doc = new jsPDF('landscape');
-      
+
       // Add title
       doc.setFontSize(20);
       doc.setTextColor(26, 35, 126); // Navy color
       doc.text('MIRSAT - Task Report', 14, 22);
-      
+
       // Add subtitle with date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on ${format(new Date(), 'MMM d, yyyy, h:mm a')}`, 14, 30);
-      
+
       // Define table columns
       const columns = [
         { header: '#', dataKey: 'index' },
-        { header: 'Task Name', dataKey: 'title' },
+        { header: 'Inspection Name', dataKey: 'title' },
         { header: 'Template', dataKey: 'template' },
         { header: 'Assignee', dataKey: 'assignee' },
         { header: 'Priority', dataKey: 'priority' },
@@ -788,13 +788,13 @@ const TaskList = () => {
         { header: 'Due Date', dataKey: 'dueDate' },
         { header: 'Progress', dataKey: 'progress' }
       ];
-      
+
       // Prepare data for the table
       const tableData = tasksData.map((task, index) => ({
         index: (index + 1).toString(),
         title: task.title || 'Untitled',
         template: task.inspectionLevel?.name || 'N/A',
-        assignee: task.assignedTo && task.assignedTo.length > 0 
+        assignee: task.assignedTo && task.assignedTo.length > 0
           ? task.assignedTo[0].name || 'Unnamed'
           : 'Unassigned',
         priority: task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'N/A',
@@ -802,7 +802,7 @@ const TaskList = () => {
         dueDate: formatDate(task.deadline),
         progress: `${task.overallProgress || 0}%`
       }));
-      
+
       // Generate the table
       doc.autoTable({
         columns: columns,
@@ -826,10 +826,10 @@ const TaskList = () => {
         tableWidth: 'auto',
         margin: { left: 14, right: 14 }
       });
-      
+
       // Save the PDF
       doc.save(`${fileName}.pdf`);
-      
+
       toast.dismiss();
       toast.success('PDF generated successfully');
     } catch (error) {
@@ -842,15 +842,15 @@ const TaskList = () => {
   const generateCSVExport = (tasksData, fileName) => {
     try {
       toast.loading('Generating CSV...');
-      
+
       // Define the headers
-      const headers = ['Task Name', 'Template', 'Assignee', 'Priority', 'Status', 'Due Date', 'Progress'];
-      
+      const headers = ['Inspection Name', 'Template', 'Assignee', 'Priority', 'Status', 'Due Date', 'Progress'];
+
       // Prepare the data
       const csvData = tasksData.map(task => [
         task.title || 'Untitled',
         task.inspectionLevel?.name || 'N/A',
-        task.assignedTo && task.assignedTo.length > 0 
+        task.assignedTo && task.assignedTo.length > 0
           ? task.assignedTo[0].name || 'Unnamed'
           : 'Unassigned',
         task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'N/A',
@@ -858,19 +858,19 @@ const TaskList = () => {
         formatDate(task.deadline),
         `${task.overallProgress || 0}%`
       ]);
-      
+
       // Add headers to the data
       csvData.unshift(headers);
-      
+
       // Convert to CSV string
-      const csvContent = csvData.map(row => 
+      const csvContent = csvData.map(row =>
         row.map(cell => {
           // Escape quotes and wrap in quotes if contains commas or quotes
           const escaped = String(cell).replace(/"/g, '""');
           return /[,"]/.test(escaped) ? `"${escaped}"` : escaped;
         }).join(',')
       ).join('\n');
-      
+
       // Create a download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -880,7 +880,7 @@ const TaskList = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.dismiss();
       toast.success('CSV generated successfully');
     } catch (error) {
@@ -925,8 +925,8 @@ const TaskList = () => {
         <FilterRow>
           <SearchBox>
             <Search className="search-icon" size={16} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder={t('tasks.searchPlaceholder')}
@@ -940,7 +940,7 @@ const TaskList = () => {
             </DropdownButton>
             <DropdownContent show={showStatusDropdown}>
               {statusOptions.map(option => (
-                <DropdownItem 
+                <DropdownItem
                   key={option.value}
                   $selected={filters?.status?.includes(option.value) || false}
                 >
@@ -962,7 +962,7 @@ const TaskList = () => {
             </DropdownButton>
             <DropdownContent show={showPriorityDropdown}>
               {priorityOptions.map(option => (
-                <DropdownItem 
+                <DropdownItem
                   key={option.value}
                   $selected={filters?.priority?.includes(option.value) || false}
                 >
@@ -984,7 +984,7 @@ const TaskList = () => {
             </DropdownButton>
             <DropdownContent show={showAssigneeDropdown}>
               {users?.map(user => (
-                <DropdownItem 
+                <DropdownItem
                   key={user._id || user.id}
                   $selected={filters?.assignedTo?.includes(user._id || user.id) || false}
                 >
@@ -1007,7 +1007,7 @@ const TaskList = () => {
           </ActionButton>
 
           <ExportDropdown className="export-dropdown">
-            <ActionButton 
+            <ActionButton
               onClick={() => setShowExportDropdown(!showExportDropdown)}
               title="Export tasks"
             >
@@ -1025,7 +1025,7 @@ const TaskList = () => {
               </ExportDropdownItem>
             </DropdownMenu>
           </ExportDropdown>
-          
+
           {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
             <ActionButton as={Link} to="/tasks/create" $variant="primary">
               <Plus size={16} />
@@ -1050,7 +1050,7 @@ const TaskList = () => {
                   </button>
                 </FilterTag>
               )) : null
-          )}
+            )}
           <FilterTag>
             {t('common.clearAll')}
             <button onClick={clearAllFilters}>
@@ -1064,10 +1064,10 @@ const TaskList = () => {
         // Show spinner with loading text
         <LoadingContainer>
           <Loader size={40} color="var(--color-navy)" />
-          <p style={{ 
-            marginTop: '16px', 
-            color: 'var(--color-navy)', 
-            fontSize: '16px' 
+          <p style={{
+            marginTop: '16px',
+            color: 'var(--color-navy)',
+            fontSize: '16px'
           }}>
             {t('tasks.loadingTasks')}
           </p>
@@ -1083,7 +1083,7 @@ const TaskList = () => {
         </ErrorContainer>
       ) : (
         // Show tasks table (even if empty, so pagination can be displayed)
-        <TaskTable 
+        <TaskTable
           tasks={tasks || []}
           loading={loading}
           pagination={pagination}

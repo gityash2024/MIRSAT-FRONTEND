@@ -3,13 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { 
-  ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle, 
+import {
+  ArrowLeft, Edit, Clock, User, Calendar, AlertTriangle,
   Send, Download, Paperclip, BarChart, TrendingUp, Users,
   Circle, ChevronRight, Filter, FileText, HelpCircle, CheckSquare, Database, MapPin,
-  Upload, Trash2, Info, Activity, CheckCircle as CheckCircleIcon, XCircle, 
-  Award, Star, Target, Zap, BarChart2, PieChart, Eye, EyeOff, Search, 
-  RotateCw, Save, Play, Pause, RefreshCcw, List, Grid, Navigation, 
+  Upload, Trash2, Info, Activity, CheckCircle as CheckCircleIcon, XCircle,
+  Award, Star, Target, Zap, BarChart2, PieChart, Eye, EyeOff, Search,
+  RotateCw, Save, Play, Pause, RefreshCcw, List, Grid, Navigation,
   Maximize2, Minimize2, ChevronDown, Loader, MessageSquare, AlertTriangle as AlertTriangleIcon
 } from 'lucide-react';
 import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
@@ -289,7 +289,7 @@ const LevelStatus = styled.span`
   font-weight: 500;
   
   ${props => {
-    switch(props.status) {
+    switch (props.status) {
       case 'completed':
         return 'background: #dcfce7; color: #166534;';
       case 'in_progress':
@@ -335,7 +335,7 @@ const AnalyticsCard = styled.div`
   border: 1px solid #e2e8f0;
   
   ${props => {
-    switch(props.type) {
+    switch (props.type) {
       case 'progress':
         return 'background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af;';
       case 'completion':
@@ -441,10 +441,10 @@ const MilestoneDot = styled.div`
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: ${({ status }) => 
-    status === 'completed' ? '#10b981' : 
-    status === 'in_progress' ? '#3b82f6' : 
-    '#e2e8f0'};
+  background: ${({ status }) =>
+    status === 'completed' ? '#10b981' :
+      status === 'in_progress' ? '#3b82f6' :
+        '#e2e8f0'};
   border: 2px solid white;
 `;
 
@@ -452,14 +452,14 @@ const MilestoneStatus = styled.span`
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
-  background: ${({ status }) => 
-    status === 'completed' ? '#ecfdf5' : 
-    status === 'in_progress' ? '#eff6ff' : 
-    '#f8fafc'};
-  color: ${({ status }) => 
-    status === 'completed' ? '#10b981' : 
-    status === 'in_progress' ? '#3b82f6' : 
-    '#64748b'};
+  background: ${({ status }) =>
+    status === 'completed' ? '#ecfdf5' :
+      status === 'in_progress' ? '#eff6ff' :
+        '#f8fafc'};
+  color: ${({ status }) =>
+    status === 'completed' ? '#10b981' :
+      status === 'in_progress' ? '#3b82f6' :
+        '#64748b'};
 `;
 
 const MilestoneDescription = styled.p`
@@ -563,8 +563,8 @@ const Button = styled.button`
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: ${props => props.$variant === 'danger' ? '#ef4444' : 
-               props.$variant === 'secondary' ? 'white' : 'var(--color-navy)'};
+  background: ${props => props.$variant === 'danger' ? '#ef4444' :
+    props.$variant === 'secondary' ? 'white' : 'var(--color-navy)'};
   color: ${props => props.$variant === 'secondary' ? 'var(--color-navy)' : 'white'};
   border: ${props => props.$variant === 'secondary' ? '1px solid var(--color-navy)' : 'none'};
   border-radius: 6px;
@@ -574,8 +574,8 @@ const Button = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.$variant === 'danger' ? '#dc2626' : 
-                props.$variant === 'secondary' ? '#f8fafc' : '#151b4f'};
+    background: ${props => props.$variant === 'danger' ? '#dc2626' :
+    props.$variant === 'secondary' ? '#f8fafc' : '#151b4f'};
   }
 
   &:disabled {
@@ -653,7 +653,7 @@ const TaskViewSkeleton = () => (
         </HeaderContent>
         <Skeleton.Button width="120px" height="40px" />
       </HeaderTop>
-      
+
       <HeaderFilters>
         <Skeleton.Circle size="16px" />
         <Skeleton.Base width="200px" height="38px" radius="6px" />
@@ -677,7 +677,7 @@ const TaskViewSkeleton = () => (
               </div>
             ))}
           </div>
-          
+
           <div style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Skeleton.Circle size="20px" />
@@ -685,7 +685,7 @@ const TaskViewSkeleton = () => (
             </div>
             <Skeleton.Base width="100%" height="200px" radius="8px" />
           </div>
-          
+
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Skeleton.Circle size="20px" />
@@ -712,14 +712,14 @@ const TaskViewSkeleton = () => (
           </div>
         </Card>
       </MainContent>
-      
+
       <Sidebar>
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <Skeleton.Circle size="20px" />
             <Skeleton.Base width="120px" height="20px" />
           </div>
-          
+
           <div style={{ marginBottom: '24px' }}>
             {Array(3).fill().map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -728,12 +728,12 @@ const TaskViewSkeleton = () => (
               </div>
             ))}
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', marginTop: '24px' }}>
             <Skeleton.Circle size="20px" />
             <Skeleton.Base width="140px" height="20px" />
           </div>
-          
+
           <div style={{ marginBottom: '24px' }}>
             {Array(2).fill().map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -742,11 +742,11 @@ const TaskViewSkeleton = () => (
               </div>
             ))}
           </div>
-          
+
           <div style={{ marginBottom: '24px' }}>
             <Skeleton.Base width="100%" height="150px" radius="8px" />
           </div>
-          
+
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Skeleton.Circle size="20px" />
@@ -779,22 +779,22 @@ const TaskView = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [preInspectionModalOpen, setPreInspectionModalOpen] = useState(false);
   const fileInputRef = useRef(null);
-  
+
   const { currentTask: task, loading, error } = useSelector((state) => state.tasks);
 
   // Utility function to safely access nested properties
   const getTaskDataOrDefault = (taskObj, path, defaultValue = '') => {
     try {
       if (!taskObj) return defaultValue;
-      
+
       const keys = path.split('.');
       let value = taskObj;
-      
+
       for (const key of keys) {
         if (value === null || value === undefined) return defaultValue;
         value = value[key];
       }
-      
+
       return value === null || value === undefined ? defaultValue : value;
     } catch (error) {
       console.error(`Error accessing path ${path}:`, error);
@@ -854,9 +854,9 @@ const TaskView = () => {
       pending: { color: '#95a5a6', bg: 'rgba(149, 165, 166, 0.1)', text: '⏳ Pending' },
       archived: { color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.1)', text: '✅ Completed' }
     };
-    
+
     const config = statusConfig[status] || statusConfig.pending;
-    
+
     return (
       <span style={{
         padding: '6px 12px',
@@ -913,15 +913,15 @@ const TaskView = () => {
       toast.error(t('tasks.taskIdMissing'));
       return;
     }
-    
+
     if (!comment.trim()) return;
-    
+
     try {
       setIsSubmitting(true);
       console.log('Adding comment with params:', { id: taskId, content: comment });
-      const result = await dispatch(addTaskComment({ 
-        id: taskId, 
-        content: comment 
+      const result = await dispatch(addTaskComment({
+        id: taskId,
+        content: comment
       })).unwrap();
       console.log('Comment added result:', result);
       setComment('');
@@ -939,12 +939,12 @@ const TaskView = () => {
       toast.error(t('tasks.taskIdMissing'));
       return;
     }
-    
+
     try {
       console.log('Updating status with params:', { id: taskId, status: newStatus });
-      const result = await dispatch(updateTaskStatus({ 
-        id: taskId, 
-        status: newStatus 
+      const result = await dispatch(updateTaskStatus({
+        id: taskId,
+        status: newStatus
       })).unwrap();
       console.log('Status update result:', result);
       toast.success(t('tasks.taskStatusUpdatedSuccessfully'));
@@ -959,23 +959,23 @@ const TaskView = () => {
       toast.error(t('tasks.taskIdMissing'));
       return;
     }
-    
+
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    
+
     try {
       setUploadingFile(true);
       console.log('Uploading files:', files.length);
-      
-      await dispatch(uploadTaskAttachment({ 
-        id: taskId, 
-        files 
+
+      await dispatch(uploadTaskAttachment({
+        id: taskId,
+        files
       })).unwrap();
-      
+
       // Refresh task data to show the new attachment
       dispatch(getTaskById(taskId));
       toast.success('Files uploaded successfully');
-      
+
     } catch (error) {
       console.error('Error uploading files:', error);
       toast.error('Failed to upload files. Please try again.');
@@ -993,15 +993,15 @@ const TaskView = () => {
       toast.error('Task ID or Attachment ID is missing');
       return;
     }
-    
+
     if (!window.confirm('Are you sure you want to delete this attachment?')) return;
-    
+
     try {
       await dispatch(deleteTaskAttachment({
         id: taskId,
         attachmentId
       })).unwrap();
-      
+
       toast.success('Attachment deleted successfully');
       // Refresh task data
       dispatch(getTaskById(taskId));
@@ -1019,7 +1019,7 @@ const TaskView = () => {
           <HeaderTop>
             <BackButton disabled>
               <ArrowLeft size={18} />
-              Back to Tasks
+              Back to Inspections
             </BackButton>
             <HeaderContent>
               <Skeleton.Base width="300px" height="32px" />
@@ -1027,14 +1027,14 @@ const TaskView = () => {
             </HeaderContent>
           </HeaderTop>
         </Header>
-        
+
         <ContentGrid>
           <MainContent>
             <Card>
               <Skeleton.Base width="100%" height="200px" />
             </Card>
           </MainContent>
-          
+
           <Sidebar>
             <Card>
               <Skeleton.Base width="100%" height="150px" />
@@ -1053,7 +1053,7 @@ const TaskView = () => {
           <HeaderTop>
             <BackButton onClick={() => navigate('/tasks')}>
               <ArrowLeft size={18} />
-              Back to Tasks
+              Back to Inspections
             </BackButton>
             <HeaderContent>
               <PageTitle>{t('tasks.errorLoadingTask')}</PageTitle>
@@ -1061,7 +1061,7 @@ const TaskView = () => {
             </HeaderContent>
           </HeaderTop>
         </Header>
-        
+
         <ContentGrid>
           <MainContent>
             <Card>
@@ -1100,7 +1100,7 @@ const TaskView = () => {
           <HeaderTop>
             <BackButton onClick={() => navigate('/tasks')}>
               <ArrowLeft size={18} />
-              Back to Tasks
+              Back to Inspections
             </BackButton>
             <HeaderContent>
               <PageTitle>{t('tasks.taskNotFound')}</PageTitle>
@@ -1108,7 +1108,7 @@ const TaskView = () => {
             </HeaderContent>
           </HeaderTop>
         </Header>
-        
+
         <ContentGrid>
           <MainContent>
             <Card>
@@ -1129,7 +1129,7 @@ const TaskView = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Back to Tasks
+                  Back to Inspections
                 </button>
               </div>
             </Card>
@@ -1141,7 +1141,7 @@ const TaskView = () => {
 
   // Extract task data from the response
   const taskData = task.data || task;
-  
+
   // Check for valid task data properties
   const hasValidTaskData = taskData && typeof taskData === 'object';
   const hasValidAssignees = Array.isArray(taskData.assignedTo);
@@ -1161,12 +1161,12 @@ const TaskView = () => {
     if (!taskData || !taskData.progress || !taskData.inspectionLevel) {
       return { completed: 0, inProgress: 0, total: 0, percentage: 0 };
     }
-    
+
     const assigneeProgress = taskData.progress.filter(p => p && p.completedBy && p.completedBy._id === assigneeId);
     const completed = assigneeProgress?.filter(p => p.status === 'completed').length || 0;
     const inProgress = assigneeProgress?.filter(p => p.status === 'in_progress').length || 0;
     const total = Array.isArray(taskData.inspectionLevel?.subLevels) ? taskData.inspectionLevel.subLevels.length : 0;
-    
+
     return {
       completed,
       inProgress,
@@ -1180,8 +1180,8 @@ const TaskView = () => {
   if (taskData && taskData.inspectionLevel && Array.isArray(taskData.inspectionLevel.subLevels)) {
     inspectionData = taskData.inspectionLevel.subLevels.map(level => ({
       name: level.name || 'Unnamed',
-      completed: getSubLevelStatus(level._id) === 'completed' ? 100 : 
-                getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
+      completed: getSubLevelStatus(level._id) === 'completed' ? 100 :
+        getSubLevelStatus(level._id) === 'in_progress' ? 50 : 0
     }));
   }
 
@@ -1189,7 +1189,7 @@ const TaskView = () => {
   const chartData = inspectionData.length > 0 ? inspectionData : [{ name: 'No Data', completed: 0 }];
 
   const renderQuestionType = (type) => {
-    switch(type) {
+    switch (type) {
       case 'yesNo':
         return 'Yes/No/NA';
       case 'compliance':
@@ -1200,13 +1200,13 @@ const TaskView = () => {
         return type;
     }
   };
-  
+
   // Debug info
-  console.log('Task validation:', { 
-    hasValidTask: hasValidTaskData, 
-    hasValidComments, 
-    hasValidSubLevels, 
-    hasValidAttachments 
+  console.log('Task validation:', {
+    hasValidTask: hasValidTaskData,
+    hasValidComments,
+    hasValidSubLevels,
+    hasValidAttachments
   });
 
   return (
@@ -1215,7 +1215,7 @@ const TaskView = () => {
         <HeaderTop>
           <BackButton onClick={() => navigate('/tasks')}>
             <ArrowLeft size={18} />
-            Back to Tasks
+            Back to Inspections
           </BackButton>
           <HeaderContent>
             <PageTitle>{getTaskDataOrDefault(taskData, 'title', 'Untitled Task')}</PageTitle>
@@ -1238,12 +1238,12 @@ const TaskView = () => {
               <BarChart size={20} />
               Task Overview
             </CardTitle>
-            
+
             {/* Task Summary Grid */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-              gap: '16px', 
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '16px',
               marginBottom: '24px',
               padding: '0 16px'
             }}>
@@ -1259,7 +1259,7 @@ const TaskView = () => {
                   {taskId}
                 </div>
               </div>
-              
+
               <div style={{
                 background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)',
                 padding: '20px',
@@ -1269,13 +1269,13 @@ const TaskView = () => {
               }}>
                 <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>TOTAL SECTIONS</div>
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {taskData.inspectionLevel?.subLevels ? 
-                    taskData.inspectionLevel.subLevels.reduce((total, page) => 
+                  {taskData.inspectionLevel?.subLevels ?
+                    taskData.inspectionLevel.subLevels.reduce((total, page) =>
                       total + (page.subLevels ? page.subLevels.length : 0), 0
                     ) : 0}
                 </div>
               </div>
-              
+
               <div style={{
                 background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
                 padding: '20px',
@@ -1285,13 +1285,13 @@ const TaskView = () => {
               }}>
                 <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>TOTAL QUESTIONS</div>
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {taskData.inspectionLevel?.subLevels ? 
-                    taskData.inspectionLevel.subLevels.reduce((total, page) => 
+                  {taskData.inspectionLevel?.subLevels ?
+                    taskData.inspectionLevel.subLevels.reduce((total, page) =>
                       total + calculateTotalQuestions(page), 0
                     ) : 0}
                 </div>
               </div>
-              
+
               <div style={{
                 background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
                 padding: '20px',
@@ -1305,7 +1305,7 @@ const TaskView = () => {
                 </div>
               </div>
             </div>
-            <Description> <span style={{ fontWeight: '600', color: 'var(--color-navy)' , fontSize: '16px', marginBottom: '8px'}}>{t('tasks.taskDescription')}:</span> {getTaskDataOrDefault(taskData, 'description', t('tasks.noDescriptionProvided'))}</Description>
+            <Description> <span style={{ fontWeight: '600', color: 'var(--color-navy)', fontSize: '16px', marginBottom: '8px' }}>{t('tasks.taskDescription')}:</span> {getTaskDataOrDefault(taskData, 'description', t('tasks.noDescriptionProvided'))}</Description>
 
             <MetaGrid>
               <MetaItem>
@@ -1317,11 +1317,11 @@ const TaskView = () => {
               <MetaItem>
                 <AlertTriangle size={16} className="icon" />
                 <div>
-                  <strong>{t('common.priority')}:</strong> 
-                  <span style={{ 
+                  <strong>{t('common.priority')}:</strong>
+                  <span style={{
                     textTransform: 'capitalize',
-                    color: taskData.priority === 'high' ? '#ef4444' : 
-                           taskData.priority === 'medium' ? '#f39c12' : '#27ae60'
+                    color: taskData.priority === 'high' ? '#ef4444' :
+                      taskData.priority === 'medium' ? '#f39c12' : '#27ae60'
                   }}>
                     {taskData.priority || 'Not set'}
                   </span>
@@ -1354,8 +1354,8 @@ const TaskView = () => {
               <MetaItem>
                 <Users size={16} className="icon" />
                 <div>
-                  <strong>{t('tasks.assignedTo')}:</strong> 
-                  {taskData.assignedTo && taskData.assignedTo.length > 0 
+                  <strong>{t('tasks.assignedTo')}:</strong>
+                  {taskData.assignedTo && taskData.assignedTo.length > 0
                     ? taskData.assignedTo.map(user => user.name).join(', ')
                     : t('tasks.noAssignees')
                   }
@@ -1379,43 +1379,43 @@ const TaskView = () => {
                 <CheckSquare size={20} />
                 Inspection Overview
               </CardTitle>
-              
+
               <div style={{ padding: '16px' }}>
                 <h4 style={{ marginBottom: '16px', color: 'var(--color-navy)' }}>
                   Template: {taskData.inspectionLevel.name || 'Unknown Template'}
                 </h4>
-                
+
                 {/* Task Metrics - Simplified */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                  <div style={{ 
-                    background: 'rgba(55, 136, 216, 0.1)', 
-                    padding: '20px', 
+                  <div style={{
+                    background: 'rgba(55, 136, 216, 0.1)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
                     <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>TASK STATUS</div>
                     <div style={{ fontSize: '20px', fontWeight: '700', color: '#3788d8' }}>
-                      {getTaskDataOrDefault(taskData, 'status', 'pending').charAt(0).toUpperCase() + 
-                       getTaskDataOrDefault(taskData, 'status', 'pending').slice(1).replace('_', ' ')}
+                      {getTaskDataOrDefault(taskData, 'status', 'pending').charAt(0).toUpperCase() +
+                        getTaskDataOrDefault(taskData, 'status', 'pending').slice(1).replace('_', ' ')}
                     </div>
                   </div>
-                  
-                  <div style={{ 
-                    background: 'rgba(39, 174, 96, 0.1)', 
-                    padding: '20px', 
+
+                  <div style={{
+                    background: 'rgba(39, 174, 96, 0.1)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
                     <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>PRIORITY</div>
                     <div style={{ fontSize: '20px', fontWeight: '700', color: '#27ae60' }}>
-                      {getTaskDataOrDefault(taskData, 'priority', 'medium').charAt(0).toUpperCase() + 
-                       getTaskDataOrDefault(taskData, 'priority', 'medium').slice(1)}
+                      {getTaskDataOrDefault(taskData, 'priority', 'medium').charAt(0).toUpperCase() +
+                        getTaskDataOrDefault(taskData, 'priority', 'medium').slice(1)}
                     </div>
                   </div>
-                  
-                  <div style={{ 
-                    background: 'rgba(243, 156, 18, 0.1)', 
-                    padding: '20px', 
+
+                  <div style={{
+                    background: 'rgba(243, 156, 18, 0.1)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
@@ -1424,10 +1424,10 @@ const TaskView = () => {
                       {taskData.createdBy?.name || taskData.createdBy?.email || 'Unknown'}
                     </div>
                   </div>
-                  
-                  <div style={{ 
-                    background: 'rgba(44, 62, 80, 0.1)', 
-                    padding: '20px', 
+
+                  <div style={{
+                    background: 'rgba(44, 62, 80, 0.1)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
@@ -1444,9 +1444,9 @@ const TaskView = () => {
                     <h4 style={{ marginBottom: '16px', color: 'var(--color-navy)' }}>
                       Inspection Template Details
                     </h4>
-                    <div style={{ 
-                      background: '#f8fafc', 
-                      padding: '16px', 
+                    <div style={{
+                      background: '#f8fafc',
+                      padding: '16px',
                       borderRadius: '8px',
                       border: '1px solid #e2e8f0'
                     }}>
@@ -1480,11 +1480,11 @@ const TaskView = () => {
                   const pageProgress = calculateSubLevelProgress(page._id);
                   const totalQuestions = calculateTotalQuestions(page);
                   const completedQuestions = calculateCompletedQuestions(page);
-                  const progressPercentage = totalQuestions > 0 ? 
+                  const progressPercentage = totalQuestions > 0 ?
                     Math.round((completedQuestions / totalQuestions) * 100) : 0;
-                  
+
                   return (
-                    <div key={page._id || pageIndex} style={{ 
+                    <div key={page._id || pageIndex} style={{
                       marginBottom: '32px',
                       border: '1px solid #e2e8f0',
                       borderRadius: '16px',
@@ -1503,18 +1503,18 @@ const TaskView = () => {
                         position: 'relative'
                       }}>
                         <div style={{ flex: 1 }}>
-                          <h4 style={{ 
-                            margin: 0, 
-                            fontSize: '20px', 
+                          <h4 style={{
+                            margin: 0,
+                            fontSize: '20px',
                             fontWeight: '700',
                             marginBottom: '8px'
                           }}>
                             {pageIndex + 1}. {page.name || 'Unnamed Page'}
                           </h4>
                           {page.description && (
-                            <p style={{ 
-                              margin: 0, 
-                              opacity: 0.9, 
+                            <p style={{
+                              margin: 0,
+                              opacity: 0.9,
                               fontSize: '15px',
                               lineHeight: '1.4'
                             }}>
@@ -1538,7 +1538,7 @@ const TaskView = () => {
                             gap: '6px'
                           }}>
                             {pageProgress.status === 'completed' ? '✅ Completed' :
-                             pageProgress.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                              pageProgress.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
                           </div>
                         </div>
                       </div>
@@ -1552,9 +1552,9 @@ const TaskView = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <div style={{ 
-                          fontSize: '16px', 
-                          color: '#374151', 
+                        <div style={{
+                          fontSize: '16px',
+                          color: '#374151',
                           fontWeight: '600',
                           display: 'flex',
                           alignItems: 'center',
@@ -1583,7 +1583,7 @@ const TaskView = () => {
                               width: `${progressPercentage}%`,
                               height: '100%',
                               background: pageProgress.status === 'completed' ? '#27ae60' :
-                                         pageProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
+                                pageProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
                               transition: 'width 0.3s ease'
                             }} />
                           </div>
@@ -1593,9 +1593,9 @@ const TaskView = () => {
                       {/* Sections within the page */}
                       {page.subLevels && page.subLevels.length > 0 && (
                         <div style={{ padding: '20px' }}>
-                          <h5 style={{ 
-                            margin: '0 0 20px 0', 
-                            fontSize: '18px', 
+                          <h5 style={{
+                            margin: '0 0 20px 0',
+                            fontSize: '18px',
                             fontWeight: '600',
                             color: '#374151',
                             display: 'flex',
@@ -1608,11 +1608,11 @@ const TaskView = () => {
                             {page.subLevels.map((section, sectionIndex) => {
                               const sectionProgress = calculateSubLevelProgress(section._id);
                               const sectionQuestions = section.questions ? section.questions.length : 0;
-                              const sectionCompleted = section.questions ? 
+                              const sectionCompleted = section.questions ?
                                 section.questions.filter(q => q.response).length : 0;
-                              const sectionProgressPercentage = sectionQuestions > 0 ? 
+                              const sectionProgressPercentage = sectionQuestions > 0 ?
                                 Math.round((sectionCompleted / sectionQuestions) * 100) : 0;
-                              
+
                               return (
                                 <div key={section._id || sectionIndex} style={{
                                   border: '1px solid #e2e8f0',
@@ -1630,17 +1630,17 @@ const TaskView = () => {
                                     borderBottom: '1px solid #e2e8f0'
                                   }}>
                                     <div style={{ flex: 1 }}>
-                                      <h6 style={{ 
-                                        margin: 0, 
-                                        fontSize: '16px', 
+                                      <h6 style={{
+                                        margin: 0,
+                                        fontSize: '16px',
                                         fontWeight: '600',
                                         color: '#374151'
                                       }}>
                                         {sectionIndex + 1}. {section.name || 'Unnamed Section'}
                                       </h6>
                                       {section.description && (
-                                        <p style={{ 
-                                          margin: '4px 0 0 0', 
+                                        <p style={{
+                                          margin: '4px 0 0 0',
                                           fontSize: '14px',
                                           color: '#64748b',
                                           lineHeight: '1.4'
@@ -1657,8 +1657,8 @@ const TaskView = () => {
                                       <div style={{
                                         fontSize: '16px',
                                         fontWeight: '700',
-                                        color: sectionProgress.status === 'completed' ? '#27ae60' : 
-                                               sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6'
+                                        color: sectionProgress.status === 'completed' ? '#27ae60' :
+                                          sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6'
                                       }}>
                                         {sectionProgressPercentage}%
                                       </div>
@@ -1668,15 +1668,15 @@ const TaskView = () => {
                                         fontSize: '12px',
                                         fontWeight: '600',
                                         background: sectionProgress.status === 'completed' ? 'rgba(39, 174, 96, 0.1)' :
-                                                   sectionProgress.status === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
-                                                   'rgba(149, 165, 166, 0.1)',
+                                          sectionProgress.status === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
+                                            'rgba(149, 165, 166, 0.1)',
                                         color: sectionProgress.status === 'completed' ? '#27ae60' :
-                                               sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
-                                        border: `1px solid ${sectionProgress.status === 'completed' ? '#27ae60' : 
-                                                 sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6'}20`
+                                          sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
+                                        border: `1px solid ${sectionProgress.status === 'completed' ? '#27ae60' :
+                                          sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6'}20`
                                       }}>
                                         {sectionProgress.status === 'completed' ? '✅ Completed' :
-                                         sectionProgress.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                                          sectionProgress.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
                                       </div>
                                     </div>
                                   </div>
@@ -1684,8 +1684,8 @@ const TaskView = () => {
                                   {/* Section Questions */}
                                   {section.questions && section.questions.length > 0 && (
                                     <div style={{ padding: '16px 20px' }}>
-                                      <div style={{ 
-                                        fontSize: '14px', 
+                                      <div style={{
+                                        fontSize: '14px',
                                         color: '#64748b',
                                         marginBottom: '12px',
                                         fontWeight: '500',
@@ -1707,11 +1707,11 @@ const TaskView = () => {
                                           width: `${sectionProgressPercentage}%`,
                                           height: '100%',
                                           background: sectionProgress.status === 'completed' ? '#27ae60' :
-                                                     sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
+                                            sectionProgress.status === 'in_progress' ? '#f39c12' : '#95a5a6',
                                           transition: 'width 0.3s ease'
                                         }} />
                                       </div>
-                                      
+
                                       {/* Question List */}
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {section.questions.map((question, qIndex) => (
@@ -1726,7 +1726,7 @@ const TaskView = () => {
                                             transition: 'all 0.2s ease'
                                           }}>
                                             <div style={{ flex: 1 }}>
-                                              <div style={{ 
+                                              <div style={{
                                                 fontSize: '15px',
                                                 fontWeight: '600',
                                                 color: '#374151',
@@ -1735,7 +1735,7 @@ const TaskView = () => {
                                                 Q{qIndex + 1}. {question.text || 'Question text not available'}
                                               </div>
                                               {question.description && (
-                                                <div style={{ 
+                                                <div style={{
                                                   fontSize: '13px',
                                                   color: '#64748b',
                                                   lineHeight: '1.4'
@@ -1789,9 +1789,9 @@ const TaskView = () => {
                       {/* Direct questions in the page (if any) */}
                       {page.questions && page.questions.length > 0 && (
                         <div style={{ padding: '20px' }}>
-                          <h5 style={{ 
-                            margin: '0 0 16px 0', 
-                            fontSize: '18px', 
+                          <h5 style={{
+                            margin: '0 0 16px 0',
+                            fontSize: '18px',
                             fontWeight: '600',
                             color: '#374151',
                             display: 'flex',
@@ -1812,7 +1812,7 @@ const TaskView = () => {
                                 alignItems: 'center'
                               }}>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ 
+                                  <div style={{
                                     fontSize: '15px',
                                     fontWeight: '600',
                                     color: '#374151',
@@ -1821,7 +1821,7 @@ const TaskView = () => {
                                     Q{qIndex + 1}. {question.text || 'Question text not available'}
                                   </div>
                                   {question.description && (
-                                    <div style={{ 
+                                    <div style={{
                                       fontSize: '13px',
                                       color: '#64748b',
                                       lineHeight: '1.4'
@@ -1862,15 +1862,15 @@ const TaskView = () => {
               </CardTitle>
               <div style={{ padding: '16px' }}>
                 {/* Overall Progress Metrics */}
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                  gap: '16px', 
-                  marginBottom: '24px' 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '24px'
                 }}>
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)', 
-                    padding: '20px', 
+                  <div style={{
+                    background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center',
                     color: 'white'
@@ -1880,10 +1880,10 @@ const TaskView = () => {
                       {taskData.overallProgress || 0}%
                     </div>
                   </div>
-                  
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)', 
-                    padding: '20px', 
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center',
                     color: 'white'
@@ -1893,10 +1893,10 @@ const TaskView = () => {
                       {taskData.progress ? taskData.progress.filter(p => p.status === 'in_progress').length : 0}
                     </div>
                   </div>
-                  
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)', 
-                    padding: '20px', 
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center',
                     color: 'white'
@@ -1920,7 +1920,7 @@ const TaskView = () => {
               </CardTitle>
               <div style={{ padding: '16px' }}>
                 {taskData.preInspectionQuestions.map((question, index) => (
-                  <div key={index} style={{ 
+                  <div key={index} style={{
                     marginBottom: '16px',
                     padding: '12px',
                     background: '#f8fafc',
@@ -2014,18 +2014,18 @@ const TaskView = () => {
                               fontSize: '12px',
                               fontWeight: '600',
                               background: response.status === 'completed' ? 'rgba(39, 174, 96, 0.1)' :
-                                         response.status === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
-                                         'rgba(149, 165, 166, 0.1)',
+                                response.status === 'in_progress' ? 'rgba(243, 156, 18, 0.1)' :
+                                  'rgba(149, 165, 166, 0.1)',
                               color: response.status === 'completed' ? '#27ae60' :
-                                     response.status === 'in_progress' ? '#f39c12' : '#95a5a6'
+                                response.status === 'in_progress' ? '#f39c12' : '#95a5a6'
                             }}>
                               {response.status === 'completed' ? '✅ Completed' :
-                               response.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
+                                response.status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}
                             </div>
                           )}
                         </div>
                       </div>
-                      
+
                       {response.completedBy && (
                         <div style={{
                           fontSize: '12px',
@@ -2111,7 +2111,7 @@ const TaskView = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {history.changedBy && (
                         <div style={{
                           fontSize: '12px',
@@ -2196,7 +2196,7 @@ const TaskView = () => {
                       {taskData.signedBy || 'Unknown'}
                     </div>
                   </div>
-                  
+
                   <div style={{
                     background: '#f8fafc',
                     padding: '16px',
@@ -2209,7 +2209,7 @@ const TaskView = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {taskData.signature && (
                   <div style={{ marginTop: '16px' }}>
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -2268,22 +2268,22 @@ const TaskView = () => {
                   {isSubmitting ? 'Adding...' : 'Add Comment'}
                 </button>
               </div>
-              
+
               {taskData.comments && taskData.comments.length > 0 ? (
                 <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                   {taskData.comments.map((comment, index) => (
-                    <div key={index} style={{ 
+                    <div key={index} style={{
                       padding: '16px',
                       marginBottom: '12px',
                       background: '#f8fafc',
                       borderRadius: '8px',
                       border: '1px solid #e2e8f0'
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'flex-start',
-                        marginBottom: '8px' 
+                        marginBottom: '8px'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{
@@ -2301,16 +2301,16 @@ const TaskView = () => {
                             {(comment.user?.name || comment.user?.email || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ 
-                              fontSize: '14px', 
+                            <div style={{
+                              fontSize: '14px',
                               fontWeight: '600',
                               color: '#1a202c'
                             }}>
                               {comment.user?.name || comment.user?.email || 'Unknown User'}
                             </div>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#64748b' 
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#64748b'
                             }}>
                               {comment.user?.role || 'User'}
                             </div>
@@ -2325,7 +2325,7 @@ const TaskView = () => {
                           <div>{new Date(comment.createdAt || comment.timestamp).toLocaleTimeString()}</div>
                         </div>
                       </div>
-                      
+
                       <div style={{
                         fontSize: '14px',
                         color: '#1a202c',
@@ -2334,7 +2334,7 @@ const TaskView = () => {
                       }}>
                         {comment.content || comment.text || comment.message || 'Comment content'}
                       </div>
-                      
+
                       {comment.attachments && comment.attachments.length > 0 && (
                         <div style={{
                           marginTop: '12px',
@@ -2394,7 +2394,7 @@ const TaskView = () => {
             </div>
           </Card>
         </MainContent>
-        
+
         <Sidebar>
           {/* Attachments Card */}
           <Card>
@@ -2426,7 +2426,7 @@ const TaskView = () => {
               >
                 {uploadingFile ? 'Uploading...' : 'Upload Files'}
               </button>
-              
+
               {taskData.attachments && taskData.attachments.length > 0 ? (
                 <div>
                   {taskData.attachments.map((attachment, index) => (

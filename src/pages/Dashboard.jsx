@@ -250,11 +250,11 @@ const Dashboard = () => {
 
     // Stats
     const statsData = [
-      ['Total Tasks', data.stats.total],
-      ['Completed Tasks', data.stats.completed],
-      ['Pending Tasks', data.stats.pending],
-      ['Delayed Inspections', data.stats.delayed],
-      ['Flagged Items', data.stats.flagged]
+      ['Total Tasks', data?.stats?.total || 0],
+      ['Completed Tasks', data?.stats?.completed || 0],
+      ['Pending Tasks', data?.stats?.pending || 0],
+      ['Delayed Inspections', data?.stats?.delayed || 0],
+      ['Flagged Items', data?.stats?.flagged || 0]
     ];
 
     autoTable(doc, {
@@ -266,7 +266,7 @@ const Dashboard = () => {
     // Upcoming Inspections
     doc.text("Upcoming Inspections", 14, doc.lastAutoTable.finalY + 15);
 
-    const upcomingData = data.upcomingInspections.map(item => [
+    const upcomingData = (data?.upcomingInspections || []).map(item => [
       item.name,
       new Date(item.date).toLocaleDateString(),
       item.assetType
@@ -282,12 +282,12 @@ const Dashboard = () => {
   };
 
   const pieData = [
-    { name: 'Completed', value: data.charts.statusDistribution.completed },
-    { name: 'Pending', value: data.charts.statusDistribution.pending },
-    { name: 'Late', value: data.charts.statusDistribution.late }
+    { name: 'Completed', value: data?.charts?.statusDistribution?.completed || 0 },
+    { name: 'Pending', value: data?.charts?.statusDistribution?.pending || 0 },
+    { name: 'Late', value: data?.charts?.statusDistribution?.late || 0 }
   ].filter(d => d.value > 0);
 
-  if (loading && !data.stats.total) {
+  if (loading && !data?.stats?.total) {
     return (
       <DashboardContainer>
         <LoadingContainer>
@@ -321,21 +321,21 @@ const Dashboard = () => {
             <div className="icon-wrapper">
               <Calendar color="var(--color-info)" />
             </div>
-            <div className="value">{data.stats.total}</div>
+            <div className="value">{data?.stats?.total || 0}</div>
             <div className="label">{t('dashboard.totalTasks')}</div>
           </StatCard>
           <StatCard>
             <div className="icon-wrapper">
               <CheckSquare color="var(--color-success)" />
             </div>
-            <div className="value">{data.stats.completed}</div>
+            <div className="value">{data?.stats?.completed || 0}</div>
             <div className="label">{t('dashboard.completedTasks')}</div>
           </StatCard>
           <StatCard>
             <div className="icon-wrapper">
               <Clock color="var(--color-warning)" />
             </div>
-            <div className="value">{data.stats.pending}</div>
+            <div className="value">{data?.stats?.pending || 0}</div>
             <div className="label">{t('dashboard.pendingTasks')}</div>
           </StatCard>
         </StatsGrid>
@@ -381,8 +381,8 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.upcomingInspections.length > 0 ? (
-                    data.upcomingInspections.map((item, index) => (
+                  {(data?.upcomingInspections || []).length > 0 ? (
+                    (data?.upcomingInspections || []).map((item, index) => (
                       <tr key={index}>
                         <td>{item.name}</td>
                         <td>{new Date(item.date).toLocaleDateString()}</td>
@@ -407,7 +407,7 @@ const Dashboard = () => {
             <div className="icon-wrapper" style={{ backgroundColor: '#fee2e2' }}>
               <Clock color="#ef4444" />
             </div>
-            <div className="value">{data.stats.delayed}</div>
+            <div className="value">{data?.stats?.delayed || 0}</div>
             <div className="label">{t('dashboard.delayedInspections')}</div>
           </StatCard>
         </ScrollAnimation>
@@ -416,7 +416,7 @@ const Dashboard = () => {
             <div className="icon-wrapper" style={{ backgroundColor: '#fef3c7' }}>
               <Flag color="#f59e0b" />
             </div>
-            <div className="value">{data.stats.flagged}</div>
+            <div className="value">{data?.stats?.flagged || 0}</div>
             <div className="label">{t('dashboard.flaggedItems')}</div>
           </StatCard>
         </ScrollAnimation>
@@ -427,7 +427,7 @@ const Dashboard = () => {
           <ChartCard>
             <SectionTitle>{t('dashboard.inspectorPerformanceAvgDuration')}</SectionTitle>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.charts.inspectorPerformance}>
+              <BarChart data={data?.charts?.inspectorPerformance || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -444,7 +444,7 @@ const Dashboard = () => {
           <ChartCard>
             <SectionTitle>{t('dashboard.inspectionsPerTemplate')}</SectionTitle>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.charts.templateUsage} layout="vertical" barCategoryGap="20%">
+              <BarChart data={data?.charts?.templateUsage || []} layout="vertical" barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={150} />

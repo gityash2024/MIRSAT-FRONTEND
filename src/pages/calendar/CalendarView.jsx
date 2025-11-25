@@ -508,9 +508,9 @@ const CalendarViewSkeleton = () => (
   <CalendarContainer>
     {/* Header skeleton */}
     <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: '16px'
       }}>
@@ -527,10 +527,10 @@ const CalendarViewSkeleton = () => (
     </div>
 
     {/* Filters area skeleton */}
-    <div style={{ 
-      background: 'white', 
-      borderRadius: '12px', 
-      padding: '20px', 
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '20px',
       marginBottom: '24px',
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
     }}>
@@ -548,9 +548,9 @@ const CalendarViewSkeleton = () => (
     <CalendarWrapper>
       <div style={{ padding: '16px' }}>
         {/* Calendar toolbar skeleton */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           marginBottom: '24px',
           padding: '8px 0'
         }}>
@@ -570,10 +570,10 @@ const CalendarViewSkeleton = () => (
         {/* Calendar grid skeleton */}
         <div>
           {/* Day header row */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(7, 1fr)', 
-            gap: '1px', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: '1px',
             marginBottom: '1px',
             background: '#f5f7fb',
             padding: '8px 0'
@@ -587,26 +587,26 @@ const CalendarViewSkeleton = () => (
 
           {/* Calendar cells */}
           {Array(6).fill().map((_, week) => (
-            <div key={week} style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(7, 1fr)', 
+            <div key={week} style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
               gap: '1px',
               borderBottom: '1px solid #e0e0e0'
             }}>
               {Array(7).fill().map((_, day) => (
-                <div key={day} style={{ 
-                  height: '120px', 
+                <div key={day} style={{
+                  height: '120px',
                   padding: '8px',
                   borderRight: day < 6 ? '1px solid #e0e0e0' : 'none'
                 }}>
                   <Skeleton.Base width="24px" height="24px" margin="0 0 8px 0" />
-                  
+
                   {/* Random number of events in each cell */}
                   {Array(Math.floor(Math.random() * 3)).fill().map((_, i) => (
-                    <Skeleton.Base 
-                      key={i} 
-                      width={`${60 + Math.random() * 30}%`} 
-                      height="20px" 
+                    <Skeleton.Base
+                      key={i}
+                      width={`${60 + Math.random() * 30}%`}
+                      height="20px"
                       margin="0 0 4px 0"
                       radius="4px"
                     />
@@ -618,7 +618,7 @@ const CalendarViewSkeleton = () => (
         </div>
       </div>
     </CalendarWrapper>
-    
+
     {/* Pagination skeleton */}
     <PaginationContainer>
       <Skeleton.Base width="180px" height="16px" />
@@ -642,13 +642,13 @@ const CalendarView = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [cachedEvents, setCachedEvents] = useState([]);
-  
+
   const dispatch = useDispatch();
   const { tasks, loading, filters, pagination } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
   const { assets } = useSelector((state) => state.assets || { assets: [] });
-  
+
   useEffect(() => {
     // Fetch necessary data when component mounts
     dispatch(fetchUsers());
@@ -668,7 +668,7 @@ const CalendarView = () => {
   // Transform tasks into events for the calendar
   const transformTasksToEvents = (tasksList) => {
     if (!tasksList || !Array.isArray(tasksList)) return [];
-    
+
     return tasksList.map(task => ({
       id: task._id || task.id,
       title: task.title,
@@ -714,12 +714,12 @@ const CalendarView = () => {
         return 'var(--color-navy)'; // Default blue
     }
   }
-  
+
   const handleLimitChange = (e) => {
     const newLimit = parseInt(e.target.value);
     dispatch(setPagination({ limit: newLimit, page: 1 }));
   };
-  
+
   const handlePageChange = (newPage) => {
     dispatch(setPagination({ page: newPage }));
   };
@@ -733,28 +733,28 @@ const CalendarView = () => {
   const handleEventClick = (clickInfo) => {
     const taskId = clickInfo.event.id;
     const task = tasks.find(t => (t._id === taskId) || (t.id === taskId));
-    
+
     console.log('Event clicked, task found:', task);
     console.log('Available data when clicking event:', {
       usersCount: users?.length || 0,
       levelsCount: levels?.results?.length || 0,
       assetsCount: assets?.length || 0
     });
-    
+
     // If required data is not available, fetch it before opening the modal
     if (!users?.length || !levels?.results?.length) {
       console.log('Required data not available, fetching...');
       if (!users?.length) dispatch(fetchUsers());
       if (!levels?.results?.length) dispatch(fetchInspectionLevels());
       if (!assets?.length) dispatch(fetchAssets());
-      
+
       // Set a timeout to try again after data should be loaded
       setTimeout(() => {
         handleEventClick(clickInfo);
       }, 1000);
       return;
     }
-    
+
     if (task) {
       // Properly extract user ID from assignedTo
       let assignedUserId = '';
@@ -769,7 +769,7 @@ const CalendarView = () => {
           assignedUserId = firstAssignedUser.id;
         }
       }
-      
+
       // Properly extract inspection level ID
       let inspectionLevelId = '';
       if (task.inspectionLevel) {
@@ -781,7 +781,7 @@ const CalendarView = () => {
           inspectionLevelId = task.inspectionLevel.id;
         }
       }
-      
+
       // Properly extract asset ID
       let assetId = '';
       if (task.asset) {
@@ -793,20 +793,20 @@ const CalendarView = () => {
           assetId = task.asset.id;
         }
       }
-      
+
       console.log('Extracted IDs:', {
         assignedUserId,
         inspectionLevelId,
         assetId
       });
-      
+
       // Check if the extracted IDs exist in the available options
       console.log('Validation checks:', {
         userExists: users?.some(u => (u._id === assignedUserId || u.id === assignedUserId)),
         levelExists: levels?.results?.some(l => l._id === inspectionLevelId),
         assetExists: assets?.some(a => (a._id === assetId || a.id === assetId))
       });
-      
+
       setSelectedEvent({
         id: task._id || task.id,
         title: task.title,
@@ -825,44 +825,19 @@ const CalendarView = () => {
 
   const handleEventAdd = async (eventData) => {
     try {
-      console.log('Adding event with data:', eventData);
-      
-      // Validate and process assignedTo field
-      let assignedToArray = [];
-      if (eventData.assignedTo) {
-        // Ensure we have a valid user ID (should be a MongoDB ObjectId format)
-        const userId = eventData.assignedTo.trim();
-        if (userId && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
-          assignedToArray = [userId];
-        } else if (userId) {
-          console.error('Invalid user ID format:', userId);
-          toast.error(t('invalidUserSelection'));
-          return;
-        }
-      }
-      
-      if (assignedToArray.length === 0) {
-        toast.error(t('selectUserRequired'));
-        return;
-      }
-      
-      // Convert the event data to task format that matches the working tasks module
+      console.log('Adding event with data from TaskForm:', eventData);
+
+      // TaskForm already provides properly formatted data
+      // Just need to convert deadline to ISO string if it's a Date object
       const taskData = {
-        title: eventData.title,
-        description: eventData.description,
-        status: eventData.status || 'pending',
-        priority: eventData.priority || 'medium',
-        deadline: eventData.deadline ? new Date(eventData.deadline).toISOString() : new Date().toISOString(),
-        assignedTo: assignedToArray,
-        inspectionLevel: eventData.inspectionLevel || null,
-        asset: eventData.asset || null,
-        location: eventData.location || '',
-        isActive: true
+        ...eventData,
+        deadline: eventData.deadline instanceof Date
+          ? eventData.deadline.toISOString()
+          : eventData.deadline
       };
-      
+
       console.log('Converted task data:', taskData);
-      console.log('AssignedTo array:', assignedToArray);
-      
+
       await dispatch(createTask(taskData)).unwrap();
       loadEvents(); // Reload events after adding
       toast.success(t('eventAddedSuccessfully'));
@@ -874,43 +849,23 @@ const CalendarView = () => {
 
   const handleEventUpdate = async (eventData) => {
     try {
-      console.log('Updating event with data:', eventData);
-      
-      // Validate and process assignedTo field (same as in handleEventAdd)
-      let assignedToArray = [];
-      if (eventData.assignedTo) {
-        const userId = eventData.assignedTo.trim();
-        if (userId && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
-          assignedToArray = [userId];
-        } else if (userId) {
-          console.error('Invalid user ID format for update:', userId);
-          toast.error(t('invalidUserSelection'));
-          return;
-        }
-      }
-      
-      if (assignedToArray.length === 0) {
-        toast.error(t('selectUserRequired'));
-        return;
-      }
-      
-      // Convert the event data to task format for update
+      console.log('Updating event with data from TaskForm:', eventData);
+
+      // TaskForm already provides properly formatted data
+      // Just need to convert deadline to ISO string if it's a Date object
       const taskData = {
-        title: eventData.title,
-        description: eventData.description,
-        status: eventData.status,
-        priority: eventData.priority || 'medium',
-        deadline: eventData.deadline ? new Date(eventData.deadline).toISOString() : new Date().toISOString(),
-        assignedTo: assignedToArray,
-        inspectionLevel: eventData.inspectionLevel || null,
-        asset: eventData.asset || null,
-        location: eventData.location || ''
+        ...eventData,
+        deadline: eventData.deadline instanceof Date
+          ? eventData.deadline.toISOString()
+          : eventData.deadline
       };
-      
-      console.log('Converted task data for update:', taskData);
-      console.log('Update AssignedTo array:', assignedToArray);
-      
-      await dispatch(updateTask({ id: eventData.id, data: taskData })).unwrap();
+
+      // Remove the id from taskData as it should be in the update call parameter
+      const { id, ...dataToUpdate } = taskData;
+
+      console.log('Converted task data for update:', dataToUpdate);
+
+      await dispatch(updateTask({ id: eventData.id, data: dataToUpdate })).unwrap();
       loadEvents(); // Reload events after updating
       toast.success(t('eventUpdatedSuccessfully'));
     } catch (error) {
@@ -972,7 +927,7 @@ const CalendarView = () => {
 
   return (
     <CalendarContainer>
-      <CalendarHeader 
+      <CalendarHeader
         onAddEvent={() => {
           setSelectedEvent(null);
           setShowEventModal(true);
@@ -982,7 +937,7 @@ const CalendarView = () => {
       />
 
       {showFilters && (
-        <CalendarFilters 
+        <CalendarFilters
           onFilterChange={() => loadEvents()}
         />
       )}
@@ -997,41 +952,41 @@ const CalendarView = () => {
           />
         )}
       </CalendarWrapper>
-      
+
       <PaginationContainer>
         <PageInfo>
           {t('showing')} {tasks?.length || 0} {t('of')} {tasks?.length || pagination.total || 0} {t('events')}
         </PageInfo>
-        
+
         <PageSelector>
-          <PageButton 
-            onClick={() => handlePageChange(1)} 
+          <PageButton
+            onClick={() => handlePageChange(1)}
             disabled={pagination.page <= 1}
           >
             {t('first')}
           </PageButton>
-          <PageButton 
-            onClick={() => handlePageChange(pagination.page - 1)} 
+          <PageButton
+            onClick={() => handlePageChange(pagination.page - 1)}
             disabled={pagination.page <= 1}
           >
             {t('previous')}
           </PageButton>
-          
+
           <PageInfo>{t('page')} {pagination.page} {t('of')} {Math.max(Math.ceil((tasks?.length || pagination.total) / pagination.limit) || 1, 1)}</PageInfo>
-          
-          <PageButton 
-            onClick={() => handlePageChange(pagination.page + 1)} 
+
+          <PageButton
+            onClick={() => handlePageChange(pagination.page + 1)}
             disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
             {t('next')}
           </PageButton>
-          <PageButton 
-            onClick={() => handlePageChange(Math.ceil((tasks?.length || pagination.total) / pagination.limit))} 
+          <PageButton
+            onClick={() => handlePageChange(Math.ceil((tasks?.length || pagination.total) / pagination.limit))}
             disabled={pagination.page >= Math.ceil((tasks?.length || pagination.total) / pagination.limit)}
           >
             {t('last')}
           </PageButton>
-          
+
           <LimitSelector value={pagination.limit} onChange={handleLimitChange}>
             <option value={10}>10 {t('perPage')}</option>
             <option value={25}>25 {t('perPage')}</option>

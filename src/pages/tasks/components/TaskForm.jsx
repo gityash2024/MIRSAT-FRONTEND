@@ -851,11 +851,11 @@ const EmptyState = styled.div`
 `;
 
 // Pre-inspection Questions Component
-const PreInspectionQuestions = ({ 
-  questions = [], 
-  onChange, 
+const PreInspectionQuestions = ({
+  questions = [],
+  onChange,
   initialQuestions = [],
-  isEditMode = false 
+  isEditMode = false
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -876,11 +876,11 @@ const PreInspectionQuestions = ({
   const [newOption, setNewOption] = useState('');
   const { questions: libraryQuestions, loading } = useSelector(state => state.questionLibrary);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Add useEffect to properly initialize questions from initialQuestions and localStorage
   useEffect(() => {
     console.log('Initializing pre-inspection questions:', initialQuestions, 'isInitialized:', isInitialized);
-    
+
     // Only initialize once and if we have initialQuestions
     if (!isInitialized && initialQuestions && initialQuestions.length > 0) {
       console.log('Setting pre-inspection questions from initialQuestions');
@@ -888,38 +888,38 @@ const PreInspectionQuestions = ({
       setIsInitialized(true);
     }
   }, [initialQuestions, onChange, isInitialized]);
-  
+
   useEffect(() => {
     dispatch(fetchQuestionLibrary());
   }, [dispatch]);
-  
+
   const handleAddFromLibrary = (question, e) => {
     // Prevent form submission
     e.preventDefault();
     e.stopPropagation();
-    
+
     console.log('Adding question from library:', question);
     console.log('Current questions before adding:', questions);
-    
+
     const newQuestion = {
       text: question.text,
       type: question.answerType,
       options: question.options || [],
       required: question.required
     };
-    
+
     const updatedQuestions = [...questions, newQuestion];
     console.log('Updated questions after adding:', updatedQuestions);
-    
+
     onChange(updatedQuestions);
     setShowLibrary(false);
   };
-  
+
   const handleRemoveQuestion = (index, e) => {
     // Prevent form submission
     e.preventDefault();
     e.stopPropagation();
-    
+
     const newQuestions = [...questions];
     newQuestions.splice(index, 1);
     onChange(newQuestions);
@@ -929,18 +929,18 @@ const PreInspectionQuestions = ({
     // Prevent form submission
     e.preventDefault();
     e.stopPropagation();
-    
+
     console.log('Adding manual question:', newQuestion);
     console.log('Current questions before adding:', questions);
-    
+
     if (!newQuestion.text.trim()) {
       console.log('Question text is empty, not adding');
       return;
     }
-    
+
     const updatedQuestions = [...questions, { ...newQuestion }];
     console.log('Updated questions after adding:', updatedQuestions);
-    
+
     onChange(updatedQuestions);
     setNewQuestion({
       text: '',
@@ -956,18 +956,18 @@ const PreInspectionQuestions = ({
     });
     setShowAddManual(false);
   };
-  
+
   const handleAddOption = (e) => {
     e.preventDefault();
     if (!newOption.trim()) return;
-    
+
     setNewQuestion(prev => ({
       ...prev,
       options: [...prev.options, newOption]
     }));
     setNewOption('');
   };
-  
+
   const handleRemoveOption = (index, e) => {
     e.preventDefault();
     const newOptions = [...newQuestion.options];
@@ -986,15 +986,15 @@ const PreInspectionQuestions = ({
       scores
     }));
   };
-  
+
   const handleTypeChange = (e) => {
     const newType = e.target.value;
-    let updatedQuestion = { 
-      ...newQuestion, 
+    let updatedQuestion = {
+      ...newQuestion,
       type: newType,
       requirementType: newQuestion.requirementType || 'mandatory'
     };
-    
+
     // Add default options based on type
     if (newType === 'multiple_choice') {
       updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : [t('common.option1'), t('common.option2'), t('common.option3')];
@@ -1005,13 +1005,13 @@ const PreInspectionQuestions = ({
         t('common.nonCompliant'),
         t('common.notApplicable')
       ];
-      
+
       // Add default scores for compliance options
       updatedQuestion.scoring = {
         enabled: true,
         max: 2
       };
-      
+
       updatedQuestion.scores = {
         [t('common.fullCompliance')]: 2,
         [t('common.partialCompliance')]: 1,
@@ -1043,12 +1043,12 @@ const PreInspectionQuestions = ({
         };
       }
     }
-    
+
     setNewQuestion(updatedQuestion);
   };
-  
+
   const getTypeLabel = (type) => {
-    switch(type) {
+    switch (type) {
       case 'yesno': return t('common.yesNo');
       case 'text': return t('common.text');
       case 'number': return t('common.number');
@@ -1059,7 +1059,7 @@ const PreInspectionQuestions = ({
       default: return type;
     }
   };
-  
+
   return (
     <QuestionContainer>
       <QuestionHeader>
@@ -1087,15 +1087,15 @@ const PreInspectionQuestions = ({
             ))}
           </div>
         )} */}
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           gap: '8px',
           flexWrap: 'wrap',
           width: '100%',
           maxWidth: '100%',
           boxSizing: 'border-box'
         }}>
-          <LibrarySelector style={{ 
+          <LibrarySelector style={{
             flex: '1 1 calc(50% - 4px)',
             minWidth: '0',
             maxWidth: '100%'
@@ -1110,7 +1110,7 @@ const PreInspectionQuestions = ({
               {showLibrary ? t('tasks.closeLibrary') : t('tasks.selectFromLibrary')}
               {showLibrary ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </LibraryButton>
-            
+
             {showLibrary && (
               <LibraryDropdown>
                 {loading ? (
@@ -1123,14 +1123,14 @@ const PreInspectionQuestions = ({
                   </div>
                 ) : (
                   libraryQuestions.map(question => (
-                    <LibraryItem 
-                      key={question._id} 
+                    <LibraryItem
+                      key={question._id}
                       onClick={(e) => handleAddFromLibrary(question, e)}
                     >
                       <LibraryItemTitle>{question.text}</LibraryItemTitle>
                       <LibraryItemType>
                         {getTypeLabel(question.answerType)}
-                        {question.options && question.options.length > 0 && 
+                        {question.options && question.options.length > 0 &&
                           ` • ${question.options.length} options`}
                       </LibraryItemType>
                     </LibraryItem>
@@ -1139,7 +1139,7 @@ const PreInspectionQuestions = ({
               </LibraryDropdown>
             )}
           </LibrarySelector>
-          
+
           <LibraryButton type="button" onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1156,12 +1156,12 @@ const PreInspectionQuestions = ({
           </LibraryButton>
         </div>
       </QuestionHeader>
-      
+
       {showAddManual && (
-        <div style={{ 
-          background: 'white', 
-          borderRadius: '8px', 
-          padding: '20px', 
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '20px',
           border: '1px solid #e2e8f0',
           marginBottom: '16px',
           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
@@ -1175,7 +1175,7 @@ const PreInspectionQuestions = ({
               rows={2}
             />
           </FormGroup>
-          
+
           <FormGroup style={{ marginTop: '16px' }}>
             <Label>{t('tasks.questionType')}</Label>
             <Select
@@ -1191,7 +1191,7 @@ const PreInspectionQuestions = ({
               <option value="compliance">{t('tasks.compliance')}</option>
             </Select>
           </FormGroup>
-          
+
           <FormGroup style={{ marginTop: '16px' }}>
             <Label>{t('tasks.requirementType')}</Label>
             <Select
@@ -1202,7 +1202,7 @@ const PreInspectionQuestions = ({
               <option value="recommended">{t('tasks.recommended')}</option>
             </Select>
           </FormGroup>
-          
+
           {/* Weight field similar to InspectionLevelForm */}
           <FormGroup style={{ marginTop: '16px' }}>
             <Label>{t('tasks.questionWeight')}</Label>
@@ -1223,19 +1223,19 @@ const PreInspectionQuestions = ({
               Set to 0 for non-scored questions
             </div>
           </FormGroup>
-          
+
           {/* Options editor for multiple choice, select or compliance questions */}
           {['multiple_choice', 'compliance', 'select', 'yesno'].includes(newQuestion.type) && (
             <FormGroup style={{ marginTop: '16px' }}>
-              <div style={{ 
-                display: 'flex', 
+              <div style={{
+                display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '12px'
               }}>
                 <Label>{t('tasks.options')}</Label>
                 {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
-                  <button 
+                  <button
                     type="button"
                     onClick={handleAddOption}
                     style={{
@@ -1256,17 +1256,17 @@ const PreInspectionQuestions = ({
                   </button>
                 )}
               </div>
-              
+
               {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <Input 
+                  <Input
                     value={newOption}
                     onChange={(e) => setNewOption(e.target.value)}
                     placeholder={t('tasks.enterOption')}
                     style={{ flex: 1 }}
                   />
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleAddOption}
                     style={{ padding: '8px 12px' }}
                   >
@@ -1274,7 +1274,7 @@ const PreInspectionQuestions = ({
                   </Button>
                 </div>
               )}
-              
+
               {/* Options table with scores - similar to InspectionLevelForm */}
               <div style={{
                 border: '1px solid #e2e8f0',
@@ -1284,22 +1284,22 @@ const PreInspectionQuestions = ({
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc' }}>
-                      <th style={{ 
-                        padding: '12px 16px', 
-                        textAlign: 'left', 
+                      <th style={{
+                        padding: '12px 16px',
+                        textAlign: 'left',
                         fontSize: '14px',
                         borderBottom: '1px solid #e2e8f0'
                       }}>{t('tasks.option')}</th>
-                      <th style={{ 
-                        padding: '12px 16px', 
-                        textAlign: 'center', 
+                      <th style={{
+                        padding: '12px 16px',
+                        textAlign: 'center',
                         fontSize: '14px',
                         borderBottom: '1px solid #e2e8f0'
                       }}>{t('tasks.score')}</th>
                       {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
-                        <th style={{ 
-                          padding: '12px 16px', 
-                          textAlign: 'center', 
+                        <th style={{
+                          padding: '12px 16px',
+                          textAlign: 'center',
                           fontSize: '14px',
                           width: '60px',
                           borderBottom: '1px solid #e2e8f0'
@@ -1309,8 +1309,8 @@ const PreInspectionQuestions = ({
                   </thead>
                   <tbody>
                     {newQuestion.options.map((option, i) => (
-                      <tr key={i} style={{ 
-                        borderBottom: i < newQuestion.options.length - 1 ? '1px solid #e2e8f0' : 'none' 
+                      <tr key={i} style={{
+                        borderBottom: i < newQuestion.options.length - 1 ? '1px solid #e2e8f0' : 'none'
                       }}>
                         <td style={{ padding: '12px 16px' }}>{option}</td>
                         <td style={{ padding: '8px 16px', textAlign: 'center' }}>
@@ -1318,8 +1318,8 @@ const PreInspectionQuestions = ({
                             type="number"
                             value={newQuestion.scores?.[option] || 0}
                             onChange={(e) => updateOptionScore(option, e.target.value)}
-                            style={{ 
-                              width: '60px', 
+                            style={{
+                              width: '60px',
                               textAlign: 'center',
                               padding: '6px 8px'
                             }}
@@ -1327,7 +1327,7 @@ const PreInspectionQuestions = ({
                         </td>
                         {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
                           <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            <button 
+                            <button
                               type="button"
                               onClick={(e) => handleRemoveOption(i, e)}
                               style={{
@@ -1351,14 +1351,14 @@ const PreInspectionQuestions = ({
               </div>
             </FormGroup>
           )}
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             marginTop: '16px'
           }}>
-            <input 
+            <input
               type="checkbox"
               checked={newQuestion.required}
               onChange={(e) => setNewQuestion(prev => ({ ...prev, required: e.target.checked }))}
@@ -1366,17 +1366,17 @@ const PreInspectionQuestions = ({
             />
             <Label htmlFor="required-checkbox" style={{ marginBottom: 0 }}>{t('common.required')}</Label>
           </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
-            gap: '8px', 
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '8px',
             marginTop: '20px',
             borderTop: '1px solid #e2e8f0',
             paddingTop: '20px'
           }}>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={(e) => {
                 e.preventDefault();
                 setShowAddManual(false);
@@ -1392,8 +1392,8 @@ const PreInspectionQuestions = ({
             >
               {t('common.cancel')}
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="primary"
               onClick={handleAddManualQuestion}
               disabled={!newQuestion.text.trim()}
@@ -1411,7 +1411,7 @@ const PreInspectionQuestions = ({
           </div>
         </div>
       )}
-      
+
       {questions.length === 0 && !showAddManual ? (
         <EmptyState>
           <p>{t('tasks.noPreInspectionQuestions')}</p>
@@ -1430,7 +1430,7 @@ const PreInspectionQuestions = ({
               <QuestionType>
                 {getTypeLabel(question.type)}
               </QuestionType>
-              
+
               {question.options && question.options.length > 0 && (
                 <QuestionOptions>
                   {question.options.map((option, i) => (
@@ -1438,7 +1438,7 @@ const PreInspectionQuestions = ({
                   ))}
                 </QuestionOptions>
               )}
-              
+
               <QuestionActions>
                 <IconButton type="button" onClick={(e) => handleRemoveQuestion(index, e)}>
                   <Trash2 size={16} />
@@ -1448,7 +1448,7 @@ const PreInspectionQuestions = ({
           ))}
         </QuestionList>
       )}
-      
+
       {!showAddManual && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
           <AddQuestionButton type="button" onClick={(e) => {
@@ -1460,7 +1460,7 @@ const PreInspectionQuestions = ({
           }}>
             <Plus size={16} /> {t('tasks.selectFromLibrary')}
           </AddQuestionButton>
-          
+
           <AddQuestionButton type="button" onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1476,15 +1476,23 @@ const PreInspectionQuestions = ({
   );
 };
 
-const TaskForm = ({ 
-  initialData = {}, 
-  onCancel, 
+const TaskForm = ({
+  task, // For calendar mode - single task object
+  initialData: propInitialData, // For tasks mode - initial data object
+  onCancel,
+  onSuccess, // For calendar mode - callback with task data
+  onDelete, // For calendar mode - delete callback
+  isEdit = false, // For calendar mode - whether editing
+  isCalendarMode = false, // Flag to indicate calendar mode
+  initialDeadline, // For calendar mode - initial deadline from selected date
   submitButtonText = 'Save',
   isSubmitting: propIsSubmitting = false,
   usersProp = [],
   inspectionLevelsProp = [],
   assetsProp = []
 }) => {
+  // Normalize initialData - support both task and initialData props
+  const initialData = task || propInitialData || {};
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
@@ -1502,7 +1510,7 @@ const TaskForm = ({
     description: initialData.description || '',
     priority: initialData.priority || 'medium',
     status: initialData.status || 'open',
-    dueDate: initialData.dueDate || initialData.deadline ? new Date(initialData.dueDate || initialData.deadline) : null,
+    dueDate: initialData.dueDate || initialData.deadline ? new Date(initialData.dueDate || initialData.deadline) : (initialDeadline || null),
     location: initialData.location || '',
     assignedTo: initialData.assignedTo || [],
     inspectionLevel: initialData.inspectionLevel?.id || initialData.inspectionLevel?._id || initialData.inspectionLevel || '',
@@ -1511,7 +1519,7 @@ const TaskForm = ({
     attachments: initialData.attachments || [],
     preInspectionQuestions: initialData.preInspectionQuestions || []
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
   const [errors, setErrors] = useState({});
   const [isUploading, setIsUploading] = useState(false);
@@ -1519,21 +1527,21 @@ const TaskForm = ({
   const [selectedUserId, setSelectedUserId] = useState('');
   const [filteredAssets, setFilteredAssets] = useState(assets || []);
   const [selectedTemplateType, setSelectedTemplateType] = useState(null);
-  
+
   useEffect(() => {
     if (!initialData?.assignedTo) return;
-    
+
     console.log('Initial assignedTo:', initialData.assignedTo);
-    
+
     try {
       // Extract user ID from initialData.assignedTo
       if (Array.isArray(initialData.assignedTo) && initialData.assignedTo.length > 0) {
         const assignedUser = initialData.assignedTo[0];
-        
+
         if (typeof assignedUser === 'string') {
           setSelectedUserId(assignedUser);
           console.log('Set selectedUserId from string:', assignedUser);
-        } 
+        }
         else if (assignedUser && typeof assignedUser === 'object') {
           const userId = assignedUser.id || assignedUser._id;
           if (userId) {
@@ -1546,7 +1554,7 @@ const TaskForm = ({
       console.error('Error extracting user ID:', error);
     }
   }, [initialData]);
-  
+
   // Filter assets based on selected template type
   useEffect(() => {
     if (assets && assets.length > 0) {
@@ -1564,10 +1572,10 @@ const TaskForm = ({
       }
     }
   }, [formData.inspectionLevel, selectedTemplateType, assets]);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Check if user is selected
     if (!selectedUserId) {
       setErrors(prev => ({
@@ -1576,88 +1584,88 @@ const TaskForm = ({
       }));
       return;
     }
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Get task ID - handle both id and _id formats
       const taskId = initialData?.id || initialData?._id;
-      
+
       // Check if pre-inspection questions have been added or modified
-      const isQuestionsChanged = !initialData || 
-        !initialData.preInspectionQuestions || 
+      const isQuestionsChanged = !initialData ||
+        !initialData.preInspectionQuestions ||
         formData.preInspectionQuestions.length !== initialData.preInspectionQuestions.length;
-      
+
       let formattedPreInspectionQuestions = [];
-      
+
       // For edit mode, use form data directly (localStorage is handled in TaskEdit)
       if (taskId && isQuestionsChanged) {
         formattedPreInspectionQuestions = Array.isArray(formData.preInspectionQuestions)
           ? formData.preInspectionQuestions.map(q => {
-              // Create a clean question object without any undefined/null values
-              const cleanQuestion = {
-                text: q.text,
-                type: q.type,
-                options: q.options || [],
-                required: q.required !== undefined ? q.required : true
-              };
-              
-              // Preserve _id if it exists
-              if (q._id) {
-                cleanQuestion._id = q._id;
-              }
-              
-              // Include scoring if it exists
-              if (q.scoring) {
-                cleanQuestion.scoring = q.scoring;
-              }
-              
-              // Include scores if they exist
-              if (q.scores) {
-                cleanQuestion.scores = q.scores;
-              }
-              
-              return cleanQuestion;
-            })
+            // Create a clean question object without any undefined/null values
+            const cleanQuestion = {
+              text: q.text,
+              type: q.type,
+              options: q.options || [],
+              required: q.required !== undefined ? q.required : true
+            };
+
+            // Preserve _id if it exists
+            if (q._id) {
+              cleanQuestion._id = q._id;
+            }
+
+            // Include scoring if it exists
+            if (q.scoring) {
+              cleanQuestion.scoring = q.scoring;
+            }
+
+            // Include scores if they exist
+            if (q.scores) {
+              cleanQuestion.scores = q.scores;
+            }
+
+            return cleanQuestion;
+          })
           : [];
-        
+
         console.log('Formatted pre-inspection questions for edit:', JSON.stringify(formattedPreInspectionQuestions));
       } else if (!taskId) {
         // For new tasks, use form data directly
         formattedPreInspectionQuestions = Array.isArray(formData.preInspectionQuestions)
           ? formData.preInspectionQuestions.map(q => {
-              // Create a clean question object without any undefined/null values
-              const cleanQuestion = {
-                text: q.text,
-                type: q.type,
-                options: q.options || [],
-                required: q.required !== undefined ? q.required : true
-              };
-              
-              // Preserve _id if it exists
-              if (q._id) {
-                cleanQuestion._id = q._id;
-              }
-              
-              // Include scoring if it exists
-              if (q.scoring) {
-                cleanQuestion.scoring = q.scoring;
-              }
-              
-              // Include scores if they exist
-              if (q.scores) {
-                cleanQuestion.scores = q.scores;
-              }
-              
-              return cleanQuestion;
-            })
+            // Create a clean question object without any undefined/null values
+            const cleanQuestion = {
+              text: q.text,
+              type: q.type,
+              options: q.options || [],
+              required: q.required !== undefined ? q.required : true
+            };
+
+            // Preserve _id if it exists
+            if (q._id) {
+              cleanQuestion._id = q._id;
+            }
+
+            // Include scoring if it exists
+            if (q.scoring) {
+              cleanQuestion.scoring = q.scoring;
+            }
+
+            // Include scores if they exist
+            if (q.scores) {
+              cleanQuestion.scores = q.scores;
+            }
+
+            return cleanQuestion;
+          })
           : [];
-        
+
         console.log('Formatted pre-inspection questions for new task:', JSON.stringify(formattedPreInspectionQuestions));
       }
-      
+
       // Prepare task data
       const taskData = {
         title: formData.title,
@@ -1672,29 +1680,42 @@ const TaskForm = ({
         isActive: formData.isActive,
         attachments: formData.attachments || []
       };
-      
+
       // Include preInspectionQuestions in the payload if we have any questions
       if (formattedPreInspectionQuestions.length > 0) {
         taskData.preInspectionQuestions = formattedPreInspectionQuestions;
       }
-      
+
       console.log('Task data for submission:', JSON.stringify(taskData));
-      
+
       // Call API to create or update task
-      if (initialData && taskId) {
+      if (isCalendarMode && onSuccess) {
+        // Calendar mode - use onSuccess callback with task data
+        await onSuccess(taskData);
+
+        // Log activity
+        await FrontendLogger.logActivity({
+          action: initialData?.id ? 'event_updated' : 'event_created',
+          description: `${initialData?.id ? 'Updated' : 'Created'} event: ${taskData.title}`,
+          module: 'calendar',
+          details: { title: taskData.title, assignedTo: taskData.assignedTo }
+        });
+
+      } else if (initialData && taskId) {
+        // Tasks mode - update task
         // Ensure we have a valid ID before attempting update
         if (taskId === 'undefined') {
           throw new Error(t('tasks.invalidTaskId'));
         }
-        
+
         console.log('Updating task with ID:', taskId);
-        
+
         // For updates, ensure we're passing the correct ID and data format
-        const updateResult = await dispatch(updateTask({ 
-          id: taskId, 
-          data: taskData 
+        const updateResult = await dispatch(updateTask({
+          id: taskId,
+          data: taskData
         })).unwrap();
-        
+
         if (updateResult) {
           // Log task update
           await FrontendLogger.logActivity({
@@ -1703,19 +1724,20 @@ const TaskForm = ({
             module: 'tasks',
             details: { taskId, title: taskData.title, changes: taskData }
           });
-          
+
           // Clear localStorage data after successful update
           localStorage.removeItem(`task_${taskId}_preinspection`);
           console.log('Cleared localStorage data for task:', taskId);
-          
+
           toast.success(t('tasks.taskUpdatedSuccessfully'));
           if (onCancel) onCancel(updateResult); // Pass the updated task back
         }
       } else {
+        // Tasks mode - create task
         console.log('Creating new task');
-        
+
         const createResult = await dispatch(createTask(taskData)).unwrap();
-        
+
         // Log task creation
         await FrontendLogger.logActivity({
           action: 'task_created',
@@ -1723,7 +1745,7 @@ const TaskForm = ({
           module: 'tasks',
           details: { taskId: createResult._id || createResult.id, title: taskData.title, assignedTo: taskData.assignedTo }
         });
-        
+
         if (onCancel) onCancel(createResult); // Pass the created task back
       }
     } catch (error) {
@@ -1733,42 +1755,42 @@ const TaskForm = ({
       setIsSubmitting(false);
     }
   };
-  
+
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.title.trim()) {
       newErrors.title = t('tasks.titleRequired');
     }
-    
+
     if (!formData.description.trim()) {
       newErrors.description = t('tasks.descriptionRequired');
     }
-    
+
     if (!formData.dueDate) {
       newErrors.dueDate = t('tasks.deadlineRequired');
     }
-    
+
     if (!selectedUserId) {
       newErrors.assignedTo = t('tasks.userAssignmentRequired');
     }
-    
+
     if (!formData.inspectionLevel) {
       newErrors.inspectionLevel = t('tasks.templateRequired');
     }
-    
+
     // Require asset selection when template is selected
     if (formData.inspectionLevel && !formData.asset) {
       newErrors.asset = 'Please select an asset';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // If template/inspection level is being changed, update filtered assets
     if (name === 'inspectionLevel') {
       if (value) {
@@ -1776,7 +1798,7 @@ const TaskForm = ({
         if (selectedTemplate && selectedTemplate.type) {
           // Set the template type to filter assets
           setSelectedTemplateType(selectedTemplate.type);
-          
+
           // Clear asset field when template changes
           setFormData(prev => ({
             ...prev,
@@ -1798,7 +1820,7 @@ const TaskForm = ({
         return;
       }
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -1808,7 +1830,7 @@ const TaskForm = ({
   // Function to check for duplicate asset assignments
   const checkDuplicateAssetAssignment = async (assetId) => {
     if (!assetId) return false;
-    
+
     try {
       // This would need to be implemented in the backend API
       // For now, we'll add a client-side warning
@@ -1819,29 +1841,29 @@ const TaskForm = ({
       return false;
     }
   };
-  
+
   const handleCancel = () => {
     if (onCancel) onCancel();
   };
-  
+
   const handleAttachmentChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     try {
       setIsUploading(true);
-      
+
       // Use the same upload approach for both create and edit modes
       // For create mode, we'll use the general upload endpoint
       const payload = initialData._id || initialData.id
-        ? { id: initialData._id || initialData.id, file } 
+        ? { id: initialData._id || initialData.id, file }
         : { file }; // No ID for create mode - will use general upload endpoint
-      
+
       console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
       console.log('Upload payload:', payload);
-      
+
       const result = await dispatch(uploadTaskAttachment(payload)).unwrap();
-      
+
       if (result && result.data) {
         setFormData(prev => ({
           ...prev,
@@ -1861,27 +1883,27 @@ const TaskForm = ({
       event.target.value = '';
     }
   };
-  
+
   const handleRemoveAttachment = (index) => {
     const newAttachments = [...formData.attachments];
     newAttachments.splice(index, 1);
     setFormData(prev => ({ ...prev, attachments: newAttachments }));
   };
-  
+
   const handlePreInspectionQuestionsChange = (questions) => {
     setFormData(prev => ({
       ...prev,
       preInspectionQuestions: questions
     }));
   };
-  
+
   useEffect(() => {
     // Fetch users if not provided as props
     if (usersProp.length === 0) {
       // Add a flag to prevent multiple calls
       const localStorageKey = 'usersFetchInitiated';
       const fetchInitiated = sessionStorage.getItem(localStorageKey);
-      
+
       if (!fetchInitiated) {
         sessionStorage.setItem(localStorageKey, 'true');
         dispatch(fetchUsers())
@@ -1897,13 +1919,13 @@ const TaskForm = ({
           });
       }
     }
-    
+
     // Fetch inspection levels if not provided as props
     if (inspectionLevelsProp.length === 0) {
       // Add a flag to prevent multiple calls
       const localStorageKey = 'inspectionLevelsFetchInitiated';
       const fetchInitiated = sessionStorage.getItem(localStorageKey);
-      
+
       if (!fetchInitiated) {
         sessionStorage.setItem(localStorageKey, 'true');
         dispatch(fetchInspectionLevels())
@@ -1919,13 +1941,13 @@ const TaskForm = ({
           });
       }
     }
-    
+
     // Fetch assets for dropdown if not provided as props
     if (assetsProp.length === 0) {
       // Add a flag to prevent multiple calls
       const localStorageKey = 'assetsDropdownFetchInitiated';
       const fetchInitiated = sessionStorage.getItem(localStorageKey);
-      
+
       if (!fetchInitiated) {
         sessionStorage.setItem(localStorageKey, 'true');
         dispatch(fetchAllAssetsForDropdown())
@@ -1942,46 +1964,46 @@ const TaskForm = ({
       }
     }
   }, [usersProp.length, inspectionLevelsProp.length, assetsProp.length, dispatch]);
-  
+
   // Define a better check for initialData format in useEffect
   useEffect(() => {
     console.log('TaskForm initialData updated:', initialData);
-    
+
     // Log data.data or data directly depending on structure
     if (initialData) {
       // Check for nested data structure (could be data.data pattern)
-      const taskData = initialData.data && typeof initialData.data === 'object' 
-        ? initialData.data 
+      const taskData = initialData.data && typeof initialData.data === 'object'
+        ? initialData.data
         : initialData;
-        
+
       console.log('Using task data:', taskData);
-      
+
       // Extract preInspectionQuestions from the correct location
       const questions = taskData.preInspectionQuestions;
-      
+
       if (questions) {
         console.log('Found preInspectionQuestions:', questions);
         console.log('Type:', typeof questions);
         console.log('Is array:', Array.isArray(questions));
         console.log('Length:', questions?.length);
-        
+
         if (Array.isArray(questions) && questions.length > 0) {
           // Create a deep copy to avoid reference issues
           const questionsCopy = JSON.parse(JSON.stringify(questions));
-          
+
           // Store pre-inspection questions in localStorage for this task
           const taskId = taskData.id || taskData._id;
           if (taskId) {
             localStorage.setItem(`task_${taskId}_preinspection`, JSON.stringify(questionsCopy));
             console.log('Stored pre-inspection questions in localStorage for task:', taskId);
           }
-          
+
           // Update form data with the pre-inspection questions
           setFormData(prev => ({
             ...prev,
             preInspectionQuestions: questionsCopy
           }));
-          
+
           console.log('Updated formData with questions copy');
         } else {
           console.log('No questions to update or not in expected format');
@@ -2011,7 +2033,7 @@ const TaskForm = ({
           {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
         </FormGroup>
       </FormRow>
-      
+
       <FormGroup>
         <Label>{t('common.description')}</Label>
         <TextArea
@@ -2024,7 +2046,7 @@ const TaskForm = ({
         />
         {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
       </FormGroup>
-      
+
       <FormRow>
         <FormGroup>
           <Label>{t('common.priority')}</Label>
@@ -2038,7 +2060,7 @@ const TaskForm = ({
             <option value="high">{t('tasks.highPriority')}</option>
           </Select>
         </FormGroup>
-        
+
         <FormGroup>
           <Label>{t('calendar.deadline')}</Label>
           <DatePicker
@@ -2055,7 +2077,7 @@ const TaskForm = ({
           {errors.dueDate && <ErrorMessage>{errors.dueDate}</ErrorMessage>}
         </FormGroup>
       </FormRow>
-      
+
       <FormGroup>
         <Label>{t('common.location')}</Label>
         <Input
@@ -2066,7 +2088,7 @@ const TaskForm = ({
           placeholder={t('tasks.enterLocationOptional')}
         />
       </FormGroup>
-      
+
       <FormGroup>
         <Label>{t('tasks.assignedUser')}</Label>
         <Select
@@ -2076,7 +2098,7 @@ const TaskForm = ({
             const userId = e.target.value;
             console.log('User selection changed to:', userId);
             setSelectedUserId(userId);
-            
+
             // We don't update formData.assignedTo here to avoid re-renders
             // It will be collected in handleSubmit
           }}
@@ -2094,7 +2116,7 @@ const TaskForm = ({
         </Select>
         {errors.assignedTo && <ErrorMessage>{errors.assignedTo}</ErrorMessage>}
       </FormGroup>
-      
+
       <FormRow>
         <FormGroup>
           <Label>{t('common.template')}</Label>
@@ -2113,7 +2135,7 @@ const TaskForm = ({
           </Select>
           {errors.inspectionLevel && <ErrorMessage>{errors.inspectionLevel}</ErrorMessage>}
         </FormGroup>
-        
+
         <FormGroup>
           <Label>{t('common.asset')}</Label>
           <Select
@@ -2129,9 +2151,9 @@ const TaskForm = ({
             }}
           >
             <option value="">
-              {formData.inspectionLevel 
-                ? filteredAssets.length > 0 
-                  ? 'Select asset' 
+              {formData.inspectionLevel
+                ? filteredAssets.length > 0
+                  ? 'Select asset'
                   : 'No matching assets found for this template type'
                 : 'Select template first'}
             </option>
@@ -2142,9 +2164,9 @@ const TaskForm = ({
             ))}
           </Select>
           {!formData.inspectionLevel && (
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#6b7280', 
+            <div style={{
+              fontSize: '12px',
+              color: '#6b7280',
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
@@ -2152,9 +2174,9 @@ const TaskForm = ({
             </div>
           )}
           {formData.inspectionLevel && filteredAssets.length === 0 && (
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#f59e0b', 
+            <div style={{
+              fontSize: '12px',
+              color: '#f59e0b',
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
@@ -2164,9 +2186,9 @@ const TaskForm = ({
           {formData.inspectionLevel && formData.asset && filteredAssets.length > 0 && (() => {
             const selectedAsset = filteredAssets.find(asset => (asset._id || asset.id) === formData.asset);
             return selectedAsset ? (
-              <div style={{ 
-                fontSize: '11px', 
-                color: '#374151', 
+              <div style={{
+                fontSize: '11px',
+                color: '#374151',
                 marginTop: '2px',
                 padding: '4px 8px',
                 backgroundColor: '#f0f9ff',
@@ -2183,7 +2205,7 @@ const TaskForm = ({
 
       <FormGroup>
         <ToggleSwitch>
-          <ToggleIndicator 
+          <ToggleIndicator
             checked={formData.isActive}
             onClick={() => setFormData(prev => ({
               ...prev,
@@ -2197,8 +2219,8 @@ const TaskForm = ({
       {/* Only show Advanced Options in edit mode */}
       {(initialData._id || initialData.id) && (
         <>
-          <AdvancedToggle 
-            type="button" 
+          <AdvancedToggle
+            type="button"
             onClick={(e) => {
               e.preventDefault(); // Prevent form submission
               setShowAdvanced(!showAdvanced);
@@ -2207,7 +2229,7 @@ const TaskForm = ({
             <span>{t('tasks.advancedOptions')}</span>
             {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </AdvancedToggle>
-          
+
           {showAdvanced && (
             <>
               <FormGroup>
@@ -2215,29 +2237,29 @@ const TaskForm = ({
                 <AttachmentList>
                   {formData.attachments.map((attachment, index) => {
                     console.log('Attachment data:', attachment); // Debug log
-                    
-                    const isImage = attachment.contentType?.startsWith('image/') || 
-                                   attachment.type?.startsWith('image/') || 
-                                   attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
-                    const isDocument = attachment.contentType?.includes('pdf') || 
-                                      attachment.contentType?.includes('document') ||
-                                      attachment.type?.includes('pdf') || 
-                                      attachment.type?.includes('document') ||
-                                      attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
-                    
+
+                    const isImage = attachment.contentType?.startsWith('image/') ||
+                      attachment.type?.startsWith('image/') ||
+                      attachment.filename?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+                    const isDocument = attachment.contentType?.includes('pdf') ||
+                      attachment.contentType?.includes('document') ||
+                      attachment.type?.includes('pdf') ||
+                      attachment.type?.includes('document') ||
+                      attachment.filename?.match(/\.(pdf|doc|docx|txt)$/i);
+
                     console.log('Is image:', isImage, 'Is document:', isDocument); // Debug log
-                    
+
                     return (
                       <AttachmentItem key={index}>
                         {isImage ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img 
-                              src={attachment.url} 
-                              alt={attachment.filename || 'Preview'} 
-                              style={{ 
-                                width: '32px', 
-                                height: '32px', 
-                                objectFit: 'cover', 
+                            <img
+                              src={attachment.url}
+                              alt={attachment.filename || 'Preview'}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                objectFit: 'cover',
                                 borderRadius: '4px',
                                 border: '1px solid #e2e8f0'
                               }}
@@ -2257,19 +2279,19 @@ const TaskForm = ({
                           </div>
                         )}
                         <AttachmentActions>
-                          <IconButton 
-                            type="button" 
+                          <IconButton
+                            type="button"
                             title={t('common.remove')}
                             onClick={() => handleRemoveAttachment(index)}
                           >
                             <Trash2 size={14} />
                           </IconButton>
                           {attachment.url && (
-                            <IconButton 
-                              type="button" 
-                              as="a" 
-                              href={attachment.url} 
-                              target="_blank" 
+                            <IconButton
+                              type="button"
+                              as="a"
+                              href={attachment.url}
+                              target="_blank"
                               rel="noopener noreferrer"
                               title={isImage ? t('common.viewImage') : isDocument ? t('common.openDocument') : t('common.openFile')}
                             >
@@ -2280,16 +2302,16 @@ const TaskForm = ({
                       </AttachmentItem>
                     );
                   })}
-                  
+
                   <AttachmentUpload>
-                    <input 
-                      type="file" 
-                      id="file-upload" 
-                      onChange={handleAttachmentChange} 
+                    <input
+                      type="file"
+                      id="file-upload"
+                      onChange={handleAttachmentChange}
                       style={{ display: 'none' }}
                     />
-                    <UploadButton 
-                      type="button" 
+                    <UploadButton
+                      type="button"
                       disabled={isUploading}
                       onClick={() => document.getElementById('file-upload').click()}
                     >
@@ -2303,17 +2325,30 @@ const TaskForm = ({
           )}
         </>
       )}
-      
-      <PreInspectionQuestions 
-        questions={formData.preInspectionQuestions} 
+
+      <PreInspectionQuestions
+        questions={formData.preInspectionQuestions}
         onChange={handlePreInspectionQuestionsChange}
-        initialQuestions={initialData.preInspectionQuestions || 
-                      (initialData.data && initialData.data.preInspectionQuestions) || 
-                      []}
+        initialQuestions={initialData.preInspectionQuestions ||
+          (initialData.data && initialData.data.preInspectionQuestions) ||
+          []}
         isEditMode={!!initialData && !!initialData._id}
       />
-      
+
       <ButtonGroup>
+        {/* Delete button for calendar mode */}
+        {isCalendarMode && onDelete && initialData?.id && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onDelete}
+            style={{ marginRight: 'auto' }}
+          >
+            <Trash2 size={16} />
+            {t('common.delete')}
+          </Button>
+        )}
+
         <Button type="button" variant="secondary" onClick={handleCancel}>
           {t('common.cancel')}
         </Button>

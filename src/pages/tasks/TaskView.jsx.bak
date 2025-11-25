@@ -743,7 +743,7 @@ const TaskView = () => {
           <p style={{ marginBottom: '24px' }}>There was an issue loading the task data. The task may have been deleted or you don't have permission to view it.</p>
           <Button onClick={() => navigate('/tasks')}>
             <ArrowLeft size={18} />
-            Back to Tasks
+            Back to Inspections
           </Button>
         </div>
       </PageContainer>
@@ -825,7 +825,7 @@ const TaskView = () => {
         <HeaderTop>
           <BackButton onClick={() => navigate('/tasks')}>
             <ArrowLeft size={18} />
-            Back to Tasks
+            Back to Inspections
           </BackButton>
           <HeaderContent>
             <PageTitle>{taskData.title || 'Untitled Task'}</PageTitle>

@@ -42,13 +42,13 @@ export const getTaskById = createAsyncThunk(
       if (!id || id === 'undefined') {
         return rejectWithValue('Invalid task ID');
       }
-      
+
       console.log('Getting task with ID:', id);
       const response = await api.get(`/tasks/${id}`);
-      
+
       // Log the response for debugging
       console.log('API response for task by ID:', response.data);
-      
+
       // Check if the response data is an array with at least one item
       if (Array.isArray(response.data.data) && response.data.data.length > 0) {
         console.log('Returning first task from array');
@@ -58,7 +58,7 @@ export const getTaskById = createAsyncThunk(
           firstTask: response.data.data[0]  // Add a convenience property
         };
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Error fetching task by ID:', error);
@@ -89,7 +89,7 @@ export const addTaskComment = createAsyncThunk(
       // Ensure content is a string, not an object
       const contentToSend = typeof content === 'object' ? JSON.stringify(content) : content;
       console.log('Sending comment content:', contentToSend, 'Type:', typeof contentToSend);
-      
+
       const response = await api.post(`/tasks/${id}/comments`, { content: contentToSend });
       return response.data;
     } catch (error) {
@@ -108,25 +108,25 @@ export const uploadTaskAttachment = createAsyncThunk(
       if (!file) {
         throw new Error('No file provided');
       }
-      
+
       const formData = new FormData();
       formData.append('file', file);
-      
+
       let url = '/upload'; // Default upload endpoint if no task ID
-      
+
       // If we have a task ID, use the task-specific upload endpoint
       if (id) {
         url = `/tasks/${id}/attachments`;
       }
-      
+
       console.log('Uploading to:', url);
-      
+
       const response = await api.post(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       console.log('Upload response:', response.data);
       toast.success('File uploaded successfully');
       return response.data;
@@ -148,12 +148,12 @@ export const createTask = createAsyncThunk(
         ...taskData,
         assignedTo: Array.isArray(taskData.assignedTo) ? taskData.assignedTo : [taskData.assignedTo]
       };
-      
+
       console.log('Creating task with data:', processedData);
-      
+
       const response = await api.post('/tasks', processedData);
-      
-      toast.success('Task created successfully');
+
+      toast.success('Inspection created successfully');
       return response.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error creating task';
@@ -171,12 +171,12 @@ export const updateTask = createAsyncThunk(
       if (!id || id === 'undefined') {
         throw new Error('Invalid task ID for update operation');
       }
-      
+
       // Ensure assignedTo is an array with valid values
       let assignedToArray = [];
       if (data.assignedTo) {
         const toProcess = Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo];
-        
+
         // Filter out invalid values and extract IDs
         assignedToArray = toProcess
           .filter(user => user != null && user !== 'undefined' && user !== '')
@@ -192,7 +192,7 @@ export const updateTask = createAsyncThunk(
           })
           .filter(id => id != null && id !== 'undefined' && id !== '');
       }
-      
+
       // Cleanup preInspectionQuestions - ensure format is consistent
       let preInspectionQuestionsArray = [];
       if (data.preInspectionQuestions && Array.isArray(data.preInspectionQuestions)) {
@@ -204,32 +204,32 @@ export const updateTask = createAsyncThunk(
             options: q.options || [],
             required: q.required !== undefined ? q.required : true
           };
-          
+
           // Add _id if it exists
           if (q._id) {
             cleanQuestion._id = q._id;
           }
-          
+
           // Add scoring if it exists
           if (q.scoring) {
             cleanQuestion.scoring = q.scoring;
           }
-          
+
           // Add scores if they exist
           if (q.scores) {
             cleanQuestion.scores = q.scores;
           }
-          
+
           return cleanQuestion;
         });
       }
-      
+
       // Create a clean processed data object
       const processedData = {
         ...data,
         assignedTo: assignedToArray
       };
-      
+
       // Ensure preInspectionQuestions is properly included
       if (preInspectionQuestionsArray.length > 0) {
         processedData.preInspectionQuestions = preInspectionQuestionsArray;
@@ -237,25 +237,25 @@ export const updateTask = createAsyncThunk(
         // If we have an empty array, still include it to allow clearing questions
         processedData.preInspectionQuestions = [];
       }
-      
+
       // Make sure inspectionLevel is included
       if (data.inspectionLevel) {
         processedData.inspectionLevel = data.inspectionLevel;
       }
-      
+
       // Make sure asset is included
       if (data.asset) {
         processedData.asset = data.asset;
       }
-      
+
       console.log('Updating task with ID:', id);
       console.log('Update payload:', JSON.stringify(processedData));
       console.log('PreInspectionQuestions:', JSON.stringify(preInspectionQuestionsArray));
-      
+
       const response = await api.put(`/tasks/${id}`, processedData);
-      
+
       console.log('Update task response:', response.data);
-      toast.success('Task updated successfully');
+      toast.success('Inspection updated successfully');
       return response.data;
     } catch (error) {
       console.error('Error updating task:', error.response?.data || error.message);
@@ -286,7 +286,7 @@ export const deleteTask = createAsyncThunk(
       if (!id) {
         throw new Error('Task ID is required for deletion');
       }
-      
+
       console.log('Deleting task with ID:', id);
       await api.delete(`/tasks/${id}`);
       toast.success('Task deleted successfully');
@@ -347,20 +347,20 @@ const taskSlice = createSlice({
         state.loading = false;
         console.log('Redux: fetchTasks.fulfilled - Full payload:', action.payload);
         console.log('Redux: Pagination data from API:', action.payload.pagination);
-        
+
         // Ensure tasks have the correct id field for progress matching
         state.tasks = action.payload.data.map(task => ({
           ...task,
           id: task.id || task._id // Ensure id field exists
         }));
-        
+
         const paginationData = {
           page: action.payload.pagination?.page || action.payload.page || 1,
           limit: action.payload.pagination?.limit || action.payload.limit || 10,
           total: action.payload.pagination?.total || action.payload.total || 0,
           pages: action.payload.pagination?.pages || action.payload.pages || action.payload.totalPages || Math.ceil((action.payload.pagination?.total || action.payload.total || 0) / (action.payload.pagination?.limit || action.payload.limit || 10))
         };
-        
+
         console.log('Redux: Setting pagination data:', paginationData);
         state.pagination = paginationData;
       })
@@ -433,20 +433,20 @@ const taskSlice = createSlice({
         state.loading = false;
         // Handle both _id and id fields for compatibility
         const taskId = action.payload;
-        state.tasks = state.tasks.filter(task => 
+        state.tasks = state.tasks.filter(task =>
           (task._id !== taskId) && (task.id !== taskId)
         );
-        if (state.currentTask && 
-           (state.currentTask._id === taskId || 
+        if (state.currentTask &&
+          (state.currentTask._id === taskId ||
             state.currentTask.id === taskId)) {
           state.currentTask = null;
         }
-        
+
         // Update pagination after deletion
         if (state.pagination.total > 0) {
           state.pagination.total -= 1;
           state.pagination.pages = Math.ceil(state.pagination.total / state.pagination.limit);
-          
+
           // If current page becomes empty and it's not the first page, go to previous page
           const currentPage = state.pagination.page;
           const totalPages = state.pagination.pages;
@@ -479,8 +479,8 @@ const taskSlice = createSlice({
           console.log('Redux: Updating tasks with progress data:', action.payload);
           action.payload.forEach(progressData => {
             // Try to match by both id and _id fields
-            const taskIndex = state.tasks.findIndex(task => 
-              task.id === progressData.taskId || 
+            const taskIndex = state.tasks.findIndex(task =>
+              task.id === progressData.taskId ||
               task._id === progressData.taskId
             );
             if (taskIndex !== -1) {
