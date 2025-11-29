@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  FileText, 
-  User, 
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  FileText,
+  User,
   Calendar,
   MapPin,
   Award,
@@ -616,18 +616,18 @@ const TaskDetailsView = () => {
   const { user } = useAuth();
   const { userRole } = usePermissions();
   const { t } = useTranslation();
-  
+
   const { currentTask, taskDetailsLoading, error } = useSelector((state) => state.userTasks);
   const [isExporting, setIsExporting] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [selectedExportFormat, setSelectedExportFormat] = useState('excel');
-  
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Check if user is admin (has all permissions)
   const canEdit = userRole === 'admin';
 
@@ -674,25 +674,25 @@ const TaskDetailsView = () => {
 
   const handleConfirmExport = async (fileName) => {
     if (!currentTask) return;
-    
+
     const formatLabels = {
       excel: 'Excel',
       word: 'Word',
       pdf: 'PDF'
     };
-    
+
     try {
       setIsExporting(true);
       setShowDocumentNamingModal(false);
-      
+
       toast.loading(`Generating ${formatLabels[selectedExportFormat]} report...`);
-      
-      await dispatch(exportTaskReport({ 
-        taskId: currentTask._id, 
+
+      await dispatch(exportTaskReport({
+        taskId: currentTask._id,
         format: selectedExportFormat,
         fileName: fileName
       })).unwrap();
-      
+
       toast.dismiss();
       toast.success(`${formatLabels[selectedExportFormat]} report exported successfully`);
     } catch (error) {
@@ -722,16 +722,16 @@ const TaskDetailsView = () => {
     if (!currentTask || !isEditMode) {
       return;
     }
-    
+
     try {
       setIsUpdating(true);
-      
+
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
         [questionId]: value
       };
-      
+
       await dispatch(updateTaskQuestionnaire({
         taskId: currentTask._id,
         questionnaire: {
@@ -740,12 +740,12 @@ const TaskDetailsView = () => {
           completed: false
         }
       })).unwrap();
-      
+
       toast.success('Response updated successfully');
-      
+
       // Refresh task details
       await dispatch(fetchUserTaskDetails(currentTask._id));
-      
+
     } catch (error) {
       toast.error(`Failed to update response: ${error.message || 'Unknown error'}`);
     } finally {
@@ -757,17 +757,17 @@ const TaskDetailsView = () => {
     if (!currentTask || !isEditMode) {
       return;
     }
-    
+
     try {
       setIsUpdating(true);
-      
+
       // Update all local changes
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
         ...localInputValues
       };
-      
+
       await dispatch(updateTaskQuestionnaire({
         taskId: currentTask._id,
         questionnaire: {
@@ -776,14 +776,14 @@ const TaskDetailsView = () => {
           completed: false
         }
       })).unwrap();
-      
+
       toast.success('Inspection responses updated successfully');
-      
+
       // Refresh task details and exit edit mode
       await dispatch(fetchUserTaskDetails(currentTask._id));
       setIsEditMode(false);
       setLocalInputValues({});
-      
+
     } catch (error) {
       toast.error(`Failed to update inspection: ${error.message || 'Unknown error'}`);
     } finally {
@@ -793,15 +793,15 @@ const TaskDetailsView = () => {
 
   const getQuestionStatus = (question, responses) => {
     if (!responses || !question._id) return 'pending';
-    
+
     const response = responses[question._id];
     if (!response) return 'pending';
-    
+
     // Check if there's a valid response
     if (response !== undefined && response !== null && response !== '') {
       return 'completed';
     }
-    
+
     return 'in_progress';
   };
 
@@ -812,23 +812,23 @@ const TaskDetailsView = () => {
 
   const calculateQuestionScore = (question, response) => {
     if (!response || !question.scoring?.enabled) return { achieved: 0, max: 0 };
-    
+
     const maxScore = question.scoring?.max || 0;
     let achievedScore = 0;
-    
+
     // Use template-defined scores if available
     if (question.scores && typeof question.scores === 'object') {
       // Get the score for this specific response from the template
       achievedScore = question.scores[response] || question.scores[response.toString()] || 0;
     } else {
       // Fallback to old logic if no template scores defined
-    if (question.type === 'yesno' && response) {
-      achievedScore = question.scores?.[response] || 0;
-    } else if (question.type === 'compliance' && response) {
-      achievedScore = question.scores?.[response] || 0;
+      if (question.type === 'yesno' && response) {
+        achievedScore = question.scores?.[response] || 0;
+      } else if (question.type === 'compliance' && response) {
+        achievedScore = question.scores?.[response] || 0;
       }
     }
-    
+
     return { achieved: achievedScore, max: maxScore };
   };
 
@@ -837,9 +837,9 @@ const TaskDetailsView = () => {
     const response = task.questionnaireResponses?.[questionId];
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
-    
+
     let questionType = question.type || question.answerType;
-    
+
     if (questionType === 'yesno' && question.answerType === 'compliance') {
       questionType = 'compliance';
     } else if (questionType === 'yesno' && (question.options?.includes('Yes') || question.options?.includes('No'))) {
@@ -849,17 +849,17 @@ const TaskDetailsView = () => {
     } else if (questionType === 'multiple') {
       questionType = 'checkbox';
     }
-    
+
     switch (questionType) {
       case 'compliance':
-        const complianceOptions = question.options?.length > 0 
-          ? question.options 
+        const complianceOptions = question.options?.length > 0
+          ? question.options
           : ['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable'];
-        
+
         return (
           <OptionsContainer>
             {complianceOptions.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={displayValue === option}
                 onClick={() => onSaveResponse(questionId, option)}
@@ -869,16 +869,16 @@ const TaskDetailsView = () => {
             ))}
           </OptionsContainer>
         );
-        
+
       case 'yesno':
-        const yesNoOptions = question.options?.length > 0 
-          ? question.options 
+        const yesNoOptions = question.options?.length > 0
+          ? question.options
           : ['Yes', 'No', 'N/A'];
-        
+
         return (
           <OptionsContainer>
             {yesNoOptions.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={displayValue === option}
                 onClick={() => onSaveResponse(questionId, option)}
@@ -888,12 +888,12 @@ const TaskDetailsView = () => {
             ))}
           </OptionsContainer>
         );
-        
+
       case 'radio':
         return (
           <OptionsContainer>
             {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={displayValue === option}
                 onClick={() => onSaveResponse(questionId, option)}
@@ -905,14 +905,14 @@ const TaskDetailsView = () => {
             )}
           </OptionsContainer>
         );
-        
+
       case 'checkbox':
         const selectedOptions = Array.isArray(displayValue) ? displayValue : displayValue ? [displayValue] : [];
-        
+
         return (
           <OptionsContainer>
             {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={selectedOptions.includes(option)}
                 onClick={() => {
@@ -929,7 +929,7 @@ const TaskDetailsView = () => {
             )}
           </OptionsContainer>
         );
-        
+
       case 'text':
         return (
           <InputContainer>
@@ -944,7 +944,7 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'number':
         return (
           <InputContainer>
@@ -959,7 +959,7 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'date':
         return (
           <InputContainer>
@@ -973,7 +973,7 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'textarea':
         return (
           <InputContainer>
@@ -987,12 +987,12 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'file':
         return (
           <InputContainer>
             <InputGroup>
-              <div style={{ 
+              <div style={{
                 border: '2px dashed #e5e7eb',
                 borderRadius: '12px',
                 padding: '16px',
@@ -1000,29 +1000,29 @@ const TaskDetailsView = () => {
                 transition: 'all 0.3s ease',
                 textAlign: 'center'
               }}>
-                <div style={{ 
+                <div style={{
                   marginBottom: '12px',
                   fontSize: '14px',
                   color: '#6b7280'
                 }}>
                   {displayValue ? 'File uploaded' : 'Click to upload file'}
                 </div>
-                
+
                 {displayValue && displayValue.startsWith('data:image/') && (
                   <div style={{ marginBottom: '12px' }}>
-                    <img 
-                      src={displayValue} 
-                      alt="Uploaded file" 
-                      style={{ 
-                        maxWidth: '200px', 
-                        maxHeight: '150px', 
+                    <img
+                      src={displayValue}
+                      alt="Uploaded file"
+                      style={{
+                        maxWidth: '200px',
+                        maxHeight: '150px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
                       }}
                     />
                   </div>
                 )}
-                
+
                 <input
                   type="file"
                   accept="image/*,.pdf,.doc,.docx"
@@ -1036,7 +1036,7 @@ const TaskDetailsView = () => {
                       reader.readAsDataURL(file);
                     }
                   }}
-                  style={{ 
+                  style={{
                     width: '100%',
                     padding: '8px',
                     border: '1px solid #d1d5db',
@@ -1048,13 +1048,13 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'signature':
         return (
           <InputContainer>
             <InputGroup>
-              <div 
-                style={{ 
+              <div
+                style={{
                   border: '2px dashed #e5e7eb',
                   borderRadius: '12px',
                   padding: '16px',
@@ -1067,29 +1067,29 @@ const TaskDetailsView = () => {
                 }}
                 title={t('tasks.signatureCannotBeEdited')}
               >
-                <div style={{ 
+                <div style={{
                   marginBottom: '12px',
                   fontSize: '14px',
                   color: '#6b7280'
                 }}>
                   {displayValue ? 'Signature provided' : 'No signature provided'}
                 </div>
-                
+
                 {displayValue && displayValue.startsWith('data:image/') && (
                   <div style={{ marginBottom: '12px' }}>
-                    <img 
-                      src={displayValue} 
-                      alt="Signature" 
-                      style={{ 
-                        maxWidth: '200px', 
-                        maxHeight: '100px', 
+                    <img
+                      src={displayValue}
+                      alt="Signature"
+                      style={{
+                        maxWidth: '200px',
+                        maxHeight: '100px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
                       }}
                     />
                   </div>
                 )}
-                
+
                 <div style={{
                   padding: '8px 16px',
                   backgroundColor: '#9ca3af',
@@ -1102,7 +1102,7 @@ const TaskDetailsView = () => {
                 }}>
                   {displayValue ? 'Signature Locked' : 'No Signature'}
                 </div>
-                
+
                 <div style={{
                   marginTop: '8px',
                   fontSize: '12px',
@@ -1115,7 +1115,7 @@ const TaskDetailsView = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       default:
         return (
           <InputContainer>
@@ -1144,11 +1144,11 @@ const TaskDetailsView = () => {
           <TaskTitle>{t('tasks.loadingTaskDetails')}</TaskTitle>
         </Header>
         <Content>
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: '48px',
             textAlign: 'center'
           }}>
@@ -1190,7 +1190,7 @@ const TaskDetailsView = () => {
             <AlertCircle size={48} style={{ marginBottom: '16px' }} />
             <h3>{t('tasks.failedToLoadTaskDetails')}</h3>
             <p>{error}</p>
-            <button 
+            <button
               onClick={() => {
                 dispatch({ type: 'userTasks/clearCurrentTask' });
                 dispatch(fetchUserTaskDetails(taskId));
@@ -1237,7 +1237,7 @@ const TaskDetailsView = () => {
 
   const responses = currentTask.questionnaireResponses || {};
   const inspectionLevel = currentTask.inspectionLevel;
-  
+
   // Calculate total questions from inspection level (excluding pre-inspection questions)
   // Prioritize pages structure as it contains the correct data
   const totalQuestionsFromPages = inspectionLevel?.pages?.reduce((total, page) => {
@@ -1245,21 +1245,21 @@ const TaskDetailsView = () => {
       return pageTotal + (section.questions?.length || 0);
     }, 0) || 0;
   }, 0) || 0;
-  
+
   // Fallback to subLevels structure if pages is not available
   const totalQuestions = inspectionLevel?.subLevels?.reduce((total, page) => {
     return total + page.subLevels?.reduce((pageTotal, section) => {
       return pageTotal + (section.questions?.length || 0);
     }, 0) || 0;
   }, 0) || 0;
-  
+
   // Use pages structure if available, otherwise fallback to subLevels
   const finalTotalQuestions = totalQuestionsFromPages > 0 ? totalQuestionsFromPages : totalQuestions;
 
   // Calculate completed questions based on actual responses (excluding pre-inspection questions)
   // Filter out pre-inspection question responses
   const inspectionQuestionIds = new Set();
-  
+
   // Prioritize pages structure as it contains the correct data
   if (inspectionLevel?.pages) {
     inspectionLevel.pages.forEach(page => {
@@ -1276,7 +1276,7 @@ const TaskDetailsView = () => {
       }
     });
   }
-  
+
   // Fallback to subLevels structure if pages is not available
   if (inspectionLevel?.subLevels && inspectionQuestionIds.size === 0) {
     inspectionLevel.subLevels.forEach(page => {
@@ -1293,13 +1293,13 @@ const TaskDetailsView = () => {
       }
     });
   }
-  
-  const completedQuestions = Object.keys(responses).filter(responseId => 
+
+  const completedQuestions = Object.keys(responses).filter(responseId =>
     inspectionQuestionIds.has(responseId)
   ).length;
 
   // Use the actual progress from the task data or calculate it
-  const progressPercentage = currentTask.overallProgress || 
+  const progressPercentage = currentTask.overallProgress ||
     (finalTotalQuestions > 0 ? Math.round((completedQuestions / finalTotalQuestions) * 100) : 0);
 
   return (
@@ -1318,9 +1318,9 @@ const TaskDetailsView = () => {
             {currentTask.status === 'archived' && <FileText size={12} />}
             {currentTask.status === 'archived' ? t('common.completed') : currentTask.status?.charAt(0).toUpperCase() + currentTask.status?.slice(1)}
           </StatusBadge>
-          
+
           <ExportButtonContainer data-export-dropdown>
-            <ExportButton 
+            <ExportButton
               onClick={handleExportClick}
               disabled={isExporting || !currentTask}
             >
@@ -1356,17 +1356,17 @@ const TaskDetailsView = () => {
               <FileText size={20} />
               {t('common.taskOverview')}
             </CardTitle>
-           
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <EditToggleButton 
-                  onClick={handleEditToggle}
-                  isEditMode={isEditMode}
-                >
-                  {isEditMode ? <X size={16} /> : <Edit size={16} />}
-                  {isEditMode ? t('common.exitEdit') : t('common.editInspection')}
-                </EditToggleButton> 
-                </div>
-            
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <EditToggleButton
+                onClick={handleEditToggle}
+                isEditMode={isEditMode}
+              >
+                {isEditMode ? <X size={16} /> : <Edit size={16} />}
+                {isEditMode ? t('common.exitEdit') : t('common.editInspection')}
+              </EditToggleButton>
+            </div>
+
           </CardHeader>
           <CardContent>
             <InfoGrid>
@@ -1410,11 +1410,35 @@ const TaskDetailsView = () => {
                 </InfoIcon>
                 <InfoContent>
                   <InfoLabel>{t('common.priority')}</InfoLabel>
-                  <InfoValue style={{ 
-                    color: currentTask.priority === 'high' ? '#dc2626' : 
-                           currentTask.priority === 'medium' ? '#d97706' : '#16a34a'
+                  <InfoValue style={{
+                    color: currentTask.priority === 'high' ? '#dc2626' :
+                      currentTask.priority === 'medium' ? '#d97706' : '#16a34a'
                   }}>
                     {currentTask.priority?.charAt(0).toUpperCase() + currentTask.priority?.slice(1) || 'Normal'}
+                  </InfoValue>
+                </InfoContent>
+              </InfoItem>
+
+              <InfoItem>
+                <InfoIcon>
+                  <Calendar size={20} />
+                </InfoIcon>
+                <InfoContent>
+                  <InfoLabel>{t('common.createdAt')}</InfoLabel>
+                  <InfoValue>
+                    {currentTask.createdAt ? new Date(currentTask.createdAt).toLocaleDateString() : 'N/A'}
+                  </InfoValue>
+                </InfoContent>
+              </InfoItem>
+
+              <InfoItem>
+                <InfoIcon>
+                  <Clock size={20} />
+                </InfoIcon>
+                <InfoContent>
+                  <InfoLabel>{t('common.updatedAt')}</InfoLabel>
+                  <InfoValue>
+                    {currentTask.updatedAt ? new Date(currentTask.updatedAt).toLocaleDateString() : 'N/A'}
                   </InfoValue>
                 </InfoContent>
               </InfoItem>
@@ -1423,10 +1447,10 @@ const TaskDetailsView = () => {
             {currentTask.description && (
               <div style={{ marginTop: '16px' }}>
                 <InfoLabel>{t('common.description')}</InfoLabel>
-                <div style={{ 
-                  marginTop: '8px', 
-                  padding: '12px', 
-                  background: '#f8fafc', 
+                <div style={{
+                  marginTop: '8px',
+                  padding: '12px',
+                  background: '#f8fafc',
                   borderRadius: '6px',
                   fontSize: '14px',
                   lineHeight: '1.5',
@@ -1456,9 +1480,9 @@ const TaskDetailsView = () => {
               <ProgressBar>
                 <ProgressFill progress={progressPercentage} />
               </ProgressBar>
-              <div style={{ 
-                marginTop: '8px', 
-                fontSize: '12px', 
+              <div style={{
+                marginTop: '8px',
+                fontSize: '12px',
                 color: '#64748b',
                 display: 'flex',
                 justifyContent: 'space-between'
@@ -1484,9 +1508,9 @@ const TaskDetailsView = () => {
                 {/* Render questions from pages structure */}
                 {inspectionLevel.pages?.map((page, pageIndex) => (
                   <div key={page._id || pageIndex} style={{ marginBottom: '32px' }}>
-                    <h3 style={{ 
-                      fontSize: '16px', 
-                      fontWeight: '600', 
+                    <h3 style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
                       color: '#1e293b',
                       marginBottom: '16px',
                       padding: '12px',
@@ -1495,12 +1519,12 @@ const TaskDetailsView = () => {
                     }}>
                       Page {pageIndex + 1}: {page.name}
                     </h3>
-                    
+
                     {page.sections?.map((section, sectionIndex) => (
                       <div key={section._id || sectionIndex} style={{ marginBottom: '24px' }}>
-                        <h4 style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '500', 
+                        <h4 style={{
+                          fontSize: '14px',
+                          fontWeight: '500',
                           color: '#475569',
                           marginBottom: '12px',
                           padding: '8px 12px',
@@ -1509,15 +1533,15 @@ const TaskDetailsView = () => {
                         }}>
                           Section {sectionIndex + 1}: {section.name}
                         </h4>
-                        
+
                         {section.questions?.map((question, questionIndex) => {
                           const status = getQuestionStatus(question, responses);
                           const response = getQuestionResponse(question, responses);
                           const score = calculateQuestionScore(question, response);
-                          
+
                           return (
-                            <EditableQuestionCard 
-                              key={question._id || questionIndex} 
+                            <EditableQuestionCard
+                              key={question._id || questionIndex}
                               completed={status === 'completed'}
                               isEditMode={isEditMode}
                             >
@@ -1533,14 +1557,14 @@ const TaskDetailsView = () => {
                                   {status.charAt(0).toUpperCase() + status.slice(1)}
                                 </QuestionStatus>
                               </QuestionHeader>
-                              
+
                               <QuestionDetails>
                                 <div>{t('tasks.type')}: {question.type} • {question.required ? t('common.required') : t('common.optional')} • {question.scoring?.enabled ? t('tasks.scored') : t('tasks.notScored')}</div>
                                 {question.description && (
                                   <div style={{ marginTop: '4px' }}>{question.description}</div>
                                 )}
                               </QuestionDetails>
-                              
+
                               {isEditMode ? (
                                 <ResponseSection>
                                   <ResponseLabel>{t('tasks.editResponse')}:</ResponseLabel>
@@ -1553,17 +1577,17 @@ const TaskDetailsView = () => {
                                   <ResponseLabel>{t('tasks.response')}:</ResponseLabel>
                                   <ResponseValue>
                                     {question.type === 'yesno' && (
-                                      <span style={{ 
-                                        color: response === 'Yes' ? '#16a34a' : 
-                                               response === 'No' ? '#dc2626' : '#64748b'
+                                      <span style={{
+                                        color: response === 'Yes' ? '#16a34a' :
+                                          response === 'No' ? '#dc2626' : '#64748b'
                                       }}>
                                         {response}
                                       </span>
                                     )}
                                     {question.type === 'compliance' && (
-                                      <span style={{ 
-                                        color: response === 'Compliant' || response === 'Full compliance' ? '#16a34a' : 
-                                               response === 'Non-Compliant' || response === 'Non compliance' ? '#dc2626' : '#64748b'
+                                      <span style={{
+                                        color: response === 'Compliant' || response === 'Full compliance' ? '#16a34a' :
+                                          response === 'Non-Compliant' || response === 'Non compliance' ? '#dc2626' : '#64748b'
                                       }}>
                                         {response}
                                       </span>
@@ -1577,12 +1601,12 @@ const TaskDetailsView = () => {
                                             <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
                                               📎 Image uploaded
                                             </div>
-                                            <img 
-                                              src={response} 
-                                              alt="Uploaded file" 
-                                              style={{ 
-                                                maxWidth: '200px', 
-                                                maxHeight: '150px', 
+                                            <img
+                                              src={response}
+                                              alt="Uploaded file"
+                                              style={{
+                                                maxWidth: '200px',
+                                                maxHeight: '150px',
                                                 borderRadius: '6px',
                                                 border: '1px solid #e2e8f0',
                                                 cursor: 'pointer'
@@ -1621,8 +1645,8 @@ const TaskDetailsView = () => {
                                       </div>
                                     )}
                                     {question.type === 'signature' && response && (
-                                      <div 
-                                        style={{ 
+                                      <div
+                                        style={{
                                           marginTop: '8px',
                                           padding: '12px',
                                           backgroundColor: '#f9fafb',
@@ -1638,12 +1662,12 @@ const TaskDetailsView = () => {
                                           ✍️ Signature provided (Locked)
                                         </div>
                                         {response.startsWith('data:image/') ? (
-                                          <img 
-                                            src={response} 
-                                            alt="Signature" 
-                                            style={{ 
-                                              maxWidth: '200px', 
-                                              maxHeight: '100px', 
+                                          <img
+                                            src={response}
+                                            alt="Signature"
+                                            style={{
+                                              maxWidth: '200px',
+                                              maxHeight: '100px',
                                               borderRadius: '6px',
                                               border: '1px solid #e2e8f0',
                                               cursor: 'pointer'
