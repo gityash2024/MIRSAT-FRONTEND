@@ -292,22 +292,22 @@ const UserCreate = () => {
               <br />
               {t('common.email')}: {confirmData.email}
               <br />
-              {t('common.role')}: {confirmData.role?.toUpperCase()}
+              {t('common.role')}: {confirmData.role ? t(`common.${confirmData.role}`) : ''}
             </DialogMessage>
             <DialogActions>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => setConfirmData(null)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={handleConfirm}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Creating...' : 'Confirm'}
+                {isSubmitting ? t('common.creating') : t('common.confirm')}
               </Button>
             </DialogActions>
           </DialogContent>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { 
-  User, 
-  AlertCircle, 
+import {
+  User,
+  AlertCircle,
   CheckCircle,
   Edit3,
   Save,
@@ -227,14 +227,14 @@ const ProfileForm = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   const DEPARTMENT_OPTIONS = [
     { value: '', label: t('profile.selectDepartment') },
     { value: 'Field Operations', label: t('profile.fieldOperations') },
     { value: 'Operations Management', label: t('profile.operationsManagement') },
     { value: 'Administration', label: t('profile.administration') }
   ];
-  
+
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -274,64 +274,64 @@ const ProfileForm = () => {
       setMessage({ type: 'error', text: t('profile.nameRequired') });
       return false;
     }
-    
+
     // Only require department for admin role (not for manager/inspector/supervisor)
     if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
       setMessage({ type: 'error', text: t('profile.departmentRequired') });
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!profileData.name.trim()) {
       setMessage({ type: 'error', text: t('profile.nameRequired') });
       return;
     }
-    
+
     if (!profileData.email.trim()) {
       setMessage({ type: 'error', text: t('profile.emailRequired') });
       return;
     }
-    
+
     // Only require department for admin role (not for manager/inspector/supervisor)
     if (!profileData.department && user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') {
       setMessage({ type: 'error', text: t('profile.departmentRequired') });
       return;
     }
-    
+
     setIsLoading(true);
     setMessage({ type: '', text: '' });
-    
+
     try {
       // Prepare update data - exclude department for non-admin users
       const updateData = {
         name: profileData.name,
         email: profileData.email
       };
-      
+
       // Only include department if user is admin/superadmin
       if (user?.role === 'admin' || user?.role === 'superadmin') {
         updateData.department = profileData.department;
       }
-      
+
       // Include other fields
       if (profileData.phone !== undefined) updateData.phone = profileData.phone;
       if (profileData.address !== undefined) updateData.address = profileData.address;
       if (profileData.emergencyContact !== undefined) updateData.emergencyContact = profileData.emergencyContact;
-      
+
       // Include password fields if provided
       if (profileData.currentPassword && profileData.newPassword) {
         updateData.currentPassword = profileData.currentPassword;
         updateData.newPassword = profileData.newPassword;
       }
-      
+
       const response = await api.put('/users/profile', updateData);
-      
+
       if (response.data.success) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         setProfileData(prev => ({
@@ -339,16 +339,16 @@ const ProfileForm = () => {
           currentPassword: '',
           newPassword: ''
         }));
-        
+
         // Update local user data
         if (updateUser) {
           updateUser(response.data.data);
         }
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to update profile. Please try again.' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update profile. Please try again.'
       });
     } finally {
       setIsLoading(false);
@@ -363,7 +363,7 @@ const ProfileForm = () => {
           {t('profile.profileInformation')}
         </FormTitle>
       </FormHeader>
-      
+
       <FormBody>
         {message.text && (
           <Message type={message.type}>
@@ -390,13 +390,17 @@ const ProfileForm = () => {
               <InfoRow>
                 <InfoLabel>{t('common.department')}</InfoLabel>
                 <InfoValue>
-                  {user?.department || t('profile.notSpecified')}
+                  {user?.department ? (
+                    ['Field Operations', 'Operations Management', 'Administration'].includes(user.department) ?
+                      t(`common.${user.department.replace(/\s+/g, '').replace(/^\w/, c => c.toLowerCase())}`) :
+                      user.department
+                  ) : t('profile.notSpecified')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
                 <InfoLabel>{t('common.role')}</InfoLabel>
                 <InfoValue>
-                  {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || t('common.inspector')}
+                  {user?.role ? t(`common.${user.role}`) : t('common.inspector')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
@@ -418,11 +422,11 @@ const ProfileForm = () => {
                 </InfoValue>
               </InfoRow>
             </InfoCard>
-            
+
             <ButtonGroup>
-              <Button 
-                type="button" 
-                variant="primary" 
+              <Button
+                type="button"
+                variant="primary"
                 onClick={startEdit}
               >
                 <Edit3 size={16} />
@@ -444,7 +448,7 @@ const ProfileForm = () => {
                   required
                 />
               </FormGroup>
-              
+
               <FormGroup>
                 <Label>{t('profile.emailAddress')}</Label>
                 <Input
@@ -456,7 +460,7 @@ const ProfileForm = () => {
                 />
               </FormGroup>
             </FormRow>
-            
+
             <FormGroup>
               <Label>
                 {t('common.department')}{(user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor') ? ' *' : ''}
@@ -479,9 +483,9 @@ const ProfileForm = () => {
                 ))}
               </Select>
               {(user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor') && (
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#666', 
+                <div style={{
+                  fontSize: '12px',
+                  color: '#666',
                   fontStyle: 'italic',
                   marginTop: '4px'
                 }}>
@@ -489,7 +493,7 @@ const ProfileForm = () => {
                 </div>
               )}
             </FormGroup>
-            
+
             <FormGroup>
               <Label>{t('profile.phoneNumber')}</Label>
               <Input
@@ -500,7 +504,7 @@ const ProfileForm = () => {
                 placeholder={t('profile.enterPhoneNumber')}
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label>{t('profile.address')}</Label>
               <Input
@@ -511,7 +515,7 @@ const ProfileForm = () => {
                 placeholder={t('profile.enterAddress')}
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label>{t('profile.emergencyContact')}</Label>
               <Input
@@ -522,11 +526,11 @@ const ProfileForm = () => {
                 placeholder={t('profile.enterEmergencyContact')}
               />
             </FormGroup>
-            
+
             <ButtonGroup>
-              <Button 
-                type="submit" 
-                variant="primary" 
+              <Button
+                type="submit"
+                variant="primary"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -538,8 +542,8 @@ const ProfileForm = () => {
                   </>
                 )}
               </Button>
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={cancelEdit}
                 disabled={isLoading}
               >
