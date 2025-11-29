@@ -447,7 +447,7 @@ const Dashboard = () => {
               <BarChart data={data?.charts?.templateUsage || []} layout="vertical" barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} />
+                <YAxis dataKey="name" type="category" width={220} tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="count" fill="#8b5cf6" name={t('dashboard.count')} />

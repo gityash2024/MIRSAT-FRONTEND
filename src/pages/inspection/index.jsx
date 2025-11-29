@@ -36,10 +36,16 @@ const InspectionLevel = () => {
   const [loading, setLoading] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const { t } = useTranslation();
-  
+
   // Store inspection data separately from rendering logic
   const [inspectionData, setInspectionData] = useState([]);
-  
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    totalResults: 0
+  });
+
   // For controlled components
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -47,7 +53,7 @@ const InspectionLevel = () => {
     status: [],
     priority: []
   });
-  
+
   // Prevent fetch loops
   const isFetchingRef = useRef(false);
   const debounceTimerRef = useRef(null);
@@ -76,14 +82,14 @@ const InspectionLevel = () => {
 
   const handleError = useCallback((error) => {
     console.error('Error in Inspection module:', error);
-    
+
     if (error?.response?.status === 429) {
       setErrorCount(prev => prev + 1);
       toast.error(t('errors.tooManyRequests'));
     } else {
       toast.error(error?.response?.data?.message || error?.message || t('errors.genericError'));
     }
-    
+
     setLoading(false);
     isFetchingRef.current = false;
   }, [t]);
@@ -95,22 +101,29 @@ const InspectionLevel = () => {
       console.log('Skipping fetch - already in progress or component unmounted');
       return;
     }
-    
+
     isFetchingRef.current = true;
     setLoading(true);
-    
+
     try {
       const params = {
         ...filters,
         search: searchTerm,
+        page: pagination.page,
+        limit: pagination.limit,
         _t: Date.now() // Cache buster
       };
-      
+
       console.log('Fetching inspection data with params:', params);
       const response = await inspectionService.getInspectionLevels(params);
-      
+
       if (!unmountedRef.current) {
         setInspectionData(response?.results || []);
+        setPagination(prev => ({
+          ...prev,
+          totalPages: response?.totalPages || 1,
+          totalResults: response?.totalResults || 0
+        }));
         initialFetchDoneRef.current = true;
       }
     } catch (error) {
@@ -124,7 +137,7 @@ const InspectionLevel = () => {
       }
       isFetchingRef.current = false;
     }
-  }, [filters, searchTerm, handleError]);
+  }, [filters, searchTerm, pagination.page, pagination.limit, handleError]);
 
   // Initial data fetch only
   useEffect(() => {
@@ -138,17 +151,17 @@ const InspectionLevel = () => {
   useEffect(() => {
     // Skip the initial render-triggered effect
     if (!initialFetchDoneRef.current) return;
-    
+
     console.log('Filter/search change detected, debouncing fetch');
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       fetchInspectionLevels();
     }, 500);
-    
+
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -158,22 +171,28 @@ const InspectionLevel = () => {
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
-  
+
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const renderContent = useCallback(() => {
     if (!isListView) {
       return (
-        <Outlet 
+        <Outlet
           context={{
             loading,
             setLoading,
             handleError,
             inspectionService
-          }} 
+          }}
         />
       );
     }
@@ -188,17 +207,19 @@ const InspectionLevel = () => {
       onSearchChange: handleSearchChange,
       filters,
       onFilterChange: handleFilterChange,
-      fetchData: fetchInspectionLevels
+      fetchData: fetchInspectionLevels,
+      pagination,
+      onPageChange: handlePageChange
     };
 
     if (loading) {
       return (
         <LoadingContainer>
           <Loader size={40} color="var(--color-navy)" />
-          <p style={{ 
-            marginTop: '16px', 
-            color: 'var(--color-navy)', 
-            fontSize: '16px' 
+          <p style={{
+            marginTop: '16px',
+            color: 'var(--color-navy)',
+            fontSize: '16px'
           }}>
             {t('inspections.loadingTemplates')}
           </p>
@@ -208,8 +229,8 @@ const InspectionLevel = () => {
 
     return <InspectionLevelList {...sharedProps} />;
   }, [
-    isListView, loading, handleError, 
-    inspectionService, inspectionData, searchTerm, filters, fetchInspectionLevels
+    isListView, loading, handleError,
+    inspectionService, inspectionData, searchTerm, filters, pagination, fetchInspectionLevels
   ]);
 
   return (

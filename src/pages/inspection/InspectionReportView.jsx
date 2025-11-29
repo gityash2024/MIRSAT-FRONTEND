@@ -310,14 +310,14 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  
+
   const [loading, setLoading] = useState(true);
   const [template, setTemplate] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [error, setError] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
-  
+
   useEffect(() => {
     if (id && !isCreating) {
       loadTemplateData();
@@ -325,18 +325,18 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       setLoading(false);
     }
   }, [id, isCreating]);
-  
+
   const loadTemplateData = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await inspectionService.getInspectionLevel(id);
       setTemplate(data);
-      
+
       // Transform template data into report data format
       const reportDataFormat = transformTemplateToReportData(data);
       setReportData(reportDataFormat);
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error loading template:', error);
@@ -344,13 +344,13 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       setLoading(false);
     }
   };
-  
+
   const transformTemplateToReportData = (templateData) => {
     // Extract sections from subLevels or sets
     const sections = [];
     let totalScore = 0;
     let maxScore = 0;
-    
+
     if (!templateData) {
       return {
         title: 'Inspection Template',
@@ -368,37 +368,37 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         }
       };
     }
-    
+
     // Process sublevels
     const processSubLevels = (subLevels, parentName = '') => {
       if (!subLevels || !subLevels.length) return [];
-      
+
       const processedSections = [];
-      
+
       subLevels.forEach((level, index) => {
         if (!level) return;
-        
+
         const sectionName = parentName ? `${parentName} - ${level.name || 'Unnamed Section'}` : (level.name || 'Unnamed Section');
-        
+
         // Calculate score for this section
         const sectionScore = 10; // This would be calculated based on real data
         const sectionMaxScore = 20; // This would be calculated based on real data
-        
+
         totalScore += sectionScore;
         maxScore += sectionMaxScore;
-        
+
         // Get compliance status
         const status = getComplianceStatus(sectionScore, sectionMaxScore);
-        
+
         // Process items within the section
         const items = level.questions ? level.questions.map(q => ({
           title: q.text || 'Unnamed Question',
           status: 'partial_compliance' // This would be determined by actual data
         })) : [];
-        
+
         // Create unique section ID
         const sectionId = `section_${level._id || `idx_${index}_${Date.now().toString(36)}`}`;
-        
+
         const section = {
           id: sectionId,
           name: sectionName,
@@ -407,19 +407,19 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
           status,
           items
         };
-        
+
         processedSections.push(section);
-        
+
         // Process child sublevels if they exist
         if (level.subLevels && level.subLevels.length) {
           const childSections = processSubLevels(level.subLevels, sectionName);
           processedSections.push(...childSections);
         }
       });
-      
+
       return processedSections;
     };
-    
+
     // Process sets if available
     if (templateData.sets && templateData.sets.length > 0) {
       templateData.sets.forEach((set, setIndex) => {
@@ -433,7 +433,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       const topLevelSections = processSubLevels(templateData.subLevels);
       sections.push(...topLevelSections);
     }
-    
+
     return {
       title: templateData.name || t('inspections.inspectionTemplate'),
       score: totalScore,
@@ -450,16 +450,16 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       }
     };
   };
-  
+
   const getComplianceStatus = (score, maxScore) => {
     if (!maxScore) return 'not_applicable';
-    
+
     const percentage = (score / maxScore) * 100;
     if (percentage >= 80) return 'full_compliance';
     if (percentage >= 40) return 'partial_compliance';
     return 'non_compliance';
   };
-  
+
   const handleDownloadPDF = () => {
     setPendingExport({ format: 'pdf', data: reportData });
     setShowDocumentModal(true);
@@ -470,17 +470,17 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     setShowDocumentModal(true);
   };
 
-  const handleConfirmExport = (fileName) => {
+  const handleConfirmExport = async (fileName) => {
     if (!pendingExport) return;
-    
+
     const { format, data } = pendingExport;
-    
+
     if (format === 'pdf') {
-      generatePDFReport(data, fileName);
+      await generatePDFReport(data, fileName);
     } else if (format === 'docx') {
       generateDOCXReport(data, fileName);
     }
-    
+
     setShowDocumentModal(false);
     setPendingExport(null);
   };
@@ -488,61 +488,61 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const generatePDFReport = (data, fileName) => {
     try {
       const doc = new jsPDF();
-      
+
       // Set document properties
       doc.setProperties({
         title: `${fileName} - Inspection Report`,
         subject: 'MIRSAT Inspection Report',
         creator: 'MIRSAT System'
       });
-      
+
       // Header
       doc.setFillColor(26, 35, 126);
       doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
-      
+
       doc.setFontSize(20);
       doc.setTextColor(255, 255, 255);
       doc.text(fileName || 'Inspection Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
-      
+
       doc.setFontSize(10);
       doc.setTextColor(200, 200, 200);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 32, { align: 'center' });
-      
+
       // Content
       let yPosition = 60;
-      
+
       // Overview section
       if (data) {
         doc.setFontSize(16);
         doc.setTextColor(26, 35, 126);
         doc.text('Overview', 14, yPosition);
         yPosition += 15;
-        
+
         doc.setFontSize(12);
         doc.setTextColor(60, 60, 60);
         doc.text(`Score: ${data.score || 0}/${data.maxScore || 0}`, 14, yPosition);
         yPosition += 10;
         doc.text(`Completion: ${data.completedAt || 'Not completed'}`, 14, yPosition);
         yPosition += 20;
-        
+
         // Sections
         if (data.sections && data.sections.length > 0) {
           doc.setFontSize(16);
           doc.setTextColor(26, 35, 126);
           doc.text('Inspection Sections', 14, yPosition);
           yPosition += 15;
-          
+
           data.sections.forEach((section, index) => {
             if (yPosition > 250) {
               doc.addPage();
               yPosition = 20;
             }
-            
+
             doc.setFontSize(12);
             doc.setTextColor(60, 60, 60);
             doc.text(`${index + 1}. ${section.name || 'Unnamed Section'}`, 14, yPosition);
             yPosition += 8;
-            
+
             if (section.description) {
               doc.setFontSize(10);
               doc.setTextColor(100, 100, 100);
@@ -550,12 +550,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
               doc.text(splitDesc, 20, yPosition);
               yPosition += splitDesc.length * 5 + 5;
             }
-            
+
             yPosition += 5;
           });
         }
       }
-      
+
       // Footer
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
@@ -563,13 +563,13 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
         doc.text(
-          `Page ${i} of ${pageCount} | MIRSAT Inspection Report`, 
-          doc.internal.pageSize.width / 2, 
-          doc.internal.pageSize.height - 10, 
+          `Page ${i} of ${pageCount} | MIRSAT Inspection Report`,
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height - 10,
           { align: 'center' }
         );
       }
-      
+
       doc.save(`${fileName}.pdf`);
       toast.success('PDF downloaded successfully');
     } catch (error) {
@@ -582,12 +582,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     try {
       // For DOCX generation, we'll create a structured HTML that can be exported
       const htmlContent = generateReportHTML(data, fileName);
-      
+
       // Create a blob with the HTML content
-      const blob = new Blob([htmlContent], { 
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      const blob = new Blob([htmlContent], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
-      
+
       // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -597,7 +597,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       toast.success('DOCX downloaded successfully');
     } catch (error) {
       console.error('Error generating DOCX:', error);
@@ -645,12 +645,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       </html>
     `;
   };
-  
+
   const handlePublish = () => {
     toast.success('Template published successfully');
     // Actual publish logic would be implemented here
   };
-  
+
   const handleGoToBuildTab = () => {
     if (isCreating) {
       navigate('/inspection/create/build');
@@ -660,7 +660,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       navigate(`/inspection/${id}/build`);
     }
   };
-  
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -669,7 +669,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         </LoadingContainer>
       );
     }
-    
+
     if (isCreating || !reportData) {
       return (
         <NoDataContainer>
@@ -686,7 +686,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         </NoDataContainer>
       );
     }
-    
+
     try {
       return (
         <ReportPreviewContainer>
@@ -711,13 +711,13 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       );
     }
   };
-  
+
   const baseUrl = isEditing ? `/inspection/${id}/edit` : isCreating ? '/inspection/create' : `/inspection/${id}`;
-  
+
   return (
     <InspectionLayout
       title={template?.name || t('inspections.newInspectionTemplate')}
-      onSave={() => {}}
+      onSave={() => { }}
       onPublish={!isCreating ? handlePublish : null}
       baseUrl={baseUrl}
       lastPublished={template?.updatedAt ? new Date(template.updatedAt).toLocaleString() : null}
@@ -729,28 +729,28 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
               <FileText size={18} />
               {t('inspections.reportPreview')}
             </ToolbarTitle>
-            
+
             <ToolbarActions>
               <ActionButton onClick={handleDownloadPDF} primary>
                 <Download size={16} />
                 {t('inspections.downloadPDF')}
               </ActionButton>
-              
+
               <ActionButton onClick={handleDownloadDOCX}>
                 <Download size={16} />
                 {t('inspections.downloadDOCX')}
               </ActionButton>
-              
+
               <ActionButton>
                 <Share2 size={16} />
                 {t('common.share')}
               </ActionButton>
-              
+
               <ActionButton>
                 <Printer size={16} />
                 {t('common.print')}
               </ActionButton>
-              
+
               <ActionButton>
                 <Settings size={16} />
                 {t('common.settings')}
@@ -758,9 +758,9 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
             </ToolbarActions>
           </ToolbarContainer>
         )}
-        
+
         {renderContent()}
-        
+
         {showDocumentModal && pendingExport && (
           <DocumentNamingModal
             isOpen={showDocumentModal}
