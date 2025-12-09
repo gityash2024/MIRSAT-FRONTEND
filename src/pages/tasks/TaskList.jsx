@@ -718,7 +718,7 @@ const TaskList = () => {
 
   const handleRefresh = () => {
     loadTasks();
-    toast.success('Tasks refreshed successfully');
+    toast.success(t('tasks.refreshedSuccessfully'));
   };
 
   // Format date for PDF export

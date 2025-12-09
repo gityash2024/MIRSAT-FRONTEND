@@ -861,6 +861,15 @@ const PreInspectionQuestions = ({
   const dispatch = useDispatch();
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
+  
+  // Helper function to translate option text
+  const translateOption = (option) => {
+    if (option === 'Option 1') return t('common.option1');
+    if (option === 'Option 2') return t('common.option2');
+    if (option === 'Option 3') return t('common.option3');
+    return option;
+  };
+  
   const [newQuestion, setNewQuestion] = useState({
     text: '',
     type: 'text',
@@ -1220,7 +1229,7 @@ const PreInspectionQuestions = ({
               placeholder={t('tasks.questionWeightPlaceholder')}
             />
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-              Set to 0 for non-scored questions
+              {t('common.setToZeroForNonScoredQuestions')}
             </div>
           </FormGroup>
 
@@ -1252,7 +1261,7 @@ const PreInspectionQuestions = ({
                       fontWeight: '500'
                     }}
                   >
-                    <Plus size={14} /> Add Option
+                    <Plus size={14} /> {t('tasks.addOption')}
                   </button>
                 )}
               </div>
@@ -1312,7 +1321,7 @@ const PreInspectionQuestions = ({
                       <tr key={i} style={{
                         borderBottom: i < newQuestion.options.length - 1 ? '1px solid #e2e8f0' : 'none'
                       }}>
-                        <td style={{ padding: '12px 16px' }}>{option}</td>
+                        <td style={{ padding: '12px 16px' }}>{translateOption(option)}</td>
                         <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                           <Input
                             type="number"
@@ -1406,7 +1415,7 @@ const PreInspectionQuestions = ({
                 fontWeight: '500'
               }}
             >
-              Add Question
+              {t('tasks.addQuestion')}
             </Button>
           </div>
         </div>
@@ -2153,9 +2162,9 @@ const TaskForm = ({
             <option value="">
               {formData.inspectionLevel
                 ? filteredAssets.length > 0
-                  ? 'Select asset'
-                  : 'No matching assets found for this template type'
-                : 'Select template first'}
+                  ? t('tasks.selectAsset')
+                  : t('tasks.noMatchingAssetFound')
+                : t('tasks.selectTemplateFirst')}
             </option>
             {filteredAssets.map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
@@ -2170,7 +2179,7 @@ const TaskForm = ({
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
-              Please select a template first to filter available assets
+              {t('tasks.selectTemplateFirstToEnableAsset')}
             </div>
           )}
           {formData.inspectionLevel && filteredAssets.length === 0 && (
@@ -2180,7 +2189,7 @@ const TaskForm = ({
               marginTop: '4px',
               fontStyle: 'italic'
             }}>
-              No matching assets found for template type: {selectedTemplateType || 'Unknown'}
+              {t('tasks.noMatchingAssetFound')} {selectedTemplateType ? `(${selectedTemplateType})` : ''}
             </div>
           )}
           {formData.inspectionLevel && formData.asset && filteredAssets.length > 0 && (() => {
@@ -2195,7 +2204,7 @@ const TaskForm = ({
                 borderRadius: '4px',
                 border: '1px solid #e0f2fe'
               }}>
-                <strong>Selected Asset:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
+                <strong>{t('tasks.selectedAsset')}:</strong> {selectedAsset.displayName || selectedAsset.uniqueId} - {selectedAsset.type}
               </div>
             ) : null;
           })()}

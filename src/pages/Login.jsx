@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
@@ -488,6 +488,14 @@ const Login = () => {
   const [apiError, setApiError] = useState(null);
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage, isRTL } = useLanguage();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setFormData({

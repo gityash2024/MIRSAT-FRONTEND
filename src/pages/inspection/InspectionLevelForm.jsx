@@ -152,8 +152,11 @@ const ConfirmationModal = ({
 const DiscardConfirmationModal = ({
   isOpen,
   onClose,
-  onConfirm
+  onConfirm,
+  onCancel
 }) => {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
   
   return (
@@ -175,16 +178,47 @@ const DiscardConfirmationModal = ({
         width: '400px',
         maxWidth: '90%',
         padding: '24px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        position: 'relative'
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Discard Template</h3>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '16px'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>{t('inspections.discardTemplate')}</h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#6b7280',
+              borderRadius: '4px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            aria-label={t('common.close')}
+          >
+            <X size={20} />
+          </button>
+        </div>
         <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>
-          Are you sure you want to discard this template? All unsaved changes will be lost.
+          {t('inspections.discardTemplateMessage')}
         </p>
         
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
           <button 
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              if (onCancel) onCancel();
+            }}
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
@@ -195,7 +229,7 @@ const DiscardConfirmationModal = ({
               fontSize: '14px'
             }}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             onClick={() => {
@@ -212,7 +246,7 @@ const DiscardConfirmationModal = ({
               fontSize: '14px'
             }}
           >
-            Discard
+            {t('inspections.discard')}
           </button>
         </div>
       </div>
@@ -4549,6 +4583,8 @@ const InspectionStatusBadge = styled.div`
   background-color: ${props => props.status === 'draft' ? '#FEF3C7' : '#DCFCE7'};
   color: ${props => props.status === 'draft' ? '#B45309' : '#166534'};
   border: 1px solid ${props => props.status === 'draft' ? '#FCD34D' : '#86EFAC'};
+  width: 150px;
+  white-space: nowrap;
 `;
 
 const InspectionSaveMessage = styled.div`
@@ -5037,6 +5073,7 @@ const InspectionLevelForm = () => {
       }
     }, 2000)
   ).current;
+  const hasShownRestoreToast = useRef(false);
   
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -5044,18 +5081,55 @@ const InspectionLevelForm = () => {
     
     if (id) {
       loadTemplate();
-      } else {
-      // Initialize with one empty page
-      setFormData({
-        ...formData,
-        pages: [{
-          name: 'Page 1',
-          description: '',
-          sections: []
-        }]
-      });
+    } else {
+      // Check for saved data in localStorage first - always restore if exists
+      try {
+        const savedTemplate = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedTemplate) {
+          const parsedTemplate = JSON.parse(savedTemplate);
+          // Ensure parsed template has required structure
+          if (parsedTemplate && (parsedTemplate.name !== undefined || parsedTemplate.pages)) {
+            setFormData(parsedTemplate);
+            // Show toast only once per page load
+            if (!hasShownRestoreToast.current) {
+              hasShownRestoreToast.current = true;
+              toast.success(t('inspections.welcomeBackRestored'), { 
+                duration: 3000,
+                style: { background: '#10B981', color: 'white' }
+              });
+            }
+            return; // Exit early after restoring
+          }
+        }
+        // Initialize with one empty page only if no saved data exists or invalid data
+        setFormData(prevData => ({
+          name: prevData.name || '',
+          description: prevData.description || '',
+          type: prevData.type || '',
+          status: prevData.status || 'draft',
+          pages: prevData.pages && prevData.pages.length > 0 ? prevData.pages : [{
+            name: 'Page 1',
+            description: '',
+            sections: []
+          }]
+        }));
+      } catch (error) {
+        console.error('Error loading from local storage:', error);
+        // Initialize with one empty page on error
+        setFormData(prevData => ({
+          name: prevData.name || '',
+          description: prevData.description || '',
+          type: prevData.type || '',
+          status: prevData.status || 'draft',
+          pages: [{
+            name: 'Page 1',
+            description: '',
+            sections: []
+          }]
+        }));
+      }
     }
-  }, [id, dispatch]);
+  }, [id, dispatch, t]);
 
   const loadTemplate = async () => {
     try {
@@ -5626,24 +5700,6 @@ const InspectionLevelForm = () => {
   // Add local storage key and functions
   const LOCAL_STORAGE_KEY = 'inspection_template_draft';
   
-  // Load template from local storage on initial render
-  useEffect(() => {
-    if (!id) {
-      try {
-        const savedTemplate = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedTemplate) {
-          const parsedTemplate = JSON.parse(savedTemplate);
-          setFormData(parsedTemplate);
-          toast.success('Welcome back! restored your previous state.', { 
-            duration: 3000,
-            style: { background: '#10B981', color: 'white' }
-          });
-        }
-      } catch (error) {
-        console.error('Error loading from local storage:', error);
-      }
-    }
-  }, [id]);
   
   // Auto-save template changes to local storage
   useEffect(() => {
@@ -7002,7 +7058,16 @@ const InspectionLevelForm = () => {
         <DiscardConfirmationModal
           isOpen={isDiscardModalOpen}
           onClose={() => setIsDiscardModalOpen(false)}
-          onConfirm={() => navigate('/inspection')}
+          onCancel={() => {
+            // Navigate to /inspection on cancel (keep data in localStorage)
+            navigate('/inspection');
+          }}
+          onConfirm={() => {
+            // Clear localStorage and navigate on discard
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            hasShownRestoreToast.current = false;
+            navigate('/inspection');
+          }}
         />
       )}
       

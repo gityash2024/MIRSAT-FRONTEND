@@ -5203,7 +5203,7 @@ const UserTaskDetail = () => {
                       opacity: isDisabled ? 0.5 : 1
                     }}
                   >
-                    📷 Camera
+                    📷 {t('tasks.camera')}
                   </button>
                 </div>
                 
@@ -5306,7 +5306,7 @@ const UserTaskDetail = () => {
             <InputGroup>
               <input
                 type="text"
-                placeholder="Enter your response"
+                placeholder={t('tasks.enterYourResponse')}
                 value={displayValue || ''}
                 onChange={(e) => {
                   handleInputChange(questionId, e.target.value);
@@ -6529,10 +6529,14 @@ const UserTaskDetail = () => {
                       </ScoreItem>
                       
                       <ScoreItem>
-                        <ScoreLabel>Status</ScoreLabel>
+                        <ScoreLabel>{t('tasks.status')}</ScoreLabel>
                         <ScoreValue style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           <StatusIcon status={currentTask.status} />
-                          {currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+                          {currentTask.status === 'pending' ? t('tasks.pending') :
+                           currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                           currentTask.status === 'completed' ? t('tasks.completed') :
+                           currentTask.status === 'archived' ? t('tasks.archived') :
+                           currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
                         </ScoreValue>
                       </ScoreItem>
                     </ScoreGrid>
@@ -6911,7 +6915,7 @@ const UserTaskDetail = () => {
                             <ExportDropdown>
                               <ExportOption onClick={() => handleExportFormat('excel')}>
                                 <FileText size={16} />
-                                Excel (.xlsx)
+                                {t('common.exportAsExcel')}
                               </ExportOption>
                               {/* <ExportOption onClick={() => handleExportFormat('word')}>
                                 <FileText size={16} />
@@ -6919,7 +6923,7 @@ const UserTaskDetail = () => {
                               </ExportOption> */}
                               <ExportOption onClick={() => handleExportFormat('pdf')}>
                                 <FileText size={16} />
-                                PDF (.pdf)
+                                {t('common.exportAsPDF')}
                               </ExportOption>
                             </ExportDropdown>
                           )}
@@ -7102,7 +7106,7 @@ const UserTaskDetail = () => {
       {responseLoading && (
         <LoadingIndicator>
           <Loader size={16} />
-          Saving response...
+          {t('tasks.savingResponse')}
         </LoadingIndicator>
       )}
       
@@ -7367,7 +7371,7 @@ const UserTaskDetail = () => {
         <ModalOverlay>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
-              <ModalTitle>Customize Report Filename</ModalTitle>
+              <ModalTitle>{t('tasks.customizeReportFilename')}</ModalTitle>
               <CloseButton onClick={() => setShowDocumentNamingModal(false)}>
                 <X size={20} />
               </CloseButton>
@@ -7376,7 +7380,7 @@ const UserTaskDetail = () => {
             <div style={{ padding: '20px 0' }}>
               <div style={{ marginBottom: '20px' }}>
                 <p style={{ color: '#374151', lineHeight: '1.6', marginBottom: '16px' }}>
-                  Customize the filename for your {selectedReportFormat?.toUpperCase()} report:
+                  {t('tasks.customizeFilenameForReport', { format: selectedReportFormat?.toUpperCase() })}
                 </p>
                 
                 <div style={{ 
@@ -7396,10 +7400,10 @@ const UserTaskDetail = () => {
                     color: '#3788d8'
                   }}>
                     <Info size={16} />
-                    Available Variables
+                    {t('tasks.availableVariables')}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    Use: <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{date}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{time}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{taskName}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{inspector}'}</code>
+                    {t('tasks.useVariables')} <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{date}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{time}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{taskName}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{inspector}'}</code>
                   </div>
                 </div>
               </div>
@@ -7412,13 +7416,13 @@ const UserTaskDetail = () => {
                   color: '#374151', 
                   marginBottom: '8px' 
                 }}>
-                  Report Filename
+                  {t('tasks.reportFilename')}
                 </label>
                 <input
                   type="text"
                   value={documentName}
                   onChange={(e) => setDocumentName(e.target.value)}
-                  placeholder="Enter custom filename"
+                  placeholder={t('tasks.enterCustomFilename')}
                   style={{
                     width: '100%',
                     padding: '12px 16px',
@@ -7433,7 +7437,7 @@ const UserTaskDetail = () => {
                   color: '#6b7280', 
                   marginTop: '4px' 
                 }}>
-                  Don't include the file extension (.{selectedReportFormat})
+                  {t('tasks.dontIncludeFileExtension', { format: selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat })}
                 </div>
               </div>
               
@@ -7444,7 +7448,7 @@ const UserTaskDetail = () => {
                 border: '1px solid #e5e7eb'
               }}>
                 <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  Preview:
+                  {t('tasks.preview')}:
                 </div>
                 <div style={{ 
                   fontSize: '14px', 
@@ -7452,7 +7456,7 @@ const UserTaskDetail = () => {
                   fontWeight: '500',
                   fontFamily: 'monospace'
                 }}>
-                  {documentName || 'filename'}.{selectedReportFormat}
+                  {documentName || 'filename'}.{selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat}
                 </div>
               </div>
             </div>
@@ -7478,7 +7482,7 @@ const UserTaskDetail = () => {
                 }}
               >
                 <Download size={16} />
-                Download Report
+                {t('tasks.downloadReport')}
               </QuickActionButton>
             </div>
           </ModalContent>

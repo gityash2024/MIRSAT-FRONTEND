@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Clock, ChevronDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const DropdownContainer = styled.div`
   position: relative;
@@ -197,6 +198,7 @@ const TIMEZONES = [
 ];
 
 const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
+  const { t } = useTranslation();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [selectedTimezone, setSelectedTimezone] = useState(
     localStorage.getItem('selectedTimezone') || 'Asia/Riyadh'
@@ -280,7 +282,7 @@ const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
       <DropdownContent isOpen={isOpen}>
         <DropdownTimeDisplay>
           <div className="time">{currentTime}</div>
-          <div className="label">Current time</div>
+          <div className="label">{t('common.currentTime')}</div>
         </DropdownTimeDisplay>
         
         {TIMEZONES.map((timezone) => (

@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import ScrollAnimation from '../components/common/ScrollAnimation';
 import DashboardFilters from '../components/dashboard/DashboardFilters';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -114,6 +115,42 @@ const ChartCard = styled.div`
   min-height: 400px;
   display: flex;
   flex-direction: column;
+  overflow: visible;
+  
+  &:has(.template-chart-container) {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+`;
+
+const ChartContainer = styled.div`
+  width: 100%;
+  min-height: 400px;
+  position: relative;
+  overflow: visible;
+  
+  &.template-chart-container {
+    overflow-x: auto;
+    overflow-y: visible;
+    
+    &::-webkit-scrollbar {
+      height: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+      
+      &:hover {
+        background: #94a3b8;
+      }
+    }
+  }
 `;
 
 const SmallCardsGrid = styled.div`
@@ -129,10 +166,18 @@ const SmallCardsGrid = styled.div`
 
 const TableContainer = styled.div`
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 390px;
   
   table {
     width: 100%;
     border-collapse: collapse;
+    
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
     
     th, td {
       padding: 12px;
@@ -200,6 +245,7 @@ const COLORS = ['#10b981', '#f59e0b', '#ef4444']; // Completed (Green), Pending 
 const Dashboard = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const [data, setData] = useState({
     stats: { total: 0, completed: 0, pending: 0, delayed: 0, flagged: 0 },
     charts: {
@@ -281,11 +327,77 @@ const Dashboard = () => {
     doc.save("dashboard_report.pdf");
   };
 
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'Completed': return t('tasks.completed');
+      case 'Pending': return t('tasks.pending');
+      case 'Late': return t('dashboard.late');
+      default: return status;
+    }
+  };
+
   const pieData = [
     { name: 'Completed', value: data?.charts?.statusDistribution?.completed || 0 },
     { name: 'Pending', value: data?.charts?.statusDistribution?.pending || 0 },
     { name: 'Late', value: data?.charts?.statusDistribution?.late || 0 }
   ].filter(d => d.value > 0);
+
+  // Custom Tooltip component
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <p style={{ margin: 0, fontWeight: 600, color: '#374151' }}>
+            {translateStatus(payload[0].name)}
+          </p>
+          <p style={{ margin: '4px 0 0', color: '#64748b' }}>
+            {t('dashboard.count')}: {payload[0].value}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom Legend component
+  const CustomLegend = ({ payload }) => {
+    if (!payload || payload.length === 0) return null;
+
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '24px',
+        flexWrap: 'wrap',
+        marginTop: '16px'
+      }}>
+        {payload.map((entry, index) => (
+          <div key={index} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              backgroundColor: entry.color,
+              borderRadius: '2px'
+            }} />
+            <span style={{ fontSize: '14px', color: '#374151' }}>
+              {translateStatus(entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (loading && !data?.stats?.total) {
     return (
@@ -345,7 +457,7 @@ const Dashboard = () => {
         <ScrollAnimation animation="slideIn" delay={0.2}>
           <ChartCard>
             <SectionTitle>{t('dashboard.inspectionStatus')}</SectionTitle>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={390}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -361,8 +473,8 @@ const Dashboard = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -426,33 +538,215 @@ const Dashboard = () => {
         <ScrollAnimation animation="slideIn" delay={0.6}>
           <ChartCard>
             <SectionTitle>{t('dashboard.inspectorPerformanceAvgDuration')}</SectionTitle>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data?.charts?.inspectorPerformance || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name={t('dashboard.inspections')} />
-                <Bar dataKey="avgTime" fill="#10b981" name={t('dashboard.avgDurationMin')} />
-              </BarChart>
-            </ResponsiveContainer>
+            <TableContainer>
+              {(data?.charts?.inspectorPerformance || []).length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                        {t('common.inspector')}
+                      </th>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '35%' }}>
+                        {t('dashboard.inspections')}
+                      </th>
+                      <th style={{ textAlign: 'center', width: '80px' }}>
+                        {t('dashboard.count')}
+                      </th>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '35%' }}>
+                        {t('dashboard.avgDurationMin')}
+                      </th>
+                      <th style={{ textAlign: 'center', width: '80px' }}>
+                        {t('common.time')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.charts?.inspectorPerformance || []).map((item, index) => {
+                      const maxCount = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.count));
+                      const maxTime = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.avgTime || 0));
+                      const countPercentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                      const timePercentage = maxTime > 0 ? ((item.avgTime || 0) / maxTime) * 100 : 0;
+
+                      return (
+                        <tr key={index}>
+                          <td style={{
+                            fontWeight: 500,
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textAlign: currentLanguage === 'ar' ? 'right' : 'left'
+                          }} title={item.name}>
+                            {item.name}
+                          </td>
+                          <td>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
+                            }}>
+                              <div style={{
+                                flex: 1,
+                                height: '24px',
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  width: `${countPercentage}%`,
+                                  height: '100%',
+                                  backgroundColor: '#3b82f6',
+                                  borderRadius: '4px',
+                                  transition: 'width 0.3s ease',
+                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
+                                }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            color: '#3b82f6'
+                          }}>
+                            {item.count}
+                          </td>
+                          <td>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
+                            }}>
+                              <div style={{
+                                flex: 1,
+                                height: '24px',
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  width: `${timePercentage}%`,
+                                  height: '100%',
+                                  backgroundColor: '#10b981',
+                                  borderRadius: '4px',
+                                  transition: 'width 0.3s ease',
+                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
+                                }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            color: '#10b981'
+                          }}>
+                            {item.avgTime || 0}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'var(--color-gray-medium)'
+                }}>
+                  {t('dashboard.noInspectorData')}
+                </div>
+              )}
+            </TableContainer>
           </ChartCard>
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.7}>
           <ChartCard>
             <SectionTitle>{t('dashboard.inspectionsPerTemplate')}</SectionTitle>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data?.charts?.templateUsage || []} layout="vertical" barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={220} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#8b5cf6" name={t('dashboard.count')} />
-              </BarChart>
-            </ResponsiveContainer>
+            <TableContainer>
+              {(data?.charts?.templateUsage || []).length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                        {t('common.template')}
+                      </th>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '60%' }}>
+                        {t('dashboard.inspections')}
+                      </th>
+                      <th style={{ textAlign: 'center', width: '80px' }}>
+                        {t('dashboard.count')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.charts?.templateUsage || []).map((item, index) => {
+                      const maxCount = Math.max(...(data?.charts?.templateUsage || []).map(t => t.count));
+                      const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+
+                      return (
+                        <tr key={index}>
+                          <td style={{
+                            fontWeight: 500,
+                            maxWidth: '250px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textAlign: currentLanguage === 'ar' ? 'right' : 'left'
+                          }} title={item.name}>
+                            {item.name}
+                          </td>
+                          <td>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
+                            }}>
+                              <div style={{
+                                flex: 1,
+                                height: '24px',
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  width: `${percentage}%`,
+                                  height: '100%',
+                                  backgroundColor: '#8b5cf6',
+                                  borderRadius: '4px',
+                                  transition: 'width 0.3s ease',
+                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
+                                }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            color: '#8b5cf6'
+                          }}>
+                            {item.count}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'var(--color-gray-medium)'
+                }}>
+                  {t('dashboard.noTemplateData')}
+                </div>
+              )}
+            </TableContainer>
           </ChartCard>
         </ScrollAnimation>
       </ChartsGrid>

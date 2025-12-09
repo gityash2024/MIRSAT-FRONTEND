@@ -291,6 +291,16 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
 
+  // Helper function to translate role names
+  const translateRole = (role) => {
+    if (!role) return t('common.inspector');
+    const roleLower = role.toLowerCase();
+    if (roleLower === 'admin') return t('common.admin');
+    if (roleLower === 'inspector') return t('common.inspector');
+    if (roleLower === 'super admin' || roleLower === 'superadmin') return t('common.superAdmin');
+    return role; // Return original if no translation found
+  };
+
   useEffect(() => {
     // Fetch notifications when the component mounts
     fetchNotifications();
@@ -373,7 +383,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
           <UserMenuTrigger onClick={handleUserMenuToggle}>
             <div className="user-info">
               <div className="name">{user?.name || t('common.inspector')}</div>
-              <div className="role">{user?.role || t('common.inspector')}</div>
+              <div className="role">{translateRole(user?.role)}</div>
             </div>
             <User size={20} />
             <ChevronDown size={16} />

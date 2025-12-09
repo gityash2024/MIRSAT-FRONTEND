@@ -13,11 +13,17 @@ export const usePermissions = () => {
     if (user.role === ROLES.ADMIN) return true;
 
     // For other roles, check if they have the specific permission
-    if (Array.isArray(user.permissions)) {
-      return user.permissions.includes(permission);
+    if (Array.isArray(user.permissions) && user.permissions.length > 0) {
+      // If user has explicit permissions, check those first
+      if (user.permissions.includes(permission)) {
+        return true;
+      }
+      // If permission not found in explicit permissions, fall back to role-based permissions
+      const rolePermissions = ROLE_PERMISSIONS[user.role];
+      return Array.isArray(rolePermissions) && rolePermissions.includes(permission);
     }
 
-    // If no permissions array, check role-based permissions
+    // If no permissions array or empty array, check role-based permissions
     const rolePermissions = ROLE_PERMISSIONS[user.role];
     return Array.isArray(rolePermissions) && rolePermissions.includes(permission);
   };
