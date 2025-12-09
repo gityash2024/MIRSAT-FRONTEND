@@ -987,6 +987,7 @@
     "saveTask": "Save Inspection",
     "editTask": "Edit Inspection",
     "updateTask": "Update Inspection",
+    "updateTaskDetailsAndInformation": "Update task details and information",
     "deleteTask": "Delete Inspection",
     "refreshedSuccessfully": "Inspections refreshed successfully",
     "markComplete": "Mark Complete",
