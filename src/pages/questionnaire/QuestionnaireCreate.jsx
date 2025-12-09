@@ -459,10 +459,12 @@ const QuestionCreate = () => {
   const { questions: libraryQuestions, loading: libraryLoading } = 
     useSelector(state => state.questionLibrary);
   
+  const [newOption, setNewOption] = useState('');
   const [question, setQuestion] = useState({
     text: '',
     answerType: 'yesno',
     options: [],
+    scores: {},
     required: true,
     requirementType: 'mandatory'
   });
@@ -519,29 +521,65 @@ const QuestionCreate = () => {
       answerType: newType
     };
     
-    // Add default options based on type
-    if (['multiple_choice', 'select', 'radio', 'checkbox', 'dropdown'].includes(newType)) {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    // Add default options based on type - always reset when changing types
+    if (newType === 'multiple_choice') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
+    } else if (newType === 'select') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
+    } else if (newType === 'checkbox') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      // Checkbox doesn't have scoring (no scores)
+      updatedQuestion.scores = {};
     } else if (newType === 'compliance') {
       updatedQuestion.options = [
-        'Full compliance',
-        'Partial compliance',
-        'Non-compliant',
-        'Not applicable'
+        t('common.fullCompliance'),
+        t('common.partialCompliance'),
+        t('common.nonCompliant'),
+        t('common.notApplicable')
       ];
+      updatedQuestion.scores = {
+        [t('common.fullCompliance')]: 2,
+        [t('common.partialCompliance')]: 1,
+        [t('common.nonCompliant')]: 0,
+        [t('common.notApplicable')]: 0
+      };
     } else {
-      // Reset options if changing to a type that doesn't need them
+      // Reset options if changing to a type that doesn't need them (text, number, date, signature, media, file)
       updatedQuestion.options = [];
+      updatedQuestion.scores = {};
     }
     
     setQuestion(updatedQuestion);
   };
   
   const addOption = () => {
-    setQuestion(prev => ({
-      ...prev,
-      options: [...(prev.options || []), '']
-    }));
+    if (newOption.trim()) {
+      setQuestion(prev => ({
+        ...prev,
+        options: [...(prev.options || []), newOption.trim()],
+        scores: {
+          ...(prev.scores || {}),
+          [newOption.trim()]: 0
+        }
+      }));
+      setNewOption('');
+    } else {
+      // If no newOption, add empty option like before
+      setQuestion(prev => ({
+        ...prev,
+        options: [...(prev.options || []), '']
+      }));
+    }
   };
   
   const updateOption = (index, value) => {
@@ -650,15 +688,17 @@ const QuestionCreate = () => {
               value={question.answerType} 
               onChange={handleTypeChange}
             >
-              <option value="yesno">{t('common.yesNo')}</option>
               <option value="text">{t('common.text')}</option>
-              <option value="multiple_choice">{t('common.multipleChoice')}</option>
-          
-              <option value="compliance">{t('common.compliance')}</option>
+              <option value="number">{t('common.number')}</option>
               <option value="date">{t('common.date')}</option>
-              <option value="file">{t('common.fileUpload')}</option>
+              <option value="yesno">{t('common.yesNo')}</option>
+              <option value="select">{t('common.select')}</option>
+              <option value="multiple_choice">{t('common.multipleChoice')}</option>
+              <option value="checkbox">{t('common.checkbox')}</option>
+              <option value="compliance">{t('common.compliance')}</option>
               <option value="signature">{t('common.signature')}</option>
               <option value="media">{t('common.mediaUpload')}</option>
+              <option value="file">{t('common.fileUpload')}</option>
             </Select>
           </FormGroup>
           
@@ -719,80 +759,188 @@ const QuestionCreate = () => {
           </FormGroup>
         </FormRow>
         
-        {['multiple_choice', 'select', 'radio', 'checkbox', 'dropdown', 'compliance'].includes(question.answerType) && (
+        {['multiple_choice', 'select', 'compliance', 'checkbox'].includes(question.answerType) && (
           <FormRow>
             <FormGroup>
-              <div style={{ 
-                display: 'flex', 
+              <div style={{
+                display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '8px',
-                flexWrap: 'wrap',
-                gap: '8px',
-                width: '100%',
-                maxWidth: '100%',
-                boxSizing: 'border-box'
+                marginBottom: '12px'
               }}>
-                <Label style={{ margin: 0, flex: '1 1 auto', minWidth: '120px' }}>Options</Label>
-                {question.answerType !== 'compliance' && (
-                  <Button
+                <Label>{t('tasks.options')}</Label>
+                {question.answerType !== 'compliance' && question.answerType !== 'checkbox' && (
+                  <button
                     type="button"
                     onClick={addOption}
-                    style={{ 
-                      padding: '4px 8px', 
+                    style={{
+                      background: '#f1f5f9',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer',
                       fontSize: '13px',
-                      flex: '0 0 auto',
-                      whiteSpace: 'nowrap'
+                      color: '#334155',
+                      fontWeight: '500'
                     }}
-                    secondary
                   >
-                    <Plus size={14} />
-                    Add Option
-                  </Button>
+                    <Plus size={14} /> {t('tasks.addOption')}
+                  </button>
                 )}
               </div>
-              
-              {question.options.map((option, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  gap: '8px',
-                  marginBottom: '8px',
-                  alignItems: 'center',
-                  width: '100%',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box'
-                }}>
+
+              {question.answerType !== 'compliance' && question.answerType !== 'checkbox' && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <Input
-                    type="text"
-                    value={option}
-                    onChange={(e) => updateOption(index, e.target.value)}
-                    placeholder={`Option ${index + 1}`}
-                    style={{ flex: 1, minWidth: 0 }}
-                    readOnly={question.answerType === 'compliance'}
+                    value={newOption}
+                    onChange={(e) => setNewOption(e.target.value)}
+                    placeholder={t('tasks.enterOption')}
+                    style={{ flex: 1 }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newOption.trim()) {
+                          addOption();
+                        }
+                      }
+                    }}
                   />
-                  
-                  {question.answerType !== 'compliance' && (
-                    <button
-                      onClick={() => removeOption(index)}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '8px',
-                        flexShrink: 0,
-                        minWidth: '32px'
-                      }}
-                      type="button"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newOption.trim()) {
+                        addOption();
+                      }
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      background: 'var(--color-navy)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Plus size={16} />
+                  </button>
                 </div>
-              ))}
+              )}
+
+              {/* Options table with scores - matching TaskForm */}
+              <div style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8fafc' }}>
+                      <th style={{
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        fontSize: '14px',
+                        borderBottom: '1px solid #e2e8f0'
+                      }}>{t('tasks.option')}</th>
+                      {question.answerType !== 'checkbox' && (
+                        <th style={{
+                          padding: '12px 16px',
+                          textAlign: 'center',
+                          fontSize: '14px',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>{t('tasks.score')}</th>
+                      )}
+                      {question.answerType !== 'compliance' && question.answerType !== 'checkbox' && (
+                        <th style={{
+                          padding: '12px 16px',
+                          textAlign: 'center',
+                          fontSize: '14px',
+                          width: '60px',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}></th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {question.options.map((option, i) => (
+                      <tr key={i} style={{
+                        borderBottom: i < question.options.length - 1 ? '1px solid #e2e8f0' : 'none'
+                      }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          {question.answerType === 'compliance' || question.answerType === 'checkbox' ? (
+                            question.answerType === 'checkbox' ? (
+                              <Input
+                                type="text"
+                                value={option}
+                                onChange={(e) => updateOption(i, e.target.value)}
+                                placeholder={`${t('tasks.option')} ${i + 1}`}
+                                style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
+                              />
+                            ) : (
+                              option
+                            )
+                          ) : (
+                            <Input
+                              type="text"
+                              value={option}
+                              onChange={(e) => updateOption(i, e.target.value)}
+                              placeholder={`${t('tasks.option')} ${i + 1}`}
+                              style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
+                            />
+                          )}
+                        </td>
+                        {question.answerType !== 'checkbox' && (
+                          <td style={{ padding: '8px 16px', textAlign: 'center' }}>
+                            <Input
+                              type="number"
+                              value={question.scores?.[option] || 0}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setQuestion(prev => ({
+                                  ...prev,
+                                  scores: {
+                                    ...(prev.scores || {}),
+                                    [option]: value === '' ? '' : parseInt(value) || 0
+                                  }
+                                }));
+                              }}
+                              style={{
+                                width: '60px',
+                                textAlign: 'center',
+                                padding: '6px 8px'
+                              }}
+                            />
+                          </td>
+                        )}
+                        {question.answerType !== 'compliance' && question.answerType !== 'checkbox' && (
+                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => removeOption(i)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#ef4444',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <X size={16} />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </FormGroup>
           </FormRow>
         )}

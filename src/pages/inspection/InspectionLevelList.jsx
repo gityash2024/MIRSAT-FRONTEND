@@ -980,7 +980,8 @@ const InspectionLevelList = ({
   filters,
   onFilterChange,
   pagination,
-  onPageChange
+  onPageChange,
+  fetchData
 }) => {
   const [inspectionLevels, setInspectionLevels] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -1226,6 +1227,9 @@ const InspectionLevelList = ({
       // Refresh the data
       if (fetchData) {
         fetchData();
+      } else {
+        // Fallback: reload page if fetchData is not available
+        window.location.reload();
       }
 
       setLoading(false);
@@ -1259,6 +1263,9 @@ const InspectionLevelList = ({
       // Refresh the data
       if (fetchData) {
         fetchData();
+      } else {
+        // Fallback: reload page if fetchData is not available
+        window.location.reload();
       }
 
       setLoading(false);

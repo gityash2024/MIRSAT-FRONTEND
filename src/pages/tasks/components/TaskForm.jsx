@@ -1004,9 +1004,14 @@ const PreInspectionQuestions = ({
       requirementType: newQuestion.requirementType || 'mandatory'
     };
 
-    // Add default options based on type
+    // Add default options based on type - always reset when changing types
     if (newType === 'multiple_choice') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
     } else if (newType === 'compliance') {
       updatedQuestion.options = [
         t('common.fullCompliance'),
@@ -1028,7 +1033,12 @@ const PreInspectionQuestions = ({
         [t('common.notApplicable')]: 0
       };
     } else if (newType === 'select') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
     } else if (newType === 'yesno') {
       // Add default scores for Yes/No
       updatedQuestion.options = [t('common.yes'), t('common.no'), t('common.na')];
@@ -1041,9 +1051,14 @@ const PreInspectionQuestions = ({
         [t('common.no')]: 0,
         [t('common.na')]: 0
       };
+    } else if (newType === 'checkbox') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      // Checkbox doesn't have scoring (no scores)
+      updatedQuestion.scores = {};
     } else {
-      // Reset options if changing to a type that doesn't need them
+      // Reset options if changing to a type that doesn't need them (text, number, date, signature, media, file)
       updatedQuestion.options = [];
+      updatedQuestion.scores = {};
       // Keep scoring if it exists, otherwise initialize it
       if (!updatedQuestion.scoring) {
         updatedQuestion.scoring = {
@@ -1191,13 +1206,17 @@ const PreInspectionQuestions = ({
               value={newQuestion.type}
               onChange={handleTypeChange}
             >
-              <option value="text">{t('tasks.text')}</option>
-              <option value="number">{t('tasks.number')}</option>
-              <option value="date">{t('tasks.date')}</option>
-              <option value="yesno">{t('tasks.yesNo')}</option>
-              <option value="select">{t('tasks.select')}</option>
-              <option value="multiple_choice">{t('tasks.multipleChoice')}</option>
-              <option value="compliance">{t('tasks.compliance')}</option>
+              <option value="text">{t('common.text')}</option>
+              <option value="number">{t('common.number')}</option>
+              <option value="date">{t('common.date')}</option>
+              <option value="yesno">{t('common.yesNo')}</option>
+              <option value="select">{t('common.select')}</option>
+              <option value="multiple_choice">{t('common.multipleChoice')}</option>
+              <option value="checkbox">{t('common.checkbox')}</option>
+              <option value="compliance">{t('common.compliance')}</option>
+              <option value="signature">{t('common.signature')}</option>
+              <option value="media">{t('common.mediaUpload')}</option>
+              <option value="file">{t('common.fileUpload')}</option>
             </Select>
           </FormGroup>
 
@@ -1233,8 +1252,8 @@ const PreInspectionQuestions = ({
             </div>
           </FormGroup>
 
-          {/* Options editor for multiple choice, select or compliance questions */}
-          {['multiple_choice', 'compliance', 'select', 'yesno'].includes(newQuestion.type) && (
+          {/* Options editor for multiple choice, select, checkbox or compliance questions */}
+          {['multiple_choice', 'compliance', 'select', 'yesno', 'checkbox'].includes(newQuestion.type) && (
             <FormGroup style={{ marginTop: '16px' }}>
               <div style={{
                 display: 'flex',
@@ -1243,7 +1262,7 @@ const PreInspectionQuestions = ({
                 marginBottom: '12px'
               }}>
                 <Label>{t('tasks.options')}</Label>
-                {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
+                {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && newQuestion.type !== 'checkbox' && (
                   <button
                     type="button"
                     onClick={handleAddOption}
@@ -1266,7 +1285,7 @@ const PreInspectionQuestions = ({
                 )}
               </div>
 
-              {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
+              {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && newQuestion.type !== 'checkbox' && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <Input
                     value={newOption}
@@ -1299,13 +1318,15 @@ const PreInspectionQuestions = ({
                         fontSize: '14px',
                         borderBottom: '1px solid #e2e8f0'
                       }}>{t('tasks.option')}</th>
-                      <th style={{
-                        padding: '12px 16px',
-                        textAlign: 'center',
-                        fontSize: '14px',
-                        borderBottom: '1px solid #e2e8f0'
-                      }}>{t('tasks.score')}</th>
-                      {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
+                      {newQuestion.type !== 'checkbox' && (
+                        <th style={{
+                          padding: '12px 16px',
+                          textAlign: 'center',
+                          fontSize: '14px',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>{t('tasks.score')}</th>
+                      )}
+                      {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && newQuestion.type !== 'checkbox' && (
                         <th style={{
                           padding: '12px 16px',
                           textAlign: 'center',
@@ -1321,20 +1342,38 @@ const PreInspectionQuestions = ({
                       <tr key={i} style={{
                         borderBottom: i < newQuestion.options.length - 1 ? '1px solid #e2e8f0' : 'none'
                       }}>
-                        <td style={{ padding: '12px 16px' }}>{translateOption(option)}</td>
-                        <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                          <Input
-                            type="number"
-                            value={newQuestion.scores?.[option] || 0}
-                            onChange={(e) => updateOptionScore(option, e.target.value)}
-                            style={{
-                              width: '60px',
-                              textAlign: 'center',
-                              padding: '6px 8px'
-                            }}
-                          />
+                        <td style={{ padding: '12px 16px' }}>
+                          {newQuestion.type === 'checkbox' ? (
+                            <Input
+                              type="text"
+                              value={option}
+                              onChange={(e) => {
+                                const updatedOptions = [...newQuestion.options];
+                                updatedOptions[i] = e.target.value;
+                                setNewQuestion(prev => ({ ...prev, options: updatedOptions }));
+                              }}
+                              placeholder={`${t('tasks.option')} ${i + 1}`}
+                              style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
+                            />
+                          ) : (
+                            translateOption(option)
+                          )}
                         </td>
-                        {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && (
+                        {newQuestion.type !== 'checkbox' && (
+                          <td style={{ padding: '8px 16px', textAlign: 'center' }}>
+                            <Input
+                              type="number"
+                              value={newQuestion.scores?.[option] || 0}
+                              onChange={(e) => updateOptionScore(option, e.target.value)}
+                              style={{
+                                width: '60px',
+                                textAlign: 'center',
+                                padding: '6px 8px'
+                              }}
+                            />
+                          </td>
+                        )}
+                        {newQuestion.type !== 'compliance' && newQuestion.type !== 'yesno' && newQuestion.type !== 'checkbox' && (
                           <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                             <button
                               type="button"

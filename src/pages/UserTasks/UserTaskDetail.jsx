@@ -1,32 +1,33 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
-import { 
-  Info, 
-  Activity, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
-  Clock, 
-  FileText, 
-  Download, 
-  CheckSquare, 
-  Paperclip, 
-  Send, 
-  Trash2, 
-  Edit, 
-  Plus, 
-  Award, 
-  User, 
-  MapPin, 
-  Calendar, 
-  Clock as ClockIcon, 
-  Edit3, 
-  Upload, 
+import {
+  Info,
+  Activity,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock,
+  FileText,
+  Download,
+  CheckSquare,
+  Paperclip,
+  Send,
+  Trash2,
+  Edit,
+  Plus,
+  Award,
+  User,
+  MapPin,
+  Calendar,
+  Clock as ClockIcon,
+  Edit3,
+  Upload,
   Clipboard,
   ArrowLeft,
   ChevronRight,
@@ -59,8 +60,8 @@ import {
   Loader
 } from 'react-feather';
 import { toast } from 'react-hot-toast';
-import { 
-  fetchUserTaskDetails, 
+import {
+  fetchUserTaskDetails,
   updateUserTaskProgress,
   addUserTaskComment,
   exportTaskReport,
@@ -349,8 +350,8 @@ const QuickActionButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  box-shadow: ${props => props.primary ? 
-    '0 4px 15px rgba(55, 136, 216, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 
+  box-shadow: ${props => props.primary ?
+    '0 4px 15px rgba(55, 136, 216, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' :
     '0 2px 8px rgba(0, 0, 0, 0.1)'};
   white-space: nowrap;
   flex-shrink: 0;
@@ -371,9 +372,9 @@ const QuickActionButton = styled.button`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.primary ? 
-      '0 8px 25px rgba(55, 136, 216, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : 
-      '0 4px 15px rgba(0, 0, 0, 0.2)'};
+    box-shadow: ${props => props.primary ?
+    '0 8px 25px rgba(55, 136, 216, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)' :
+    '0 4px 15px rgba(0, 0, 0, 0.2)'};
   }
   
   &:disabled {
@@ -656,7 +657,7 @@ const StatusBadge = styled.div`
   }
   
   ${props => {
-    switch(props.status) {
+    switch (props.status) {
       case 'pending':
         return css`
           background: linear-gradient(135deg, #f39c12, #e67e22);
@@ -719,7 +720,7 @@ const PriorityBadge = styled.div`
   }
   
   ${props => {
-    switch(props.priority) {
+    switch (props.priority) {
       case 'high':
         return css`
           background: linear-gradient(135deg, #e74c3c, #c0392b);
@@ -1822,12 +1823,12 @@ const ScoreBadge = styled.div`
   font-size: 12px;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: ${props => props.hasResponse ? 
-    'linear-gradient(135deg, #27ae60, #2ecc71)' : 
+  background: ${props => props.hasResponse ?
+    'linear-gradient(135deg, #27ae60, #2ecc71)' :
     'linear-gradient(135deg, #f3f4f6, #e5e7eb)'};
   color: ${props => props.hasResponse ? 'white' : '#6b7280'};
-  box-shadow: ${props => props.hasResponse ? 
-    '0 2px 8px rgba(39, 174, 96, 0.3)' : 
+  box-shadow: ${props => props.hasResponse ?
+    '0 2px 8px rgba(39, 174, 96, 0.3)' :
     '0 2px 8px rgba(0, 0, 0, 0.1)'};
   white-space: nowrap;
   flex-shrink: 0;
@@ -2636,8 +2637,8 @@ const CommentSubmitButton = styled.button`
   align-items: center;
   gap: 6px;
   padding: 12px 20px;
-  background: ${props => props.disabled 
-    ? '#9ca3af' 
+  background: ${props => props.disabled
+    ? '#9ca3af'
     : 'linear-gradient(135deg, #3788d8, #2980b9)'};
   color: white;
   border: none;
@@ -2761,7 +2762,7 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000;
   backdrop-filter: blur(8px);
   animation: ${fadeIn} 0.3s ease-out;
 `;
@@ -3085,11 +3086,11 @@ const CompletionBadge = styled.div`
 
 const formatTimeSpent = (timeInHours) => {
   if (!timeInHours || timeInHours === 0) return '0:00';
-  
+
   const totalMinutes = Math.round(timeInHours * 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}`;
   } else {
@@ -3143,47 +3144,48 @@ const calculateSectionScore = (section, responses) => {
   if (!section || !section.questions || !responses) {
     return { total: 0, achieved: 0, percentage: 0 };
   }
-  
+
   let totalPossible = 0;
   let totalAchieved = 0;
-  
+
   section.questions.forEach(question => {
     // CRITICAL FIX: Exclude recommended questions from scoring
     if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
       return; // Skip recommended/non-mandatory questions
     }
-    
+
     // CRITICAL FIX: Only score Yes/No and Compliance question types
     const questionType = question.type || question.answerType;
     const scorableTypes = ['yesno', 'compliance'];
+    // Exclude non-scorable types: text, number, date, signature, file, media, checkbox, select, multiple_choice
     if (!scorableTypes.includes(questionType)) {
-      return; // Skip text, signature, date, number, file, and other non-scorable types
+      return; // Skip text, signature, date, number, file, media, checkbox, select, multiple_choice and other non-scorable types
     }
-    
+
     const questionId = question._id || question.id;
     let responseKey = null;
-    
+
     if (responses[questionId] !== undefined) {
       responseKey = questionId;
     } else {
-      responseKey = Object.keys(responses).find(key => 
+      responseKey = Object.keys(responses).find(key =>
         key.includes(questionId) || key.endsWith(questionId)
       );
     }
-    
+
     const maxScore = question.scores?.max || question.scoring?.max || 2;
     const weight = question.weight || 1;
-    
+
     totalPossible += (maxScore * weight);
-    
+
     if (responseKey) {
       const response = responses[responseKey];
-      
+
       if (response === 'na' || response === 'not_applicable' || response === 'N/A' || response === 'Not applicable') {
         totalPossible -= (maxScore * weight);
         return;
       }
-      
+
       // Use template-defined scores if available
       if (question.scores && typeof question.scores === 'object') {
         // Get the score for this specific response from the template
@@ -3204,9 +3206,9 @@ const calculateSectionScore = (section, responses) => {
       }
     }
   });
-  
+
   const percentage = totalPossible > 0 ? Math.round((totalAchieved / totalPossible) * 100) : 0;
-  
+
   return {
     total: totalPossible,
     achieved: totalAchieved,
@@ -3218,18 +3220,18 @@ const calculatePageScore = (page, responses) => {
   if (!page || !page.sections) {
     return { total: 0, achieved: 0, percentage: 0 };
   }
-  
+
   let pageTotal = 0;
   let pageAchieved = 0;
-  
+
   page.sections.forEach(section => {
     const sectionScore = calculateSectionScore(section, responses);
     pageTotal += sectionScore.total;
     pageAchieved += sectionScore.achieved;
   });
-  
+
   const percentage = pageTotal > 0 ? Math.round((pageAchieved / pageTotal) * 100) : 0;
-  
+
   return {
     total: pageTotal,
     achieved: pageAchieved,
@@ -3297,16 +3299,16 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
         {isDisabled ? t('tasks.signature') : t('tasks.digitalSignatureRequired')}
       </div>
 
-      {/* Signature Display or Button */}
+      {/* Signature Display or Button - NO EMBEDDED CANVAS */}
       {response ? (
-        <div style={{ 
+        <div style={{
           border: '2px dashed #e5e7eb',
           borderRadius: '12px',
           padding: '16px',
           background: '#f9fafb',
           textAlign: 'center'
         }}>
-          <div style={{ 
+          <div style={{
             fontSize: '12px',
             color: '#16a34a',
             fontWeight: '500',
@@ -3314,7 +3316,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
           }}>
             ✅ {t('tasks.signatureCaptured')}
           </div>
-          
+
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -3327,7 +3329,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
               background: 'white',
               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
             }}>
-              <img 
+              <img
                 src={response}
                 alt="Signature preview"
                 style={{
@@ -3378,21 +3380,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
           )}
         </div>
       ) : (
-        <div style={{ 
-          border: '2px dashed #e5e7eb',
-          borderRadius: '12px',
-          padding: '24px',
-          background: '#f9fafb',
-          textAlign: 'center'
-        }}>
-          <div style={{ 
-            fontSize: '14px',
-            color: '#6b7280',
-            marginBottom: '16px'
-          }}>
-            No signature provided
-          </div>
-          
+        // No signature - just show button to open modal (NO CANVAS HERE)
+        <div style={{ textAlign: 'center' }}>
           {!isDisabled && (
             <button
               type="button"
@@ -3406,20 +3395,29 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
                 fontSize: '14px',
                 cursor: 'pointer',
                 fontWeight: '500',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                margin: '0 auto'
+                transition: 'all 0.3s ease'
               }}
             >
               ✏️ Add Signature
             </button>
           )}
+          {isDisabled && (
+            <div style={{
+              fontSize: '14px',
+              color: '#9ca3af',
+              padding: '12px'
+            }}>
+              No signature provided
+            </div>
+          )}
         </div>
       )}
 
-      {/* Signature Modal */}
-      {showSignatureModal && (
+      {/* Signature Modal - Canvas ONLY appears here */}
+      {showSignatureModal && ReactDOM.createPortal(
         <ModalOverlay onClick={handleModalOverlayClick}>
           <ModalContent onClick={handleModalContentClick}>
             <ModalHeader>
@@ -3430,7 +3428,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
             </ModalHeader>
 
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ 
+              <div style={{
                 fontSize: '14px',
                 color: '#6b7280',
                 marginBottom: '12px',
@@ -3486,7 +3484,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
               </SaveButton>
             </SignatureActions>
           </ModalContent>
-        </ModalOverlay>
+        </ModalOverlay>,
+        document.body
       )}
     </div>
   );
@@ -3537,32 +3536,32 @@ const UserTaskDetail = () => {
   const [showPageDropdown, setShowPageDropdown] = useState(false);
   const [responseLoading, setResponseLoading] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
-  
+
   // CRITICAL FIX: Track unanswered required questions for validation
   const [unansweredRequiredQuestions, setUnansweredRequiredQuestions] = useState(new Set());
-  
+
   // Section comments state
   const [sectionComments, setSectionComments] = useState({});
   const [sectionCommentTexts, setSectionCommentTexts] = useState({});
   const [commentLoadingStates, setCommentLoadingStates] = useState({});
-  
+
   // Enhanced time tracking state
   const [isScreenActive, setIsScreenActive] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [accumulatedTime, setAccumulatedTime] = useState(0);
   const sessionTimerRef = useRef(null);
-  
+
   // Auto-update functionality
   const autoUpdateRef = useRef(null);
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
-  
+
   // Track user interactions to prevent auto-update interference
   const userActiveRef = useRef(false);
-  
+
   // Refs for focus management
   const sectionNavigationRef = useRef(null);
   const pageNavigationRef = useRef(null);
-  
+
   // Derive currentPage from inspectionPages and selectedPage
   const currentPage = useMemo(() => {
     if (!inspectionPages || !selectedPage) return null;
@@ -3574,7 +3573,7 @@ const UserTaskDetail = () => {
     if (!currentPage || !selectedSection) return null;
     return currentPage.sections?.find(s => (s.id || s._id) === selectedSection);
   }, [currentPage, selectedSection]);
-  
+
   // Log auto-update status
   useEffect(() => {
     console.log('Auto-update enabled:', autoUpdateEnabled);
@@ -3590,7 +3589,7 @@ const UserTaskDetail = () => {
   // Define calculateTaskCompletionPercentage BEFORE all useEffects that use it
   const calculateTaskCompletionPercentage = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
-    
+
     if (!taskToUse || !inspectionPages || inspectionPages.length === 0) {
       if (!taskData) setTaskCompletionPercentage(0); // Only update state if using current task
       return 0;
@@ -3609,22 +3608,22 @@ const UserTaskDetail = () => {
               if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
                 return; // Skip recommended/non-mandatory questions
               }
-              
+
               totalQuestions++;
-              
+
               const questionId = question._id || question.id;
               let hasResponse = false;
-              
+
               if (taskToUse.questionnaireResponses) {
                 if (taskToUse.questionnaireResponses[questionId] !== undefined) {
                   const response = taskToUse.questionnaireResponses[questionId];
                   // Count as answered if response exists and is not empty
                   hasResponse = response !== null && response !== undefined && response !== '';
                 } else {
-                  const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key => 
+                  const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key =>
                     key.includes(questionId) || key.endsWith(questionId)
                   );
-                  
+
                   if (responseKey) {
                     const response = taskToUse.questionnaireResponses[responseKey];
                     // Count as answered if response exists and is not empty
@@ -3632,7 +3631,7 @@ const UserTaskDetail = () => {
                   }
                 }
               }
-              
+
               if (hasResponse) {
                 answeredQuestions++;
               }
@@ -3645,22 +3644,22 @@ const UserTaskDetail = () => {
     if (taskToUse.preInspectionQuestions && taskToUse.preInspectionQuestions.length > 0) {
       taskToUse.preInspectionQuestions.forEach(question => {
         totalQuestions++;
-        if (taskToUse.questionnaireResponses && 
-            taskToUse.questionnaireResponses[question._id] !== undefined) {
+        if (taskToUse.questionnaireResponses &&
+          taskToUse.questionnaireResponses[question._id] !== undefined) {
           answeredQuestions++;
         }
       });
     }
 
     const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
-    
+
     console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}% (using ${taskData ? 'fresh data' : 'current state'})`);
-    
+
     if (!taskData) {
       setTaskCompletionPercentage(percentage);
       setLastUpdateTime(Date.now()); // Force re-render
     }
-    
+
     return percentage;
   }, [currentTask, inspectionPages]);
 
@@ -3679,27 +3678,27 @@ const UserTaskDetail = () => {
     if (currentTask?.status === 'completed' || currentTask?.signature) {
       return; // Don't start timer for completed tasks
     }
-    
+
     if (!isScreenActive && currentTask?.status === 'in_progress') {
       setIsScreenActive(true);
       setSessionStartTime(Date.now());
-      
+
       sessionTimerRef.current = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
   }, [currentTask, isScreenActive]);
-  
+
   const pauseScreenTimer = useCallback(() => {
     if (isScreenActive) {
       setIsScreenActive(false);
-      
+
       if (sessionStartTime) {
         const sessionDuration = (Date.now() - sessionStartTime) / 1000; // in seconds
         setAccumulatedTime(prev => prev + sessionDuration);
         setSessionStartTime(null);
       }
-      
+
       if (sessionTimerRef.current) {
         clearInterval(sessionTimerRef.current);
         sessionTimerRef.current = null;
@@ -3713,7 +3712,7 @@ const UserTaskDetail = () => {
     if (currentTask && (accumulatedTime > 0 || sessionStartTime)) {
       const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
       const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
-      
+
       // Update task metrics with final time
       dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
@@ -3724,74 +3723,74 @@ const UserTaskDetail = () => {
           timeSpent: totalActiveTime
         }
       }));
-         }
-   }, [pauseScreenTimer, currentTask, accumulatedTime, sessionStartTime, dispatch]);
+    }
+  }, [pauseScreenTimer, currentTask, accumulatedTime, sessionStartTime, dispatch]);
 
-   const calculateScores = useCallback((taskData = null) => {
-     const taskToUse = taskData || currentTask;
-     if (!taskToUse) return;
+  const calculateScores = useCallback((taskData = null) => {
+    const taskToUse = taskData || currentTask;
+    if (!taskToUse) return;
 
-     try {
-       let totalPoints = 0;
-       let achievedPoints = 0;
-       
-       inspectionPages.forEach(page => {
-         if (!page.sections) return;
-         
-         page.sections.forEach(section => {
-           if (!section.questions) return;
-           
-           const pageScore = calculateSectionScore(section, taskToUse.questionnaireResponses || {});
-           totalPoints += pageScore.total;
-           achievedPoints += pageScore.achieved;
-         });
-       });
-       
-       if (totalPoints === 0) {
-         if (!taskData) { // Only update state if using current task
-           setScores({
-             total: 0,
-             achieved: 0,
-             percentage: 0,
-             checkpointScores: {},
-             assessmentAreaScores: {}
-           });
-         }
-         return;
-       }
-       
-       const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
-       
-       const result = {
-         total: totalPoints,
-         achieved: achievedPoints,
-         percentage,
-         checkpointScores: {},
-         assessmentAreaScores: {}
-       };
-       
-       if (!taskData) { // Only update state if using current task
-         setScores(result);
-       }
-       
-       return result;
-     } catch (error) {
-       console.error('Error calculating scores:', error);
-       if (!taskData) { // Only update state if using current task
-         setScores({
-           total: 0,
-           achieved: 0,
-           percentage: 0,
-           checkpointScores: {},
-           assessmentAreaScores: {}
-         });
-       }
-     }
-   }, [currentTask, inspectionPages]);
+    try {
+      let totalPoints = 0;
+      let achievedPoints = 0;
+
+      inspectionPages.forEach(page => {
+        if (!page.sections) return;
+
+        page.sections.forEach(section => {
+          if (!section.questions) return;
+
+          const pageScore = calculateSectionScore(section, taskToUse.questionnaireResponses || {});
+          totalPoints += pageScore.total;
+          achievedPoints += pageScore.achieved;
+        });
+      });
+
+      if (totalPoints === 0) {
+        if (!taskData) { // Only update state if using current task
+          setScores({
+            total: 0,
+            achieved: 0,
+            percentage: 0,
+            checkpointScores: {},
+            assessmentAreaScores: {}
+          });
+        }
+        return;
+      }
+
+      const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
+
+      const result = {
+        total: totalPoints,
+        achieved: achievedPoints,
+        percentage,
+        checkpointScores: {},
+        assessmentAreaScores: {}
+      };
+
+      if (!taskData) { // Only update state if using current task
+        setScores(result);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error calculating scores:', error);
+      if (!taskData) { // Only update state if using current task
+        setScores({
+          total: 0,
+          achieved: 0,
+          percentage: 0,
+          checkpointScores: {},
+          assessmentAreaScores: {}
+        });
+      }
+    }
+  }, [currentTask, inspectionPages]);
 
   useEffect(() => {
     dispatch(fetchUserTaskDetails(taskId));
-    
+
     if (location.state?.questionnaireCompleted) {
       setActiveTab('inspection');
     }
@@ -3801,10 +3800,10 @@ const UserTaskDetail = () => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Only enable keyboard navigation when in inspection tab and not typing in inputs
-      if (activeTab !== 'inspection' || 
-          e.target.tagName === 'INPUT' || 
-          e.target.tagName === 'TEXTAREA' || 
-          e.target.tagName === 'SELECT') {
+      if (activeTab !== 'inspection' ||
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.tagName === 'SELECT') {
         return;
       }
 
@@ -3873,12 +3872,12 @@ const UserTaskDetail = () => {
       setTimer(currentTask.taskMetrics.timeSpent * 3600);
       setAccumulatedTime(currentTask.taskMetrics.timeSpent * 3600); // Convert hours to seconds
     }
-    
+
     // Start timer for in-progress tasks
     if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
       startScreenTimer();
     }
-    
+
     // Add page visibility listeners
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -3887,14 +3886,14 @@ const UserTaskDetail = () => {
         startScreenTimer();
       }
     };
-    
+
     const handleBeforeUnload = () => {
       pauseScreenTimer();
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       pauseScreenTimer();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -3905,9 +3904,9 @@ const UserTaskDetail = () => {
   useEffect(() => {
     if (currentTask) {
       calculateScores();
-      
+
       let pagesToUse = [];
-      
+
       if (currentTask.inspectionLevel && currentTask.inspectionLevel.pages) {
         pagesToUse = currentTask.inspectionLevel.pages.map(page => ({
           _id: page._id,
@@ -3927,20 +3926,20 @@ const UserTaskDetail = () => {
           })) : []
         }));
       }
-      
+
       setInspectionPages(pagesToUse);
-      
+
       // Only set default page/section if not already set (prevents overriding during auto-updates)
       if (pagesToUse.length > 0 && !selectedPage) {
         const firstPageId = pagesToUse[0]._id || pagesToUse[0].id;
         setSelectedPage(firstPageId);
-        
+
         if (pagesToUse[0].sections && pagesToUse[0].sections.length > 0 && !selectedSection) {
           const firstSectionId = pagesToUse[0].sections[0]._id || pagesToUse[0].sections[0].id;
           setSelectedSection(firstSectionId);
         }
       }
-      
+
       // Recalculate completion percentage when task data changes
       setTimeout(() => {
         const newPercentage = calculateTaskCompletionPercentage();
@@ -3974,16 +3973,16 @@ const UserTaskDetail = () => {
       ctx.lineCap = 'round';
     }
   }, [showSignatureModal, signatureMethod]);
-  
+
   // Periodic save function to backup time data (define BEFORE useEffect)
   const saveTimeToBackend = useCallback(async () => {
     if (!currentTask || currentTask.status === 'completed' || currentTask.signature) {
       return;
     }
-    
+
     const currentSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
     const totalActiveTime = (accumulatedTime + currentSessionTime) / 3600; // Convert to hours
-    
+
     if (totalActiveTime > 0) {
       try {
         await dispatch(updateUserTaskProgress({
@@ -4000,14 +3999,14 @@ const UserTaskDetail = () => {
       }
     }
   }, [currentTask, accumulatedTime, sessionStartTime, dispatch]);
-  
+
   // Set up periodic time saving (every 2 minutes)
   useEffect(() => {
     if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
       const saveInterval = setInterval(() => {
         saveTimeToBackend();
       }, 120000); // Save every 2 minutes
-      
+
       return () => clearInterval(saveInterval);
     }
   }, [currentTask, saveTimeToBackend]);
@@ -4022,7 +4021,7 @@ const UserTaskDetail = () => {
 
     if (autoUpdateEnabled && currentTask && currentTask._id) {
       console.log('Setting up progress auto-update every 5 seconds for task:', currentTask._id);
-      
+
       autoUpdateRef.current = setInterval(async () => {
         try {
           // Skip update if user is actively interacting
@@ -4030,27 +4029,27 @@ const UserTaskDetail = () => {
             console.log('Skipping auto-update - user is active');
             return;
           }
-          
+
           console.log('Auto-updating progress and scores... Current progress:', currentTask.overallProgress);
-          
+
           // Store current UI state BEFORE any updates
           const currentPageId = selectedPage;
           const currentSectionId = selectedSection;
           const currentActiveTab = activeTab;
-          
+
           // Fetch latest task data silently
           const updatedTask = await dispatch(fetchUserTaskDetails(currentTask._id));
           console.log('Updated task progress:', updatedTask?.payload?.overallProgress);
           console.log('Fresh task data has', Object.keys(updatedTask?.payload?.questionnaireResponses || {}).length, 'responses');
-          
+
           // Force recalculate completion percentage using fresh task data
           const newCompletionPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
           console.log('Recalculated completion percentage with fresh data:', newCompletionPercentage);
-          
+
           // Always update if there's any difference, even small ones
           if (updatedTask?.payload && newCompletionPercentage !== (updatedTask.payload.overallProgress || 0)) {
             console.log('Updating task progress from', updatedTask.payload.overallProgress, 'to', newCompletionPercentage);
-            
+
             try {
               await dispatch(updateUserTaskProgress({
                 taskId: currentTask._id,
@@ -4061,17 +4060,17 @@ const UserTaskDetail = () => {
                   completionPercentage: newCompletionPercentage
                 }
               }));
-              
+
               console.log('Progress update successful');
               // DO NOT fetch task details again immediately to prevent progress reset
-              
+
             } catch (error) {
               console.error('Failed to update progress:', error);
             }
           } else {
             console.log('No progress update needed - values match');
           }
-          
+
           // Restore UI state to prevent tab switching (only if user hasn't changed it)
           setTimeout(() => {
             if (!userActiveRef.current) {
@@ -4084,16 +4083,16 @@ const UserTaskDetail = () => {
               if (currentSectionId && currentSectionId !== selectedSection) {
                 setSelectedSection(currentSectionId);
               }
-              
+
               // Update scores and recalculate everything using fresh data
               calculateScores(updatedTask?.payload);
-              
+
               // Force recalculate completion percentage with updated data
               const refreshedPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
               console.log('Auto-update: Refreshed completion percentage:', refreshedPercentage);
             }
           }, 100);
-          
+
         } catch (error) {
           console.error('Auto-update failed:', error);
         }
@@ -4108,7 +4107,7 @@ const UserTaskDetail = () => {
         autoUpdateRef.current = null;
       }
     };
-      }, [autoUpdateEnabled, currentTask?._id]); // Keep dependencies minimal
+  }, [autoUpdateEnabled, currentTask?._id]); // Keep dependencies minimal
 
   // Component cleanup effect
   useEffect(() => {
@@ -4130,13 +4129,13 @@ const UserTaskDetail = () => {
     if (!currentTask?.preInspectionQuestions || currentTask.preInspectionQuestions.length === 0) {
       return true;
     }
-    
+
     const totalQuestions = currentTask.preInspectionQuestions.length;
     const answeredQuestions = currentTask.preInspectionQuestions.filter(question => {
       const response = currentTask.questionnaireResponses?.[question._id];
       return response !== undefined && response !== null && response !== '';
     }).length;
-    
+
     return answeredQuestions === totalQuestions;
   };
 
@@ -4146,13 +4145,13 @@ const UserTaskDetail = () => {
     try {
       await userTaskService.startTask(taskId);
       toast.success(t('tasks.taskStartedSuccessfully'));
-      
+
       // Log task start
       await FrontendLogger.logTaskStart(taskId, currentTask?.title || 'Unknown Task');
-      
+
       dispatch(fetchUserTaskDetails(taskId));
       setActiveTab('inspection');
-      
+
       // Initialize timer for newly started task
       setAccumulatedTime(0);
       startScreenTimer();
@@ -4163,15 +4162,15 @@ const UserTaskDetail = () => {
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) return;
-    
+
     try {
       await dispatch(addUserTaskComment({
         taskId,
         comment: commentText
       })).unwrap();
-      
+
       setCommentText('');
-      
+
       if (commentBoxRef.current) {
         commentBoxRef.current.style.height = 'auto';
       }
@@ -4196,21 +4195,21 @@ const UserTaskDetail = () => {
   const handleSectionCommentSubmit = async (sectionId) => {
     const commentText = sectionCommentTexts[sectionId];
     if (!commentText?.trim()) return;
-    
+
     setCommentLoadingStates(prev => ({ ...prev, [sectionId]: true }));
-    
+
     try {
       const data = await userTaskService.addSectionComment(currentTask._id, sectionId, commentText.trim());
-      
+
       // Add the new comment to the section comments
       setSectionComments(prev => ({
         ...prev,
         [sectionId]: [...(prev[sectionId] || []), data.data.comment]
       }));
-      
+
       // Clear the comment text
       setSectionCommentTexts(prev => ({ ...prev, [sectionId]: '' }));
-      
+
       toast.success(t('tasks.commentAddedSuccessfully'));
     } catch (error) {
       console.error('Error adding section comment:', error);
@@ -4226,12 +4225,12 @@ const UserTaskDetail = () => {
 
   const handleRefreshProgress = async () => {
     if (!currentTask?.questionnaireResponses || actionLoading) return;
-    
+
     setRefreshLoading(true);
-    
+
     try {
       const completionPercentage = calculateTaskCompletionPercentage();
-      
+
       await dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
         subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
@@ -4241,7 +4240,7 @@ const UserTaskDetail = () => {
           completionPercentage: completionPercentage
         }
       })).unwrap();
-      
+
       toast.success(t('tasks.progressUpdatedSuccessfully'));
     } catch (err) {
       toast.error(t('tasks.failedToUpdateProgress'));
@@ -4252,18 +4251,18 @@ const UserTaskDetail = () => {
 
   const handleExportReport = async () => {
     if (!currentTask) return;
-    
+
     if (!currentTask.signature) {
       setShowSignatureModal(true);
       toast.info(t('tasks.pleaseProvideSignatureBeforeDownloading'));
       return;
     }
-    
+
     try {
       toast.loading(t('tasks.generatingReport'));
-      
+
       const completionPercentage = calculateTaskCompletionPercentage();
-      
+
       if (currentTask.overallProgress !== completionPercentage) {
         await dispatch(updateUserTaskProgress({
           taskId: currentTask._id,
@@ -4276,15 +4275,15 @@ const UserTaskDetail = () => {
           }
         })).unwrap();
       }
-      
-      const result = await dispatch(exportTaskReport({ 
-        taskId: currentTask._id, 
-        format: 'excel' 
+
+      const result = await dispatch(exportTaskReport({
+        taskId: currentTask._id,
+        format: 'excel'
       })).unwrap();
-      
+
       toast.dismiss();
       toast.success(t('tasks.reportExportedSuccessfully'));
-      
+
       return result;
     } catch (error) {
       toast.dismiss();
@@ -4306,16 +4305,16 @@ const UserTaskDetail = () => {
   const handleSubmitAndDownloadLater = async () => {
     try {
       toast.loading(t('tasks.submittingInspectionForLaterDownload'));
-      
+
       // Archive the task without downloading
       await dispatch(archiveTask(currentTask._id)).unwrap();
-      
+
       // Refresh task data
       await dispatch(fetchUserTaskDetails(currentTask._id));
-      
+
       toast.dismiss();
       toast.success(t('tasks.inspectionSubmittedSuccessfully'));
-      
+
     } catch (error) {
       toast.dismiss();
       toast.error(`${t('tasks.failedToSubmitInspection')}: ${error.message || t('common.error')}`);
@@ -4331,39 +4330,39 @@ const UserTaskDetail = () => {
     try {
       setShowDocumentNamingModal(false);
       toast.loading(t('tasks.generatingReportFormat', { format: selectedReportFormat.toUpperCase() }));
-      
+
       let result;
-      
+
       switch (selectedReportFormat) {
         case 'excel':
-          result = await dispatch(exportTaskReport({ 
-            taskId: currentTask._id, 
-            format: 'excel' 
+          result = await dispatch(exportTaskReport({
+            taskId: currentTask._id,
+            format: 'excel'
           })).unwrap();
           break;
         case 'pdf':
-          result = await dispatch(exportTaskReport({ 
-            taskId: currentTask._id, 
-            format: 'pdf' 
+          result = await dispatch(exportTaskReport({
+            taskId: currentTask._id,
+            format: 'pdf'
           })).unwrap();
           break;
         case 'docx':
           // For DOCX, you'll need to implement DOCX generation in the backend
-          result = await dispatch(exportTaskReport({ 
-            taskId: currentTask._id, 
-            format: 'docx' 
+          result = await dispatch(exportTaskReport({
+            taskId: currentTask._id,
+            format: 'docx'
           })).unwrap();
           break;
         default:
           throw new Error('Unsupported format');
       }
-      
+
       toast.dismiss();
       toast.success(t('tasks.reportFormatGeneratedSuccessfully', { format: selectedReportFormat.toUpperCase() }));
-      
+
       // Here you would handle the actual download with the custom filename
       // For now, we'll use the existing export functionality
-      
+
     } catch (error) {
       toast.dismiss();
       toast.error(`${t('tasks.failedToGenerateReportFormat', { format: selectedReportFormat.toUpperCase() })}: ${error.message || t('common.error')}`);
@@ -4379,12 +4378,12 @@ const UserTaskDetail = () => {
       ...prev,
       [questionId]: value
     }));
-    
+
     // CRITICAL FIX: Clear existing debounce timer for this question
     if (debounceTimersRef.current[questionId]) {
       clearTimeout(debounceTimersRef.current[questionId]);
     }
-    
+
     // CRITICAL FIX: Set new debounce timer (500ms delay)
     debounceTimersRef.current[questionId] = setTimeout(() => {
       // Only save if value is not empty or if it was previously saved
@@ -4399,27 +4398,27 @@ const UserTaskDetail = () => {
     if (!currentTask || currentTask.status === 'completed') {
       return;
     }
-    
+
     // CRITICAL FIX: Prevent duplicate saves (race condition protection)
     if (pendingSavesRef.current.has(questionId)) {
       return; // Already saving this question
     }
-    
+
     try {
       pendingSavesRef.current.add(questionId);
       setResponseLoading(true);
-      
+
       // Store current state before API calls
       const currentPageId = selectedPage;
       const currentSectionId = selectedSection;
       const currentActiveTab = activeTab;
-      
+
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
         [questionId]: value
       };
-      
+
       const result = await dispatch(updateTaskQuestionnaire({
         taskId: currentTask._id,
         questionnaire: {
@@ -4428,11 +4427,11 @@ const UserTaskDetail = () => {
           completed: false
         }
       })).unwrap();
-      
+
       toast.success(t('tasks.responseSavedSuccessfully'));
-      
+
       const completionPercentage = calculateTaskCompletionPercentage();
-      
+
       if (Math.abs(completionPercentage - (currentTask.overallProgress || 0)) > 2) {
         await dispatch(updateUserTaskProgress({
           taskId: currentTask._id,
@@ -4444,24 +4443,24 @@ const UserTaskDetail = () => {
           }
         })).unwrap();
       }
-      
+
       // Refresh task details while preserving UI state
       await dispatch(fetchUserTaskDetails(currentTask._id));
       calculateScores();
-      
+
       // Restore state immediately to prevent UI jumping
       if (currentActiveTab) {
         setActiveTab(currentActiveTab);
       }
-      
+
       if (currentPageId) {
         setSelectedPage(currentPageId);
       }
-      
+
       if (currentSectionId) {
         setSelectedSection(currentSectionId);
       }
-      
+
     } catch (error) {
       toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
     } finally {
@@ -4472,44 +4471,44 @@ const UserTaskDetail = () => {
 
   const handleStartDrawing = (e) => {
     if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
-    
+
     const canvas = signatureCanvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
   };
-  
+
   const handleDrawing = (e) => {
     if (!isDrawing || !signatureCanvasRef.current || signatureMethod !== 'draw') return;
-    
+
     const canvas = signatureCanvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     ctx.lineTo(x, y);
     ctx.stroke();
   };
-  
+
   const handleStopDrawing = () => {
     if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
-    
+
     setIsDrawing(false);
-    
+
     const canvas = signatureCanvasRef.current;
     const dataURL = canvas.toDataURL('image/png');
     setSignatureImage(dataURL);
   };
-  
+
   const handleClearSignature = () => {
     if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
-    
+
     const canvas = signatureCanvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
@@ -4520,35 +4519,35 @@ const UserTaskDetail = () => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       setSignatureImage(event.target.result);
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleSignatureUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-  
+
   const handleSaveSignature = async () => {
     if (!signatureImage) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSaving'));
       return;
     }
-    
+
     try {
       toast.loading(t('tasks.savingSignature'));
-      
+
       // Stop timer permanently when task is signed
       const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
       const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
-      
+
       const completionPercentage = calculateTaskCompletionPercentage();
-      
+
       await dispatch(saveTaskSignature({
         taskId: currentTask._id,
         signature: signatureImage,
@@ -4559,22 +4558,22 @@ const UserTaskDetail = () => {
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
       })).unwrap();
-      
+
       // Stop timer permanently
       stopTimerPermanently();
-      
+
       await dispatch(fetchUserTaskDetails(currentTask._id));
-      
+
       toast.dismiss();
       toast.success(t('tasks.signatureSavedSuccessfully'));
       setShowSignatureModal(false);
-      
+
       // Clear signature image after successful save
       setSignatureImage(null);
-      
+
       // Mark that signature was just saved
       setSignatureJustSaved(true);
-      
+
       // Directly open the Complete & Archive modal
       setTimeout(() => {
         setShowArchiveModal(true);
@@ -4591,16 +4590,16 @@ const UserTaskDetail = () => {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSubmitting'));
       return;
     }
-    
+
     try {
       toast.loading(t('tasks.savingAndSubmittingComplianceData'));
-      
+
       // Stop timer permanently when task is submitted
       const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
       const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
-      
+
       const completionPercentage = calculateTaskCompletionPercentage();
-      
+
       // First save signature
       await dispatch(saveTaskSignature({
         taskId: currentTask._id,
@@ -4612,10 +4611,10 @@ const UserTaskDetail = () => {
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
       })).unwrap();
-      
+
       // Log signature added
       await FrontendLogger.logSignatureAdded(currentTask._id, currentTask.title);
-      
+
       // Then update task status to completed
       await dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
@@ -4628,31 +4627,31 @@ const UserTaskDetail = () => {
           completedAt: new Date().toISOString()
         }
       })).unwrap();
-      
+
       // Log task completion
       await FrontendLogger.logTaskComplete(currentTask._id, currentTask.title);
-      
+
       // Stop timer permanently
       stopTimerPermanently();
-      
+
       // Refresh task data
       await dispatch(fetchUserTaskDetails(currentTask._id));
-      
+
       toast.dismiss();
       toast.success(t('tasks.complianceDataSubmittedSuccessfully'));
       setShowSignatureModal(false);
-      
+
       // Clear signature image after successful save
       setSignatureImage(null);
-      
+
       // Mark that signature was just saved
       setSignatureJustSaved(true);
-      
+
       // Directly open the Complete & Archive modal
       setTimeout(() => {
         setShowArchiveModal(true);
       }, 500);
-      
+
     } catch (error) {
       toast.dismiss();
       toast.error(`${t('tasks.failedToSubmitComplianceData')}: ${error.message || t('common.error')}`);
@@ -4664,9 +4663,9 @@ const UserTaskDetail = () => {
     if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
       return { isValid: false, unansweredQuestions: [] };
     }
-    
+
     const unansweredQuestions = [];
-    
+
     inspectionPages.forEach(page => {
       if (page.sections) {
         page.sections.forEach(section => {
@@ -4676,26 +4675,26 @@ const UserTaskDetail = () => {
               if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
                 return; // Skip recommended/non-mandatory questions
               }
-              
+
               const questionId = question._id || question.id;
               let hasResponse = false;
-              
+
               if (currentTask.questionnaireResponses) {
                 if (currentTask.questionnaireResponses[questionId] !== undefined) {
                   const response = currentTask.questionnaireResponses[questionId];
                   hasResponse = response !== null && response !== undefined && response !== '';
                 } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key => 
+                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
                     key.includes(questionId) || key.endsWith(questionId)
                   );
-                  
+
                   if (responseKey) {
                     const response = currentTask.questionnaireResponses[responseKey];
                     hasResponse = response !== null && response !== undefined && response !== '';
                   }
                 }
               }
-              
+
               if (!hasResponse) {
                 unansweredQuestions.push({
                   questionId,
@@ -4709,20 +4708,20 @@ const UserTaskDetail = () => {
         });
       }
     });
-    
+
     // Also check pre-inspection questions
     if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
       currentTask.preInspectionQuestions.forEach(question => {
         if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
           return; // Skip recommended
         }
-        
+
         const questionId = question._id || question.id;
-        const hasResponse = currentTask.questionnaireResponses && 
+        const hasResponse = currentTask.questionnaireResponses &&
           currentTask.questionnaireResponses[questionId] !== undefined &&
           currentTask.questionnaireResponses[questionId] !== null &&
           currentTask.questionnaireResponses[questionId] !== '';
-        
+
         if (!hasResponse) {
           unansweredQuestions.push({
             questionId,
@@ -4733,7 +4732,7 @@ const UserTaskDetail = () => {
         }
       });
     }
-    
+
     return {
       isValid: unansweredQuestions.length === 0,
       unansweredQuestions
@@ -4744,12 +4743,12 @@ const UserTaskDetail = () => {
   const handleCompleteAndArchive = async () => {
     // CRITICAL FIX: Validate all required questions first
     const validation = validateRequiredQuestions();
-    
+
     if (!validation.isValid) {
       // Set unanswered questions for highlighting
       const unansweredIds = new Set(validation.unansweredQuestions.map(q => q.questionId));
       setUnansweredRequiredQuestions(unansweredIds);
-      
+
       // Show error message
       toast.error(
         `Please fill the highlighted questions before completing the inspection. ${validation.unansweredQuestions.length} required question(s) are unanswered.`,
@@ -4763,7 +4762,7 @@ const UserTaskDetail = () => {
           }
         }
       );
-      
+
       // Scroll to first unanswered question
       if (validation.unansweredQuestions.length > 0) {
         const firstUnanswered = validation.unansweredQuestions[0];
@@ -4772,18 +4771,18 @@ const UserTaskDetail = () => {
           questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
-      
+
       return;
     }
-    
+
     // Clear any previous highlighting
     setUnansweredRequiredQuestions(new Set());
-    
+
     // Check task completion percentage first - use the same calculation as the UI
     const dbProgress = currentTask?.overallProgress || 0;
     const calculatedProgress = calculateTaskCompletionPercentage();
     const actualProgress = Math.max(dbProgress, calculatedProgress);
-    
+
     if (actualProgress < 100) {
       toast.error(
         t('tasks.taskMustBeCompletedBeforeArchiving', { progress: actualProgress }),
@@ -4825,7 +4824,7 @@ const UserTaskDetail = () => {
       toast.dismiss();
       toast.success(t('tasks.inspectionCompletedAndArchivedSuccessfully'));
       setShowArchiveModal(false);
-      
+
       // Reset signature flag
       setSignatureJustSaved(false);
 
@@ -4836,10 +4835,10 @@ const UserTaskDetail = () => {
 
     } catch (error) {
       toast.dismiss();
-      
+
       // Handle specific error types with user-friendly messages
       let errorMessage = 'Failed to archive task';
-      
+
       if (error.message) {
         if (error.message.includes('100% completed')) {
           errorMessage = `⚠️ ${error.message}`;
@@ -4851,14 +4850,14 @@ const UserTaskDetail = () => {
           errorMessage = `❌ ${error.message}`;
         }
       }
-      
+
       toast.error(errorMessage, {
         duration: 6000,
         style: {
           maxWidth: '500px',
         }
       });
-      
+
     } finally {
       setIsArchiving(false);
     }
@@ -4871,41 +4870,43 @@ const UserTaskDetail = () => {
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
     const isDisabled = task.status === 'completed' || task.status === 'archived';
-    
+
     let questionType = question.type || question.answerType;
-    
+
     if (questionType === 'yesno' && question.answerType === 'compliance') {
       questionType = 'compliance';
     } else if (questionType === 'yesno' && (question.options?.includes('Yes') || question.options?.includes('No'))) {
       questionType = 'yesno';
     } else if (questionType === 'multiple_choice') {
       questionType = 'radio';
-    } else if (questionType === 'multiple') {
+    } else if (questionType === 'multiple' || questionType === 'checkbox') {
       questionType = 'checkbox';
     }
-    
+
     switch (questionType) {
       case 'compliance':
-        const complianceOptions = question.options?.length > 0 
-          ? question.options 
+        const complianceOptions = question.options?.length > 0
+          ? question.options
           : [t('tasks.fullCompliance'), t('tasks.partialCompliance'), t('tasks.nonCompliant'), t('common.notApplicable')];
-        const isComplianceUnanswered = unansweredRequiredQuestions.has(questionId) && 
+        const isComplianceUnanswered = unansweredRequiredQuestions.has(questionId) &&
           (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
           (!response || response === '');
         return (
-          <OptionsContainer 
-            $isUnanswered={isComplianceUnanswered} 
+          <OptionsContainer
+            $isUnanswered={isComplianceUnanswered}
             $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
             data-question-id={questionId}
           >
             {complianceOptions.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={response === option}
                 disabled={isDisabled}
                 onClick={() => {
                   if (!isDisabled) {
-                    onSaveResponse(questionId, option);
+                    // Allow unclicking: if clicking the same option, unselect it
+                    const newValue = response === option ? '' : option;
+                    onSaveResponse(questionId, newValue);
                     // Clear highlighting when user selects an option
                     if (unansweredRequiredQuestions.has(questionId)) {
                       setUnansweredRequiredQuestions(prev => {
@@ -4922,28 +4923,34 @@ const UserTaskDetail = () => {
             ))}
           </OptionsContainer>
         );
-        
+
       case 'yesno':
-        const yesNoOptions = question.options?.length > 0 
-          ? question.options 
-          : [t('common.yes'), t('common.no'), t('common.notApplicable')];
-        const isYesNoUnanswered = unansweredRequiredQuestions.has(questionId) && 
+        // Respect includeNA property from question (default to true for backward compatibility)
+        const includeNA = question.includeNA !== false;
+        const yesNoOptions = question.options?.length > 0
+          ? question.options
+          : includeNA
+            ? [t('common.yes'), t('common.no'), t('common.na')]
+            : [t('common.yes'), t('common.no')];
+        const isYesNoUnanswered = unansweredRequiredQuestions.has(questionId) &&
           (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
           (!response || response === '');
         return (
-          <OptionsContainer 
-            $isUnanswered={isYesNoUnanswered} 
+          <OptionsContainer
+            $isUnanswered={isYesNoUnanswered}
             $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
             data-question-id={questionId}
           >
             {yesNoOptions.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={response === option}
                 disabled={isDisabled}
                 onClick={() => {
                   if (!isDisabled) {
-                    onSaveResponse(questionId, option);
+                    // Allow unclicking: if clicking the same option, unselect it
+                    const newValue = response === option ? '' : option;
+                    onSaveResponse(questionId, newValue);
                     // Clear highlighting when user selects an option
                     if (unansweredRequiredQuestions.has(questionId)) {
                       setUnansweredRequiredQuestions(prev => {
@@ -4960,16 +4967,22 @@ const UserTaskDetail = () => {
             ))}
           </OptionsContainer>
         );
-        
+
       case 'radio':
         return (
           <OptionsContainer>
             {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
-              <OptionButton 
+              <OptionButton
                 key={optIndex}
                 selected={response === option}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && onSaveResponse(questionId, option)}
+                onClick={() => {
+                  if (!isDisabled) {
+                    // Allow unclicking: if clicking the same option, unselect it
+                    const newValue = response === option ? '' : option;
+                    onSaveResponse(questionId, newValue);
+                  }
+                }}
               >
                 {option}
               </OptionButton>
@@ -4978,20 +4991,20 @@ const UserTaskDetail = () => {
             )}
           </OptionsContainer>
         );
-        
+
       case 'checkbox':
         const selectedOptions = Array.isArray(response) ? response : response ? [response] : [];
-        
+
         return (
           <CheckboxContainer>
             {question.options && question.options.length > 0 ? question.options.map((option, optIndex) => (
               <CheckboxItem key={optIndex}>
-                <input 
+                <input
                   type="checkbox"
                   checked={selectedOptions.includes(option)}
                   onChange={() => {
                     if (isDisabled) return;
-                    
+
                     let newSelected;
                     if (selectedOptions.includes(option)) {
                       newSelected = selectedOptions.filter(item => item !== option);
@@ -5009,7 +5022,7 @@ const UserTaskDetail = () => {
             )}
           </CheckboxContainer>
         );
-        
+
       case 'select':
       case 'dropdown':
         return (
@@ -5040,20 +5053,20 @@ const UserTaskDetail = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'file':
         return (
           <InputContainer>
             <InputGroup>
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '12px' 
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
               }}>
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '8px', 
-                  flexWrap: 'wrap' 
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap'
                 }}>
                   <input
                     type="file"
@@ -5062,7 +5075,7 @@ const UserTaskDetail = () => {
                     onChange={async (e) => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
-                      
+
                       // Convert file to base64 for storage
                       const reader = new FileReader();
                       reader.onload = (event) => {
@@ -5077,28 +5090,28 @@ const UserTaskDetail = () => {
                     }}
                     style={{ flex: 1, minWidth: '200px' }}
                   />
-                  
+
                   <button
                     type="button"
                     disabled={isDisabled}
                     onClick={() => {
                       if (isDisabled) return;
-                      
+
                       // Camera capture functionality
                       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        navigator.mediaDevices.getUserMedia({ 
-                          video: { 
+                        navigator.mediaDevices.getUserMedia({
+                          video: {
                             facingMode: { ideal: 'environment' } // Prefer back camera
-                          } 
+                          }
                         })
-                        .then(stream => {
-                          const video = document.createElement('video');
-                          const canvas = document.createElement('canvas');
-                          const ctx = canvas.getContext('2d');
-                          
-                          // Create modal for camera preview
-                          const modal = document.createElement('div');
-                          modal.style.cssText = `
+                          .then(stream => {
+                            const video = document.createElement('video');
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+
+                            // Create modal for camera preview
+                            const modal = document.createElement('div');
+                            modal.style.cssText = `
                             position: fixed;
                             top: 0;
                             left: 0;
@@ -5111,23 +5124,23 @@ const UserTaskDetail = () => {
                             justify-content: center;
                             z-index: 10000;
                           `;
-                          
-                          video.style.cssText = `
+
+                            video.style.cssText = `
                             max-width: 90%;
                             max-height: 70%;
                             border-radius: 8px;
                           `;
-                          
-                          const buttonContainer = document.createElement('div');
-                          buttonContainer.style.cssText = `
+
+                            const buttonContainer = document.createElement('div');
+                            buttonContainer.style.cssText = `
                             display: flex;
                             gap: 16px;
                             margin-top: 20px;
                           `;
-                          
-                          const captureBtn = document.createElement('button');
-                          captureBtn.textContent = '📸 Capture';
-                          captureBtn.style.cssText = `
+
+                            const captureBtn = document.createElement('button');
+                            captureBtn.textContent = '📸 Capture';
+                            captureBtn.style.cssText = `
                             padding: 12px 24px;
                             background: #3b82f6;
                             color: white;
@@ -5136,10 +5149,10 @@ const UserTaskDetail = () => {
                             font-size: 16px;
                             cursor: pointer;
                           `;
-                          
-                          const cancelBtn = document.createElement('button');
-                          cancelBtn.textContent = '❌ Cancel';
-                          cancelBtn.style.cssText = `
+
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.textContent = '❌ Cancel';
+                            cancelBtn.style.cssText = `
                             padding: 12px 24px;
                             background: #ef4444;
                             color: white;
@@ -5148,42 +5161,42 @@ const UserTaskDetail = () => {
                             font-size: 16px;
                             cursor: pointer;
                           `;
-                          
-                          video.srcObject = stream;
-                          video.play();
-                          
-                          captureBtn.onclick = () => {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            ctx.drawImage(video, 0, 0);
-                            
-                            canvas.toBlob(blob => {
-                              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                              const filename = `inspection-photo-${timestamp}.jpg`;
-                              
-                              onSaveResponse(questionId, filename);
+
+                            video.srcObject = stream;
+                            video.play();
+
+                            captureBtn.onclick = () => {
+                              canvas.width = video.videoWidth;
+                              canvas.height = video.videoHeight;
+                              ctx.drawImage(video, 0, 0);
+
+                              canvas.toBlob(blob => {
+                                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                                const filename = `inspection-photo-${timestamp}.jpg`;
+
+                                onSaveResponse(questionId, filename);
+                                stream.getTracks().forEach(track => track.stop());
+                                document.body.removeChild(modal);
+
+                                toast.success(t('tasks.photoCapturedSuccessfully'));
+                              }, 'image/jpeg', 0.8);
+                            };
+
+                            cancelBtn.onclick = () => {
                               stream.getTracks().forEach(track => track.stop());
                               document.body.removeChild(modal);
-                              
-                              toast.success(t('tasks.photoCapturedSuccessfully'));
-                            }, 'image/jpeg', 0.8);
-                          };
-                          
-                          cancelBtn.onclick = () => {
-                            stream.getTracks().forEach(track => track.stop());
-                            document.body.removeChild(modal);
-                          };
-                          
-                          buttonContainer.appendChild(captureBtn);
-                          buttonContainer.appendChild(cancelBtn);
-                          modal.appendChild(video);
-                          modal.appendChild(buttonContainer);
-                          document.body.appendChild(modal);
-                        })
-                        .catch(err => {
-                          console.error('Camera access denied:', err);
-                          toast.error(t('tasks.cameraAccessDenied'));
-                        });
+                            };
+
+                            buttonContainer.appendChild(captureBtn);
+                            buttonContainer.appendChild(cancelBtn);
+                            modal.appendChild(video);
+                            modal.appendChild(buttonContainer);
+                            document.body.appendChild(modal);
+                          })
+                          .catch(err => {
+                            console.error('Camera access denied:', err);
+                            toast.error(t('tasks.cameraAccessDenied'));
+                          });
                       } else {
                         toast.error(t('tasks.cameraNotSupported'));
                       }
@@ -5206,10 +5219,10 @@ const UserTaskDetail = () => {
                     📷 {t('tasks.camera')}
                   </button>
                 </div>
-                
+
                 {response && (
-                  <div style={{ 
-                    marginTop: '8px', 
+                  <div style={{
+                    marginTop: '8px',
                     padding: '8px 12px',
                     background: '#f8fafc',
                     borderRadius: '6px',
@@ -5217,8 +5230,8 @@ const UserTaskDetail = () => {
                   }}>
                     {response.startsWith('data:image/') ? (
                       <div>
-                        <div style={{ 
-                          fontSize: '12px', 
+                        <div style={{
+                          fontSize: '12px',
                           color: '#16a34a',
                           fontWeight: '500',
                           marginBottom: '8px',
@@ -5228,12 +5241,12 @@ const UserTaskDetail = () => {
                         }}>
                           ✅ Image uploaded
                         </div>
-                        <img 
-                          src={response} 
-                          alt="File preview" 
-                          style={{ 
-                            maxWidth: '200px', 
-                            maxHeight: '150px', 
+                        <img
+                          src={response}
+                          alt="File preview"
+                          style={{
+                            maxWidth: '200px',
+                            maxHeight: '150px',
                             borderRadius: '6px',
                             border: '1px solid #e2e8f0',
                             cursor: 'pointer'
@@ -5243,8 +5256,8 @@ const UserTaskDetail = () => {
                       </div>
                     ) : response.startsWith('data:') ? (
                       <div>
-                        <div style={{ 
-                          fontSize: '12px', 
+                        <div style={{
+                          fontSize: '12px',
                           color: '#16a34a',
                           fontWeight: '500',
                           marginBottom: '8px',
@@ -5275,8 +5288,8 @@ const UserTaskDetail = () => {
                         </button>
                       </div>
                     ) : (
-                      <div style={{ 
-                        fontSize: '14px', 
+                      <div style={{
+                        fontSize: '14px',
                         color: '#16a34a',
                         fontWeight: '500',
                         display: 'flex',
@@ -5292,14 +5305,211 @@ const UserTaskDetail = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
+      case 'media':
+        return (
+          <InputContainer>
+            <InputGroup>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap'
+                }}>
+                  <button
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => {
+                      if (isDisabled) return;
+
+                      // Instant photo/video capture
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({
+                          video: {
+                            facingMode: { ideal: 'environment' } // Prefer back camera
+                          }
+                        })
+                          .then(stream => {
+                            const video = document.createElement('video');
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+
+                            // Create modal for camera preview
+                            const modal = document.createElement('div');
+                            modal.style.cssText = `
+                              position: fixed;
+                              top: 0;
+                              left: 0;
+                              width: 100%;
+                              height: 100%;
+                              background: rgba(0,0,0,0.9);
+                              display: flex;
+                              flex-direction: column;
+                              align-items: center;
+                              justify-content: center;
+                              z-index: 10000;
+                            `;
+
+                            video.style.cssText = `
+                              max-width: 90%;
+                              max-height: 70%;
+                              border-radius: 8px;
+                            `;
+
+                            const buttonContainer = document.createElement('div');
+                            buttonContainer.style.cssText = `
+                              display: flex;
+                              gap: 16px;
+                              margin-top: 20px;
+                            `;
+
+                            const captureBtn = document.createElement('button');
+                            captureBtn.textContent = '📸 Capture';
+                            captureBtn.style.cssText = `
+                              padding: 12px 24px;
+                              background: #3b82f6;
+                              color: white;
+                              border: none;
+                              border-radius: 8px;
+                              font-size: 16px;
+                              cursor: pointer;
+                            `;
+
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.textContent = '❌ Cancel';
+                            cancelBtn.style.cssText = `
+                              padding: 12px 24px;
+                              background: #ef4444;
+                              color: white;
+                              border: none;
+                              border-radius: 8px;
+                              font-size: 16px;
+                              cursor: pointer;
+                            `;
+
+                            video.srcObject = stream;
+                            video.play();
+
+                            captureBtn.onclick = () => {
+                              canvas.width = video.videoWidth;
+                              canvas.height = video.videoHeight;
+                              ctx.drawImage(video, 0, 0);
+
+                              canvas.toBlob(blob => {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64Data = event.target.result;
+                                  onSaveResponse(questionId, base64Data);
+                                  toast.success(t('tasks.photoCapturedSuccessfully'));
+                                };
+                                reader.readAsDataURL(blob);
+                                stream.getTracks().forEach(track => track.stop());
+                                document.body.removeChild(modal);
+                              }, 'image/jpeg', 0.8);
+                            };
+
+                            cancelBtn.onclick = () => {
+                              stream.getTracks().forEach(track => track.stop());
+                              document.body.removeChild(modal);
+                            };
+
+                            buttonContainer.appendChild(captureBtn);
+                            buttonContainer.appendChild(cancelBtn);
+                            modal.appendChild(video);
+                            modal.appendChild(buttonContainer);
+                            document.body.appendChild(modal);
+                          })
+                          .catch(err => {
+                            console.error('Camera access denied:', err);
+                            toast.error(t('tasks.cameraAccessDenied'));
+                          });
+                      } else {
+                        toast.error(t('tasks.cameraNotSupported'));
+                      }
+                    }}
+                    style={{
+                      padding: '12px 24px',
+                      background: '#16a34a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      opacity: isDisabled ? 0.5 : 1
+                    }}
+                  >
+                    📷 {t('tasks.camera')}
+                  </button>
+                </div>
+
+                {response && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#f8fafc',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    {response.startsWith('data:image/') ? (
+                      <div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#16a34a',
+                          fontWeight: '500',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          ✅ {t('tasks.photoCaptured')}
+                        </div>
+                        <img
+                          src={response}
+                          alt="Captured media"
+                          style={{
+                            maxWidth: '200px',
+                            maxHeight: '150px',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => window.open(response, '_blank')}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#16a34a',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        ✅ {t('tasks.mediaCaptured')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </InputGroup>
+          </InputContainer>
+        );
+
       case 'text':
-        const isTextUnanswered = unansweredRequiredQuestions.has(questionId) && 
+        const isTextUnanswered = unansweredRequiredQuestions.has(questionId) &&
           (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
           (!displayValue || displayValue === '');
         return (
-          <InputContainer 
-            $isUnanswered={isTextUnanswered} 
+          <InputContainer
+            $isUnanswered={isTextUnanswered}
             $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
             data-question-id={questionId}
           >
@@ -5334,14 +5544,14 @@ const UserTaskDetail = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'number':
-        const isNumberUnanswered = unansweredRequiredQuestions.has(questionId) && 
+        const isNumberUnanswered = unansweredRequiredQuestions.has(questionId) &&
           (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
           (!displayValue || displayValue === '');
         return (
-          <InputContainer 
-            $isUnanswered={isNumberUnanswered} 
+          <InputContainer
+            $isUnanswered={isNumberUnanswered}
             $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
             data-question-id={questionId}
           >
@@ -5375,14 +5585,14 @@ const UserTaskDetail = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'date':
-        const isDateUnanswered = unansweredRequiredQuestions.has(questionId) && 
+        const isDateUnanswered = unansweredRequiredQuestions.has(questionId) &&
           (question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended') &&
           (!displayValue || displayValue === '');
         return (
-          <InputContainer 
-            $isUnanswered={isDateUnanswered} 
+          <InputContainer
+            $isUnanswered={isDateUnanswered}
             $isRequired={question.required !== false && question.mandatory !== false && question.requirementType !== 'recommended'}
             data-question-id={questionId}
           >
@@ -5415,18 +5625,18 @@ const UserTaskDetail = () => {
             </InputGroup>
           </InputContainer>
         );
-        
+
       case 'signature':
         return (
           <InputContainer>
-            <div style={{ 
+            <div style={{
               border: '2px dashed #e5e7eb',
               borderRadius: '12px',
               padding: '16px',
               background: '#f9fafb',
               transition: 'all 0.3s ease'
             }}>
-              <div style={{ 
+              <div style={{
                 marginBottom: '12px',
                 fontSize: '14px',
                 color: '#6b7280',
@@ -5434,13 +5644,13 @@ const UserTaskDetail = () => {
               }}>
                 {isDisabled ? '' : ''}
               </div>
-              
-              <div style={{ 
+
+              <div style={{
                 display: 'flex',
                 justifyContent: 'center',
                 marginBottom: '12px'
               }}>
-                <SignatureCanvasComponent 
+                <SignatureCanvasComponent
                   questionId={questionId}
                   response={response}
                   isDisabled={isDisabled}
@@ -5450,7 +5660,7 @@ const UserTaskDetail = () => {
             </div>
           </InputContainer>
         );
-        
+
       default:
         return (
           <InputContainer>
@@ -5482,7 +5692,7 @@ const UserTaskDetail = () => {
     if (!currentTask?.preInspectionQuestions || currentTask.preInspectionQuestions.length === 0) {
       return null;
     }
-    
+
     return (
       <PreInspectionContainer>
         <Card>
@@ -5491,7 +5701,7 @@ const UserTaskDetail = () => {
               <CheckSquare size={20} />
               {t('tasks.preInspectionQuestionnaire')}
             </SectionTitle>
-            
+
             <CompletionBadge complete={isPreInspectionCompleted()}>
               {isPreInspectionCompleted() ? (
                 <>
@@ -5506,7 +5716,7 @@ const UserTaskDetail = () => {
               )}
             </CompletionBadge>
           </PreInspectionHeader>
-          
+
           <PreInspectionContent>
             {currentTask.preInspectionQuestions.map((question, index) => (
               <QuestionRow key={index}>
@@ -5525,7 +5735,7 @@ const UserTaskDetail = () => {
                       </QuestionBadge>
                     </QuestionBadges> */}
                   </QuestionHeader>
-                  
+
                   {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
                 </QuestionContent>
               </QuestionRow>
@@ -5552,11 +5762,11 @@ const UserTaskDetail = () => {
     const totalQuestions = currentSection?.questions?.length || 0;
     const answeredQuestions = currentSection?.questions?.filter(q => {
       const questionId = q._id || q.id;
-      return currentTask.questionnaireResponses && 
+      return currentTask.questionnaireResponses &&
         (currentTask.questionnaireResponses[questionId] !== undefined ||
-         Object.keys(currentTask.questionnaireResponses).some(key => 
-           key.includes(questionId) || key.endsWith(questionId)
-         ));
+          Object.keys(currentTask.questionnaireResponses).some(key =>
+            key.includes(questionId) || key.endsWith(questionId)
+          ));
     }).length || 0;
 
     return (
@@ -5568,10 +5778,10 @@ const UserTaskDetail = () => {
               {t('tasks.completeAllSectionsToFinish')}
             </div>
           </div>
-          
+
           <InspectionControls>
             {/* Previous Button */}
-            <NavigationButton 
+            <NavigationButton
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
@@ -5591,12 +5801,12 @@ const UserTaskDetail = () => {
             </NavigationButton>
 
             <DropdownContainer>
-              <DropdownButton 
+              <DropdownButton
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowPageDropdown(!showPageDropdown);
                 }}
-                style={{ 
+                style={{
                   cursor: 'pointer',
                   opacity: 1
                 }}
@@ -5606,13 +5816,13 @@ const UserTaskDetail = () => {
                 </span>
                 <ChevronDown size={16} />
               </DropdownButton>
-              
+
               {showPageDropdown && (
                 <DropdownMenu>
                   {inspectionPages.map((page, index) => {
                     const pageId = page.id || page._id;
                     const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
-                    
+
                     return (
                       <DropdownItem
                         key={pageId}
@@ -5628,8 +5838,8 @@ const UserTaskDetail = () => {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span>{`${index + 1}. ${page.name}`}</span>
-                          <span style={{ 
-                            fontSize: '12px', 
+                          <span style={{
+                            fontSize: '12px',
                             color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
                             fontWeight: '600'
                           }}>
@@ -5644,7 +5854,7 @@ const UserTaskDetail = () => {
             </DropdownContainer>
 
             {/* Next Button */}
-            <NavigationButton 
+            <NavigationButton
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
@@ -5664,7 +5874,7 @@ const UserTaskDetail = () => {
             </NavigationButton>
           </InspectionControls>
         </InspectionHeader>
-        
+
         <InspectionLayout>
           <NavigationPanel>
             <NavigationHeader>
@@ -5684,12 +5894,12 @@ const UserTaskDetail = () => {
                 </span>
               </ProgressSummary>
             </NavigationHeader>
-            
+
             {/* Section Navigation Controls */}
             {currentPage && currentPage.sections && currentPage.sections.length > 1 && (
               <SectionNavigationControls ref={sectionNavigationRef}>
                 {/* Previous Section Button */}
-                <SectionNavigationButton 
+                <SectionNavigationButton
                   disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
                   onClick={() => {
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
@@ -5715,7 +5925,7 @@ const UserTaskDetail = () => {
                 </SectionCounter>
 
                 {/* Next Section Button */}
-                <SectionNavigationButton 
+                <SectionNavigationButton
                   disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
                   onClick={() => {
                     const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
@@ -5736,20 +5946,20 @@ const UserTaskDetail = () => {
                 </SectionNavigationButton>
               </SectionNavigationControls>
             )}
-            
+
             <SectionsNavigation>
               {currentPage && currentPage.sections && currentPage.sections.length > 0 ? (
                 currentPage.sections.map((section, idx) => {
                   const sectionId = section.id || section._id;
                   const isActive = selectedSection === sectionId;
                   const sectionScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
-                  
+
                   return (
                     <SectionNavItem
                       key={sectionId}
                       active={isActive}
                       onClick={() => setSelectedSection(sectionId)}
-                      style={{ 
+                      style={{
                         cursor: 'pointer',
                         opacity: 1
                       }}
@@ -5770,7 +5980,7 @@ const UserTaskDetail = () => {
               )}
             </SectionsNavigation>
           </NavigationPanel>
-          
+
           <ContentPanel>
             <ContentHeader>
               <ContentTitle>
@@ -5786,7 +5996,7 @@ const UserTaskDetail = () => {
                   </>
                 )}
               </ContentTitle>
-              
+
               {currentSection && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <QuestionCounter>
@@ -5801,7 +6011,7 @@ const UserTaskDetail = () => {
                 </div>
               )}
             </ContentHeader>
-            
+
             <QuestionsContent>
               {currentSection ? (
                 <>
@@ -5809,27 +6019,28 @@ const UserTaskDetail = () => {
                     currentSection.questions.map((question, qIndex) => {
                       const questionId = question._id || question.id;
                       let response = currentTask.questionnaireResponses?.[questionId];
-                      
+
                       if (response === undefined) {
-                        const responseKey = Object.keys(currentTask.questionnaireResponses || {}).find(key => 
+                        const responseKey = Object.keys(currentTask.questionnaireResponses || {}).find(key =>
                           key.includes(questionId) || key.endsWith(questionId)
                         );
                         if (responseKey) {
                           response = currentTask.questionnaireResponses[responseKey];
                         }
                       }
-                      
+
                       // CRITICAL FIX: Determine if question is scorable
                       const questionType = question.type || question.answerType;
                       const scorableTypes = ['yesno', 'compliance'];
-                      const isScorable = scorableTypes.includes(questionType) && 
-                        question.requirementType !== 'recommended' && 
-                        question.mandatory !== false && 
+                      // Exclude non-scorable types: text, number, date, signature, file, media, checkbox, select, multiple_choice
+                      const isScorable = scorableTypes.includes(questionType) &&
+                        question.requirementType !== 'recommended' &&
+                        question.mandatory !== false &&
                         question.required !== false;
-                      
+
                       const maxScore = isScorable ? (question.scoring?.max || 2) : 0;
                       let achievedScore = 0;
-                      
+
                       // CRITICAL FIX: Only calculate score for scorable questions
                       if (isScorable && response !== undefined && response !== null) {
                         // Use template-defined scores if available
@@ -5851,7 +6062,7 @@ const UserTaskDetail = () => {
                           // These should NEVER be scored
                         }
                       }
-                      
+
                       return (
                         <QuestionCard key={questionId || qIndex}>
                           <QuestionHeader>
@@ -5862,7 +6073,7 @@ const UserTaskDetail = () => {
                                 <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                               )}
                             </QuestionText>
-                            
+
                             <QuestionBadges>
                               {/* <QuestionBadge type={question.required === false ? 'recommended' : 'mandatory'}>
                                 {question.required === false ? 'Optional' : 'Required'}
@@ -5876,7 +6087,7 @@ const UserTaskDetail = () => {
                               )}
                             </QuestionBadges>
                           </QuestionHeader>
-                          
+
                           {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
                         </QuestionCard>
                       );
@@ -5888,14 +6099,14 @@ const UserTaskDetail = () => {
                       <p>This section doesn't contain any questions.</p>
                     </EmptyState>
                   )}
-                  
+
                   {/* Section Comments - Always show when section is selected */}
                   <SectionCommentsContainer>
                     <SectionCommentsHeader>
                       <MessageSquare size={18} />
                       {t('tasks.sectionComments')}
                     </SectionCommentsHeader>
-                    
+
                     {/* Existing Comments */}
                     {sectionComments[selectedSection] && sectionComments[selectedSection].length > 0 && (
                       <CommentsList>
@@ -5916,16 +6127,16 @@ const UserTaskDetail = () => {
                         ))}
                       </CommentsList>
                     )}
-                    
+
                     {/* Add Comment */}
                     {!isArchivedTask && (
                       <CommentInputContainer>
                         <CommentTextarea
-                            placeholder={t('tasks.addCommentForSection')}
-                            value={sectionCommentTexts[selectedSection] || ''}
-                            onChange={(e) => handleSectionCommentTextChange(selectedSection, e.target.value)}
-                            disabled={commentLoadingStates[selectedSection]}
-                          />
+                          placeholder={t('tasks.addCommentForSection')}
+                          value={sectionCommentTexts[selectedSection] || ''}
+                          onChange={(e) => handleSectionCommentTextChange(selectedSection, e.target.value)}
+                          disabled={commentLoadingStates[selectedSection]}
+                        />
                         <CommentSubmitButton
                           onClick={() => handleSectionCommentSubmit(selectedSection)}
                           disabled={!sectionCommentTexts[selectedSection]?.trim() || commentLoadingStates[selectedSection]}
@@ -5944,7 +6155,7 @@ const UserTaskDetail = () => {
                         </CommentSubmitButton>
                       </CommentInputContainer>
                     )}
-                    
+
                     {/* Archived State Message */}
                     {isArchivedTask && (
                       <div style={{
@@ -5958,7 +6169,7 @@ const UserTaskDetail = () => {
                       </div>
                     )}
                   </SectionCommentsContainer>
-                  </>
+                </>
               ) : (
                 <EmptyState>
                   <Info size={48} />
@@ -5977,10 +6188,10 @@ const UserTaskDetail = () => {
     return (
       <PageContainer>
         <MainContent>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             height: '60vh',
             flexDirection: 'column',
             gap: '20px'
@@ -6044,37 +6255,37 @@ const UserTaskDetail = () => {
       <MainContent>
         <TopBar>
           <TopBarLeftSection>
-          <BackButton onClick={() => navigate(-1)}>
-            <ArrowLeft size={18} />
-            {t('common.backToTasks')}
-          </BackButton>
-          
-              {autoUpdateEnabled ? (
+            <BackButton onClick={() => navigate(-1)}>
+              <ArrowLeft size={18} />
+              {t('common.backToTasks')}
+            </BackButton>
+
+            {autoUpdateEnabled ? (
               <LiveStatusBadge
                 onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
                 title="Click to toggle auto-update"
-                >
-                  <div style={{ 
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%', 
-                    background: '#16a34a',
-                    animation: 'pulse 2s infinite'
-                  }}></div>
-                  Live (5s)
+              >
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#16a34a',
+                  animation: 'pulse 2s infinite'
+                }}></div>
+                Live (5s)
               </LiveStatusBadge>
-              ) : (
+            ) : (
               <LiveStatusBadge $paused
                 onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
                 title="Click to enable auto-update"
-                >
-                  ⏸ Paused
+              >
+                ⏸ Paused
               </LiveStatusBadge>
-              )}
+            )}
           </TopBarLeftSection>
-              
+
           <QuickActions>
-              {/* <QuickActionButton 
+            {/* <QuickActionButton 
                 primary
                 onClick={handleExportReport}
                 disabled={currentTask.status === 'pending'}
@@ -6084,7 +6295,7 @@ const UserTaskDetail = () => {
               </QuickActionButton> */}
           </QuickActions>
         </TopBar>
-        
+
         <TaskHeader>
           <TaskTitle>{currentTask.name}</TaskTitle>
           {currentTask.description && (
@@ -6092,7 +6303,7 @@ const UserTaskDetail = () => {
               {currentTask.description}
             </p>
           )}
-          
+
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
             <StatusBadge status={currentTask.status}>
               <StatusIcon status={currentTask.status} />
@@ -6101,7 +6312,7 @@ const UserTaskDetail = () => {
               {currentTask.status === 'completed' && t('tasks.completed')}
               {currentTask.status === 'archived' && t('tasks.archived')}
             </StatusBadge>
-            
+
             {isArchivedTask && (
               <div style={{
                 display: 'flex',
@@ -6119,18 +6330,18 @@ const UserTaskDetail = () => {
                 READ-ONLY MODE
               </div>
             )}
-            
+
             {currentTask.priority && (
               <PriorityBadge priority={currentTask.priority}>
                 <AlertTriangle size={14} />
                 {currentTask.priority === 'high' ? t('tasks.high') :
-                 currentTask.priority === 'medium' ? t('tasks.medium') :
-                 currentTask.priority === 'low' ? t('tasks.low') :
-                 currentTask.priority}
+                  currentTask.priority === 'medium' ? t('tasks.medium') :
+                    currentTask.priority === 'low' ? t('tasks.low') :
+                      currentTask.priority}
               </PriorityBadge>
             )}
           </div>
-          
+
           <TaskMeta>
             {currentTask.dueDate && (
               <MetaCard>
@@ -6141,7 +6352,7 @@ const UserTaskDetail = () => {
                 </MetaValue>
               </MetaCard>
             )}
-            
+
             {currentTask.location && (
               <MetaCard>
                 <MetaLabel>{t('tasks.location')}</MetaLabel>
@@ -6151,7 +6362,7 @@ const UserTaskDetail = () => {
                 </MetaValue>
               </MetaCard>
             )}
-            
+
             {currentTask.inspectionType && (
               <MetaCard>
                 <MetaLabel>{t('tasks.type')}</MetaLabel>
@@ -6161,7 +6372,7 @@ const UserTaskDetail = () => {
                 </MetaValue>
               </MetaCard>
             )}
-            
+
             <MetaCard>
               <MetaLabel>{t('tasks.progress')}</MetaLabel>
               <MetaValue>
@@ -6171,11 +6382,11 @@ const UserTaskDetail = () => {
             </MetaCard>
           </TaskMeta>
         </TaskHeader>
-        
+
         <TabsContainer>
           <TabsWrapper>
-            <Tab 
-              active={activeTab === 'overview'} 
+            <Tab
+              active={activeTab === 'overview'}
               onClick={() => {
                 userActiveRef.current = true;
                 setActiveTab('overview');
@@ -6186,21 +6397,21 @@ const UserTaskDetail = () => {
               {t('tasks.overview')}
             </Tab>
             {/* {!isArchivedTask && ( */}
-              <Tab 
-                active={activeTab === 'inspection'} 
-                onClick={() => {
-                  userActiveRef.current = true;
-                  setActiveTab('inspection');
-                  setTimeout(() => userActiveRef.current = false, 1000);
-                }}
-                disabled={currentTask?.status === 'pending'}
-              >
-                <CheckSquare size={16} />
-                {t('tasks.inspection')}
-              </Tab>
+            <Tab
+              active={activeTab === 'inspection'}
+              onClick={() => {
+                userActiveRef.current = true;
+                setActiveTab('inspection');
+                setTimeout(() => userActiveRef.current = false, 1000);
+              }}
+              disabled={currentTask?.status === 'pending'}
+            >
+              <CheckSquare size={16} />
+              {t('tasks.inspection')}
+            </Tab>
             {/* )} */}
-            <Tab 
-              active={activeTab === 'report'} 
+            <Tab
+              active={activeTab === 'report'}
               onClick={() => {
                 userActiveRef.current = true;
                 setActiveTab('report');
@@ -6213,7 +6424,7 @@ const UserTaskDetail = () => {
             </Tab>
           </TabsWrapper>
         </TabsContainer>
-        
+
         <ContentContainer>
           <MainPanel>
             {activeTab === 'overview' && (
@@ -6223,7 +6434,7 @@ const UserTaskDetail = () => {
                     <Info size={20} />
                     {t('tasks.taskOverview')}
                   </SectionTitle>
-                  
+
                   <div style={{ marginBottom: '24px' }}>
                     <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#1a202c', marginBottom: '12px' }}>
                       {t('tasks.taskDetails')}
@@ -6238,7 +6449,7 @@ const UserTaskDetail = () => {
                       <div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.assignedTo')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
-                          {Array.isArray(currentTask.assignedTo) 
+                          {Array.isArray(currentTask.assignedTo)
                             ? currentTask.assignedTo.map(user => user.name || user.email || user).join(', ')
                             : currentTask.assignedTo?.name || currentTask.assignedTo?.email || currentTask.assignedTo || t('tasks.unassigned')
                           }
@@ -6257,20 +6468,20 @@ const UserTaskDetail = () => {
                       {currentTask.status && (
                         <div>
                           <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.status')}</div>
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: currentTask.status === 'completed' ? '#16a34a' : 
-                                   currentTask.status === 'in_progress' ? '#f59e0b' : '#64748b',
+                          <div style={{
+                            fontWeight: '600',
+                            color: currentTask.status === 'completed' ? '#16a34a' :
+                              currentTask.status === 'in_progress' ? '#f59e0b' : '#64748b',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px'
                           }}>
                             <StatusIcon status={currentTask.status} />
                             {currentTask.status === 'pending' ? t('tasks.pending') :
-                             currentTask.status === 'in_progress' ? t('tasks.inProgress') :
-                             currentTask.status === 'completed' ? t('tasks.completed') :
-                             currentTask.status === 'archived' ? t('tasks.archived') :
-                             currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+                              currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                                currentTask.status === 'completed' ? t('tasks.completed') :
+                                  currentTask.status === 'archived' ? t('tasks.archived') :
+                                    currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
                           </div>
                         </div>
                       )}
@@ -6280,9 +6491,9 @@ const UserTaskDetail = () => {
                           <div style={{ fontWeight: '600', color: '#1a202c' }}>
                             <PriorityBadge priority={currentTask.priority}>
                               {currentTask.priority === 'high' ? t('tasks.high') :
-                               currentTask.priority === 'medium' ? t('tasks.medium') :
-                               currentTask.priority === 'low' ? t('tasks.low') :
-                               currentTask.priority}
+                                currentTask.priority === 'medium' ? t('tasks.medium') :
+                                  currentTask.priority === 'low' ? t('tasks.low') :
+                                    currentTask.priority}
                             </PriorityBadge>
                           </div>
                         </div>
@@ -6290,9 +6501,9 @@ const UserTaskDetail = () => {
                     </div>
                   </div>
                 </Card>
-                
+
                 {renderPreInspectionQuestionnaire()}
-                
+
                 {/* Task Comments Section */}
                 {currentTask.comments && currentTask.comments.length > 0 && (
                   <Card style={{ marginTop: '24px' }}>
@@ -6302,7 +6513,7 @@ const UserTaskDetail = () => {
                     </SectionTitle>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {currentTask.comments.map((comment, index) => (
-                        <div 
+                        <div
                           key={index}
                           style={{
                             padding: '16px',
@@ -6311,28 +6522,28 @@ const UserTaskDetail = () => {
                             border: '1px solid rgba(55, 136, 216, 0.1)'
                           }}
                         >
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
                             marginBottom: '8px'
                           }}>
-                            <span style={{ 
-                              fontWeight: '600', 
+                            <span style={{
+                              fontWeight: '600',
                               color: '#1a202c',
                               fontSize: '14px'
                             }}>
                               {comment.user?.name || comment.user?.email || comment.user || t('common.unknownUser')}
                             </span>
-                            <span style={{ 
-                              fontSize: '12px', 
-                              color: '#64748b' 
+                            <span style={{
+                              fontSize: '12px',
+                              color: '#64748b'
                             }}>
                               {formatDate(comment.createdAt || comment.timestamp)}
                             </span>
                           </div>
-                          <p style={{ 
-                            margin: 0, 
+                          <p style={{
+                            margin: 0,
                             color: '#374151',
                             fontSize: '14px',
                             lineHeight: '1.5'
@@ -6344,7 +6555,7 @@ const UserTaskDetail = () => {
                     </div>
                   </Card>
                 )}
-                
+
                 {/* Task Metrics Section */}
                 {(currentTask.status === 'in_progress' || currentTask.status === 'completed' || currentTask.status === 'archived') && (
                   <Card style={{ marginTop: '24px' }}>
@@ -6360,7 +6571,7 @@ const UserTaskDetail = () => {
                         </MetricValue>
                         <MetricDescription>{t('tasks.taskCompletion')}</MetricDescription>
                       </MetricCard>
-                      
+
                       <MetricCard $color="green" $bgColor="rgba(39, 174, 96, 0.1)">
                         <MetricLabel>{t('tasks.complianceScore')}</MetricLabel>
                         <MetricValue $color="#27ae60">
@@ -6370,7 +6581,7 @@ const UserTaskDetail = () => {
                           {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
                         </MetricDescription>
                       </MetricCard>
-                      
+
                       <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
                         <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
                         <MetricValue $color="#f39c12">
@@ -6378,7 +6589,7 @@ const UserTaskDetail = () => {
                         </MetricValue>
                         <MetricDescription>{t('tasks.totalDuration')}</MetricDescription>
                       </MetricCard>
-                      
+
                       <MetricCard $color="gray" $bgColor="rgba(44, 62, 80, 0.1)">
                         <MetricLabel>{t('tasks.inspectionPages')}</MetricLabel>
                         <MetricValue $color="#2c3e50">
@@ -6389,7 +6600,7 @@ const UserTaskDetail = () => {
                     </MetricGrid>
                   </Card>
                 )}
-                
+
                 {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <StartTaskButton onClick={handleStartTask} disabled={actionLoading}>
@@ -6398,7 +6609,7 @@ const UserTaskDetail = () => {
                     </StartTaskButton>
                   </div>
                 )}
-                
+
                 {currentTask.status === 'in_progress' && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
                     <ContinueButton onClick={() => setActiveTab('inspection')} disabled={actionLoading}>
@@ -6407,19 +6618,19 @@ const UserTaskDetail = () => {
                     </ContinueButton>
                   </div>
                 )}
-                
+
                 {isArchivedTask && (
-                  <div style={{ 
-                    textAlign: 'center', 
+                  <div style={{
+                    textAlign: 'center',
                     margin: '32px 0',
                     padding: '24px',
                     background: 'rgba(55, 136, 216, 0.05)',
                     borderRadius: '12px',
                     border: '1px solid rgba(55, 136, 216, 0.2)'
                   }}>
-                    <div style={{ 
-                      fontSize: '18px', 
-                      fontWeight: '600', 
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
                       color: '#3788d8',
                       marginBottom: '8px',
                       display: 'flex',
@@ -6430,8 +6641,8 @@ const UserTaskDetail = () => {
                       <CheckCircle size={20} />
                       Task Completed & Archived
                     </div>
-                    <p style={{ 
-                      fontSize: '14px', 
+                    <p style={{
+                      fontSize: '14px',
                       color: '#64748b',
                       margin: 0
                     }}>
@@ -6441,7 +6652,7 @@ const UserTaskDetail = () => {
                 )}
               </>
             )}
-            
+
             {activeTab === 'inspection' && (
               <>
                 <ProgressContainer>
@@ -6450,7 +6661,7 @@ const UserTaskDetail = () => {
                       <TrendingUp size={20} />
                       {t('tasks.inspectionProgress')}
                     </ProgressTitle>
-                    
+
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <ProgressValue>
                         {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
@@ -6461,10 +6672,10 @@ const UserTaskDetail = () => {
                           </div>
                         )}
                       </ProgressValue>
-                      
+
                       {autoUpdateEnabled && (
-                        <div style={{ 
-                          fontSize: '10px', 
+                        <div style={{
+                          fontSize: '10px',
                           color: '#16a34a',
                           display: 'flex',
                           alignItems: 'center',
@@ -6473,10 +6684,10 @@ const UserTaskDetail = () => {
                           padding: '2px 6px',
                           borderRadius: '4px'
                         }}>
-                          <div style={{ 
-                            width: '3px', 
-                            height: '3px', 
-                            borderRadius: '50%', 
+                          <div style={{
+                            width: '3px',
+                            height: '3px',
+                            borderRadius: '50%',
                             background: '#16a34a',
                             animation: 'pulse 2s infinite'
                           }}></div>
@@ -6485,19 +6696,19 @@ const UserTaskDetail = () => {
                       )}
                     </div>
                   </ProgressHeader>
-                  
+
                   <ProgressBar progress={Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)} />
                 </ProgressContainer>
-                
+
                 {renderInspectionInterface()}
-                
+
                 {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
                   <ScoreCard>
                     <SectionTitle>
                       <Award size={20} />
                       {t('tasks.inspectionScoringSummary')}
                     </SectionTitle>
-                    
+
                     <ScoreGrid>
                       <ScoreItem>
                         <ScoreLabel>{t('tasks.complianceScore')}</ScoreLabel>
@@ -6508,35 +6719,35 @@ const UserTaskDetail = () => {
                           </span>
                         </ScoreValue>
                       </ScoreItem>
-                      
+
                       <ScoreItem>
                         <ScoreLabel>{t('tasks.pagesScored')}</ScoreLabel>
                         <ScoreValue>
-                          {inspectionPages.length > 0 ? 
+                          {inspectionPages.length > 0 ?
                             inspectionPages.reduce((sum, page) => {
                               const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
                               return sum + (pageScore.achieved > 0 ? 1 : 0);
-                            }, 0) 
+                            }, 0)
                             : 0} / {inspectionPages.length}
                         </ScoreValue>
                       </ScoreItem>
-                      
+
                       <ScoreItem>
                         <ScoreLabel>{t('tasks.completionRate')}</ScoreLabel>
                         <ScoreValue>
                           {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                         </ScoreValue>
                       </ScoreItem>
-                      
+
                       <ScoreItem>
                         <ScoreLabel>{t('tasks.status')}</ScoreLabel>
                         <ScoreValue style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           <StatusIcon status={currentTask.status} />
                           {currentTask.status === 'pending' ? t('tasks.pending') :
-                           currentTask.status === 'in_progress' ? t('tasks.inProgress') :
-                           currentTask.status === 'completed' ? t('tasks.completed') :
-                           currentTask.status === 'archived' ? t('tasks.archived') :
-                           currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+                            currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                              currentTask.status === 'completed' ? t('tasks.completed') :
+                                currentTask.status === 'archived' ? t('tasks.archived') :
+                                  currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
                         </ScoreValue>
                       </ScoreItem>
                     </ScoreGrid>
@@ -6544,7 +6755,7 @@ const UserTaskDetail = () => {
                 )}
               </>
             )}
-            
+
             {activeTab === 'report' && (
               <>
                 <ReportSection>
@@ -6553,7 +6764,7 @@ const UserTaskDetail = () => {
                       <FileText size={24} />
                       {t('tasks.inspectionFinalReport')}
                     </ReportTitle>
-                    
+
                     {/* <QuickActionButton 
                       primary
                       onClick={handleExportReport}
@@ -6563,7 +6774,7 @@ const UserTaskDetail = () => {
                       Export Excel
                     </QuickActionButton> */}
                   </ReportHeader>
-                  
+
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                     <div style={{ background: 'rgba(55, 136, 216, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
@@ -6574,7 +6785,7 @@ const UserTaskDetail = () => {
                         {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
                       </div>
                     </div>
-                    
+
                     <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.completion')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
@@ -6584,7 +6795,7 @@ const UserTaskDetail = () => {
                         {t('tasks.questionsAnswered')}
                       </div>
                     </div>
-                    
+
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
@@ -6594,7 +6805,7 @@ const UserTaskDetail = () => {
                         {t('tasks.totalDuration')}
                       </div>
                     </div>
-                    
+
                     <div style={{ background: 'rgba(44, 62, 80, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
@@ -6605,13 +6816,13 @@ const UserTaskDetail = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {currentTask?.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0 && (
                     <div style={{ marginTop: '32px' }}>
-                      <h3 style={{ 
-                        fontSize: '18px', 
-                        fontWeight: '600', 
-                        color: '#1a202c', 
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#1a202c',
                         marginBottom: '20px',
                         display: 'flex',
                         alignItems: 'center',
@@ -6620,23 +6831,23 @@ const UserTaskDetail = () => {
                         <CheckSquare size={18} />
                         {t('tasks.preInspectionQuestionnaire')}
                       </h3>
-                      
+
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         {currentTask.preInspectionQuestions.map((question, index) => (
-                          <div 
-                            key={index} 
-                            style={{ 
-                              background: 'rgba(248, 250, 252, 0.8)', 
-                              borderRadius: '12px', 
+                          <div
+                            key={index}
+                            style={{
+                              background: 'rgba(248, 250, 252, 0.8)',
+                              borderRadius: '12px',
                               padding: '16px',
                               border: '1px solid rgba(226, 232, 240, 0.7)',
                               margin: '6px'
                             }}
                           >
-                            <div style={{ 
-                              display: 'flex', 
-                              gap: '12px', 
-                              alignItems: 'flex-start' 
+                            <div style={{
+                              display: 'flex',
+                              gap: '12px',
+                              alignItems: 'flex-start'
                             }}>
                               <div style={{
                                 display: 'flex',
@@ -6654,19 +6865,19 @@ const UserTaskDetail = () => {
                                 {index + 1}
                               </div>
                               <div style={{ flex: 1 }}>
-                                <div style={{ 
-                                  fontWeight: '600', 
-                                  color: '#1a202c', 
+                                <div style={{
+                                  fontWeight: '600',
+                                  color: '#1a202c',
                                   marginBottom: '8px',
-                                  fontSize: '14px' 
+                                  fontSize: '14px'
                                 }}>
                                   {question.text}
                                   {question.required !== false && (
                                     <span style={{ color: '#dc2626', marginLeft: '4px', fontWeight: 'bold' }}>*</span>
                                   )}
                                 </div>
-                                <div style={{ 
-                                  fontSize: '14px', 
+                                <div style={{
+                                  fontSize: '14px',
                                   color: '#374151',
                                   background: 'white',
                                   padding: '8px 12px',
@@ -6675,13 +6886,13 @@ const UserTaskDetail = () => {
                                 }}>
                                   <strong>{t('tasks.response')}:</strong> {
                                     (() => {
-                                      const response = currentTask.questionnaireResponses && 
-                                        currentTask.questionnaireResponses[question._id] ? 
-                                        currentTask.questionnaireResponses[question._id] : 
+                                      const response = currentTask.questionnaireResponses &&
+                                        currentTask.questionnaireResponses[question._id] ?
+                                        currentTask.questionnaireResponses[question._id] :
                                         null;
-                                      
+
                                       if (!response) return t('tasks.notAnswered');
-                                      
+
                                       // Handle file responses with preview
                                       if (question.type === 'file' && response) {
                                         if (response.startsWith('data:image/')) {
@@ -6690,12 +6901,12 @@ const UserTaskDetail = () => {
                                               <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
                                                 📎 {t('tasks.imageUploaded')}
                                               </div>
-                                              <img 
-                                                src={response} 
-                                                alt="Uploaded file" 
-                                                style={{ 
-                                                  maxWidth: '200px', 
-                                                  maxHeight: '150px', 
+                                              <img
+                                                src={response}
+                                                alt="Uploaded file"
+                                                style={{
+                                                  maxWidth: '200px',
+                                                  maxHeight: '150px',
                                                   borderRadius: '6px',
                                                   border: '1px solid #e2e8f0',
                                                   cursor: 'pointer'
@@ -6735,7 +6946,7 @@ const UserTaskDetail = () => {
                                           return `📎 ${t('tasks.fileUploaded')}: ${response}`;
                                         }
                                       }
-                                      
+
                                       // Handle signature responses with preview
                                       if (question.type === 'signature' && response) {
                                         if (response.startsWith('data:image/')) {
@@ -6744,12 +6955,12 @@ const UserTaskDetail = () => {
                                               <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
                                                 ✍️ {t('tasks.signatureProvided')}
                                               </div>
-                                              <img 
-                                                src={response} 
-                                                alt="Signature" 
-                                                style={{ 
-                                                  maxWidth: '200px', 
-                                                  maxHeight: '100px', 
+                                              <img
+                                                src={response}
+                                                alt="Signature"
+                                                style={{
+                                                  maxWidth: '200px',
+                                                  maxHeight: '100px',
                                                   borderRadius: '6px',
                                                   border: '1px solid #e2e8f0',
                                                   cursor: 'pointer'
@@ -6762,7 +6973,7 @@ const UserTaskDetail = () => {
                                           return `✍️ ${t('tasks.signatureProvided')}`;
                                         }
                                       }
-                                      
+
                                       // Default response display
                                       return response;
                                     })()
@@ -6776,7 +6987,7 @@ const UserTaskDetail = () => {
                     </div>
                   )}
                 </ReportSection>
-                
+
                 {/* <ReportSection>
                   <SectionTitle>
                     <Edit size={20} />
@@ -6815,10 +7026,10 @@ const UserTaskDetail = () => {
                     )}
                   </SignatureSection>
                 </ReportSection> */}
-                
+
                 {/* Action Buttons Section */}
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '20px',
@@ -6828,39 +7039,39 @@ const UserTaskDetail = () => {
                   borderRadius: '16px',
                   border: '1px solid rgba(226, 232, 240, 0.8)'
                 }}>
-                  
+
                   {/* Button Row */}
-                  <div style={{ 
-                    display: 'flex', 
+                  <div style={{
+                    display: 'flex',
                     gap: '16px',
                     flexWrap: 'wrap',
                     justifyContent: 'center',
                     alignItems: 'center'
                   }}>
-                    
+
                     {/* Complete & Archive Button */}
                     {currentTask?.status !== 'archived' && (() => {
                       const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
                       const isProgressComplete = actualProgress >= 100;
                       const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete;
-                      
+
                       return (
-                        <QuickActionButton 
+                        <QuickActionButton
                           primary
                           onClick={handleCompleteAndArchive}
                           disabled={isButtonDisabled}
-                          style={{ 
-                            padding: '16px 32px', 
+                          style={{
+                            padding: '16px 32px',
                             fontSize: '16px',
                             fontWeight: '600',
-                            background: isProgressComplete 
-                              ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+                            background: isProgressComplete
+                              ? 'linear-gradient(135deg, #16a34a, #15803d)'
                               : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                            boxShadow: isProgressComplete 
-                              ? '0 4px 15px rgba(22, 163, 74, 0.4)' 
+                            boxShadow: isProgressComplete
+                              ? '0 4px 15px rgba(22, 163, 74, 0.4)'
                               : '0 2px 8px rgba(100, 116, 139, 0.2)',
-                            border: isProgressComplete 
-                              ? '1px solid rgba(22, 163, 74, 0.3)' 
+                            border: isProgressComplete
+                              ? '1px solid rgba(22, 163, 74, 0.3)'
                               : '1px solid rgba(100, 116, 139, 0.3)',
                             minWidth: '240px',
                             height: '56px',
@@ -6881,7 +7092,7 @@ const UserTaskDetail = () => {
                         </QuickActionButton>
                       );
                     })()}
-                    
+
                     {/* Download Report Buttons - Only show for archived tasks */}
                     {currentTask?.status === 'archived' && (
                       <>
@@ -6903,7 +7114,7 @@ const UserTaskDetail = () => {
                           <Download size={20} />
                           Download Excel
                         </QuickActionButton> */}
-                        
+
                         {/* Export Dropdown */}
                         <ExportButtonContainer className="export-dropdown">
                           <ExportButton onClick={handleExportClick}>
@@ -6928,7 +7139,7 @@ const UserTaskDetail = () => {
                             </ExportDropdown>
                           )}
                         </ExportButtonContainer>
-                        
+
                         {/* Word Download */}
                         {/* <QuickActionButton 
                           primary
@@ -6949,14 +7160,14 @@ const UserTaskDetail = () => {
                         </QuickActionButton> */}
                       </>
                     )}
-                    
+
                     {/* Submit and Download Later Button - Only show for non-archived completed tasks */}
                     {currentTask?.status === 'completed' && currentTask?.signature && (
-                      <QuickActionButton 
+                      <QuickActionButton
                         primary
                         onClick={handleSubmitAndDownloadLater}
-                        style={{ 
-                          padding: '16px 32px', 
+                        style={{
+                          padding: '16px 32px',
                           fontSize: '16px',
                           fontWeight: '600',
                           background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
@@ -6971,13 +7182,13 @@ const UserTaskDetail = () => {
                       </QuickActionButton>
                     )}
                   </div>
-                  
+
                   {/* Status Message */}
                   <div style={{ textAlign: 'center' }}>
                     {currentTask?.status === 'archived' ? (
-                      <p style={{ 
-                        fontSize: '14px', 
-                        color: '#16a34a', 
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#16a34a',
                         fontWeight: '500',
                         display: 'flex',
                         alignItems: 'center',
@@ -6990,12 +7201,12 @@ const UserTaskDetail = () => {
                     ) : (() => {
                       const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
                       const isComplete = actualProgress >= 100;
-                      
+
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-                          <p style={{ 
-                            fontSize: '14px', 
-                            color: isComplete ? '#16a34a' : '#f59e0b', 
+                          <p style={{
+                            fontSize: '14px',
+                            color: isComplete ? '#16a34a' : '#f59e0b',
                             fontWeight: '500',
                             display: 'flex',
                             alignItems: 'center',
@@ -7015,9 +7226,9 @@ const UserTaskDetail = () => {
                             )}
                           </p>
                           {!isComplete && (
-                            <p style={{ 
-                              fontSize: '12px', 
-                              color: '#64748b', 
+                            <p style={{
+                              fontSize: '12px',
+                              color: '#64748b',
                               fontStyle: 'italic'
                             }}>
                               {t('tasks.completeAllInspectionSectionsToEnableArchiving')}
@@ -7031,18 +7242,18 @@ const UserTaskDetail = () => {
               </>
             )}
           </MainPanel>
-          
+
           <SidePanel>
             <Card>
               <SectionTitle>
                 <BarChart2 size={20} />
                 {t('tasks.quickStats')}
               </SectionTitle>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '12px',
                   background: 'rgba(55, 136, 216, 0.05)',
@@ -7053,10 +7264,10 @@ const UserTaskDetail = () => {
                     {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
                   </span>
                 </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '12px',
                   background: 'rgba(39, 174, 96, 0.05)',
@@ -7067,10 +7278,10 @@ const UserTaskDetail = () => {
                     {scores.percentage}%
                   </span>
                 </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '12px',
                   background: 'rgba(243, 156, 18, 0.05)',
@@ -7081,10 +7292,10 @@ const UserTaskDetail = () => {
                     {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
                   </span>
                 </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '12px',
                   background: 'rgba(44, 62, 80, 0.05)',
@@ -7097,19 +7308,19 @@ const UserTaskDetail = () => {
                 </div>
               </div>
             </Card>
-            
+
 
           </SidePanel>
         </ContentContainer>
       </MainContent>
-      
+
       {responseLoading && (
         <LoadingIndicator>
           <Loader size={16} />
           {t('tasks.savingResponse')}
         </LoadingIndicator>
       )}
-      
+
       {showSignatureModal && !isArchivedTask && (
         <ModalOverlay>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -7119,32 +7330,32 @@ const UserTaskDetail = () => {
                 <X size={20} />
               </CloseButton>
             </ModalHeader>
-            
+
             <div>
               <p style={{ marginBottom: '20px', color: '#64748b', fontSize: '14px' }}>
                 {t('tasks.pleaseProvideSignature')}
               </p>
-              
+
               <SignatureTabs>
-                <SignatureTab 
-                  active={signatureMethod === 'draw'} 
+                <SignatureTab
+                  active={signatureMethod === 'draw'}
                   onClick={() => setSignatureMethod('draw')}
                 >
                   {t('tasks.drawSignature')}
                 </SignatureTab>
-                <SignatureTab 
-                  active={signatureMethod === 'upload'} 
+                <SignatureTab
+                  active={signatureMethod === 'upload'}
                   onClick={() => setSignatureMethod('upload')}
                 >
                   {t('tasks.uploadSignature')}
                 </SignatureTab>
               </SignatureTabs>
-              
+
               {signatureMethod === 'draw' ? (
                 <SignatureCanvas>
-                  <canvas 
+                  <canvas
                     ref={signatureCanvasRef}
-                    width="500" 
+                    width="500"
                     height="200"
                     onMouseDown={handleStartDrawing}
                     onMouseMove={handleDrawing}
@@ -7178,15 +7389,15 @@ const UserTaskDetail = () => {
               ) : (
                 <SignatureCanvas clickable onClick={handleSignatureUpload}>
                   {signatureImage ? (
-                    <img 
-                      src={signatureImage} 
-                      alt="Uploaded signature" 
-                      style={{ maxWidth: '100%', maxHeight: '200px' }} 
+                    <img
+                      src={signatureImage}
+                      alt="Uploaded signature"
+                      style={{ maxWidth: '100%', maxHeight: '200px' }}
                     />
                   ) : (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       gap: '12px',
                       color: '#64748b'
@@ -7205,7 +7416,7 @@ const UserTaskDetail = () => {
                 </SignatureCanvas>
               )}
             </div>
-            
+
             <SignatureActions>
               {signatureMethod === 'draw' && (
                 <ClearButton onClick={handleClearSignature}>
@@ -7213,14 +7424,14 @@ const UserTaskDetail = () => {
                   {t('common.clear')}
                 </ClearButton>
               )}
-              
+
               {signatureMethod === 'upload' && (
                 <UploadButton onClick={handleSignatureUpload}>
                   <Upload size={16} />
                   {t('tasks.uploadImage')}
                 </UploadButton>
               )}
-              
+
               {/* <SaveButton 
                 onClick={handleSaveSignature}
                 disabled={!signatureImage}
@@ -7229,11 +7440,11 @@ const UserTaskDetail = () => {
                 <Save size={16} />
                 Save & Continue
               </SaveButton> */}
-              
-              <SaveButton 
+
+              <SaveButton
                 onClick={handleSaveAndSubmit}
                 disabled={!signatureImage}
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   marginLeft: '8px',
                   fontWeight: '600'
@@ -7260,11 +7471,11 @@ const UserTaskDetail = () => {
                 <X size={20} />
               </CloseButton>
             </ModalHeader>
-            
+
             <div style={{ padding: '20px 0' }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: '16px',
                 marginBottom: '20px',
                 padding: '16px',
@@ -7274,18 +7485,18 @@ const UserTaskDetail = () => {
               }}>
                 <CheckCircle size={48} color="#16a34a" />
                 <div>
-                  <h3 style={{ 
-                    margin: 0, 
-                    fontSize: '18px', 
-                    fontWeight: '600', 
-                    color: '#16a34a' 
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#16a34a'
                   }}>
                     {t('tasks.readyToComplete')}
                   </h3>
-                  <p style={{ 
-                    margin: '4px 0 0 0', 
-                    color: '#64748b', 
-                    fontSize: '14px' 
+                  <p style={{
+                    margin: '4px 0 0 0',
+                    color: '#64748b',
+                    fontSize: '14px'
                   }}>
                     {t('tasks.inspectionSignedAndReadyToArchive')}
                   </p>
@@ -7296,9 +7507,9 @@ const UserTaskDetail = () => {
                 <p style={{ color: '#374151', lineHeight: '1.6' }}>
                   {t('tasks.byClickingCompleteAndArchive')}
                 </p>
-                <ul style={{ 
-                  marginTop: '12px', 
-                  paddingLeft: '24px', 
+                <ul style={{
+                  marginTop: '12px',
+                  paddingLeft: '24px',
                   color: '#64748b',
                   lineHeight: '1.6'
                 }}>
@@ -7309,16 +7520,16 @@ const UserTaskDetail = () => {
                 </ul>
               </div>
 
-              <div style={{ 
-                padding: '12px', 
+              <div style={{
+                padding: '12px',
                 background: 'rgba(245, 158, 11, 0.1)',
                 borderRadius: '6px',
                 border: '1px solid rgba(245, 158, 11, 0.2)',
                 marginBottom: '20px'
               }}>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: '14px', 
+                <p style={{
+                  margin: 0,
+                  fontSize: '14px',
                   color: '#92400e',
                   fontWeight: '500'
                 }}>
@@ -7326,25 +7537,25 @@ const UserTaskDetail = () => {
                 </p>
               </div>
             </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              gap: '12px', 
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
               justifyContent: 'flex-end',
               borderTop: '1px solid #e5e7eb',
               paddingTop: '20px'
             }}>
-              <QuickActionButton 
+              <QuickActionButton
                 onClick={() => setShowArchiveModal(false)}
                 disabled={isArchiving}
               >
                 {t('common.cancel')}
               </QuickActionButton>
-              <QuickActionButton 
+              <QuickActionButton
                 primary
                 onClick={handleConfirmArchive}
                 disabled={isArchiving}
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   minWidth: '160px'
                 }}
@@ -7376,23 +7587,23 @@ const UserTaskDetail = () => {
                 <X size={20} />
               </CloseButton>
             </ModalHeader>
-            
+
             <div style={{ padding: '20px 0' }}>
               <div style={{ marginBottom: '20px' }}>
                 <p style={{ color: '#374151', lineHeight: '1.6', marginBottom: '16px' }}>
                   {t('tasks.customizeFilenameForReport', { format: selectedReportFormat?.toUpperCase() })}
                 </p>
-                
-                <div style={{ 
-                  padding: '16px', 
+
+                <div style={{
+                  padding: '16px',
                   background: 'rgba(55, 136, 216, 0.05)',
                   borderRadius: '8px',
                   border: '1px solid rgba(55, 136, 216, 0.2)',
                   marginBottom: '16px'
                 }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: '8px',
                     marginBottom: '8px',
                     fontSize: '14px',
@@ -7407,14 +7618,14 @@ const UserTaskDetail = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: '14px', 
-                  fontWeight: '600', 
-                  color: '#374151', 
-                  marginBottom: '8px' 
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
                 }}>
                   {t('tasks.reportFilename')}
                 </label>
@@ -7432,17 +7643,17 @@ const UserTaskDetail = () => {
                     transition: 'all 0.3s ease'
                   }}
                 />
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#6b7280', 
-                  marginTop: '4px' 
+                <div style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  marginTop: '4px'
                 }}>
                   {t('tasks.dontIncludeFileExtension', { format: selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat })}
                 </div>
               </div>
-              
-              <div style={{ 
-                padding: '12px', 
+
+              <div style={{
+                padding: '12px',
                 background: '#f9fafb',
                 borderRadius: '6px',
                 border: '1px solid #e5e7eb'
@@ -7450,9 +7661,9 @@ const UserTaskDetail = () => {
                 <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
                   {t('tasks.preview')}:
                 </div>
-                <div style={{ 
-                  fontSize: '14px', 
-                  color: '#374151', 
+                <div style={{
+                  fontSize: '14px',
+                  color: '#374151',
                   fontWeight: '500',
                   fontFamily: 'monospace'
                 }}>
@@ -7460,23 +7671,23 @@ const UserTaskDetail = () => {
                 </div>
               </div>
             </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              gap: '12px', 
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
               justifyContent: 'flex-end',
               borderTop: '1px solid #e5e7eb',
               paddingTop: '20px'
             }}>
-              <QuickActionButton 
+              <QuickActionButton
                 onClick={() => setShowDocumentNamingModal(false)}
               >
                 {t('common.cancel')}
               </QuickActionButton>
-              <QuickActionButton 
+              <QuickActionButton
                 primary
                 onClick={handleConfirmDownload}
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, #3788d8, #2c3e50)',
                   minWidth: '160px'
                 }}

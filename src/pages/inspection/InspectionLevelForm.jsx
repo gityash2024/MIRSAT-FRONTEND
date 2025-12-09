@@ -2144,6 +2144,7 @@ const QuestionItemComponent = ({
   const [showLogicBuilder, setShowLogicBuilder] = useState(false);
   const [showScoreEditor, setShowScoreEditor] = useState(false);
   const [totalScore, setTotalScore] = useState(1);
+  const [newOption, setNewOption] = useState('');
   
   // Get dispatch and library items from Redux
   const dispatch = useDispatch();
@@ -2154,9 +2155,12 @@ const QuestionItemComponent = ({
     let maxScore = 0;
     
     if (question.answerType === 'yesno') {
-      const yesScore = parseInt(question.scores?.Yes) || 0;
-      const noScore = parseInt(question.scores?.No) || 0;
-      const naScore = parseInt(question.scores?.['N/A']) || 0;
+      const yesKey = t('common.yes');
+      const noKey = t('common.no');
+      const naKey = t('common.na');
+      const yesScore = parseInt(question.scores?.[yesKey] || question.scores?.Yes) || 0;
+      const noScore = parseInt(question.scores?.[noKey] || question.scores?.No) || 0;
+      const naScore = question.includeNA !== false ? (parseInt(question.scores?.[naKey] || question.scores?.['N/A']) || 0) : 0;
       maxScore = Math.max(yesScore, noScore, naScore);
     } else if (question.answerType === 'compliance') {
       const scores = question.scores || {};
@@ -2167,7 +2171,7 @@ const QuestionItemComponent = ({
         scores['Not applicable'] || 0
       ];
       maxScore = Math.max(...complianceScores);
-    } else if (question.answerType === 'multiple') {
+    } else if (question.answerType === 'multiple' || question.answerType === 'multiple_choice') {
       const scores = question.scores || {};
       const optionScores = Object.values(scores).map(s => parseInt(s) || 0);
       maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
@@ -2218,15 +2222,20 @@ const QuestionItemComponent = ({
       requirementType: question.requirementType || 'mandatory'  // Preserve requirementType
     };
     
-    // Add default options based on type
-    if (newType === 'multiple' || newType === 'checkbox') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    // Add default options based on type - always reset when changing types
+    if (newType === 'multiple_choice') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
     } else if (newType === 'compliance') {
       updatedQuestion.options = [
-        'Full compliance',
-        'Partial compliance',
-        'Non-compliant',
-        'Not applicable'
+        t('common.fullCompliance'),
+        t('common.partialCompliance'),
+        t('common.nonCompliant'),
+        t('common.notApplicable')
       ];
       
       // Add default scores for compliance options
@@ -2236,28 +2245,43 @@ const QuestionItemComponent = ({
       };
       
       updatedQuestion.scores = {
-        'Full compliance': 2,
-        'Partial compliance': 1,
-        'Non-compliant': 0,
-        'Not applicable': 0
+        [t('common.fullCompliance')]: 2,
+        [t('common.partialCompliance')]: 1,
+        [t('common.nonCompliant')]: 0,
+        [t('common.notApplicable')]: 0
       };
-    } else if (newType === 'radio' || newType === 'dropdown' || newType === 'select') {
-      updatedQuestion.options = updatedQuestion.options?.length ? updatedQuestion.options : ['Option 1', 'Option 2', 'Option 3'];
+    } else if (newType === 'select') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      updatedQuestion.scores = {
+        [t('common.option1')]: 0,
+        [t('common.option2')]: 0,
+        [t('common.option3')]: 0
+      };
     } else if (newType === 'yesno' || newType === 'yes_no') {
-      // Add default scores for Yes/No - fixing the issue with Yes/No
-      updatedQuestion.options = ['Yes', 'No', 'N/A'];
+      // Add default scores for Yes/No - N/A is optional (controlled by includeNA property)
+      const includeNA = question.includeNA !== undefined ? question.includeNA : true; // Default to true for backward compatibility
+      updatedQuestion.options = includeNA 
+        ? [t('common.yes'), t('common.no'), t('common.na')]
+        : [t('common.yes'), t('common.no')];
       updatedQuestion.scoring = {
         enabled: true,
         max: 2 // Change default max score to 2
       };
       updatedQuestion.scores = {
-        'Yes': 2, // Default Yes score is 2
-        'No': 0,
-        'N/A': 0 // N/A should have 0 score
+        [t('common.yes')]: 2, // Default Yes score is 2
+        [t('common.no')]: 0
       };
+      if (includeNA) {
+        updatedQuestion.scores[t('common.na')] = 0; // N/A should have 0 score
+      }
+    } else if (newType === 'checkbox') {
+      updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
+      // Checkbox doesn't have scoring (no scores)
+      updatedQuestion.scores = {};
     } else {
-      // Reset options if changing to a type that doesn't need them
+      // Reset options if changing to a type that doesn't need them (text, number, date, signature, media, file)
       updatedQuestion.options = [];
+      updatedQuestion.scores = {};
       // Keep scoring if it exists, otherwise initialize it
       if (!updatedQuestion.scoring) {
         updatedQuestion.scoring = {
@@ -2277,11 +2301,7 @@ const QuestionItemComponent = ({
         updatedQuestion.text = '';
       } else if (currentText.includes('compliance') && newTypeLower !== 'compliance') {
         updatedQuestion.text = '';
-      } else if (currentText.includes('multiple choice') && !['multiple', 'checkbox', 'radio', 'dropdown'].includes(newTypeLower)) {
-        updatedQuestion.text = '';
-      } else if (currentText.includes('file upload') && newTypeLower !== 'file') {
-        updatedQuestion.text = '';
-      } else if (currentText.includes('signature') && newTypeLower !== 'signature') {
+      } else if (currentText.includes('multiple choice') && !['multiple', 'multiple_choice', 'checkbox', 'radio', 'dropdown'].includes(newTypeLower)) {
         updatedQuestion.text = '';
       } else if (currentText.includes('date') && newTypeLower !== 'date') {
         updatedQuestion.text = '';
@@ -2292,8 +2312,15 @@ const QuestionItemComponent = ({
   };
   
   const addOption = () => {
-    const options = [...(question.options || []), ''];
-    updateQuestion({ ...question, options });
+    if (newOption.trim()) {
+      const options = [...(question.options || []), newOption.trim()];
+      updateQuestion({ ...question, options });
+      setNewOption('');
+    } else {
+      // If no newOption, add empty option like before
+      const options = [...(question.options || []), ''];
+      updateQuestion({ ...question, options });
+    }
   };
   
   const updateOption = (index, value) => {
@@ -2373,14 +2400,16 @@ const QuestionItemComponent = ({
     switch(type) {
       case 'yesno': return t('common.yesNo');
       case 'text': return t('common.text');
-      case 'multiple': return t('common.multipleChoice');
+      case 'number': return t('common.number');
+      case 'date': return t('common.date');
+      case 'select': return t('common.select');
+      case 'multiple_choice': return t('common.multipleChoice');
+      case 'multiple': return t('common.multipleChoice'); // Backward compatibility
+      case 'checkbox': return t('common.checkbox');
       case 'compliance': return t('common.compliance');
       case 'location': return t('common.location');
       case 'signature': return t('common.signature');
-      case 'date': return t('common.date');
       case 'file': return t('common.fileUpload');
-      case 'checkbox': return t('common.checkbox');
-      case 'number': return t('common.number');
       case 'media': return t('common.mediaUpload');
       case 'slider': return t('common.slider');
       default: return t('common.text');
@@ -2485,7 +2514,7 @@ const QuestionItemComponent = ({
             >
               {question.answerType === 'yesno' && <ToggleLeft size={14} style={{ flexShrink: 0 }} />}
               {question.answerType === 'text' && <FileText size={14} style={{ flexShrink: 0 }} />}
-              {question.answerType === 'multiple' && <List size={14} style={{ flexShrink: 0 }} />}
+              {(question.answerType === 'multiple' || question.answerType === 'multiple_choice') && <List size={14} style={{ flexShrink: 0 }} />}
               {question.answerType === 'compliance' && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
               {question.answerType === 'date' && <Calendar size={14} style={{ flexShrink: 0 }} />}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2604,11 +2633,15 @@ const QuestionItemComponent = ({
                   disabled={loading}
                 >
                   <option value="text">{t('common.text')}</option>
+                  <option value="number">{t('common.number')}</option>
+                  <option value="date">{t('common.date')}</option>
                   <option value="yesno">{t('common.yesNo')}</option>
-                  <option value="multiple">{t('common.multipleChoice')}</option>
+                  <option value="select">{t('common.select')}</option>
+                  <option value="multiple_choice">{t('common.multipleChoice')}</option>
+                  <option value="checkbox">{t('common.checkbox')}</option>
                   <option value="compliance">{t('common.compliance')}</option>
                   <option value="signature">{t('common.signature')}</option>
-                  <option value="date">{t('common.date')}</option>
+                  <option value="media">{t('common.mediaUpload')}</option>
                   <option value="file">{t('common.fileUpload')}</option>
                 </Select>
               </FormGroup>
@@ -2636,100 +2669,238 @@ const QuestionItemComponent = ({
                 </div>
               </FormGroup>
               
-              {/* Options editor for multiple choice or compliance questions */}
-              {['multiple', 'compliance'].includes(question.answerType) && (
+              {/* Options editor for multiple choice, select, checkbox or compliance questions */}
+              {['multiple_choice', 'compliance', 'select', 'yesno', 'multiple', 'checkbox'].includes(question.answerType) && (
                 <FormGroup style={{ marginTop: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  width: '100%',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                  flexWrap: 'wrap',
-                  gap: '8px'
+                  marginBottom: '12px'
                 }}>
-                    <Label style={{ flex: 1, minWidth: 0 }}>Options</Label>
-                    {question.answerType === 'multiple' && (
-                      <Button
-                    type="button"
-                    onClick={addOption}
-                        style={{ padding: '4px 8px', fontSize: '13px', flexShrink: 0, whiteSpace: 'nowrap' }}
-                      >
-                        <Plus size={14} />
-                        Add Option
-                      </Button>
-                    )}
+                  <Label>{t('tasks.options')}</Label>
+                  {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                    <button
+                      type="button"
+                      onClick={addOption}
+                      style={{
+                        background: '#f1f5f9',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        color: '#334155',
+                        fontWeight: '500'
+                      }}
+                    >
+                      <Plus size={14} /> {t('tasks.addOption')}
+                    </button>
+                  )}
                 </div>
-                
-                  <div style={{ marginTop: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                {(question.options || []).map((option, index) => (
-                  <div key={index} style={{ 
-                    display: 'flex', 
-                    gap: '8px',
-                    marginBottom: '8px',
-                    alignItems: 'center',
-                    width: '100%',
-                    maxWidth: '100%',
-                    boxSizing: 'border-box',
-                    flexWrap: 'wrap'
-                  }}>
-                        <Input
-                      type="text"
-                      value={option}
-                      onChange={(e) => updateOption(index, e.target.value)}
-                      placeholder={`Option ${index + 1}`}
-                          style={{ flex: 1, minWidth: 0 }}
-                          readOnly={question.answerType === 'compliance'}
-                        />
-                        
-                        <Input
-                          type="text"
-                          value={question.scores?.[option] ?? (index === 0 ? 2 : index === 1 ? 1 : 0)}
-                          onChange={(e) => {
-                            const newScores = { ...(question.scores || {}) };
-                            const value = e.target.value;
-                            newScores[option] = value === '' ? '' : parseInt(value) || 0;
-                            
-                            // Calculate new max score
-                            const optionScores = Object.values(newScores).map(s => parseInt(s) || 0);
-                            const maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
-                            
-                            updateQuestion({ 
-                              ...question, 
-                              scores: newScores,
-                              scoring: {
-                                ...(question.scoring || {}),
-                                max: maxScore
-                              }
-                            });
-                          }}
-                          style={{ width: '80px', flexShrink: 0 }}
-                          placeholder="Score"
-                        />
-                        
-                        {question.answerType === 'multiple' && (
-                          <IconButton
-                      onClick={() => removeOption(index)}
-                            style={{ color: '#ef4444', flexShrink: 0 }}
-                            title="Remove Option"
-                          >
-                            <X size={18} />
-                          </IconButton>
+
+                {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <Input
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      placeholder={t('tasks.enterOption')}
+                      style={{ flex: 1 }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newOption.trim()) {
+                            addOption();
+                            setNewOption('');
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newOption.trim()) {
+                          addOption();
+                          setNewOption('');
+                        }
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        background: 'var(--color-navy)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Options table with scores - matching TaskForm */}
+                <div style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8fafc' }}>
+                        <th style={{
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          fontSize: '14px',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>{t('tasks.option')}</th>
+                        {question.answerType !== 'checkbox' && (
+                          <th style={{
+                            padding: '12px 16px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}>{t('tasks.score')}</th>
                         )}
-                  </div>
-                ))}
-                  </div>
+                        {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                          <th style={{
+                            padding: '12px 16px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            width: '60px',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}></th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(question.options || []).map((option, i) => (
+                        <tr key={i} style={{
+                          borderBottom: i < (question.options || []).length - 1 ? '1px solid #e2e8f0' : 'none'
+                        }}>
+                          <td style={{ padding: '12px 16px' }}>
+                            {question.answerType === 'compliance' || question.answerType === 'yesno' ? (
+                              option
+                            ) : (
+                              <Input
+                                type="text"
+                                value={option}
+                                onChange={(e) => updateOption(i, e.target.value)}
+                                placeholder={`${t('tasks.option')} ${i + 1}`}
+                                style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
+                              />
+                            )}
+                          </td>
+                          {question.answerType !== 'checkbox' && (
+                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
+                              <Input
+                                type="number"
+                                value={question.scores?.[option] || 0}
+                                onChange={(e) => {
+                                  const newScores = { ...(question.scores || {}) };
+                                  const value = e.target.value;
+                                  newScores[option] = value === '' ? '' : parseInt(value) || 0;
+                                  
+                                  // Calculate new max score
+                                  const optionScores = Object.values(newScores).map(s => parseInt(s) || 0);
+                                  const maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
+                                  
+                                  updateQuestion({ 
+                                    ...question, 
+                                    scores: newScores,
+                                    scoring: {
+                                      ...(question.scoring || {}),
+                                      max: maxScore
+                                    }
+                                  });
+                                }}
+                                style={{
+                                  width: '60px',
+                                  textAlign: 'center',
+                                  padding: '6px 8px'
+                                }}
+                              />
+                            </td>
+                          )}
+                          {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => removeOption(i)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#ef4444',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <X size={16} />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 </FormGroup>
               )}
               
+              {/* N/A Toggle for Yes/No questions */}
+              {question.answerType === 'yesno' && (
+                <FormGroup style={{ marginTop: '16px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    marginBottom: '12px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      id={`includeNA-${questionIndex}`}
+                      checked={question.includeNA !== false}
+                      onChange={(e) => {
+                        const includeNA = e.target.checked;
+                        const newOptions = includeNA 
+                          ? [t('common.yes'), t('common.no'), t('common.na')]
+                          : [t('common.yes'), t('common.no')];
+                        const newScores = { ...(question.scores || {}) };
+                        if (includeNA) {
+                          newScores[t('common.na')] = 0;
+                        } else {
+                          delete newScores[t('common.na')];
+                        }
+                        updateQuestion({ 
+                          ...question, 
+                          includeNA,
+                          options: newOptions,
+                          scores: newScores
+                        });
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <Label htmlFor={`includeNA-${questionIndex}`} style={{ margin: 0, cursor: 'pointer' }}>
+                      {t('tasks.includeNAOption')}
+                    </Label>
+                  </div>
+                </FormGroup>
+              )}
+
               {/* Score editor for Yes/No questions */}
               {question.answerType === 'yesno' && (
                 <FormGroup style={{ marginTop: '16px' }}>
                   <Label>{t('common.scoring')}</Label>
                   <div style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gridTemplateColumns: question.includeNA !== false ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', 
                     gap: '12px', 
                     marginTop: '8px',
                     width: '100%',
@@ -2742,16 +2913,21 @@ const QuestionItemComponent = ({
                       <Label style={{ fontSize: '13px' }}>{t('common.yesScore')}</Label>
                       <Input
                         type="text"
-                        value={question.scores?.Yes ?? 2}
+                        value={question.scores?.[t('common.yes')] ?? question.scores?.Yes ?? 2}
                         onChange={(e) => {
                           const newScores = { ...(question.scores || {}) };
                           const value = e.target.value;
+                          const yesKey = t('common.yes');
+                          newScores[yesKey] = value === '' ? '' : parseInt(value) || 0;
+                          // Also update 'Yes' for backward compatibility
                           newScores.Yes = value === '' ? '' : parseInt(value) || 0;
                           
                           // Calculate new max score
-                          const yesScore = parseInt(newScores.Yes) || 0;
-                          const noScore = parseInt(newScores.No) || 0;
-                          const naScore = parseInt(newScores['N/A']) || 0;
+                          const yesScore = parseInt(newScores[yesKey] || newScores.Yes) || 0;
+                          const noKey = t('common.no');
+                          const noScore = parseInt(newScores[noKey] || newScores.No) || 0;
+                          const naKey = t('common.na');
+                          const naScore = question.includeNA !== false ? (parseInt(newScores[naKey] || newScores['N/A']) || 0) : 0;
                           const maxScore = Math.max(yesScore, noScore, naScore);
                           
                           updateQuestion({ 
@@ -2770,16 +2946,21 @@ const QuestionItemComponent = ({
                       <Label style={{ fontSize: '13px' }}>{t('common.noScore')}</Label>
                       <Input
                         type="text"
-                        value={question.scores?.No ?? 0}
+                        value={question.scores?.[t('common.no')] ?? question.scores?.No ?? 0}
                         onChange={(e) => {
                           const newScores = { ...(question.scores || {}) };
                           const value = e.target.value;
+                          const noKey = t('common.no');
+                          newScores[noKey] = value === '' ? '' : parseInt(value) || 0;
+                          // Also update 'No' for backward compatibility
                           newScores.No = value === '' ? '' : parseInt(value) || 0;
                           
                           // Calculate new max score
-                          const yesScore = parseInt(newScores.Yes) || 0;
-                          const noScore = parseInt(newScores.No) || 0;
-                          const naScore = parseInt(newScores['N/A']) || 0;
+                          const yesKey = t('common.yes');
+                          const yesScore = parseInt(newScores[yesKey] || newScores.Yes) || 0;
+                          const noScore = parseInt(newScores[noKey] || newScores.No) || 0;
+                          const naKey = t('common.na');
+                          const naScore = question.includeNA !== false ? (parseInt(newScores[naKey] || newScores['N/A']) || 0) : 0;
                           const maxScore = Math.max(yesScore, noScore, naScore);
                           
                           updateQuestion({ 
@@ -2794,34 +2975,39 @@ const QuestionItemComponent = ({
                         placeholder="Enter score"
                       />
                     </div>
-                    <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                      <Label style={{ fontSize: '13px' }}>{t('common.naScore')}</Label>
-                      <Input
-                        type="text"
-                        value={question.scores?.['N/A'] ?? 0}
-                        onChange={(e) => {
-                          const newScores = { ...(question.scores || {}) };
-                          const value = e.target.value;
-                          newScores['N/A'] = value === '' ? '' : parseInt(value) || 0;
-                          
-                          // Calculate new max score
-                          const yesScore = parseInt(newScores.Yes) || 0;
-                          const noScore = parseInt(newScores.No) || 0;
-                          const naScore = parseInt(newScores['N/A']) || 0;
-                          const maxScore = Math.max(yesScore, noScore, naScore);
-                          
-                          updateQuestion({ 
-                            ...question, 
-                            scores: newScores,
-                            scoring: {
-                              ...(question.scoring || {}),
-                              max: maxScore
-                            }
-                          });
-                        }}
-                        placeholder="Enter score"
-                      />
-                    </div>
+                    {question.includeNA !== false && (
+                      <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                        <Label style={{ fontSize: '13px' }}>{t('common.naScore')}</Label>
+                        <Input
+                          type="text"
+                          value={question.scores?.[t('common.na')] ?? question.scores?.['N/A'] ?? 0}
+                          onChange={(e) => {
+                            const newScores = { ...(question.scores || {}) };
+                            const value = e.target.value;
+                            const naKey = t('common.na');
+                            newScores[naKey] = value === '' ? '' : parseInt(value) || 0;
+                            
+                            // Calculate new max score
+                            const yesKey = t('common.yes');
+                            const noKey = t('common.no');
+                            const yesScore = parseInt(newScores[yesKey] || newScores.Yes) || 0;
+                            const noScore = parseInt(newScores[noKey] || newScores.No) || 0;
+                            const naScore = parseInt(newScores[naKey]) || 0;
+                            const maxScore = Math.max(yesScore, noScore, naScore);
+                            
+                            updateQuestion({ 
+                              ...question, 
+                              scores: newScores,
+                              scoring: {
+                                ...(question.scoring || {}),
+                                max: maxScore
+                              }
+                            });
+                          }}
+                          placeholder="Enter score"
+                        />
+                      </div>
+                    )}
                   </div>
                 </FormGroup>
               )}
@@ -3782,8 +3968,9 @@ const MobilePreviewPanel = ({
       const questionWeight = question.weight || 0;
       let maxScore = 0;
       
-      if (question.answerType === 'yesno' && question.scores?.Yes) {
-        maxScore = question.scores.Yes;
+      if (question.answerType === 'yesno') {
+        const yesKey = t('common.yes');
+        maxScore = parseInt(question.scores?.[yesKey] || question.scores?.Yes) || 2;
       } else if (question.scores) {
         // Find highest possible score
         const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
@@ -3853,8 +4040,10 @@ const MobilePreviewPanel = ({
             </label>
           </div>
         );
-      case 'multiple':
-      case 'dropdown':
+      case 'select':
+      case 'multiple_choice':
+      case 'multiple': // Backward compatibility
+      case 'dropdown': // Backward compatibility
         return (
           <select 
             disabled 
@@ -3900,6 +4089,51 @@ const MobilePreviewPanel = ({
             }}
           />
         );
+      case 'signature':
+        return (
+          <div style={{
+            width: '100%',
+            maxWidth: '100%',
+            padding: '16px',
+            border: '2px dashed #e2e8f0',
+            borderRadius: '4px',
+            textAlign: 'center',
+            color: '#64748b',
+            boxSizing: 'border-box'
+          }}>
+            {t('common.signature')}
+          </div>
+        );
+      case 'media':
+        return (
+          <div style={{
+            width: '100%',
+            maxWidth: '100%',
+            padding: '16px',
+            border: '2px dashed #e2e8f0',
+            borderRadius: '4px',
+            textAlign: 'center',
+            color: '#64748b',
+            boxSizing: 'border-box'
+          }}>
+            📷 {t('common.mediaUpload')}
+          </div>
+        );
+      case 'file':
+        return (
+          <div style={{
+            width: '100%',
+            maxWidth: '100%',
+            padding: '16px',
+            border: '2px dashed #e2e8f0',
+            borderRadius: '4px',
+            textAlign: 'center',
+            color: '#64748b',
+            boxSizing: 'border-box'
+          }}>
+            📎 {t('common.fileUpload')}
+          </div>
+        );
       default:
         return (
           <input
@@ -3924,12 +4158,13 @@ const MobilePreviewPanel = ({
     const weight = question.weight || 0;
     let maxScore = 0;
     
-    if (question.answerType === 'yesno' && question.scores?.Yes) {
-      maxScore = question.scores.Yes;
+    if (question.answerType === 'yesno') {
+      const yesKey = t('common.yes');
+      maxScore = parseInt(question.scores?.[yesKey] || question.scores?.Yes) || 2;
     } else if (question.scores) {
       // Find highest possible score
       const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
-      maxScore = Math.max(...scoreValues);
+      maxScore = scoreValues.length > 0 ? Math.max(...scoreValues) : 0;
     }
     
     return weight * maxScore;
@@ -4335,7 +4570,7 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    {t('common.yes')}: {question.scores?.Yes || 0} {t('common.pts')}
+                                    {t('common.yes')}: {question.scores?.[t('common.yes')] || question.scores?.Yes || 0} {t('common.pts')}
                                   </div>
                                   <div style={{ 
                                     backgroundColor: '#fee2e2', 
@@ -4343,16 +4578,18 @@ const MobilePreviewPanel = ({
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
-                                    {t('common.no')}: {question.scores?.No || 0} {t('common.pts')}
+                                    {t('common.no')}: {question.scores?.[t('common.no')] || question.scores?.No || 0} {t('common.pts')}
                                   </div>
-                                  <div style={{ 
-                                    backgroundColor: '#f1f5f9', 
-                                    color: '#475569',
-                                    padding: '4px 8px',
-                                    borderRadius: '4px'
-                                  }}>
-                                    {t('common.na')}: {question.scores?.['N/A'] || 0} {t('common.pts')}
-                                  </div>
+                                  {question.includeNA !== false && (
+                                    <div style={{ 
+                                      backgroundColor: '#f1f5f9', 
+                                      color: '#475569',
+                                      padding: '4px 8px',
+                                      borderRadius: '4px'
+                                    }}>
+                                      {t('common.na')}: {question.scores?.[t('common.na')] || question.scores?.['N/A'] || 0} {t('common.pts')}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               
@@ -5488,15 +5725,16 @@ const InspectionLevelForm = () => {
       required: true,
       mandatory: true,
       requirementType: 'mandatory',
-      options: ['Yes', 'No', 'N/A'],
+      includeNA: true, // Default to true for new Yes/No questions
+      options: [t('common.yes'), t('common.no'), t('common.na')],
       scoring: {
         enabled: true,
         max: 2
       },
       scores: {
-        'Yes': 2,
-        'No': 0,
-        'N/A': 0
+        [t('common.yes')]: 2,
+        [t('common.no')]: 0,
+        [t('common.na')]: 0
       }
     };
 
