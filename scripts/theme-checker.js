@@ -45,6 +45,7 @@ const colorMap = {
   '#2D4654': 'var(--color-gray-dark)',
   '#2d4654': 'var(--color-gray-dark)',
   
+  
   // Status colors
   '#7CB797': 'var(--color-success)',
   '#7cb797': 'var(--color-success)',
