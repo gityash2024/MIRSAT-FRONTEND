@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled, { css } from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
-import { 
-  Plus, 
-  Trash2, 
-  AlertCircle, 
-  Save, 
-  ArrowLeft, 
-  Folder, 
-  ChevronRight, 
+import {
+  Plus,
+  Trash2,
+  AlertCircle,
+  Save,
+  ArrowLeft,
+  Folder,
+  ChevronRight,
   ChevronDown,
   ChevronLeft,
   Check,
@@ -53,7 +53,7 @@ import {
   ToggleLeft,
   Download
 } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+// Native HTML5 Drag and Drop will be used instead of react-beautiful-dnd for better stability
 import { toast } from 'react-hot-toast';
 import { inspectionService } from '../../services/inspection.service';
 import {
@@ -75,17 +75,17 @@ import ReportPreviewComponent from '../../components/reports/ReportPreviewCompon
 import Alert from '@mui/material/Alert';
 
 // Modal component for confirmations
-const ConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
-  message, 
-  confirmText = "Confirm", 
-  cancelText = "Cancel" 
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = "Confirm",
+  cancelText = "Cancel"
 }) => {
   if (!isOpen) return null;
-  
+
   return (
     <div style={{
       position: 'fixed',
@@ -109,9 +109,9 @@ const ConfirmationModal = ({
       }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>{title}</h3>
         <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>{message}</p>
-        
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button 
+          <button
             onClick={onClose}
             style={{
               padding: '8px 16px',
@@ -125,7 +125,7 @@ const ConfirmationModal = ({
           >
             {cancelText}
           </button>
-          <button 
+          <button
             onClick={() => {
               onConfirm();
               onClose();
@@ -156,9 +156,9 @@ const DiscardConfirmationModal = ({
   onCancel
 }) => {
   const { t } = useTranslation();
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div style={{
       position: 'fixed',
@@ -212,9 +212,9 @@ const DiscardConfirmationModal = ({
         <p style={{ margin: '0 0 24px 0', color: '#4b5563' }}>
           {t('inspections.discardTemplateMessage')}
         </p>
-        
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button 
+          <button
             onClick={() => {
               onClose();
               if (onCancel) onCancel();
@@ -231,7 +231,7 @@ const DiscardConfirmationModal = ({
           >
             {t('common.cancel')}
           </button>
-          <button 
+          <button
             onClick={() => {
               onConfirm();
               onClose();
@@ -847,14 +847,23 @@ const TabsContainer = styled.div`
 `;
 
 const Tab = styled.div`
-  padding: 12px 20px;
+  padding: 12px 24px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-bottom: 3px solid ${props => props.$active ? 'var(--color-navy)' : 'transparent'};
   color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
-  background-color: ${props => props.$active ? 'rgba(59, 73, 223, 0.05)' : 'transparent'};
-  transition: all 0.2s;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  background: ${props => {
+    if (props.$isDragging) return '#e2e8f0';
+    if (props.$active) return 'rgba(59, 73, 223, 0.15)';
+    return 'transparent';
+  }};
+  backdrop-filter: ${props => props.$active ? 'blur(12px)' : 'none'};
+  box-shadow: ${props => props.$active
+    ? '0 8px 24px rgba(59, 73, 223, 0.2)'
+    : 'none'};
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   position: relative;
   display: flex;
@@ -862,22 +871,24 @@ const Tab = styled.div`
   gap: 8px;
   flex-shrink: 0;
   box-sizing: border-box;
+  margin-right: 6px;
 
   @media (max-width: 768px) {
-    padding: 10px 16px;
+    padding: 10px 18px;
     font-size: 13px;
     gap: 6px;
   }
 
   @media (max-width: 480px) {
-    padding: 8px 12px;
+    padding: 8px 14px;
     font-size: 12px;
     gap: 6px;
   }
   
   &:hover {
     color: var(--color-navy);
-    background-color: rgba(59, 73, 223, 0.03);
+    background: rgba(59, 73, 223, 0.05);
+    backdrop-filter: blur(4px);
     
     .delete-icon {
       opacity: 1;
@@ -1902,7 +1913,7 @@ const TabMenu = styled.div`
 
 const QuestionPagination = ({ currentPage, totalPages, onPageChange }) => {
   const { t } = useTranslation();
-  
+
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       onPageChange(page);
@@ -2126,11 +2137,11 @@ const QuestionNumber = styled.div`
 
 // Now update the QuestionItemComponent implementation
 
-const QuestionItemComponent = ({ 
-  question, 
-  questionIndex, 
-  loading, 
-  updateQuestion, 
+const QuestionItemComponent = ({
+  question,
+  questionIndex,
+  loading,
+  updateQuestion,
   removeQuestion,
   allLevels = [],
   onMoveQuestion
@@ -2145,15 +2156,15 @@ const QuestionItemComponent = ({
   const [showScoreEditor, setShowScoreEditor] = useState(false);
   const [totalScore, setTotalScore] = useState(1);
   const [newOption, setNewOption] = useState('');
-  
+
   // Get dispatch and library items from Redux
   const dispatch = useDispatch();
   const { questions: libraryItems, loading: libraryLoading } = useSelector(state => state.questionLibrary);
-  
+
   // Calculate total score based on question type and weights
   useEffect(() => {
     let maxScore = 0;
-    
+
     if (question.answerType === 'yesno') {
       const yesKey = t('common.yes');
       const noKey = t('common.no');
@@ -2176,9 +2187,9 @@ const QuestionItemComponent = ({
       const optionScores = Object.values(scores).map(s => parseInt(s) || 0);
       maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
     }
-    
+
     setTotalScore(maxScore);
-    
+
     // Automatically update the question's scoring.max value
     const newScoring = {
       ...(question.scoring || {}),
@@ -2189,7 +2200,7 @@ const QuestionItemComponent = ({
       scoring: newScoring
     });
   }, [question.scores, question.answerType]);
-  
+
   // Load library with proper debugging
   const loadLibrary = async () => {
     console.log("QuestionItem: Loading question library...");
@@ -2197,7 +2208,7 @@ const QuestionItemComponent = ({
       const result = await dispatch(fetchQuestionLibrary()).unwrap();
       console.log("QuestionItem: Library loaded successfully");
       console.log("QuestionItem: Found", result?.results?.length || 0, "questions");
-      
+
       if (result?.results?.length === 0) {
         console.log("QuestionItem: Empty library result - might be an API issue");
       }
@@ -2205,23 +2216,23 @@ const QuestionItemComponent = ({
       console.error("QuestionItem: Error loading library:", error);
     }
   };
-  
+
   // Load library when modal opens
   useEffect(() => {
     if (showLibraryModal) {
       loadLibrary();
     }
   }, [showLibraryModal]);
-  
+
   const handleTypeChange = (e) => {
     const newType = e.target.value;
-    let updatedQuestion = { 
-      ...question, 
+    let updatedQuestion = {
+      ...question,
       type: newType,         // Set the type property
       answerType: newType,   // Also set answerType for backward compatibility
       requirementType: question.requirementType || 'mandatory'  // Preserve requirementType
     };
-    
+
     // Add default options based on type - always reset when changing types
     if (newType === 'multiple_choice') {
       updatedQuestion.options = [t('common.option1'), t('common.option2'), t('common.option3')];
@@ -2237,13 +2248,13 @@ const QuestionItemComponent = ({
         t('common.nonCompliant'),
         t('common.notApplicable')
       ];
-      
+
       // Add default scores for compliance options
       updatedQuestion.scoring = {
         enabled: true,
         max: 2
       };
-      
+
       updatedQuestion.scores = {
         [t('common.fullCompliance')]: 2,
         [t('common.partialCompliance')]: 1,
@@ -2260,7 +2271,7 @@ const QuestionItemComponent = ({
     } else if (newType === 'yesno' || newType === 'yes_no') {
       // Add default scores for Yes/No - N/A is optional (controlled by includeNA property)
       const includeNA = question.includeNA !== undefined ? question.includeNA : true; // Default to true for backward compatibility
-      updatedQuestion.options = includeNA 
+      updatedQuestion.options = includeNA
         ? [t('common.yes'), t('common.no'), t('common.na')]
         : [t('common.yes'), t('common.no')];
       updatedQuestion.scoring = {
@@ -2290,12 +2301,12 @@ const QuestionItemComponent = ({
         };
       }
     }
-    
+
     // Clear question text if it contains type-specific text that doesn't match the new type
     if (updatedQuestion.text) {
       const currentText = updatedQuestion.text.toLowerCase();
       const newTypeLower = newType.toLowerCase();
-      
+
       // If current text contains old type references, clear it
       if ((currentText.includes('yes/no') || currentText.includes('yes or no')) && newTypeLower !== 'yesno') {
         updatedQuestion.text = '';
@@ -2307,10 +2318,10 @@ const QuestionItemComponent = ({
         updatedQuestion.text = '';
       }
     }
-    
+
     updateQuestion(updatedQuestion);
   };
-  
+
   const addOption = () => {
     if (newOption.trim()) {
       const options = [...(question.options || []), newOption.trim()];
@@ -2322,39 +2333,39 @@ const QuestionItemComponent = ({
       updateQuestion({ ...question, options });
     }
   };
-  
+
   const updateOption = (index, value) => {
     const options = [...(question.options || [])];
     options[index] = value;
     updateQuestion({ ...question, options });
   };
-  
+
   const removeOption = (index) => {
     const options = (question.options || []).filter((_, i) => i !== index);
-    
+
     // Also remove score for this option
     const scores = { ...(question.scores || {}) };
     if (options[index] && scores[options[index]]) {
       delete scores[options[index]];
     }
-    
+
     updateQuestion({ ...question, options, scores });
   };
-  
+
   // Update option score
   const updateOptionScore = (option, score) => {
     const scores = { ...(question.scores || {}) };
     scores[option] = parseInt(score) || 0;
     updateQuestion({ ...question, scores });
   };
-  
+
   // New function to save question to library
   const saveToLibrary = async () => {
     if (!question.text) {
       toast.error('Please add question text before saving to library');
       return;
     }
-    
+
     try {
       // Prepare question for library
       const libraryQuestion = {
@@ -2363,11 +2374,11 @@ const QuestionItemComponent = ({
         options: question.options || [],
         required: !!question.required
       };
-      
+
       // Use the addQuestionToLibrary action from the Redux store
       await dispatch(addQuestionToLibrary(libraryQuestion));
       toast.success('Question saved to library');
-      
+
       // Refresh the library to show the new question
       loadLibrary();
     } catch (error) {
@@ -2379,25 +2390,27 @@ const QuestionItemComponent = ({
   // Function to handle selecting a question from the library
   const handleSelectFromLibrary = (libraryQuestion) => {
     // Map field names from database to component fields
+    const answerType = libraryQuestion.answerType || 'yesno';
     const updatedQuestion = {
       ...question,
       text: libraryQuestion.text || '',
-      // Map different answer types to the component's expected format
-      answerType: libraryQuestion.answerType || 'yesno',
+      // Set both type and answerType to ensure dropdown shows correct value
+      type: answerType,
+      answerType: answerType,
       options: libraryQuestion.options || [],
       required: !!libraryQuestion.required
     };
-    
+
     console.log("Selected library question:", libraryQuestion);
     console.log("Updated question:", updatedQuestion);
-    
+
     updateQuestion(updatedQuestion);
     setShowLibraryModal(false);
   };
-  
+
   // Get answer type label for display
   const getAnswerTypeLabel = (type) => {
-    switch(type) {
+    switch (type) {
       case 'yesno': return t('common.yesNo');
       case 'text': return t('common.text');
       case 'number': return t('common.number');
@@ -2434,22 +2447,22 @@ const QuestionItemComponent = ({
           >
             <Move size={18} />
           </DragHandleIcon>
-          
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
+
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
             gap: '4px',
             minWidth: 0,
             maxWidth: '100%',
             overflow: 'hidden',
             boxSizing: 'border-box'
           }}>
-            <QuestionNumber style={{ 
+            <QuestionNumber style={{
               minWidth: 0,
               maxWidth: '100%',
               overflow: 'hidden'
             }}>
-              <span style={{ 
+              <span style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2462,10 +2475,10 @@ const QuestionItemComponent = ({
               }}>
                 <ChevronDown size={16} />
               </span>
-              <span style={{ 
-                flex: 1, 
-                minWidth: 0, 
-                overflow: 'hidden', 
+              <span style={{
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
               }}>
@@ -2474,8 +2487,8 @@ const QuestionItemComponent = ({
               </span>
             </QuestionNumber>
             {question.description && (
-              <div style={{ 
-                fontSize: '13px', 
+              <div style={{
+                fontSize: '13px',
                 color: '#64748b',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -2487,16 +2500,16 @@ const QuestionItemComponent = ({
               </div>
             )}
           </div>
-          
-          <div style={{ 
+
+          <div style={{
             minWidth: 0,
             maxWidth: '100%',
             overflow: 'hidden',
             boxSizing: 'border-box'
           }}>
-            <div style={{ 
-              padding: '6px 12px', 
-              backgroundColor: '#f1f5f9', 
+            <div style={{
+              padding: '6px 12px',
+              backgroundColor: '#f1f5f9',
               borderRadius: '4px',
               display: 'inline-flex',
               alignItems: 'center',
@@ -2510,7 +2523,7 @@ const QuestionItemComponent = ({
               maxWidth: '100%',
               boxSizing: 'border-box'
             }}
-            className="answer-type-badge"
+              className="answer-type-badge"
             >
               {question.answerType === 'yesno' && <ToggleLeft size={14} style={{ flexShrink: 0 }} />}
               {question.answerType === 'text' && <FileText size={14} style={{ flexShrink: 0 }} />}
@@ -2522,9 +2535,9 @@ const QuestionItemComponent = ({
               </span>
             </div>
           </div>
-          
+
           <QuestionActionsMenu onClick={(e) => e.stopPropagation()}>
-            <IconButton 
+            <IconButton
               onClick={(e) => {
                 e.stopPropagation();
                 setExpanded(!expanded);
@@ -2533,7 +2546,7 @@ const QuestionItemComponent = ({
             >
               {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </IconButton>
-            
+
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
@@ -2543,14 +2556,14 @@ const QuestionItemComponent = ({
             >
               <ArrowUpRight size={18} />
             </IconButton>
-            
+
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
                 setShowDeleteModal(true);
               }}
               title="Delete Question"
-              style={{ 
+              style={{
                 color: '#ef4444',
                 padding: '4px 8px',
                 display: 'flex',
@@ -2569,11 +2582,11 @@ const QuestionItemComponent = ({
             </IconButton>
           </QuestionActionsMenu>
         </QuestionTableRow>
-        </div>
-        
+      </div>
+
       {/* Expanded view when a question is clicked */}
-        {expanded && (
-        <div style={{ 
+      {expanded && (
+        <div style={{
           padding: '20px',
           background: '#f8fafc',
           borderBottom: '1px solid #e2e8f0',
@@ -2582,27 +2595,27 @@ const QuestionItemComponent = ({
           overflow: 'visible',
           boxSizing: 'border-box'
         }}
-        className="question-expanded-container"
+          className="question-expanded-container"
         >
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
+          <div style={{
+            display: 'flex',
+            gap: '20px',
             alignItems: 'flex-start',
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box',
             flexWrap: 'wrap'
           }}
-          className="question-expanded-content"
+            className="question-expanded-content"
           >
-            <div style={{ 
-              flex: '1', 
+            <div style={{
+              flex: '1',
               minWidth: '0',
               width: '100%',
               maxWidth: '100%',
               boxSizing: 'border-box'
             }}
-            className="question-expanded-main"
+              className="question-expanded-main"
             >
               <FormGroup>
                 <Label>{t('common.questionText')}</Label>
@@ -2613,7 +2626,7 @@ const QuestionItemComponent = ({
                   placeholder={t('common.enterQuestionText')}
                 />
               </FormGroup>
-              
+
               <FormGroup style={{ marginTop: '16px' }}>
                 <Label>{t('common.description')}</Label>
                 <TextArea
@@ -2623,7 +2636,7 @@ const QuestionItemComponent = ({
                   rows={2}
                 />
               </FormGroup>
-              
+
               <FormGroup style={{ marginTop: '16px' }}>
                 <Label>{t('common.answerType')}</Label>
                 <Select
@@ -2646,7 +2659,7 @@ const QuestionItemComponent = ({
                 </Select>
               </FormGroup>
 
-              
+
               {/* Add weight input field after answer type */}
               <FormGroup style={{ marginTop: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <Label>{t('common.questionWeight')}</Label>
@@ -2657,8 +2670,8 @@ const QuestionItemComponent = ({
                     const value = e.target.value;
                     const weight = value === '' ? '' : parseInt(value);
                     // Allow zero or positive values
-                    updateQuestion({ 
-                      ...question, 
+                    updateQuestion({
+                      ...question,
                       weight: value === '' ? '' : (isNaN(weight) ? 0 : Math.max(0, weight))
                     });
                   }}
@@ -2668,198 +2681,198 @@ const QuestionItemComponent = ({
                   {t('common.setToZeroForNonScoredQuestions')}
                 </div>
               </FormGroup>
-              
+
               {/* Options editor for multiple choice, select, checkbox or compliance questions */}
               {['multiple_choice', 'compliance', 'select', 'yesno', 'multiple', 'checkbox'].includes(question.answerType) && (
                 <FormGroup style={{ marginTop: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '12px'
-                }}>
-                  <Label>{t('tasks.options')}</Label>
-                  {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
-                    <button
-                      type="button"
-                      onClick={addOption}
-                      style={{
-                        background: '#f1f5f9',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '6px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        color: '#334155',
-                        fontWeight: '500'
-                      }}
-                    >
-                      <Plus size={14} /> {t('tasks.addOption')}
-                    </button>
-                  )}
-                </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <Label>{t('tasks.options')}</Label>
+                    {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                      <button
+                        type="button"
+                        onClick={addOption}
+                        style={{
+                          background: '#f1f5f9',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '6px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: '#334155',
+                          fontWeight: '500'
+                        }}
+                      >
+                        <Plus size={14} /> {t('tasks.addOption')}
+                      </button>
+                    )}
+                  </div>
 
-                {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    <Input
-                      value={newOption}
-                      onChange={(e) => setNewOption(e.target.value)}
-                      placeholder={t('tasks.enterOption')}
-                      style={{ flex: 1 }}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
+                  {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                      <Input
+                        value={newOption}
+                        onChange={(e) => setNewOption(e.target.value)}
+                        placeholder={t('tasks.enterOption')}
+                        style={{ flex: 1 }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newOption.trim()) {
+                              addOption();
+                              setNewOption('');
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
                           if (newOption.trim()) {
                             addOption();
                             setNewOption('');
                           }
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (newOption.trim()) {
-                          addOption();
-                          setNewOption('');
-                        }
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--color-navy)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                )}
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          background: 'var(--color-navy)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  )}
 
-                {/* Options table with scores - matching TaskForm */}
-                <div style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  overflow: 'hidden'
-                }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#f8fafc' }}>
-                        <th style={{
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          borderBottom: '1px solid #e2e8f0'
-                        }}>{t('tasks.option')}</th>
-                        {question.answerType !== 'checkbox' && (
+                  {/* Options table with scores - matching TaskForm */}
+                  <div style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc' }}>
                           <th style={{
                             padding: '12px 16px',
-                            textAlign: 'center',
+                            textAlign: 'left',
                             fontSize: '14px',
                             borderBottom: '1px solid #e2e8f0'
-                          }}>{t('tasks.score')}</th>
-                        )}
-                        {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
-                          <th style={{
-                            padding: '12px 16px',
-                            textAlign: 'center',
-                            fontSize: '14px',
-                            width: '60px',
-                            borderBottom: '1px solid #e2e8f0'
-                          }}></th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(question.options || []).map((option, i) => (
-                        <tr key={i} style={{
-                          borderBottom: i < (question.options || []).length - 1 ? '1px solid #e2e8f0' : 'none'
-                        }}>
-                          <td style={{ padding: '12px 16px' }}>
-                            {question.answerType === 'compliance' || question.answerType === 'yesno' ? (
-                              option
-                            ) : (
-                              <Input
-                                type="text"
-                                value={option}
-                                onChange={(e) => updateOption(i, e.target.value)}
-                                placeholder={`${t('tasks.option')} ${i + 1}`}
-                                style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
-                              />
-                            )}
-                          </td>
+                          }}>{t('tasks.option')}</th>
                           {question.answerType !== 'checkbox' && (
-                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                              <Input
-                                type="number"
-                                value={question.scores?.[option] || 0}
-                                onChange={(e) => {
-                                  const newScores = { ...(question.scores || {}) };
-                                  const value = e.target.value;
-                                  newScores[option] = value === '' ? '' : parseInt(value) || 0;
-                                  
-                                  // Calculate new max score
-                                  const optionScores = Object.values(newScores).map(s => parseInt(s) || 0);
-                                  const maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
-                                  
-                                  updateQuestion({ 
-                                    ...question, 
-                                    scores: newScores,
-                                    scoring: {
-                                      ...(question.scoring || {}),
-                                      max: maxScore
-                                    }
-                                  });
-                                }}
-                                style={{
-                                  width: '60px',
-                                  textAlign: 'center',
-                                  padding: '6px 8px'
-                                }}
-                              />
-                            </td>
+                            <th style={{
+                              padding: '12px 16px',
+                              textAlign: 'center',
+                              fontSize: '14px',
+                              borderBottom: '1px solid #e2e8f0'
+                            }}>{t('tasks.score')}</th>
                           )}
                           {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
-                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                              <button
-                                type="button"
-                                onClick={() => removeOption(i)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: '#ef4444',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <X size={16} />
-                              </button>
-                            </td>
+                            <th style={{
+                              padding: '12px 16px',
+                              textAlign: 'center',
+                              fontSize: '14px',
+                              width: '60px',
+                              borderBottom: '1px solid #e2e8f0'
+                            }}></th>
                           )}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {(question.options || []).map((option, i) => (
+                          <tr key={i} style={{
+                            borderBottom: i < (question.options || []).length - 1 ? '1px solid #e2e8f0' : 'none'
+                          }}>
+                            <td style={{ padding: '12px 16px' }}>
+                              {question.answerType === 'compliance' || question.answerType === 'yesno' ? (
+                                option
+                              ) : (
+                                <Input
+                                  type="text"
+                                  value={option}
+                                  onChange={(e) => updateOption(i, e.target.value)}
+                                  placeholder={`${t('tasks.option')} ${i + 1}`}
+                                  style={{ width: '100%', border: 'none', padding: '0', background: 'transparent' }}
+                                />
+                              )}
+                            </td>
+                            {question.answerType !== 'checkbox' && (
+                              <td style={{ padding: '8px 16px', textAlign: 'center' }}>
+                                <Input
+                                  type="number"
+                                  value={question.scores?.[option] || 0}
+                                  onChange={(e) => {
+                                    const newScores = { ...(question.scores || {}) };
+                                    const value = e.target.value;
+                                    newScores[option] = value === '' ? '' : parseInt(value) || 0;
+
+                                    // Calculate new max score
+                                    const optionScores = Object.values(newScores).map(s => parseInt(s) || 0);
+                                    const maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
+
+                                    updateQuestion({
+                                      ...question,
+                                      scores: newScores,
+                                      scoring: {
+                                        ...(question.scoring || {}),
+                                        max: maxScore
+                                      }
+                                    });
+                                  }}
+                                  style={{
+                                    width: '60px',
+                                    textAlign: 'center',
+                                    padding: '6px 8px'
+                                  }}
+                                />
+                              </td>
+                            )}
+                            {question.answerType !== 'compliance' && question.answerType !== 'yesno' && (
+                              <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => removeOption(i)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#ef4444',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <X size={16} />
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </FormGroup>
               )}
-              
+
               {/* N/A Toggle for Yes/No questions */}
               {question.answerType === 'yesno' && (
                 <FormGroup style={{ marginTop: '16px' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: '8px',
                     marginBottom: '12px'
                   }}>
@@ -2869,7 +2882,7 @@ const QuestionItemComponent = ({
                       checked={question.includeNA !== false}
                       onChange={(e) => {
                         const includeNA = e.target.checked;
-                        const newOptions = includeNA 
+                        const newOptions = includeNA
                           ? [t('common.yes'), t('common.no'), t('common.na')]
                           : [t('common.yes'), t('common.no')];
                         const newScores = { ...(question.scores || {}) };
@@ -2878,8 +2891,8 @@ const QuestionItemComponent = ({
                         } else {
                           delete newScores[t('common.na')];
                         }
-                        updateQuestion({ 
-                          ...question, 
+                        updateQuestion({
+                          ...question,
                           includeNA,
                           options: newOptions,
                           scores: newScores
@@ -2898,16 +2911,16 @@ const QuestionItemComponent = ({
               {question.answerType === 'yesno' && (
                 <FormGroup style={{ marginTop: '16px' }}>
                   <Label>{t('common.scoring')}</Label>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: question.includeNA !== false ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', 
-                    gap: '12px', 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: question.includeNA !== false ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                    gap: '12px',
                     marginTop: '8px',
                     width: '100%',
                     maxWidth: '100%',
                     boxSizing: 'border-box'
                   }}
-                  className="scoring-grid"
+                    className="scoring-grid"
                   >
                     <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       <Label style={{ fontSize: '13px' }}>{t('common.yesScore')}</Label>
@@ -2921,7 +2934,7 @@ const QuestionItemComponent = ({
                           newScores[yesKey] = value === '' ? '' : parseInt(value) || 0;
                           // Also update 'Yes' for backward compatibility
                           newScores.Yes = value === '' ? '' : parseInt(value) || 0;
-                          
+
                           // Calculate new max score
                           const yesScore = parseInt(newScores[yesKey] || newScores.Yes) || 0;
                           const noKey = t('common.no');
@@ -2929,9 +2942,9 @@ const QuestionItemComponent = ({
                           const naKey = t('common.na');
                           const naScore = question.includeNA !== false ? (parseInt(newScores[naKey] || newScores['N/A']) || 0) : 0;
                           const maxScore = Math.max(yesScore, noScore, naScore);
-                          
-                          updateQuestion({ 
-                            ...question, 
+
+                          updateQuestion({
+                            ...question,
                             scores: newScores,
                             scoring: {
                               ...(question.scoring || {}),
@@ -2954,7 +2967,7 @@ const QuestionItemComponent = ({
                           newScores[noKey] = value === '' ? '' : parseInt(value) || 0;
                           // Also update 'No' for backward compatibility
                           newScores.No = value === '' ? '' : parseInt(value) || 0;
-                          
+
                           // Calculate new max score
                           const yesKey = t('common.yes');
                           const yesScore = parseInt(newScores[yesKey] || newScores.Yes) || 0;
@@ -2962,9 +2975,9 @@ const QuestionItemComponent = ({
                           const naKey = t('common.na');
                           const naScore = question.includeNA !== false ? (parseInt(newScores[naKey] || newScores['N/A']) || 0) : 0;
                           const maxScore = Math.max(yesScore, noScore, naScore);
-                          
-                          updateQuestion({ 
-                            ...question, 
+
+                          updateQuestion({
+                            ...question,
                             scores: newScores,
                             scoring: {
                               ...(question.scoring || {}),
@@ -2986,7 +2999,7 @@ const QuestionItemComponent = ({
                             const value = e.target.value;
                             const naKey = t('common.na');
                             newScores[naKey] = value === '' ? '' : parseInt(value) || 0;
-                            
+
                             // Calculate new max score
                             const yesKey = t('common.yes');
                             const noKey = t('common.no');
@@ -2994,9 +3007,9 @@ const QuestionItemComponent = ({
                             const noScore = parseInt(newScores[noKey] || newScores.No) || 0;
                             const naScore = parseInt(newScores[naKey]) || 0;
                             const maxScore = Math.max(yesScore, noScore, naScore);
-                            
-                            updateQuestion({ 
-                              ...question, 
+
+                            updateQuestion({
+                              ...question,
                               scores: newScores,
                               scoring: {
                                 ...(question.scoring || {}),
@@ -3012,17 +3025,17 @@ const QuestionItemComponent = ({
                 </FormGroup>
               )}
             </div>
-            
-            <div style={{ 
-              width: '320px', 
-              minWidth: '320px', 
+
+            <div style={{
+              width: '320px',
+              minWidth: '320px',
               maxWidth: '320px',
               flexShrink: 0
             }}
-            className="question-expanded-sidebar"
+              className="question-expanded-sidebar"
             >
-            <div style={{ 
-                padding: '16px', 
+              <div style={{
+                padding: '16px',
                 border: '1px solid #e2e8f0',
                 borderRadius: '8px',
                 background: 'white',
@@ -3031,9 +3044,9 @@ const QuestionItemComponent = ({
                 maxWidth: '100%',
                 boxSizing: 'border-box'
               }}>
-                <div style={{ 
-                  fontSize: '14px', 
-                  fontWeight: '600', 
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
                   marginBottom: '12px',
                   wordWrap: 'break-word',
                   overflowWrap: 'break-word',
@@ -3041,7 +3054,7 @@ const QuestionItemComponent = ({
                   maxWidth: '100%',
                   boxSizing: 'border-box'
                 }}>{t('common.questionSettings')}</div>
-                
+
                 <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.requirementType')}</Label>
                   <Select
@@ -3058,17 +3071,17 @@ const QuestionItemComponent = ({
                 <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.required')}</Label>
                   <div style={{ marginTop: '10px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       id={`required-settings-${questionIndex}`}
-                      name="required" 
-                      checked={question.required !== false} 
+                      name="required"
+                      checked={question.required !== false}
                       onChange={(e) => updateQuestion({ ...question, required: e.target.checked })}
                       style={{ marginRight: '8px', flexShrink: 0 }}
                       disabled={loading}
                     />
-                    <label htmlFor={`required-settings-${questionIndex}`} style={{ 
-                      fontSize: '14px', 
+                    <label htmlFor={`required-settings-${questionIndex}`} style={{
+                      fontSize: '14px',
                       color: '#334155',
                       wordWrap: 'break-word',
                       overflowWrap: 'break-word',
@@ -3078,9 +3091,9 @@ const QuestionItemComponent = ({
                       {t('common.thisQuestionIsRequired')}
                     </label>
                   </div>
-                  
+
                 </FormGroup>
-                
+
                 {/* <FormGroup style={{ marginBottom: '12px' }}>
                   <Label>{t('common.questionWeight')}</Label>
                   <Input
@@ -3093,7 +3106,7 @@ const QuestionItemComponent = ({
                     Multiplies the base score value
               </div>
                 </FormGroup> */}
-                
+
                 <FormGroup style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <Label>{t('common.maxPossibleScore')}</Label>
                   <Input
@@ -3110,9 +3123,9 @@ const QuestionItemComponent = ({
                     }}
                     placeholder="Auto-calculated"
                   />
-                  <div style={{ 
-                    fontSize: '12px', 
-                    color: '#64748b', 
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
                     marginTop: '4px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
@@ -3123,11 +3136,11 @@ const QuestionItemComponent = ({
                     {t('common.automaticallyCalculatedFromScoring')}
                   </div>
                 </FormGroup>
-                
+
                 {/* Enhanced Scoring Settings */}
                 {question.scoring?.enabled && (
                   <div style={{ marginTop: '16px' }}>
-              {/* <div style={{ 
+                    {/* <div style={{ 
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -3138,15 +3151,15 @@ const QuestionItemComponent = ({
                       <Award size={16} />
                       <span>Detailed Scoring</span>
                     </div> */}
-                    
-                    
+
+
                   </div>
                 )}
-            </div>
-            
-              <div style={{ 
-                display: 'flex', 
-                gap: '12px', 
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '12px',
                 flexDirection: 'column',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -3155,7 +3168,7 @@ const QuestionItemComponent = ({
                 <Button
                   type="button"
                   onClick={saveToLibrary}
-                  style={{ 
+                  style={{
                     width: '100%',
                     minWidth: '140px',
                     height: '40px',
@@ -3178,11 +3191,11 @@ const QuestionItemComponent = ({
                   <Save size={16} />
                   {t('common.saveToLibrary')}
                 </Button>
-                
+
                 <Button
                   type="button"
                   onClick={() => setShowLibraryModal(true)}
-                  style={{ 
+                  style={{
                     width: '100%',
                     minWidth: '140px',
                     height: '40px',
@@ -3205,12 +3218,12 @@ const QuestionItemComponent = ({
                   <Folder size={16} />
                   {t('common.selectFromLibrary')}
                 </Button>
-          </div>
-      </div>
               </div>
+            </div>
           </div>
-        )}
-      
+        </div>
+      )}
+
       {/* Confirmation modal for deleting the question */}
       <ConfirmationModal
         isOpen={showDeleteModal}
@@ -3224,7 +3237,7 @@ const QuestionItemComponent = ({
         confirmText="Delete"
         cancelText="Cancel"
       />
-      
+
       {/* Custom Question Library Modal */}
       {showLibraryModal && (
         <LibraryModalOverlay onClick={() => setShowLibraryModal(false)}>
@@ -3238,7 +3251,7 @@ const QuestionItemComponent = ({
                 <X size={20} />
               </LibraryModalClose>
             </LibraryModalHeader>
-            
+
             <LibraryModalBody>
               <LibrarySearchContainer>
                 <LibrarySearchIcon>
@@ -3251,7 +3264,7 @@ const QuestionItemComponent = ({
                   onChange={(e) => setLibrarySearchQuery(e.target.value)}
                 />
               </LibrarySearchContainer>
-              
+
               {libraryLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
                   <Loader size={32} style={{ marginBottom: '16px', color: 'var(--color-navy)' }} />
@@ -3297,7 +3310,7 @@ const QuestionItemComponent = ({
                 </LibraryQuestionsList>
               )}
             </LibraryModalBody>
-            
+
             <LibraryModalFooter>
               <LibraryModalButton onClick={() => setShowLibraryModal(false)}>
                 Cancel
@@ -3310,16 +3323,16 @@ const QuestionItemComponent = ({
   );
 };
 
-const SubLevelTreeComponent = ({ 
-  subLevels, 
-  level = 0, 
+const SubLevelTreeComponent = ({
+  subLevels,
+  level = 0,
   selectedLevelId,
   onSelectLevel,
   parentNumber = '', // Add parent number parameter for auto-numbering
   searchQuery = ''
 }) => {
   const [expandedLevels, setExpandedLevels] = useState({});
-  
+
   // Toggle level expanded/collapsed
   const toggleLevel = (levelId) => {
     setExpandedLevels(prev => ({
@@ -3327,14 +3340,14 @@ const SubLevelTreeComponent = ({
       [levelId]: !prev[levelId]
     }));
   };
-  
+
   useEffect(() => {
     // Auto-expand all when searching
     if (searchQuery) {
       const expandAll = {};
       const addExpandedIds = (levels) => {
         if (!levels || !Array.isArray(levels)) return;
-        
+
         levels.forEach(node => {
           const nodeId = node.id || node._id;
           if (nodeId) expandAll[nodeId] = true;
@@ -3343,28 +3356,28 @@ const SubLevelTreeComponent = ({
           }
         });
       };
-      
+
       addExpandedIds(subLevels);
       setExpandedLevels(expandAll);
     }
   }, [searchQuery, subLevels]);
-  
+
   if (!subLevels || !Array.isArray(subLevels)) return null;
-  
+
   // Filter levels recursively based on search query
   const filterLevels = (levels, query) => {
     if (!query) return levels;
-    
+
     return levels.filter(node => {
       // Check if current node matches search
       const nameMatch = node.name?.toLowerCase().includes(query.toLowerCase());
-      
+
       // Check if any children match search
-      const hasMatchingChildren = 
-        node.subLevels && 
-        node.subLevels.length > 0 && 
+      const hasMatchingChildren =
+        node.subLevels &&
+        node.subLevels.length > 0 &&
         filterLevels(node.subLevels, query).length > 0;
-      
+
       return nameMatch || hasMatchingChildren;
     }).map(node => {
       if (node.subLevels && node.subLevels.length > 0) {
@@ -3376,22 +3389,22 @@ const SubLevelTreeComponent = ({
       return node;
     });
   };
-  
+
   const filteredLevels = filterLevels(subLevels, searchQuery);
-  
+
   return (
     <>
       {filteredLevels.map((subLevel, index) => {
         if (!subLevel) return null;
-        
+
         const levelId = subLevel.id || subLevel._id;
         const hasChildren = subLevel.subLevels && Array.isArray(subLevel.subLevels) && subLevel.subLevels.length > 0;
         const isExpanded = levelId ? expandedLevels[levelId] : false;
-        
+
         return (
           <div key={levelId || `sublevel-${index}`}>
             <TreeNodeContainer>
-              <TreeNode 
+              <TreeNode
                 selected={selectedLevelId === levelId}
                 onClick={() => levelId && onSelectLevel(levelId)}
               >
@@ -3418,10 +3431,10 @@ const SubLevelTreeComponent = ({
                     marginRight: '8px'
                   }}>
                     {/* Replace existing numbering with A-style format */}
-                    {level === 0 
+                    {level === 0
                       ? String.fromCharCode(65 + index) // A, B, C, etc. for top level
-                      : parentNumber 
-                        ? `${parentNumber}${index + 1}` 
+                      : parentNumber
+                        ? `${parentNumber}${index + 1}`
                         : `${index + 1}`
                     }
                   </span>
@@ -3431,18 +3444,18 @@ const SubLevelTreeComponent = ({
                   <Badge color="#3949ab">{subLevel.questionCount || 0}</Badge>
                 </BadgeContainer>
               </TreeNode>
-              
+
               {hasChildren && isExpanded && (
                 <div style={{ marginLeft: '20px' }}>
-                  <SubLevelTreeComponent 
-                    subLevels={subLevel.subLevels} 
+                  <SubLevelTreeComponent
+                    subLevels={subLevel.subLevels}
                     level={level + 1}
                     selectedLevelId={selectedLevelId}
                     onSelectLevel={onSelectLevel}
-                    parentNumber={level === 0 
-                      ? `${String.fromCharCode(65 + index)}.` 
+                    parentNumber={level === 0
+                      ? `${String.fromCharCode(65 + index)}.`
                       : `${parentNumber}${index + 1}.`
-                    } 
+                    }
                     searchQuery={searchQuery}
                   />
                 </div>
@@ -3458,13 +3471,13 @@ const SubLevelTreeComponent = ({
 // Component to display activity history
 const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => {
   const { t } = useTranslation();
-  
+
   if (!isOpen) return null;
-  
+
   // Calculate section and question counts more accurately
   const countQuestions = () => {
     if (!formData || !formData.pages) return 0;
-    
+
     let count = 0;
     formData.pages.forEach(page => {
       if (page.sections) {
@@ -3477,11 +3490,11 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
     });
     return count;
   };
-  
+
   // Calculate sections count
   const countSections = () => {
     if (!formData || !formData.pages) return 0;
-    
+
     let count = 0;
     formData.pages.forEach(page => {
       if (page.sections) {
@@ -3490,15 +3503,15 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
     });
     return count;
   };
-  
+
   // Get the last updated time
   const getLastUpdated = () => {
     if (!activities || activities.length === 0) return 'Not available';
     return activities[0].timestamp;
   };
-  
+
   const isMobile = window.innerWidth <= 480;
-  
+
   return (
     <div style={{
       position: 'fixed',
@@ -3514,11 +3527,11 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
       padding: isMobile ? '0' : '20px 16px 16px 16px',
       boxSizing: 'border-box'
     }}
-    onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        onClose();
-      }
-    }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div style={{
         backgroundColor: 'white',
@@ -3532,7 +3545,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
         boxSizing: 'border-box'
       }}
-      onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div style={{
           display: 'flex',
@@ -3544,9 +3557,9 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
           flexWrap: 'wrap',
           gap: '8px'
         }}>
-          <h2 style={{ 
-            margin: 0, 
-            fontSize: '20px', 
+          <h2 style={{
+            margin: 0,
+            fontSize: '20px',
             fontWeight: '600',
             color: 'var(--color-navy)',
             wordWrap: 'break-word',
@@ -3574,8 +3587,8 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
             &times;
           </button>
         </div>
-        
-        <div style={{ 
+
+        <div style={{
           marginBottom: '24px',
           padding: '16px',
           background: '#f8fafc',
@@ -3588,7 +3601,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
           </div>
           <div style={{ fontSize: '14px', color: '#64748b', display: 'grid', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-              <strong>{t('common.name')}:</strong> 
+              <strong>{t('common.name')}:</strong>
               <span style={{ color: '#334155', fontWeight: '500' }}>{formData.name || t('common.untitled')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
@@ -3597,39 +3610,39 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>{t('common.status')}:</strong>
-              <InspectionStatusBadge status={formData.status} style={{padding: '2px 8px', fontSize: '12px'}}>
+              <InspectionStatusBadge status={formData.status} style={{ padding: '2px 8px', fontSize: '12px' }}>
                 {formData.status === 'draft' ? t('common.draft') : t('common.published')}
               </InspectionStatusBadge>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>{t('common.pages')}:</strong>
-              <span style={{ 
-                background: '#ebf5ff', 
-                padding: '2px 8px', 
-                borderRadius: '4px', 
-                color: '#3b82f6', 
+              <span style={{
+                background: '#ebf5ff',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                color: '#3b82f6',
                 fontWeight: '600',
                 fontSize: '12px'
               }}>{formData.pages?.length || 0}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>{t('common.sections')}:</strong>
-              <span style={{ 
-                background: '#eff6ff', 
-                padding: '2px 8px', 
-                borderRadius: '4px', 
-                color: '#2563eb', 
+              <span style={{
+                background: '#eff6ff',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                color: '#2563eb',
                 fontWeight: '600',
                 fontSize: '12px'
               }}>{countSections()}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>{t('common.questions')}:</strong>
-              <span style={{ 
-                background: '#eef2ff', 
-                padding: '2px 8px', 
-                borderRadius: '4px', 
-                color: '#4338ca', 
+              <span style={{
+                background: '#eef2ff',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                color: '#4338ca',
                 fontWeight: '600',
                 fontSize: '12px'
               }}>{countQuestions()}</span>
@@ -3640,10 +3653,10 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
             </div> */}
             <div style={{ borderTop: '1px dashed #e2e8f0', padding: '8px 0 0', marginTop: '4px' }}>
               <strong>{t('common.description')}:</strong>
-              <div style={{ 
-                padding: '8px', 
+              <div style={{
+                padding: '8px',
                 marginTop: '4px',
-                background: 'white', 
+                background: 'white',
                 borderRadius: '4px',
                 color: '#334155',
                 border: '1px solid #e2e8f0',
@@ -3653,7 +3666,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
             </div>
           </div>
         </div>
-        
+
         {/* <h3 style={{ 
           fontSize: '16px',
           fontWeight: '600',
@@ -3736,47 +3749,37 @@ const SkeletonLoader = () => {
 };
 
 // Add MoveQuestionModal component for moving questions between sections
-const MoveQuestionModal = ({ 
-  isOpen, 
-  onClose, 
+const MoveQuestionModal = ({
+  isOpen,
+  onClose,
   question,
   questionIndex,
-  allSets,
-  currentSetIndex,
-  onMoveQuestion 
+  allPages,
+  currentPageIndex,
+  currentSectionIndex,
+  onMoveQuestion
 }) => {
   const { t } = useTranslation();
-  const [targetSetIndex, setTargetSetIndex] = useState(currentSetIndex);
-  const [targetLevelId, setTargetLevelId] = useState(null);
-  
-  // Flatten the sublevel tree for the select dropdown
-  const getFlattenedLevels = (subLevels, prefix = '', result = []) => {
-    if (!subLevels || !subLevels.length) return result;
-    
-    subLevels.forEach((level, index) => {
-      const levelNumber = `${prefix}${index + 1}`;
-      result.push({
-        id: level.id,
-        name: `${levelNumber}. ${level.name || 'Unnamed Section'}`,
-        level
-      });
-      
-      if (level.subLevels && level.subLevels.length) {
-        getFlattenedLevels(level.subLevels, `${levelNumber}.`, result);
-      }
-    });
-    
-    return result;
-  };
-  
-  const targetSet = allSets[targetSetIndex] || {};
-  const flattenedLevels = getFlattenedLevels(targetSet.subLevels || []);
-  
+  const [targetPageIndex, setTargetPageIndex] = useState(currentPageIndex);
+  const [targetSectionId, setTargetSectionId] = useState(null);
+
+  // Get sections for the selected page
+  const selectedPage = allPages[targetPageIndex] || {};
+  const sections = selectedPage.sections || [];
+
+  // Reset section selection when page changes
+  useEffect(() => {
+    if (isOpen) {
+      setTargetPageIndex(currentPageIndex);
+      setTargetSectionId(null);
+    }
+  }, [isOpen, currentPageIndex]);
+
   if (!isOpen) return null;
-  
+
   return (
     <Modal onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <ModalContent 
+      <ModalContent
         onClick={(e) => e.stopPropagation()}
         className="move-question-modal"
       >
@@ -3786,18 +3789,18 @@ const MoveQuestionModal = ({
             <X size={20} />
           </ModalClose>
         </ModalHeader>
-        
-        <div style={{ 
+
+        <div style={{
           padding: '20px',
           background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
           minHeight: '200px'
         }}
-        className="move-question-modal-body"
+          className="move-question-modal-body"
         >
           <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Label>Question to Move</Label>
-            <div style={{ 
-              padding: '12px', 
+            <div style={{
+              padding: '12px',
               border: '1px solid #e2e8f0',
               borderRadius: '8px',
               background: '#ffffff',
@@ -3811,41 +3814,42 @@ const MoveQuestionModal = ({
               {question?.text || t('common.untitledQuestion')}
             </div>
           </FormGroup>
-          
+
           <FormGroup style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Label>Select Target Page</Label>
             <Select
-              value={targetSetIndex}
+              value={targetPageIndex}
               onChange={(e) => {
-                setTargetSetIndex(parseInt(e.target.value));
-                setTargetLevelId(null); // Reset selected level when changing set
+                const newPageIndex = parseInt(e.target.value);
+                setTargetPageIndex(newPageIndex);
+                setTargetSectionId(null); // Reset selected section when changing page
               }}
             >
-              {allSets.map((set, idx) => (
-                <option key={set.id || idx} value={idx}>
-                  {set.name || `Page ${idx + 1}`}
+              {allPages.map((page, idx) => (
+                <option key={page.id || idx} value={idx}>
+                  {page.name || `Page ${idx + 1}`}
                 </option>
               ))}
             </Select>
           </FormGroup>
-          
+
           <FormGroup style={{ marginBottom: '24px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Label>Select Target Section</Label>
-            {flattenedLevels.length > 0 ? (
+            {sections.length > 0 ? (
               <Select
-                value={targetLevelId || ''}
-                onChange={(e) => setTargetLevelId(e.target.value)}
+                value={targetSectionId !== null && targetSectionId !== undefined ? targetSectionId : ''}
+                onChange={(e) => setTargetSectionId(e.target.value === '' ? null : e.target.value)}
               >
                 <option value="">-- Select a section --</option>
-                {flattenedLevels.map((level) => (
-                  <option key={level.id} value={level.id}>
-                    {level.name}
+                {sections.map((section, sectionIdx) => (
+                  <option key={section.id || sectionIdx} value={sectionIdx}>
+                    {section.name || `Section ${sectionIdx + 1}`}
                   </option>
                 ))}
               </Select>
             ) : (
-              <div style={{ 
-                padding: '12px', 
+              <div style={{
+                padding: '12px',
                 color: '#64748b',
                 background: '#ffffff',
                 borderRadius: '8px',
@@ -3863,17 +3867,17 @@ const MoveQuestionModal = ({
               </div>
             )}
           </FormGroup>
-          
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
             gap: '8px',
             flexWrap: 'wrap',
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box'
           }}
-          className="move-question-modal-actions"
+            className="move-question-modal-actions"
           >
             <Button type="button" onClick={onClose}>
               Cancel
@@ -3882,15 +3886,30 @@ const MoveQuestionModal = ({
               type="button"
               variant="primary"
               onClick={() => {
-                if (!targetLevelId) {
+                if (targetSectionId === null || targetSectionId === undefined || targetSectionId === '') {
                   toast.error('Please select a target section');
                   return;
                 }
-                
-                onMoveQuestion(questionIndex, question, targetSetIndex, targetLevelId);
+
+                // Parse the section index (stored as string in select value)
+                const targetSectionIndex = parseInt(targetSectionId);
+
+                if (isNaN(targetSectionIndex) || targetSectionIndex < 0 || targetSectionIndex >= sections.length) {
+                  toast.error('Selected section not found');
+                  return;
+                }
+
+                // Check if moving to the same location
+                if (targetPageIndex === currentPageIndex && targetSectionIndex === currentSectionIndex) {
+                  toast.info('Question is already in the selected location');
+                  onClose();
+                  return;
+                }
+
+                onMoveQuestion(targetPageIndex, targetSectionIndex);
                 onClose();
               }}
-              disabled={!targetLevelId}
+              disabled={targetSectionId === null || targetSectionId === undefined || targetSectionId === ''}
             >
               Move Question
             </Button>
@@ -3902,11 +3921,11 @@ const MoveQuestionModal = ({
 };
 
 // Replace the MobilePreviewPanel component
-const MobilePreviewPanel = ({ 
-  formData, 
+const MobilePreviewPanel = ({
+  formData,
   currentSet,
   allQuestions,
-  scoreSummary, 
+  scoreSummary,
   activeSetIndex,
   isOpen = true,
   onClose
@@ -3916,7 +3935,7 @@ const MobilePreviewPanel = ({
   const [expandedSections, setExpandedSections] = useState({});
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const currentPageRef = useRef(null);
-  
+
   // Use effect to reset scroll position when page changes
   useEffect(() => {
     if (currentPageRef.current) {
@@ -3938,11 +3957,11 @@ const MobilePreviewPanel = ({
       setCurrentPage(currentPage - 1);
     }
   };
-  
+
   const getCurrentPageData = () => {
     return formData.pages[currentPage] || { name: '', sections: [] };
   };
-  
+
   // Toggle section accordion
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => ({
@@ -3950,7 +3969,7 @@ const MobilePreviewPanel = ({
       [sectionId]: !prev[sectionId]
     }));
   };
-  
+
   // Toggle question accordion
   const toggleQuestion = (questionId) => {
     setExpandedQuestions(prev => ({
@@ -3958,16 +3977,16 @@ const MobilePreviewPanel = ({
       [questionId]: !prev[questionId]
     }));
   };
-  
+
   // Calculate total score for a section
   const calculateSectionScore = (section) => {
     if (!section.questions || section.questions.length === 0) return 0;
-    
+
     let totalScore = 0;
     section.questions.forEach(question => {
       const questionWeight = question.weight || 0;
       let maxScore = 0;
-      
+
       if (question.answerType === 'yesno') {
         const yesKey = t('common.yes');
         maxScore = parseInt(question.scores?.[yesKey] || question.scores?.Yes) || 2;
@@ -3976,13 +3995,13 @@ const MobilePreviewPanel = ({
         const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
         maxScore = Math.max(...scoreValues);
       }
-      
+
       totalScore += questionWeight * maxScore;
     });
-    
+
     return totalScore;
   };
-  
+
   // Add renderQuestionInput function to handle different question types
   const renderQuestionInput = (question) => {
     switch (question.answerType || question.type) {
@@ -4045,9 +4064,9 @@ const MobilePreviewPanel = ({
       case 'multiple': // Backward compatibility
       case 'dropdown': // Backward compatibility
         return (
-          <select 
-            disabled 
-            style={{ 
+          <select
+            disabled
+            style={{
               width: '100%',
               maxWidth: '100%',
               padding: '8px 12px',
@@ -4152,12 +4171,12 @@ const MobilePreviewPanel = ({
         );
     }
   };
-  
+
   // Calculate max score for question
   const calculateQuestionScore = (question) => {
     const weight = question.weight || 0;
     let maxScore = 0;
-    
+
     if (question.answerType === 'yesno') {
       const yesKey = t('common.yes');
       maxScore = parseInt(question.scores?.[yesKey] || question.scores?.Yes) || 2;
@@ -4166,14 +4185,14 @@ const MobilePreviewPanel = ({
       const scoreValues = Object.values(question.scores).map(score => Number(score) || 0);
       maxScore = scoreValues.length > 0 ? Math.max(...scoreValues) : 0;
     }
-    
+
     return weight * maxScore;
   };
-  
+
   const currentPageData = getCurrentPageData();
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div style={{
       position: 'fixed',
@@ -4229,7 +4248,7 @@ const MobilePreviewPanel = ({
           <X size={16} />
         </button>
       </div>
-      
+
       {/* App header */}
       <div style={{
         padding: '12px 16px',
@@ -4246,15 +4265,15 @@ const MobilePreviewPanel = ({
         <div style={{ fontWeight: '600', fontSize: '18px', wordWrap: 'break-word', overflowWrap: 'break-word', minWidth: 0, flex: 1 }}>MIRSAT</div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           <User size={16} />
-          <div style={{ 
-            width: '8px', 
-            height: '8px', 
-            borderRadius: '50%', 
-            backgroundColor: '#10b981' 
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981'
           }}></div>
         </div>
       </div>
-      
+
       {/* Template header */}
       <div style={{
         padding: '16px',
@@ -4272,7 +4291,7 @@ const MobilePreviewPanel = ({
           {formData.description || t('common.noDescriptionProvided')}
         </div>
       </div>
-      
+
       {/* Page navigation */}
       <div style={{
         padding: '12px 16px',
@@ -4302,11 +4321,11 @@ const MobilePreviewPanel = ({
         >
           <ChevronLeft size={20} />
         </button>
-        
+
         <div style={{ fontWeight: '500', wordWrap: 'break-word', overflowWrap: 'break-word', textAlign: 'center', flex: 1, minWidth: 0, padding: '0 8px' }}>
           {formData.pages.length > 0 ? `${t('common.page')} ${currentPage + 1} ${t('common.of')} ${formData.pages.length}` : t('common.noPages')}
         </div>
-        
+
         <button
           onClick={nextPage}
           disabled={currentPage >= formData.pages.length - 1}
@@ -4324,9 +4343,9 @@ const MobilePreviewPanel = ({
           <ChevronRight size={20} />
         </button>
       </div>
-      
+
       {/* Page content */}
-      <div 
+      <div
         ref={currentPageRef}
         style={{
           flex: 1,
@@ -4358,13 +4377,13 @@ const MobilePreviewPanel = ({
             </p>
           )}
         </div>
-        
+
         {/* Sections as accordions */}
         {currentPageData.sections && currentPageData.sections.map((section, sectionIndex) => {
           const sectionId = `section-${currentPage}-${sectionIndex}`;
           const sectionScore = calculateSectionScore(section);
           const isExpanded = expandedSections[sectionId] || false;
-          
+
           return (
             <div key={sectionId} style={{
               backgroundColor: 'white',
@@ -4377,7 +4396,7 @@ const MobilePreviewPanel = ({
               boxSizing: 'border-box'
             }}>
               {/* Section header */}
-              <div 
+              <div
                 onClick={() => toggleSection(sectionId)}
                 style={{
                   padding: '12px 16px',
@@ -4395,8 +4414,8 @@ const MobilePreviewPanel = ({
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ 
-                    fontWeight: '600', 
+                  <div style={{
+                    fontWeight: '600',
                     fontSize: '16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -4411,9 +4430,9 @@ const MobilePreviewPanel = ({
                     <span style={{ wordWrap: 'break-word', overflowWrap: 'break-word', flex: 1, minWidth: 0 }}>
                       {section.name || `${t('common.section')} ${sectionIndex + 1}`}
                     </span>
-                    <span style={{ 
-                      fontSize: '12px', 
-                      padding: '2px 8px', 
+                    <span style={{
+                      fontSize: '12px',
+                      padding: '2px 8px',
                       backgroundColor: '#dbeafe',
                       color: '#1e40af',
                       borderRadius: '12px',
@@ -4425,7 +4444,7 @@ const MobilePreviewPanel = ({
                     </span>
                   </div>
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   {/* Section score */}
                   <div style={{
@@ -4439,12 +4458,12 @@ const MobilePreviewPanel = ({
                   }}>
                     {sectionScore} {t('common.pts')}
                   </div>
-                  
+
                   {/* Accordion toggle */}
                   {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </div>
               </div>
-              
+
               {/* Section content (only visible when expanded) */}
               {isExpanded && (
                 <div style={{ padding: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -4453,13 +4472,13 @@ const MobilePreviewPanel = ({
                       {section.description}
                     </p>
                   )}
-                  
+
                   {/* Questions as sub-accordions */}
                   {section.questions && section.questions.map((question, questionIndex) => {
                     const questionId = `question-${currentPage}-${sectionIndex}-${questionIndex}`;
                     const isQuestionExpanded = expandedQuestions[questionId] || false;
                     const questionScore = calculateQuestionScore(question);
-                    
+
                     return (
                       <div key={questionId} style={{
                         border: '1px solid #e2e8f0',
@@ -4471,7 +4490,7 @@ const MobilePreviewPanel = ({
                         boxSizing: 'border-box'
                       }}>
                         {/* Question header */}
-                        <div 
+                        <div
                           onClick={() => toggleQuestion(questionId)}
                           style={{
                             padding: '12px',
@@ -4488,8 +4507,8 @@ const MobilePreviewPanel = ({
                             gap: '8px'
                           }}
                         >
-                          <div style={{ 
-                            fontWeight: '500', 
+                          <div style={{
+                            fontWeight: '500',
                             fontSize: '14px',
                             display: 'flex',
                             alignItems: 'center',
@@ -4497,9 +4516,9 @@ const MobilePreviewPanel = ({
                             flex: 1,
                             minWidth: 0
                           }}>
-                            <span style={{ 
-                              minWidth: '24px', 
-                              height: '24px', 
+                            <span style={{
+                              minWidth: '24px',
+                              height: '24px',
                               backgroundColor: '#f1f5f9',
                               color: '#475569',
                               borderRadius: '4px',
@@ -4517,7 +4536,7 @@ const MobilePreviewPanel = ({
                               {question.required !== false && <span style={{ color: 'red', marginLeft: '4px' }}>*</span>}
                             </span>
                           </div>
-                          
+
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                             <div style={{
                               fontWeight: '500',
@@ -4533,7 +4552,7 @@ const MobilePreviewPanel = ({
                             {isQuestionExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </div>
                         </div>
-                        
+
                         {/* Question content */}
                         {isQuestionExpanded && (
                           <div style={{ padding: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -4542,12 +4561,12 @@ const MobilePreviewPanel = ({
                                 {question.description}
                               </div>
                             )}
-                            
+
                             {/* Answer input */}
                             <div style={{ marginBottom: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                               {renderQuestionInput(question)}
                             </div>
-                            
+
                             {/* Scoring details */}
                             <div style={{
                               backgroundColor: '#f8fafc',
@@ -4561,19 +4580,19 @@ const MobilePreviewPanel = ({
                               <div style={{ fontWeight: '600', marginBottom: '4px', color: '#334155' }}>
                                 {t('common.scoring')}
                               </div>
-                              
+
                               {question.answerType === 'yesno' && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                  <div style={{ 
-                                    backgroundColor: '#dcfce7', 
+                                  <div style={{
+                                    backgroundColor: '#dcfce7',
                                     color: '#166534',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
                                     {t('common.yes')}: {question.scores?.[t('common.yes')] || question.scores?.Yes || 0} {t('common.pts')}
                                   </div>
-                                  <div style={{ 
-                                    backgroundColor: '#fee2e2', 
+                                  <div style={{
+                                    backgroundColor: '#fee2e2',
                                     color: '#991b1b',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
@@ -4581,8 +4600,8 @@ const MobilePreviewPanel = ({
                                     {t('common.no')}: {question.scores?.[t('common.no')] || question.scores?.No || 0} {t('common.pts')}
                                   </div>
                                   {question.includeNA !== false && (
-                                    <div style={{ 
-                                      backgroundColor: '#f1f5f9', 
+                                    <div style={{
+                                      backgroundColor: '#f1f5f9',
                                       color: '#475569',
                                       padding: '4px 8px',
                                       borderRadius: '4px'
@@ -4592,27 +4611,27 @@ const MobilePreviewPanel = ({
                                   )}
                                 </div>
                               )}
-                              
+
                               {question.answerType === 'compliance' && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                  <div style={{ 
-                                    backgroundColor: '#dcfce7', 
+                                  <div style={{
+                                    backgroundColor: '#dcfce7',
                                     color: '#166534',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
                                     {t('common.fullCompliance')}: {question.scores?.['Full compliance'] || 0} {t('common.pts')}
                                   </div>
-                                  <div style={{ 
-                                    backgroundColor: '#fef9c3', 
+                                  <div style={{
+                                    backgroundColor: '#fef9c3',
                                     color: '#854d0e',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
                                   }}>
                                     {t('common.partialCompliance')}: {question.scores?.['Partial compliance'] || 0} {t('common.pts')}
                                   </div>
-                                  <div style={{ 
-                                    backgroundColor: '#fee2e2', 
+                                  <div style={{
+                                    backgroundColor: '#fee2e2',
                                     color: '#991b1b',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
@@ -4621,10 +4640,10 @@ const MobilePreviewPanel = ({
                                   </div>
                                 </div>
                               )}
-                              
+
                               {question.weight && question.weight > 1 && (
-                                <div style={{ 
-                                  marginTop: '8px', 
+                                <div style={{
+                                  marginTop: '8px',
                                   borderTop: '1px dashed #e2e8f0',
                                   paddingTop: '8px',
                                   fontSize: '12px',
@@ -4644,10 +4663,10 @@ const MobilePreviewPanel = ({
             </div>
           );
         })}
-        
+
         {currentPageData.sections && currentPageData.sections.length === 0 && (
-          <div style={{ 
-            padding: '32px 16px', 
+          <div style={{
+            padding: '32px 16px',
             textAlign: 'center',
             backgroundColor: 'white',
             borderRadius: '8px',
@@ -5156,12 +5175,21 @@ const SectionTabsContainer = styled.div`
 `;
 
 const SectionTab = styled.div`
-  padding: 8px 16px;
+  padding: 8px 18px;
   cursor: pointer;
   font-size: 14px;
-  border-bottom: 2px solid ${props => props.$active ? 'var(--color-navy)' : 'transparent'};
   color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
-  font-weight: ${props => props.$active ? '500' : 'normal'};
+  font-weight: ${props => props.$active ? '700' : '500'};
+  background: ${props => {
+    if (props.$isDragging) return '#e2e8f0';
+    if (props.$active) return 'rgba(59, 73, 223, 0.15)';
+    return 'transparent';
+  }};
+  backdrop-filter: ${props => props.$active ? 'blur(10px)' : 'none'};
+  box-shadow: ${props => props.$active
+    ? '0 4px 12px rgba(59, 73, 223, 0.25)'
+    : 'none'};
+  border-radius: 6px 6px 0 0;
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -5169,21 +5197,26 @@ const SectionTab = styled.div`
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  border: ${props => props.$isDragging ? '1px dashed #64748b' : 'none'};
+  margin-right: 6px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   @media (max-width: 768px) {
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 13px;
     gap: 6px;
   }
 
   @media (max-width: 480px) {
-    padding: 6px 10px;
+    padding: 6px 12px;
     font-size: 12px;
     gap: 6px;
   }
   
   &:hover {
     color: var(--color-navy);
+    background: rgba(59, 73, 223, 0.08);
     
     .delete-icon {
       opacity: 1;
@@ -5235,7 +5268,7 @@ const PriorityBadge = styled.span`
   border-radius: 50%;
   margin-right: 8px;
   background-color: ${props => {
-    switch(props.priority) {
+    switch (props.priority) {
       case 'high': return '#EF4444';
       case 'medium': return '#F59E0B';
       case 'low': return '#10B981';
@@ -5265,11 +5298,11 @@ const InspectionLevelForm = () => {
   const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-      name: '',
-      description: '',
-      type: '',
-      status: 'draft',
-      pages: []
+    name: '',
+    description: '',
+    type: '',
+    status: 'draft',
+    pages: []
   });
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [activeSectionIndex, setActiveSectionIndex] = useState(null);
@@ -5278,7 +5311,7 @@ const InspectionLevelForm = () => {
   const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
   const [isActivityHistoryOpen, setIsActivityHistoryOpen] = useState(false);
   const [isMoveQuestionModalOpen, setIsMoveQuestionModalOpen] = useState(false);
-  
+
   // New confirmation modals for page and section deletion
   const [showPageDeleteModal, setShowPageDeleteModal] = useState(false);
   const [showSectionDeleteModal, setShowSectionDeleteModal] = useState(false);
@@ -5298,24 +5331,24 @@ const InspectionLevelForm = () => {
   });
   const [saveError, setSaveError] = useState('');
   const [unsavedChanges, setUnsavedChanges] = useState(false);
-  
+
   // Refs
   const autoSaveToLocalStorage = useRef(
     debounce((data) => {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
         console.log('Template auto-saved to local storage');
-    } catch (error) {
+      } catch (error) {
         console.error('Error auto-saving to local storage:', error);
       }
     }, 2000)
   ).current;
   const hasShownRestoreToast = useRef(false);
-  
+
   useEffect(() => {
     // Fetch asset types for the dropdown
     dispatch(fetchAssetTypes());
-    
+
     if (id) {
       loadTemplate();
     } else {
@@ -5330,7 +5363,7 @@ const InspectionLevelForm = () => {
             // Show toast only once per page load
             if (!hasShownRestoreToast.current) {
               hasShownRestoreToast.current = true;
-              toast.success(t('inspections.welcomeBackRestored'), { 
+              toast.success(t('inspections.welcomeBackRestored'), {
                 duration: 3000,
                 style: { background: '#10B981', color: 'white' }
               });
@@ -5339,17 +5372,38 @@ const InspectionLevelForm = () => {
           }
         }
         // Initialize with one empty page only if no saved data exists or invalid data
-        setFormData(prevData => ({
-          name: prevData.name || '',
-          description: prevData.description || '',
-          type: prevData.type || '',
-          status: prevData.status || 'draft',
-          pages: prevData.pages && prevData.pages.length > 0 ? prevData.pages : [{
+        setFormData(prevData => {
+          const pages = prevData.pages && prevData.pages.length > 0 ? prevData.pages : [{
             name: 'Page 1',
             description: '',
-            sections: []
-          }]
-        }));
+            sections: [{
+              id: uuidv4(),
+              name: 'Section 1',
+              description: '',
+              order: 0,
+              questions: []
+            }]
+          }];
+
+          // Ensure all sections have IDs
+          pages.forEach(page => {
+            if (page.sections) {
+              page.sections.forEach((section, idx) => {
+                if (!section.id && !section._id) {
+                  section.id = section.name ? `section-${section.name.replace(/\s+/g, '-').toLowerCase()}-${idx}` : uuidv4();
+                }
+              });
+            }
+          });
+
+          return {
+            name: prevData.name || '',
+            description: prevData.description || '',
+            type: prevData.type || '',
+            status: prevData.status || 'draft',
+            pages: pages
+          };
+        });
       } catch (error) {
         console.error('Error loading from local storage:', error);
         // Initialize with one empty page on error
@@ -5361,7 +5415,13 @@ const InspectionLevelForm = () => {
           pages: [{
             name: 'Page 1',
             description: '',
-            sections: []
+            sections: [{
+              id: uuidv4(),
+              name: 'Section 1',
+              description: '',
+              order: 0,
+              questions: []
+            }]
           }]
         }));
       }
@@ -5371,13 +5431,13 @@ const InspectionLevelForm = () => {
   const loadTemplate = async () => {
     try {
       setLoading(true);
-      
+
       // Use the centralized API service
       const response = await api.get(`/inspection/${id}`);
-      
+
       const templateData = response.data;
       console.log('Loaded template data:', templateData);
-      
+
       // Transform the data into the format expected by the form
       let formattedData = {
         name: templateData.name,
@@ -5386,45 +5446,89 @@ const InspectionLevelForm = () => {
         status: templateData.status || 'draft',
         pages: []
       };
-      
+
       // If we have the new pages format
       if (templateData.pages && templateData.pages.length > 0) {
-        formattedData.pages = templateData.pages.map(page => ({
-          ...page,
-          id: page._id || page.id,
-          sections: page.sections ? page.sections.map(section => ({
-            ...section,
-            id: section._id || section.id,
-            questions: section.questions ? section.questions.map(q => ({
-              ...q,
-              id: q._id || q.id,
-              required: q.required !== undefined ? q.required : true // Ensure required field is preserved
-            })) : []
-          })) : []
-        }));
-      } 
+        formattedData.pages = templateData.pages.map((page, pageIndex) => {
+          // Sort sections by order to ensure correct display order
+          const sortedSections = page.sections
+            ? [...page.sections].sort((a, b) => {
+              const orderA = a.order !== undefined ? a.order : 0;
+              const orderB = b.order !== undefined ? b.order : 0;
+              return orderA - orderB;
+            }).map((section, sectionIndex) => ({
+              ...section,
+              // Ensure every section has a stable ID
+              id: section._id || section.id || uuidv4(),
+              order: section.order !== undefined ? section.order : sectionIndex,
+              questions: section.questions ? section.questions.map(q => ({
+                ...q,
+                id: q._id || q.id,
+                required: q.required !== undefined ? q.required : true // Ensure required field is preserved
+              })) : []
+            }))
+            : [];
+
+          if (sortedSections.length === 0) {
+            sortedSections.push({
+              id: uuidv4(),
+              name: 'Section 1',
+              description: '',
+              order: 0,
+              questions: []
+            });
+          }
+
+          return {
+            ...page,
+            id: page._id || page.id,
+            order: page.order !== undefined ? page.order : pageIndex,
+            sections: sortedSections
+          };
+        });
+      }
       // If we have the old subLevels format
       else if (templateData.subLevels && templateData.subLevels.length > 0) {
         // Convert subLevels to pages and sections
         formattedData.pages = templateData.subLevels.map((page, pageIndex) => {
-          return {
-            id: page._id || page.id,
-            name: page.name,
-            description: page.description || 'No description provided',
-            order: page.order || pageIndex,
-            sections: page.subLevels ? page.subLevels.map((section, sectionIndex) => {
+          // Sort sections by order to ensure correct display order
+          const sortedSections = page.subLevels
+            ? [...page.subLevels].sort((a, b) => {
+              const orderA = a.order !== undefined ? a.order : 0;
+              const orderB = b.order !== undefined ? b.order : 0;
+              return orderA - orderB;
+            }).map((section, sectionIndex) => {
               return {
-                id: section._id || section.id,
+                // Ensure every section has a stable ID
+                id: section._id || section.id || uuidv4(),
                 name: section.name,
                 description: section.description || 'No description provided',
-                order: section.order || sectionIndex,
+                order: section.order !== undefined ? section.order : sectionIndex,
                 questions: section.questions ? section.questions.map(q => ({
                   ...q,
                   id: q._id || q.id,
                   required: q.required !== undefined ? q.required : true // Ensure required field is preserved
                 })) : []
               };
-            }) : []
+            })
+            : [];
+
+          if (sortedSections.length === 0) {
+            sortedSections.push({
+              id: uuidv4(),
+              name: 'Section 1',
+              description: '',
+              order: 0,
+              questions: []
+            });
+          }
+
+          return {
+            id: page._id || page.id,
+            name: page.name,
+            description: page.description || 'No description provided',
+            order: page.order || pageIndex,
+            sections: sortedSections
           };
         });
       }
@@ -5432,8 +5536,18 @@ const InspectionLevelForm = () => {
       else {
         formattedData.pages = [];
       }
-      
+
       console.log('Formatted data for form:', formattedData);
+
+      // Ensure all sections have stable IDs - create new objects to avoid mutation
+      formattedData.pages = formattedData.pages.map(page => ({
+        ...page,
+        sections: page.sections ? page.sections.map((section, idx) => ({
+          ...section,
+          id: section.id || section._id || `sect-${idx}-${uuidv4().substring(0, 8)}` // Ensure stable ID
+        })) : []
+      }));
+
       setFormData(formattedData);
       setActivities(templateData.activities || []);
       setLoading(false);
@@ -5449,13 +5563,13 @@ const InspectionLevelForm = () => {
       setLoading(true);
       setSaveError('');
       setSaveMessage('Saving template...');
-      
+
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Prepare questions array
       const allQuestions = [];
-      
+
       // Basic template data
       const templateData = {
         name: formData.name,
@@ -5475,46 +5589,53 @@ const InspectionLevelForm = () => {
             order: pageIndex,
             sections: []
           };
-          
+
           if (page.sections && page.sections.length > 0) {
-            page.sections.forEach((section, sectionIndex) => {
+            // Sort sections by order before processing to ensure correct order
+            const sortedSections = [...page.sections].sort((a, b) => {
+              const orderA = a.order !== undefined ? a.order : 0;
+              const orderB = b.order !== undefined ? b.order : 0;
+              return orderA - orderB;
+            });
+
+            sortedSections.forEach((section, sectionIndex) => {
               // Process section questions
-              const processedQuestions = section.questions 
+              const processedQuestions = section.questions
                 ? section.questions.map(q => ({
-                    ...q,
-                    description: q.description || '',
-                    required: q.required !== undefined ? q.required : true // Ensure required field is preserved
-                  }))
+                  ...q,
+                  description: q.description || '',
+                  required: q.required !== undefined ? q.required : true // Ensure required field is preserved
+                }))
                 : [];
-                
+
               const sectionData = {
                 name: section.name,
                 description: section.description || 'No description provided',
-                order: sectionIndex,
+                order: section.order !== undefined ? section.order : sectionIndex,
                 questions: processedQuestions
               };
-              
+
               pageData.sections.push(sectionData);
-              
+
               // Add questions to the main questions array as well
               if (processedQuestions.length > 0) {
                 allQuestions.push(...processedQuestions);
               }
             });
           }
-          
+
           templateData.pages.push(pageData);
         });
       }
-      
+
       // Set the questions array
       templateData.questions = allQuestions;
-      
+
       // Debug output to see what we're sending
       console.log('Template data before sending:', JSON.stringify(templateData));
-      
+
       let response;
-      
+
       if (id) {
         response = await api.put(`/inspection/${id}`, templateData, {
           timeout: 60000, // Increase timeout for large templates
@@ -5523,17 +5644,17 @@ const InspectionLevelForm = () => {
         response = await api.post('/inspection', templateData, {
           timeout: 60000, // Increase timeout for large templates
         });
-        
+
         // Clear local storage after successful save
         localStorage.removeItem(LOCAL_STORAGE_KEY);
-        
+
         // Redirect to the templates listing page after successful creation
         navigate('/inspection');
         setSaveMessage('Template created successfully');
         toast.success('Template created successfully');
         return response.data;
       }
-      
+
       setSaveMessage('Template saved successfully');
       setTimeout(() => setSaveMessage(''), 3000);
       navigate('/inspection');
@@ -5557,8 +5678,8 @@ const InspectionLevelForm = () => {
 
   // Add a conditional title for the confirm modal
   const getPublishModalText = () => {
-    return formData.status === 'active' 
-      ? { title: 'Unpublish Template', message: 'Are you sure you want to unpublish this template?' } 
+    return formData.status === 'active'
+      ? { title: 'Unpublish Template', message: 'Are you sure you want to unpublish this template?' }
       : { title: 'Publish Template', message: 'Are you sure you want to publish this template?' };
   };
 
@@ -5568,13 +5689,13 @@ const InspectionLevelForm = () => {
       // Determine if we're publishing or unpublishing
       const isPublishing = formData.status !== 'active';
       setSaveMessage(isPublishing ? 'Saving and publishing template...' : 'Unpublishing template...');
-      
+
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // First save the template
       const savedData = await handleSave();
-      
+
       if (savedData) {
         // Update the status based on the current status
         const newStatus = isPublishing ? 'active' : 'draft';
@@ -5582,19 +5703,19 @@ const InspectionLevelForm = () => {
           ...savedData,
           status: newStatus
         };
-        
+
         // Use the centralized API service
         await api.put(`/inspection/${savedData._id || savedData.id}`, updateData, {
           timeout: 30000, // 30s timeout for operation
         });
-        
+
         setFormData({
           ...formData,
           status: newStatus
         });
-        
+
         setSaveMessage(isPublishing ? 'Template published successfully' : 'Template unpublished successfully');
-        
+
         // Redirect to template listing after publishing
         if (isPublishing) {
           setTimeout(() => {
@@ -5602,7 +5723,7 @@ const InspectionLevelForm = () => {
           }, 1500);
         }
       }
-      
+
       setIsConfirmModalOpen(false);
       setLoading(false);
     } catch (error) {
@@ -5657,14 +5778,20 @@ const InspectionLevelForm = () => {
     newPages.push({
       name: `Page ${newPages.length + 1}`,
       description: '',
-      sections: []
+      sections: [{
+        id: uuidv4(),
+        name: 'Section 1',
+        description: '',
+        order: 0,
+        questions: []
+      }]
     });
-    
+
     setFormData({
       ...formData,
       pages: newPages
     });
-    
+
     setActivePageIndex(newPages.length - 1);
   };
 
@@ -5674,7 +5801,7 @@ const InspectionLevelForm = () => {
       ...newPages[index],
       ...data
     };
-    
+
     setFormData({
       ...formData,
       pages: newPages
@@ -5682,37 +5809,175 @@ const InspectionLevelForm = () => {
   };
 
   const addSection = () => {
-    const newPages = [...formData.pages];
-    const activePage = newPages[activePageIndex];
-    
-    activePage.sections.push({
-      name: `Section ${activePage.sections.length + 1}`,
-      description: '',
-      subLevels: [],
-      questions: []
+    setFormData(prevFormData => {
+      const newPages = prevFormData.pages.map((page, idx) => {
+        if (idx !== activePageIndex) return page;
+
+        // Create new sections array with the new section
+        const newSections = [...(page.sections || [])];
+        const sectionId = uuidv4();
+
+        newSections.push({
+          id: sectionId,
+          name: `Section ${newSections.length + 1}`,
+          description: '',
+          order: newSections.length,
+          subLevels: [],
+          questions: []
+        });
+
+        return {
+          ...page,
+          sections: newSections
+        };
+      });
+
+      // Update active section index after state update
+      const newActivePage = newPages[activePageIndex];
+      if (newActivePage && newActivePage.sections) {
+        setActiveSectionIndex(newActivePage.sections.length - 1);
+      }
+
+      return {
+        ...prevFormData,
+        pages: newPages
+      };
     });
-    
-    setFormData({
-      ...formData,
-      pages: newPages
-    });
-    
-    setActiveSectionIndex(activePage.sections.length - 1);
   };
 
   const updateSection = (sectionIndex, data) => {
     const newPages = [...formData.pages];
     const activePage = newPages[activePageIndex];
-    
+
     activePage.sections[sectionIndex] = {
       ...activePage.sections[sectionIndex],
       ...data
     };
-    
+
     setFormData({
       ...formData,
       pages: newPages
     });
+  };
+
+  // Manual Drag and Drop Handlers for Sections
+  const [draggingSectionIndex, setDraggingSectionIndex] = useState(null);
+  // Manual Drag and Drop Handlers for Pages
+  const [draggingPageIndex, setDraggingPageIndex] = useState(null);
+
+  const handlePageManualDragStart = (e, index) => {
+    setDraggingPageIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+    e.currentTarget.style.opacity = '0.4';
+  };
+
+  const handlePageManualDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggingPageIndex !== null && draggingPageIndex !== index) {
+      e.currentTarget.classList.add('drag-over');
+    }
+  };
+
+  const handlePageManualDrop = (e, destinationIndex) => {
+    e.preventDefault();
+    const sourceIndex = draggingPageIndex;
+    e.currentTarget.classList.remove('drag-over');
+
+    if (sourceIndex === null || sourceIndex === destinationIndex) {
+      return;
+    }
+
+    setFormData(prevFormData => {
+      const newPages = [...prevFormData.pages];
+      const [reorderedPage] = newPages.splice(sourceIndex, 1);
+      newPages.splice(destinationIndex, 0, reorderedPage);
+
+      // Update activePageIndex to stay with the reordered page
+      setActivePageIndex(destinationIndex);
+      setUnsavedChanges(true);
+
+      return {
+        ...prevFormData,
+        pages: newPages
+      };
+    });
+  };
+
+  const handlePageManualDragEnd = (e) => {
+    setDraggingPageIndex(null);
+    e.currentTarget.style.opacity = '1';
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  };
+
+  const handleManualDragStart = (e, index) => {
+    setDraggingSectionIndex(index);
+    // Required for some browsers
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+
+    // Create a visual indicator on the source element
+    e.currentTarget.style.opacity = '0.4';
+  };
+
+  const handleManualDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    // Optional: Add visual indicator for drop target
+    if (draggingSectionIndex !== null && draggingSectionIndex !== index) {
+      e.currentTarget.classList.add('drag-over');
+    }
+  };
+
+  const handleManualDrop = (e, destinationIndex) => {
+    e.preventDefault();
+    const sourceIndex = draggingSectionIndex;
+
+    // Clear visual indicators
+    e.currentTarget.classList.remove('drag-over');
+
+    if (sourceIndex === null || sourceIndex === destinationIndex) {
+      return;
+    }
+
+    setFormData(prevFormData => {
+      const newPages = prevFormData.pages.map((page, idx) => {
+        if (idx !== activePageIndex) return page;
+
+        const newSections = [...page.sections];
+        const [reorderedSection] = newSections.splice(sourceIndex, 1);
+        newSections.splice(destinationIndex, 0, reorderedSection);
+
+        // Update order property
+        newSections.forEach((section, index) => {
+          section.order = index;
+        });
+
+        return {
+          ...page,
+          sections: newSections
+        };
+      });
+
+      setUnsavedChanges(true);
+      return {
+        ...prevFormData,
+        pages: newPages
+      };
+    });
+
+    // Update active section tab to the new position
+    setActiveSectionTab(destinationIndex);
+  };
+
+  const handleManualDragEnd = (e) => {
+    setDraggingSectionIndex(null);
+    e.currentTarget.style.opacity = '1';
+
+    // Ensure all drag-over classes are removed if drop was cancelled
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
   };
 
   const addQuestion = (sectionIndex) => {
@@ -5740,12 +6005,12 @@ const InspectionLevelForm = () => {
 
     const updatedPages = [...formData.pages];
     updatedPages[activePageIndex].sections[sectionIndex].questions.push(newQuestion);
-    
+
     setFormData({
       ...formData,
       pages: updatedPages
     });
-    
+
     setUnsavedChanges(true);
   };
 
@@ -5753,12 +6018,12 @@ const InspectionLevelForm = () => {
     const newPages = [...formData.pages];
     const activePage = newPages[activePageIndex];
     const section = activePage.sections[sectionIndex];
-    
+
     section.questions[questionIndex] = {
       ...section.questions[questionIndex],
       ...data
     };
-    
+
     setFormData({
       ...formData,
       pages: newPages
@@ -5769,9 +6034,9 @@ const InspectionLevelForm = () => {
     const newPages = [...formData.pages];
     const activePage = newPages[activePageIndex];
     const section = activePage.sections[sectionIndex];
-    
+
     section.questions.splice(questionIndex, 1);
-    
+
     setFormData({
       ...formData,
       pages: newPages
@@ -5786,29 +6051,34 @@ const InspectionLevelForm = () => {
     setIsMoveQuestionModalOpen(true);
   };
 
-  const handleMoveQuestion = (targetSectionIndex) => {
-    if (targetSectionIndex === activeSectionIndex) {
+  const handleMoveQuestion = (targetPageIndex, targetSectionIndex) => {
+    // Check if moving to the same location
+    if (targetPageIndex === activePageIndex && targetSectionIndex === activeSectionIndex) {
       setIsMoveQuestionModalOpen(false);
       return;
     }
-    
+
     const newPages = [...formData.pages];
-    const activePage = newPages[activePageIndex];
-    const sourceSection = activePage.sections[activeSectionIndex];
-    const targetSection = activePage.sections[targetSectionIndex];
-    
+    const sourcePage = newPages[activePageIndex];
+    const sourceSection = sourcePage.sections[activeSectionIndex];
+    const targetPage = newPages[targetPageIndex];
+    const targetSection = targetPage.sections[targetSectionIndex];
+
     // Remove from source
     const [movedQuestion] = sourceSection.questions.splice(selectedQuestionIndex, 1);
-    
+
     // Add to target
     targetSection.questions.push(movedQuestion);
-    
+
     setFormData({
       ...formData,
       pages: newPages
     });
-    
+
     setIsMoveQuestionModalOpen(false);
+    
+    // Show success message
+    toast.success('Question moved successfully');
   };
 
   // Function to handle guide toggle
@@ -5819,15 +6089,15 @@ const InspectionLevelForm = () => {
   // Calculate template complexity
   useEffect(() => {
     if (!formData || !formData.pages) return;
-    
+
     let questionCount = 0;
     let sectionCount = 0;
     let pageCount = formData.pages.length;
-    
+
     formData.pages.forEach(page => {
       if (page.sections) {
         sectionCount += page.sections.length;
-        
+
         page.sections.forEach(section => {
           if (section.questions) {
             questionCount += section.questions.length;
@@ -5835,11 +6105,11 @@ const InspectionLevelForm = () => {
         });
       }
     });
-    
+
     // Determine if template might be too complex to save
     // These thresholds should be adjusted based on actual observed limits
     const isComplex = questionCount > 200 || sectionCount > 50 || pageCount > 20;
-    
+
     setTemplateComplexity({
       totalQuestions: questionCount,
       totalSections: sectionCount,
@@ -5854,12 +6124,12 @@ const InspectionLevelForm = () => {
     const sections = [];
     let totalScore = 0;
     let maxScore = 0;
-    
+
     // Basic validation but ensure we show what we have even if incomplete
     if (!formData) {
       return getEmptyReportTemplate();
     }
-    
+
     // Process all pages and sections even if some fields are incomplete
     if (formData.pages && formData.pages.length > 0) {
       formData.pages.forEach((page, pageIndex) => {
@@ -5874,31 +6144,31 @@ const InspectionLevelForm = () => {
               status: 'not_applicable',
               items: []
             };
-        
-        // Process questions
+
+            // Process questions
             if (section.questions && section.questions.length > 0) {
               section.questions.forEach(question => {
                 const questionScore = question.scoring?.enabled ? (question.scoring.max || 1) : 0;
                 maxScore += questionScore;
-                
+
                 sectionData.items.push({
                   title: question.text || t('common.unnamedQuestion'),
                   status: 'not_applicable'
                 });
-                
+
                 sectionData.maxScore += questionScore;
               });
             }
-            
+
             // Calculate section status
             sectionData.status = sectionData.maxScore > 0 ? 'partial_compliance' : 'not_applicable';
-            
+
             sections.push(sectionData);
           });
         }
       });
     }
-    
+
     return {
       title: formData.name || t('common.draftInspectionTemplate'),
       score: 0, // No real score in template preview
@@ -5915,7 +6185,7 @@ const InspectionLevelForm = () => {
       }
     };
   };
-  
+
   // Helper function for empty template
   const getEmptyReportTemplate = () => {
     return {
@@ -5937,8 +6207,8 @@ const InspectionLevelForm = () => {
 
   // Add local storage key and functions
   const LOCAL_STORAGE_KEY = 'inspection_template_draft';
-  
-  
+
+
   // Auto-save template changes to local storage
   useEffect(() => {
     if (!id && formData.pages && formData.pages.length > 0) {
@@ -5954,10 +6224,10 @@ const InspectionLevelForm = () => {
 
     const updatedPages = [...formData.pages];
     updatedPages.splice(index, 1);
-    
+
     // If the current activePageIndex is beyond the new array length, set it to the last valid index
     const newActivePageIndex = activePageIndex >= updatedPages.length ? updatedPages.length - 1 : activePageIndex;
-    
+
     setFormData(prev => ({
       ...prev,
       pages: updatedPages
@@ -5969,7 +6239,7 @@ const InspectionLevelForm = () => {
   const removeSection = (pageIndex, sectionIndex) => {
     const updatedPages = [...formData.pages];
     updatedPages[pageIndex].sections.splice(sectionIndex, 1);
-    
+
     setFormData(prev => ({
       ...prev,
       pages: updatedPages
@@ -5997,12 +6267,12 @@ const InspectionLevelForm = () => {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div 
+          <div
             onClick={() => setActivePageIndex(pageIndex)}
             style={{ flex: '1' }}
           >
-            <div style={{ 
-              fontSize: '16px', 
+            <div style={{
+              fontSize: '16px',
               fontWeight: activePageIndex === pageIndex ? '600' : '500',
               color: activePageIndex === pageIndex ? 'var(--color-navy)' : '#64748b',
               display: 'flex',
@@ -6012,24 +6282,24 @@ const InspectionLevelForm = () => {
               <span>{pageIndex + 1}.</span>
               <span>{page.name || `Unnamed Page ${pageIndex + 1}`}</span>
               {page.sections && page.sections.length > 0 && (
-                <span style={{ 
-                  marginLeft: '8px', 
-                  fontSize: '13px', 
-                  color: '#64748b', 
+                <span style={{
+                  marginLeft: '8px',
+                  fontSize: '13px',
+                  color: '#64748b',
                   fontWeight: 'normal'
                 }}>
                   ({page.sections.length} section{page.sections.length !== 1 ? 's' : ''})
                 </span>
               )}
             </div>
-            
+
             {page.description && (
               <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
                 {page.description}
               </div>
             )}
           </div>
-          
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setActivePageIndex(pageIndex)}
@@ -6048,7 +6318,7 @@ const InspectionLevelForm = () => {
             >
               <Edit size={18} />
             </button>
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -6082,7 +6352,7 @@ const InspectionLevelForm = () => {
           padding: '20px',
           textAlign: 'center'
         }}>
-          <Button 
+          <Button
             onClick={addPage}
             style={{
               backgroundColor: '#f0f9ff',
@@ -6100,31 +6370,16 @@ const InspectionLevelForm = () => {
 
   // ... existing code ...
 
-  // Update SectionHeader to include remove button
-  const SectionHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    
-    h4 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .section-header-actions {
-      display: flex;
-      gap: 8px;
-    }
-  `;
+  // Note: SectionHeader styled component is already defined at the top of the file (line 686)
+  // Do not redefine it here to avoid styled-components warnings
 
   // In the template where sections are rendered, add the remove section button
   const renderSections = (pageIndex) => {
     const page = formData.pages[pageIndex];
     if (!page || !page.sections) return null;
-    
+
     const sectionList = page.sections.map((section, sectionIndex) => (
-      <div 
+      <div
         key={section.id || sectionIndex}
         style={{
           backgroundColor: 'white',
@@ -6148,19 +6403,19 @@ const InspectionLevelForm = () => {
             color: 'var(--color-navy)'
           }}>
             {section.name || `Section ${sectionIndex + 1}`}
-            
+
             {section.questions && section.questions.length > 0 && (
-              <span style={{ 
-                marginLeft: '8px', 
-                fontSize: '13px', 
-                color: '#64748b', 
+              <span style={{
+                marginLeft: '8px',
+                fontSize: '13px',
+                color: '#64748b',
                 fontWeight: 'normal'
               }}>
                 ({section.questions.length} question{section.questions.length !== 1 ? 's' : ''})
               </span>
             )}
           </div>
-          
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => addQuestion(sectionIndex)}
@@ -6179,7 +6434,7 @@ const InspectionLevelForm = () => {
             >
               <Plus size={18} />
             </button>
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -6202,24 +6457,24 @@ const InspectionLevelForm = () => {
             </button>
           </div>
         </div>
-        
+
         <div style={{ padding: '16px' }}>
           {section.description && (
-            <div style={{ 
-              marginBottom: '16px', 
-              fontSize: '14px', 
+            <div style={{
+              marginBottom: '16px',
+              fontSize: '14px',
               color: '#64748b'
             }}>
               {section.description}
             </div>
           )}
-          
+
           {section.questions && section.questions.length > 0 ? (
             <div>
               <div style={{ marginBottom: '12px', fontSize: '14px', color: '#334155', fontWeight: '500' }}>
                 Questions
               </div>
-              
+
               {section.questions.map((question, questionIndex) => (
                 <QuestionItemComponent
                   key={question.id || questionIndex}
@@ -6233,18 +6488,18 @@ const InspectionLevelForm = () => {
               ))}
             </div>
           ) : (
-            <div style={{ 
-              padding: '20px', 
-              textAlign: 'center', 
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
               color: '#94a3b8',
               backgroundColor: '#f8fafc',
-              borderRadius: '6px' 
+              borderRadius: '6px'
             }}>
               <div style={{ marginBottom: '12px' }}>
                 <HelpCircle size={24} style={{ marginBottom: '8px' }} />
                 <div>No questions in this section</div>
               </div>
-              <Button 
+              <Button
                 onClick={() => addQuestion(sectionIndex)}
                 variant="primary"
                 style={{ margin: '0 auto' }}
@@ -6266,7 +6521,7 @@ const InspectionLevelForm = () => {
           padding: '20px',
           textAlign: 'center'
         }}>
-          <Button 
+          <Button
             onClick={addSection}
             style={{
               backgroundColor: '#f0f9ff',
@@ -6287,15 +6542,38 @@ const InspectionLevelForm = () => {
   // Update the tabs to include delete buttons
   const renderPageTabs = () => {
     return (
-      <div style={{ display: 'flex', overflow: 'auto', borderBottom: '1px solid #e2e8f0' }}>
+      <div style={{
+        display: 'flex',
+        overflow: 'auto',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '4px',
+        gap: '4px'
+      }}>
         {formData.pages.map((page, index) => (
           <Tab
-            key={index}
+            key={page.id || page._id || index}
             $active={index === activePageIndex}
+            $isDragging={draggingPageIndex === index}
             onClick={() => setActivePageIndex(index)}
+            draggable="true"
+            onDragStart={(e) => handlePageManualDragStart(e, index)}
+            onDragOver={(e) => handlePageManualDragOver(e, index)}
+            onDrop={(e) => handlePageManualDrop(e, index)}
+            onDragEnd={handlePageManualDragEnd}
           >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'grab',
+                marginRight: '8px'
+              }}
+              title="Drag to reorder page"
+            >
+              <Move size={14} color="#64748b" />
+            </div>
             {page.name || `Page ${index + 1}`}
-            <div 
+            <div
               className="delete-icon"
               onClick={(e) => {
                 e.stopPropagation();
@@ -6311,13 +6589,18 @@ const InspectionLevelForm = () => {
           onClick={addPage}
           style={{
             padding: '12px 16px',
-            background: 'none',
+            background: 'rgba(59, 73, 223, 0.05)',
             border: 'none',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             color: 'var(--color-navy)',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            marginLeft: '8px'
           }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(59, 73, 223, 0.1)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(59, 73, 223, 0.05)'}
         >
           <Plus size={16} />
         </button>
@@ -6325,35 +6608,72 @@ const InspectionLevelForm = () => {
     );
   };
 
-  // Update renderSectionTabs to include delete buttons
+  // Update renderSectionTabs to include delete buttons and manual drag-and-drop
   const renderSectionTabs = (pageIndex) => {
-    const page = formData.pages[pageIndex];
-    if (!page || !page.sections) return null;
-    
+    // Normalize pageIndex to ensure it's always valid
+    const validPageIndex = Math.max(0, Math.min(pageIndex || 0, (formData.pages?.length || 1) - 1));
+
+    const page = formData.pages?.[validPageIndex];
+    const sections = page?.sections || [];
+
     return (
-      <div style={{ display: 'flex', overflow: 'auto', borderBottom: '1px solid #e2e8f0', marginBottom: '16px' }}>
-        {page.sections.map((section, index) => (
-          <SectionTab 
-            key={index} 
-            $active={index === activeSectionTab}
-            onClick={() => setActiveSectionTab(index)}
-          >
-            {section.name || `Template ${index + 1}`}
-            <div 
-              className="delete-icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSectionDeleteClick(activePageIndex, index, section.name || `Section ${index + 1}`);
-              }}
-              title="Delete Section"
-            >
-              <X size={14} />
-            </div>
-            <TabCount $active={index === activeSectionTab}>
-              {section.questions?.length || 0}
-            </TabCount>
-          </SectionTab>
-        ))}
+      <div style={{
+        display: 'flex',
+        overflow: 'auto',
+        borderBottom: '1px solid #e2e8f0',
+        marginBottom: '16px',
+        minHeight: '45px'
+      }}>
+        <div
+          style={{
+            display: 'flex',
+            overflow: 'auto',
+            width: '100%'
+          }}
+        >
+          {sections.map((section, index) => {
+            return (
+              <SectionTab
+                key={section.id || section._id || index}
+                $active={index === activeSectionTab}
+                $isDragging={draggingSectionIndex === index}
+                onClick={() => setActiveSectionTab(index)}
+                draggable="true"
+                onDragStart={(e) => handleManualDragStart(e, index)}
+                onDragOver={(e) => handleManualDragOver(e, index)}
+                onDrop={(e) => handleManualDrop(e, index)}
+                onDragEnd={handleManualDragEnd}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'grab',
+                    marginRight: '8px',
+                    padding: '4px'
+                  }}
+                  title="Drag to reorder"
+                >
+                  <Move size={14} color="#64748b" />
+                </div>
+                {section.name || `Template ${index + 1}`}
+                <div
+                  className="delete-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSectionDeleteClick(activePageIndex, index, section.name || `Section ${index + 1}`);
+                  }}
+                  title="Delete Section"
+                >
+                  <X size={14} />
+                </div>
+                <TabCount $active={index === activeSectionTab}>
+                  {section.questions?.length || 0}
+                </TabCount>
+              </SectionTab>
+            );
+          })}
+        </div>
         <button
           onClick={addSection}
           style={{
@@ -6363,7 +6683,8 @@ const InspectionLevelForm = () => {
             display: 'flex',
             alignItems: 'center',
             color: 'var(--color-navy)',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            flexShrink: 0
           }}
         >
           <Plus size={16} />
@@ -6372,174 +6693,24 @@ const InspectionLevelForm = () => {
     );
   };
 
-  // Replace the tabs container in the pages section
-  {formData.pages.length > 0 && (
-    <>
-      {renderPageTabs()}
-      
-      <PagesQuestionsContent>
-        <InspectionFormRow>
-          <InspectionFormGroup>
-            <Label>Page Name</Label>
-            <Input
-              value={formData.pages[activePageIndex].name}
-              onChange={(e) => updatePage(activePageIndex, { name: e.target.value })}
-              placeholder="Enter page name"
-            />
-          </InspectionFormGroup>
-          <InspectionFormGroup>
-            <Label>Page Description</Label>
-            <TextArea
-              value={formData.pages[activePageIndex].description}
-              onChange={(e) => updatePage(activePageIndex, { description: e.target.value })}
-              placeholder="Enter page description"
-              rows={2}
-            />
-          </InspectionFormGroup>
-        </InspectionFormRow>
-        
-        <SectionsWrapper>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '16px',
-            width: '100%',
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            flexWrap: 'wrap',
-            gap: '8px'
-          }}>
-            <h4>{t('common.templateLevels')}</h4>
-            <Button onClick={addSection}>
-              <Plus size={16} style={{ marginRight: '4px' }} />
-              {t('common.addTemplateLevel')}
-            </Button>
-          </div>
-          
-          {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
-            <>
-              {renderSectionTabs(activePageIndex)}
-              
-              {formData.pages[activePageIndex].sections[activeSectionTab] && (
-                <div style={{
-                  width: '100%',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                  overflowX: 'hidden'
-                }}>
-                  <InspectionFormRow>
-                    <InspectionFormGroup>
-                      <Label>{t('common.templateLevelName')}</Label>
-                      <Input
-                        value={formData.pages[activePageIndex].sections[activeSectionTab].name || ''}
-                        onChange={(e) => updateSection(activeSectionTab, { name: e.target.value })}
-                        placeholder={t('common.enterTemplateLevelName')}
-                      />
-                    </InspectionFormGroup>
-                    <InspectionFormGroup>
-                      <Label>{t('common.templateLevelDescription')}</Label>
-                      <TextArea
-                        value={formData.pages[activePageIndex].sections[activeSectionTab].description || ''}
-                        onChange={(e) => updateSection(activeSectionTab, { description: e.target.value })}
-                        placeholder={t('common.enterTemplateLevelDescription')}
-                        rows={2}
-                      />
-                    </InspectionFormGroup>
-                  </InspectionFormRow>
-                  
-                  <div style={{ 
-                    marginTop: '24px',
-                    width: '100%',
-                    maxWidth: '100%',
-                    boxSizing: 'border-box',
-                    overflowX: 'hidden'
-                  }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      marginBottom: '16px',
-                      width: '100%',
-                      maxWidth: '100%',
-                      boxSizing: 'border-box',
-                      flexWrap: 'wrap',
-                      gap: '8px'
-                    }}>
-                      <h5>{t('common.questions')}</h5>
-                      <Button onClick={() => addQuestion(activeSectionTab)}>
-                        <Plus size={16} style={{ marginRight: '4px' }} />
-                        {t('common.addQuestion')}
-                      </Button>
-                    </div>
-                    
-                    {formData.pages[activePageIndex].sections[activeSectionTab].questions && 
-                    formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
-                      <QuestionTable>
-                        <QuestionTableHeader>
-                          <div style={{ width: '40px' }}>#</div>
-                          <div>{t('common.question')}</div>
-                          <div>{t('common.type')}</div>
-                          <div>{t('common.actions')}</div>
-                        </QuestionTableHeader>
-                        
-                        {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
-                          <QuestionItemComponent
-                            key={questionIndex}
-                            question={question}
-                            questionIndex={questionIndex}
-                            loading={loading}
-                            updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
-                            removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
-                            onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
-                          />
-                        ))}
-                      </QuestionTable>
-                    ) : (
-                      <TabEmptyState>
-                        <FileText size={32} />
-                        <p>No questions added yet</p>
-                        <Button onClick={() => addQuestion(activeSectionTab)}>
-                          <Plus size={16} style={{ marginRight: '4px' }} />
-                          {t('common.addQuestion')}
-                        </Button>
-                      </TabEmptyState>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <TabEmptyState>
-              <Layers size={32} />
-              <p>{t('common.noTemplateLevelsAddedYet')}</p>
-              <Button onClick={addSection}>
-                <Plus size={16} style={{ marginRight: '4px' }} />
-                {t('common.addTemplateLevel')}
-              </Button>
-            </TabEmptyState>
-          )}
-        </SectionsWrapper>
-      </PagesQuestionsContent>
-    </>
-  )}
+
 
   return (
     <PageContainer>
       {loading && <SkeletonLoader />}
-      
+
       {saveMessage && (
         <Alert severity="success" sx={{ position: 'fixed', top: '16px', right: '16px', zIndex: 9999 }}>
           {saveMessage}
         </Alert>
       )}
-      
+
       {saveError && (
         <Alert severity="error" sx={{ position: 'fixed', top: '16px', right: '16px', zIndex: 9999 }}>
           {saveError}
         </Alert>
       )}
-      
+
       <Header>
         <BackButton onClick={handleBack}>
           <ChevronLeft size={20} />
@@ -6563,10 +6734,10 @@ const InspectionLevelForm = () => {
             <Save size={16} />
             {id ? t('common.updateTemplate') : t('common.save')}
           </InspectionSaveButton>
-      
+
         </div>
       </Header>
-      
+
       {templateComplexity.isComplex && (
         <div style={{
           padding: '12px 16px',
@@ -6581,73 +6752,79 @@ const InspectionLevelForm = () => {
         }}>
           <AlertTriangle size={20} />
           <div>
-            <strong>Warning:</strong> This template is becoming complex ({templateComplexity.totalQuestions} questions, 
-            {templateComplexity.totalSections} sections, {templateComplexity.totalPages} pages). 
+            <strong>Warning:</strong> This template is becoming complex ({templateComplexity.totalQuestions} questions,
+            {templateComplexity.totalSections} sections, {templateComplexity.totalPages} pages).
             You may experience slow performance or issues when saving. Consider breaking it into multiple templates.
           </div>
         </div>
       )}
-      
+
       {/* Main tabs navigation */}
       <div style={{
         display: 'flex',
-        borderBottom: '1px solid #e0e0e0',
-        marginBottom: '20px',
+        borderBottom: '1px solid #e2e8f0',
+        marginBottom: '24px',
         overflowX: 'auto',
-        overflowY: 'hidden',
         width: '100%',
-        maxWidth: '100%',
-        boxSizing: 'border-box',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'thin'
+        padding: '4px',
+        gap: '8px'
       }}>
-        <div 
+        <div
           style={{
-            padding: '12px 20px',
+            padding: '12px 24px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'basic-info' ? '2px solid var(--color-navy)' : '2px solid transparent',
-            color: activeTab === 'basic-info' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'basic-info' ? '500' : 'normal',
+            borderRadius: '8px 8px 0 0',
+            transition: 'all 0.3s ease',
+            backgroundColor: activeTab === 'basic-info' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
+            backdropFilter: activeTab === 'basic-info' ? 'blur(10px)' : 'none',
+            boxShadow: activeTab === 'basic-info' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
+            color: activeTab === 'basic-info' ? 'var(--color-navy)' : '#64748b',
+            fontWeight: activeTab === 'basic-info' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
-            flexShrink: 0
           }}
           onClick={() => setActiveTab('basic-info')}
         >
           {t('common.basicInformation')}
         </div>
-        <div 
-          style={{ 
-            padding: '12px 20px',
+        <div
+          style={{
+            padding: '12px 24px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'pages-questions' ? '2px solid var(--color-navy)' : '2px solid transparent',
-            color: activeTab === 'pages-questions' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'pages-questions' ? '500' : 'normal',
+            borderRadius: '8px 8px 0 0',
+            transition: 'all 0.3s ease',
+            backgroundColor: activeTab === 'pages-questions' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
+            backdropFilter: activeTab === 'pages-questions' ? 'blur(10px)' : 'none',
+            boxShadow: activeTab === 'pages-questions' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
+            color: activeTab === 'pages-questions' ? 'var(--color-navy)' : '#64748b',
+            fontWeight: activeTab === 'pages-questions' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
-            flexShrink: 0
           }}
           onClick={() => setActiveTab('pages-questions')}
         >
           {t('common.pagesAndQuestions')}
         </div>
-        <div 
-          style={{ 
-            padding: '12px 20px',
+        <div
+          style={{
+            padding: '12px 24px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'report' ? '2px solid var(--color-navy)' : '2px solid transparent',
-            color: activeTab === 'report' ? 'var(--color-navy)' : '#757575',
-            fontWeight: activeTab === 'report' ? '500' : 'normal',
+            borderRadius: '8px 8px 0 0',
+            transition: 'all 0.3s ease',
+            backgroundColor: activeTab === 'report' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
+            backdropFilter: activeTab === 'report' ? 'blur(10px)' : 'none',
+            boxShadow: activeTab === 'report' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
+            color: activeTab === 'report' ? 'var(--color-navy)' : '#64748b',
+            fontWeight: activeTab === 'report' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
-            flexShrink: 0
           }}
           onClick={() => setActiveTab('report')}
         >
           {t('common.report')}
         </div>
       </div>
-      
+
       {isGuideOpen && (
         <div className="guide-modal" style={{
           position: 'fixed',
@@ -6663,13 +6840,13 @@ const InspectionLevelForm = () => {
           padding: window.innerWidth <= 480 ? '0' : '20px 16px 16px 16px',
           boxSizing: 'border-box'
         }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            toggleGuide();
-          }
-        }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              toggleGuide();
+            }
+          }}
         >
-          <div style={{ 
+          <div style={{
             backgroundColor: 'white',
             borderRadius: window.innerWidth <= 480 ? '12px 12px 0 0' : '8px',
             width: '700px',
@@ -6681,10 +6858,10 @@ const InspectionLevelForm = () => {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
             boxSizing: 'border-box'
           }}
-          onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ 
-              display: 'flex', 
+            <div style={{
+              display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '16px',
@@ -6693,10 +6870,10 @@ const InspectionLevelForm = () => {
               flexWrap: 'wrap',
               gap: '8px'
             }}>
-              <h2 style={{ 
-                margin: 0, 
-                fontSize: '20px', 
-                fontWeight: '600', 
+              <h2 style={{
+                margin: 0,
+                fontSize: '20px',
+                fontWeight: '600',
                 color: 'var(--color-navy)',
                 display: 'flex',
                 alignItems: 'center',
@@ -6729,19 +6906,19 @@ const InspectionLevelForm = () => {
                 &times;
               </button>
             </div>
-                
-                <div style={{ marginBottom: '20px' }}>
+
+            <div style={{ marginBottom: '20px' }}>
               <p style={{ marginTop: 0, color: '#64748b' }}>{t('common.followTheseStepsToCreate')}</p>
-              
-                  <div style={{ 
-                background: '#f1f5f9', 
-                    borderRadius: '8px',
-                padding: '16px', 
-                marginBottom: '16px' 
+
+              <div style={{
+                background: '#f1f5f9',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '16px'
               }}>
-                <h3 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '16px', 
+                <h3 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '16px',
                   color: 'var(--color-navy)',
                   display: 'flex',
                   alignItems: 'center',
@@ -6754,12 +6931,12 @@ const InspectionLevelForm = () => {
                     height: '24px',
                     borderRadius: '12px',
                     display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     fontWeight: 'bold'
                   }}>1</div>
                   {t('common.basicInformation')}
-                  </h3>
+                </h3>
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
                   {t('common.startByFillingOut')}
                 </p>
@@ -6769,16 +6946,16 @@ const InspectionLevelForm = () => {
                   <li>{t('common.addAClearDescription')}</li>
                 </ul>
               </div>
-              
-                    <div style={{ 
-                background: '#f1f5f9', 
-                      borderRadius: '8px', 
-                padding: '16px', 
-                      marginBottom: '16px' 
-                    }}>
-                <h3 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '16px', 
+
+              <div style={{
+                background: '#f1f5f9',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '16px'
+              }}>
+                <h3 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '16px',
                   color: 'var(--color-navy)',
                   display: 'flex',
                   alignItems: 'center',
@@ -6806,19 +6983,19 @@ const InspectionLevelForm = () => {
                   <li>{t('common.createQuestionsWithAppropriateTypes')}</li>
                   <li>{t('common.configureScoringForQuestions')}</li>
                 </ul>
-                    </div>
-              
-                  <div style={{ 
-                background: '#f1f5f9', 
-                    borderRadius: '8px',
+              </div>
+
+              <div style={{
+                background: '#f1f5f9',
+                borderRadius: '8px',
                 padding: '16px'
-                  }}>
-                    <h3 style={{ 
-                  margin: '0 0 12px 0', 
-                      fontSize: '16px', 
+              }}>
+                <h3 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '16px',
                   color: 'var(--color-navy)',
-                      display: 'flex',
-                      alignItems: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '8px'
                 }}>
                   <div style={{
@@ -6828,8 +7005,8 @@ const InspectionLevelForm = () => {
                     height: '24px',
                     borderRadius: '12px',
                     display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     fontWeight: 'bold'
                   }}>3</div>
                   {t('common.reportPreviewAndPublishing')}
@@ -6844,16 +7021,16 @@ const InspectionLevelForm = () => {
                 </ul>
               </div>
             </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
               borderTop: '1px solid #e2e8f0',
-              paddingTop: '16px' 
+              paddingTop: '16px'
             }}>
-                      <Button
+              <Button
                 onClick={toggleGuide}
-                        style={{
+                style={{
                   backgroundColor: 'var(--color-navy)',
                   color: 'white',
                   padding: '8px 16px',
@@ -6864,12 +7041,12 @@ const InspectionLevelForm = () => {
                 }}
               >
                 {t('common.gotIt')}!
-                      </Button>
-                          </div>
+              </Button>
+            </div>
           </div>
         </div>
       )}
-      
+
       {/* Basic Information Tab */}
       {activeTab === 'basic-info' && (
         <InspectionFormSection>
@@ -6877,37 +7054,37 @@ const InspectionLevelForm = () => {
           <InspectionFormRow>
             <InspectionFormGroup>
               <Label>{t('common.templateName')}*</Label>
-                            <Input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder={t('common.enterTemplateName')}
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder={t('common.enterTemplateName')}
                 required
               />
             </InspectionFormGroup>
             <InspectionFormGroup>
-                    <Label>{t('common.type')}</Label>
-                    <Select 
-                      name="type" 
-                      value={formData.type} 
-                      onChange={handleChange}
-                    >
-                      <option value="">{t('common.selectType')}</option>
+              <Label>{t('common.type')}</Label>
+              <Select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+              >
+                <option value="">{t('common.selectType')}</option>
                 {assetTypes.map(type => (
                   <option key={type._id} value={type.name}>
-                            {type.name}
-                          </option>
+                    {type.name}
+                  </option>
                 ))}
-                    </Select>
+              </Select>
             </InspectionFormGroup>
           </InspectionFormRow>
           <InspectionFormRow>
             <InspectionFormGroup>
-                    <Label>{t('common.description')}</Label>
-                            <TextArea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
+              <Label>{t('common.description')}</Label>
+              <TextArea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
                 placeholder={t('common.enterDescription')}
                 rows={3}
               />
@@ -6969,16 +7146,16 @@ const InspectionLevelForm = () => {
               </InspectionStatusBadge>
             </InspectionFormGroup>
           </InspectionFormRow>
-          
+
           {/* Navigation Buttons for Basic Information Tab */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
             marginTop: '30px',
             paddingTop: '20px',
             borderTop: '1px solid #e5e7eb'
           }}>
-            <Button 
+            <Button
               onClick={() => setActiveTab('pages-questions')}
               style={{
                 background: 'var(--color-navy)',
@@ -7010,16 +7187,16 @@ const InspectionLevelForm = () => {
           </div>
         </InspectionFormSection>
       )}
-      
+
       {/* Pages and Questions Tab */}
       {activeTab === 'pages-questions' && (
         <InspectionFormSection>
           <h3 style={{ marginBottom: "20px" }}>{t('common.pagesAndQuestions')}</h3>
-          
+
           {formData.pages.length > 0 && (
             <>
               {renderPageTabs()}
-              
+
               <div style={{ padding: '24px' }}>
                 <InspectionFormRow>
                   <InspectionFormGroup>
@@ -7040,7 +7217,7 @@ const InspectionLevelForm = () => {
                     />
                   </InspectionFormGroup>
                 </InspectionFormRow>
-                
+
                 <SectionsWrapper>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h4>{t('common.templateLevels')}</h4>
@@ -7049,11 +7226,15 @@ const InspectionLevelForm = () => {
                       {t('common.addTemplateLevel')}
                     </Button>
                   </div>
-                  
+
+                  {/* Render section tabs with native drag-and-drop support */}
+                  {formData.pages && formData.pages.length > 0 && activePageIndex >= 0 && activePageIndex < formData.pages.length
+                    ? renderSectionTabs(activePageIndex)
+                    : renderSectionTabs(0) // Fallback to page 0 if activePageIndex is invalid
+                  }
+
                   {formData.pages[activePageIndex].sections && formData.pages[activePageIndex].sections.length > 0 ? (
                     <>
-                      {renderSectionTabs(activePageIndex)}
-                      
                       {formData.pages[activePageIndex].sections[activeSectionTab] && (
                         <div>
                           <InspectionFormRow>
@@ -7075,7 +7256,7 @@ const InspectionLevelForm = () => {
                               />
                             </InspectionFormGroup>
                           </InspectionFormRow>
-                          
+
                           <div style={{ marginTop: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                               <h5>Questions</h5>
@@ -7084,9 +7265,9 @@ const InspectionLevelForm = () => {
                                 {t('common.addQuestion')}
                               </Button>
                             </div>
-                            
-                            {formData.pages[activePageIndex].sections[activeSectionTab].questions && 
-                            formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
+
+                            {formData.pages[activePageIndex].sections[activeSectionTab].questions &&
+                              formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
                               <QuestionTable>
                                 <QuestionTableHeader>
                                   <div style={{ width: '40px' }}>#</div>
@@ -7094,7 +7275,7 @@ const InspectionLevelForm = () => {
                                   <div>Type</div>
                                   <div>Actions</div>
                                 </QuestionTableHeader>
-                                
+
                                 {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
                                   <QuestionItemComponent
                                     key={questionIndex}
@@ -7135,7 +7316,7 @@ const InspectionLevelForm = () => {
               </div>
             </>
           )}
-          
+
           {formData.pages.length === 0 && (
             <TabEmptyState>
               <FileText size={32} />
@@ -7146,16 +7327,16 @@ const InspectionLevelForm = () => {
               </Button>
             </TabEmptyState>
           )}
-          
+
           {/* Navigation Buttons for Pages and Questions Tab */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             marginTop: '30px',
             paddingTop: '20px',
             borderTop: '1px solid #e5e7eb'
           }}>
-            <Button 
+            <Button
               onClick={() => setActiveTab('basic-info')}
               style={{
                 background: 'white',
@@ -7183,8 +7364,8 @@ const InspectionLevelForm = () => {
               <ChevronLeft size={16} />
               {t('common.back')}
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => setActiveTab('report')}
               style={{
                 background: 'var(--color-navy)',
@@ -7213,12 +7394,12 @@ const InspectionLevelForm = () => {
           </div>
         </InspectionFormSection>
       )}
-      
+
       {/* Report Preview Tab */}
       {activeTab === 'report' && (
         <InspectionFormSection>
           <h3 style={{ marginBottom: "20px" }}>{t('common.reportPreview')}</h3>
-          
+
           {!formData.pages || formData.pages.length === 0 ? (
             <TabEmptyState>
               <FileText size={32} />
@@ -7227,28 +7408,28 @@ const InspectionLevelForm = () => {
                 {t('common.goToPagesAndQuestions')}
               </Button>
             </TabEmptyState>
-                  ) : (
-                    <div style={{ 
-              background: 'white', 
-              border: '1px solid #e0e0e0', 
-                      borderRadius: '8px', 
+          ) : (
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
               padding: '24px',
               maxWidth: '800px',
               margin: '0 auto'
             }}>
               <ReportPreviewComponent reportData={transformTemplateToReportData()} />
-                    </div>
+            </div>
           )}
-          
+
           {/* Navigation Buttons for Report Tab */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-start', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
             marginTop: '30px',
             paddingTop: '20px',
             borderTop: '1px solid #e5e7eb'
           }}>
-            <Button 
+            <Button
               onClick={() => setActiveTab('pages-questions')}
               style={{
                 background: 'white',
@@ -7279,7 +7460,7 @@ const InspectionLevelForm = () => {
           </div>
         </InspectionFormSection>
       )}
-      
+
       {/* Modals */}
       {isConfirmModalOpen && (
         <ConfirmationModal
@@ -7291,7 +7472,7 @@ const InspectionLevelForm = () => {
           confirmText={formData.status === 'active' ? 'Unpublish' : 'Publish'}
         />
       )}
-      
+
       {isDiscardModalOpen && (
         <DiscardConfirmationModal
           isOpen={isDiscardModalOpen}
@@ -7308,7 +7489,7 @@ const InspectionLevelForm = () => {
           }}
         />
       )}
-      
+
       {isMobilePreviewOpen && (
         <MobilePreviewPanel
           isOpen={isMobilePreviewOpen}
@@ -7317,24 +7498,25 @@ const InspectionLevelForm = () => {
           activeSetIndex={activePageIndex}
         />
       )}
-      
+
       {isActivityHistoryOpen && (
-        <ActivityHistoryCard 
-          formData={formData} 
+        <ActivityHistoryCard
+          formData={formData}
           activities={activities}
           isOpen={isActivityHistoryOpen}
           onClose={() => setIsActivityHistoryOpen(false)}
         />
       )}
-      
+
       {isMoveQuestionModalOpen && selectedQuestion && (
         <MoveQuestionModal
           isOpen={isMoveQuestionModalOpen}
           onClose={() => setIsMoveQuestionModalOpen(false)}
           question={selectedQuestion}
           questionIndex={selectedQuestionIndex}
-          allSets={formData.pages[activePageIndex].sections}
-          currentSetIndex={activeSectionIndex}
+          allPages={formData.pages}
+          currentPageIndex={activePageIndex}
+          currentSectionIndex={activeSectionIndex}
           onMoveQuestion={handleMoveQuestion}
         />
       )}
