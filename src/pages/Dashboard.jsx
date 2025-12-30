@@ -7,10 +7,12 @@ import {
   AlertTriangle,
   Flag,
   Download,
-  Loader
+  Loader,
+  Eye
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import ScrollAnimation from '../components/common/ScrollAnimation';
 import DashboardFilters from '../components/dashboard/DashboardFilters';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +22,37 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+// Helper function to detect if text contains Arabic characters
+const containsArabic = (text) => {
+  if (!text) return false;
+  const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  return arabicPattern.test(String(text));
+};
+
+// Load Arabic font for PDF
+const loadArabicFont = async (doc) => {
+  try {
+    // Fetch the Noto Naskh Arabic font from CDN
+    const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf');
+    const fontArrayBuffer = await response.arrayBuffer();
+    const fontBase64 = btoa(
+      new Uint8Array(fontArrayBuffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ''
+      )
+    );
+
+    // Add the font to jsPDF
+    doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontBase64);
+    doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
+
+    return true;
+  } catch (error) {
+    console.warn('Could not load Arabic font, Arabic text may not display correctly:', error);
+    return false;
+  }
+};
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -246,6 +279,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { currentLanguage } = useLanguage();
+  const navigate = useNavigate();
   const [data, setData] = useState({
     stats: { total: 0, completed: 0, pending: 0, delayed: 0, flagged: 0 },
     charts: {
@@ -287,8 +321,12 @@ const Dashboard = () => {
     fetchDashboardData(filters);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const doc = new jsPDF();
+    
+    // Load Arabic font
+    const fontLoaded = await loadArabicFont(doc);
+    
     doc.setFontSize(18);
     doc.text("Dashboard Report", 14, 22);
     doc.setFontSize(12);
@@ -318,11 +356,76 @@ const Dashboard = () => {
       item.assetType
     ]);
 
+    // Configure autoTable to handle Arabic text
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 20,
       head: [['Inspection Name', 'Date', 'Asset Type']],
       body: upcomingData,
+      didParseCell: function (data) {
+        // Check if cell contains Arabic and apply font
+        if (data.cell.raw && containsArabic(String(data.cell.raw))) {
+          if (fontLoaded) {
+            data.cell.styles.font = 'NotoNaskhArabic';
+            data.cell.styles.fontStyle = 'normal';
+          }
+        }
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 10,
+      },
+      headStyles: {
+        font: 'helvetica',
+        fontStyle: 'bold',
+        fontSize: 10,
+      },
     });
+
+    // Add Flagged Items section if there are any
+    if (data?.stats?.flagged > 0) {
+      doc.text("Flagged Items Summary", 14, doc.lastAutoTable.finalY + 20);
+      
+      // Fetch flagged items for the report
+      try {
+        const flaggedResponse = await api.get('/dashboard/flagged-items?limit=100');
+        const flaggedItems = flaggedResponse.data?.data || [];
+        
+        if (flaggedItems.length > 0) {
+          const flaggedData = flaggedItems.slice(0, 50).map(item => [
+            item.taskTitle || 'N/A',
+            item.templateName || 'N/A',
+            item.questionText || 'N/A',
+            item.response || 'N/A',
+            new Date(item.flaggedAt).toLocaleDateString()
+          ]);
+
+          autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 25,
+            head: [['Task', 'Template', 'Question', 'Response', 'Date']],
+            body: flaggedData,
+            didParseCell: function (data) {
+              if (data.cell.raw && containsArabic(String(data.cell.raw))) {
+                if (fontLoaded) {
+                  data.cell.styles.font = 'NotoNaskhArabic';
+                  data.cell.styles.fontStyle = 'normal';
+                }
+              }
+            },
+            styles: {
+              font: 'helvetica',
+              fontSize: 9,
+            },
+            headStyles: {
+              font: 'helvetica',
+              fontStyle: 'bold',
+              fontSize: 9,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching flagged items for PDF:', error);
+      }
+    }
 
     doc.save("dashboard_report.pdf");
   };
@@ -524,12 +627,43 @@ const Dashboard = () => {
           </StatCard>
         </ScrollAnimation>
         <ScrollAnimation animation="slideIn" delay={0.5}>
-          <StatCard>
+          <StatCard style={{ position: 'relative' }}>
             <div className="icon-wrapper" style={{ backgroundColor: '#fef3c7' }}>
               <Flag color="#f59e0b" />
             </div>
             <div className="value">{data?.stats?.flagged || 0}</div>
             <div className="label">{t('dashboard.flaggedItems')}</div>
+            {data?.stats?.flagged > 0 && (
+              <button
+                onClick={() => navigate('/flagged-items')}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'var(--color-navy)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--color-navy-dark)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--color-navy)';
+                }}
+              >
+                <Eye size={14} />
+                {t('common.view')}
+              </button>
+            )}
           </StatCard>
         </ScrollAnimation>
       </SmallCardsGrid>

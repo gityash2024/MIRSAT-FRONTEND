@@ -16,6 +16,16 @@ import { CustomTimeInput } from './TimeInput';
 
 const Container = styled.div`
   padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const Title = styled.h2`
@@ -186,7 +196,24 @@ const ContentPane = styled.div`
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: 80vh;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -460,6 +487,15 @@ const InspectionContainer = styled.div`
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const SearchContainer = styled.div`
@@ -509,9 +545,20 @@ const ResultsTitle = styled.h3`
 const InspectionBodyContainer = styled.div`
   display: flex;
   min-height: 500px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
   
   @media (max-width: 768px) {
     flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
   }
 `;
 
@@ -2937,6 +2984,17 @@ const QuestionCard = styled.div`
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   border: 1px solid #f1f5f9;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const QuestionHeader = styled.div`
@@ -2944,6 +3002,16 @@ const QuestionHeader = styled.div`
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 `;
 
 const QuestionNumber = styled.div`
@@ -2964,9 +3032,13 @@ const QuestionText = styled.div`
   font-weight: 500;
   color: #334155;
   flex-grow: 1;
+  flex-shrink: 1;
   word-wrap: break-word;
   overflow-wrap: break-word;
   font-size: 16px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     font-size: 15px;
@@ -2974,6 +3046,9 @@ const QuestionText = styled.div`
 
   @media (max-width: 480px) {
     font-size: 14px;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
   }
 `;
 
@@ -3014,16 +3089,31 @@ const ComplianceButtonGroup = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
 
   @media (max-width: 480px) {
     gap: 6px;
+    width: 100%;
+    max-width: 100%;
   }
 
   button {
+    box-sizing: border-box;
+    min-width: 0;
+    
     @media (max-width: 480px) {
       flex: 1 1 calc(50% - 3px);
       max-width: calc(50% - 3px);
       min-width: 0;
+      width: calc(50% - 3px);
+      padding: 8px 6px;
+      font-size: 12px;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
   }
 `;
@@ -3040,6 +3130,9 @@ const ComplianceButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
   
   &:hover:not(:disabled) {
     background: var(--color-navy-light);
@@ -3050,6 +3143,21 @@ const ComplianceButton = styled.button`
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 8px 6px;
+    gap: 4px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
   }
 `;
 

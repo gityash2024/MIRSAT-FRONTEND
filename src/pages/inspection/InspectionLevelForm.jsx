@@ -2372,7 +2372,8 @@ const QuestionItemComponent = ({
         text: question.text,
         answerType: question.answerType || 'yesno',
         options: question.options || [],
-        required: !!question.required
+        required: !!question.required,
+        requirementType: question.requirementType || 'mandatory'
       };
 
       // Use the addQuestionToLibrary action from the Redux store
@@ -2398,7 +2399,8 @@ const QuestionItemComponent = ({
       type: answerType,
       answerType: answerType,
       options: libraryQuestion.options || [],
-      required: !!libraryQuestion.required
+      required: !!libraryQuestion.required,
+      requirementType: libraryQuestion.requirementType || 'mandatory'
     };
 
     console.log("Selected library question:", libraryQuestion);

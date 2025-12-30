@@ -1069,7 +1069,7 @@ const InspectionContainer = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  overflow: visible;
+  overflow: hidden;
   min-height: 80vh;
   margin: 6px;
   min-width: 0;
@@ -1092,6 +1092,7 @@ const InspectionContainer = styled.div`
     min-height: 60vh;
     width: calc(100% - 4px);
     max-width: calc(100% - 4px);
+    overflow-x: hidden;
   }
 `;
 
@@ -1108,19 +1109,28 @@ const InspectionHeader = styled.div`
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
   z-index: 1;
+
+  > div:first-child {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
 
   @media (max-width: 768px) {
     padding: 16px 20px;
     gap: 12px;
+    width: 100%;
+    max-width: 100%;
   }
 
   @media (max-width: 480px) {
-    padding: 12px 16px;
+    padding: 12px;
     gap: 8px;
     flex-direction: column;
+    width: 100%;
+    max-width: 100%;
     align-items: stretch;
   }
 `;
@@ -1150,25 +1160,30 @@ const InspectionControls = styled.div`
   flex-wrap: nowrap;
   min-width: 0;
   max-width: 100%;
-  width: 100%;
+  width: auto;
   box-sizing: border-box;
+  overflow: hidden;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     gap: 8px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     width: 100%;
+    max-width: 100%;
   }
 
   @media (max-width: 480px) {
     gap: 6px;
     width: 100%;
+    max-width: 100%;
     justify-content: stretch;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
   > * {
     min-width: 0;
     flex-shrink: 1;
+    max-width: 100%;
 
     @media (max-width: 480px) {
       flex: 1;
@@ -1183,6 +1198,18 @@ const DropdownContainer = styled.div`
   display: flex;
   align-items: center;
   z-index: 10000;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    flex: 1 1 100%;
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const DropdownButton = styled.button`
@@ -1218,10 +1245,29 @@ const DropdownButton = styled.button`
   @media (max-width: 480px) {
     min-width: 0;
     flex: 1;
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 12px;
     gap: 4px;
     max-width: 100%;
+    width: 100%;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+    }
+    
+    svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
   }
 
   span {
@@ -1402,12 +1448,21 @@ const NavigationPanel = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.3);
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   
   @media (max-width: 1200px) {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
     max-height: 300px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 100%;
   }
 `;
 
@@ -1416,6 +1471,16 @@ const NavigationHeader = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.6);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const NavigationTitle = styled.h4`
@@ -1460,16 +1525,57 @@ const ProgressSummary = styled.div`
   border-radius: 8px;
   font-size: 12px;
   border: 1px solid rgba(55, 136, 216, 0.2);
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 `;
 
 const SectionNavigationControls = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   padding: 12px 16px;
   background: rgba(248, 250, 252, 0.8);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 12px;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+  }
+`;
+
+const SectionButtonsRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+
+  @media (max-width: 480px) {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+  }
 `;
 
 const SectionNavigationButton = styled.button`
@@ -1488,6 +1594,11 @@ const SectionNavigationButton = styled.button`
   box-shadow: 
     0 2px 8px rgba(55, 136, 216, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  justify-content: center;
   
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -1523,10 +1634,23 @@ const SectionNavigationButton = styled.button`
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
       0 0 0 2px rgba(55, 136, 216, 0.2);
   }
+
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 11px;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+  }
 `;
 
 const SectionCounter = styled.div`
-  flex: 1;
   text-align: center;
   font-size: 12px;
   font-weight: 600;
@@ -1536,11 +1660,35 @@ const SectionCounter = styled.div`
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 11px;
+    margin-top: 0;
+  }
 `;
 
 const SectionsNavigation = styled.div`
   padding: 16px;
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+
+  @media (max-width: 480px) {
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const SectionNavItem = styled.div`
@@ -1554,6 +1702,11 @@ const SectionNavItem = styled.div`
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   
   ${props => props.active ? css`
     background: linear-gradient(135deg, #3788d8, #2c3e50);
@@ -1575,12 +1728,41 @@ const SectionNavItem = styled.div`
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
   `}
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    margin: 4px;
+    width: 100%;
+    max-width: 100%;
+    
+    ${props => props.active ? css`
+      transform: translateX(2px);
+    ` : css`
+      &:hover {
+        transform: translateX(1px);
+      }
+    `}
+  }
 `;
 
 const SectionTitle2 = styled.div`
   font-weight: 600;
   font-size: 14px;
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
 `;
 
 const SectionScore = styled.div`
@@ -1678,7 +1860,7 @@ const QuestionsContent = styled.div`
   }
 
   @media (max-width: 480px) {
-    padding: 12px 16px;
+    padding: 12px;
     width: 100%;
     max-width: 100%;
   }
@@ -1789,10 +1971,14 @@ const QuestionBadges = styled.div`
   align-items: center;
   flex-shrink: 0;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 480px) {
     gap: 4px;
     flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
   }
 `;
 
@@ -1833,6 +2019,20 @@ const ScoreBadge = styled.div`
   white-space: nowrap;
   flex-shrink: 0;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 3px;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+  }
 
   @media (max-width: 768px) {
     padding: 5px 10px;
@@ -2606,11 +2806,16 @@ const CommentTextarea = styled.textarea`
   min-height: 80px;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
 
   @media (max-width: 768px) {
     padding: 10px;
     font-size: 13px;
     min-height: 70px;
+    width: 100%;
+    max-width: 100%;
   }
 
   @media (max-width: 480px) {
@@ -2618,6 +2823,8 @@ const CommentTextarea = styled.textarea`
     font-size: 13px;
     min-height: 60px;
     border-radius: 6px;
+    width: 100%;
+    max-width: 100%;
   }
 
   &:focus {
@@ -2648,6 +2855,7 @@ const CommentSubmitButton = styled.button`
   font-size: 14px;
   white-space: nowrap;
   flex-shrink: 0;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     padding: 10px 16px;
@@ -2658,6 +2866,8 @@ const CommentSubmitButton = styled.button`
   @media (max-width: 480px) {
     padding: 10px 16px;
     font-size: 13px;
+    width: 100%;
+    justify-content: center;
     width: 100%;
     justify-content: center;
     border-radius: 6px;
@@ -2765,6 +2975,8 @@ const ModalOverlay = styled.div`
   z-index: 10000;
   backdrop-filter: blur(8px);
   animation: ${fadeIn} 0.3s ease-out;
+  overflow: hidden;
+  overscroll-behavior: contain;
 `;
 
 const ModalContent = styled.div`
@@ -2775,19 +2987,24 @@ const ModalContent = styled.div`
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
   animation: ${fadeIn} 0.3s ease-out;
   margin: 20px;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 768px) {
-    padding: 24px;
+    padding: 20px;
     border-radius: 16px;
-    width: 95%;
+    width: calc(100% - 32px);
     max-width: none;
-    margin: 10px;
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+    padding-bottom: 20px;
   }
 
   @media (max-width: 480px) {
@@ -2795,7 +3012,8 @@ const ModalContent = styled.div`
     border-radius: 12px;
     width: calc(100% - 20px);
     margin: 10px;
-    max-height: 85vh;
+    max-height: calc(100vh - 20px);
+    padding-bottom: 16px;
   }
 `;
 
@@ -2803,9 +3021,15 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
   border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -2889,6 +3113,8 @@ const SignatureCanvas = styled.div`
   cursor: ${props => props.clickable ? 'pointer' : 'default'};
   transition: all 0.3s ease;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  min-height: 0;
   
   &:hover {
     border-color: ${props => props.clickable ? '#3788d8' : '#e5e7eb'};
@@ -2900,6 +3126,23 @@ const SignatureCanvas = styled.div`
     border-radius: 8px;
     background: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    height: auto;
+    
+    @media (max-width: 480px) {
+      width: 100% !important;
+      height: 150px !important;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
   }
 `;
 
@@ -2908,6 +3151,12 @@ const SignatureActions = styled.div`
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  margin-top: auto;
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const SignatureButton = styled.button`
@@ -3973,6 +4222,32 @@ const UserTaskDetail = () => {
       ctx.lineCap = 'round';
     }
   }, [showSignatureModal, signatureMethod]);
+
+  // Lock body scroll when signature modal is open
+  useEffect(() => {
+    if (showSignatureModal) {
+      // Save current body overflow style
+      const originalOverflow = window.getComputedStyle(document.body).overflow;
+      const originalPosition = window.getComputedStyle(document.body).position;
+      const originalWidth = window.getComputedStyle(document.body).width;
+      const scrollY = window.scrollY;
+      
+      // Lock body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${scrollY}px`;
+      
+      return () => {
+        // Restore original body styles
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = originalWidth;
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [showSignatureModal]);
 
   // Periodic save function to backup time data (define BEFORE useEffect)
   const saveTimeToBackend = useCallback(async () => {
@@ -5898,52 +6173,55 @@ const UserTaskDetail = () => {
             {/* Section Navigation Controls */}
             {currentPage && currentPage.sections && currentPage.sections.length > 1 && (
               <SectionNavigationControls ref={sectionNavigationRef}>
-                {/* Previous Section Button */}
-                <SectionNavigationButton
-                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
-                  onClick={() => {
-                    const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
-                    if (currentIndex > 0) {
-                      const prevSection = currentPage.sections[currentIndex - 1];
-                      const prevSectionId = prevSection.id || prevSection._id;
-                      setSelectedSection(prevSectionId);
-                      // Announce navigation for screen readers
-                      setTimeout(() => {
-                        console.log(`Navigated to section: ${prevSection.name}`);
-                      }, 100);
-                    }
-                  }}
-                  aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
-                >
-                  <ChevronLeft size={14} />
-                  {t('tasks.previousSection')}
-                </SectionNavigationButton>
+                {/* Previous and Next Buttons Row */}
+                <SectionButtonsRow>
+                  {/* Previous Section Button */}
+                  <SectionNavigationButton
+                    disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
+                    onClick={() => {
+                      const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+                      if (currentIndex > 0) {
+                        const prevSection = currentPage.sections[currentIndex - 1];
+                        const prevSectionId = prevSection.id || prevSection._id;
+                        setSelectedSection(prevSectionId);
+                        // Announce navigation for screen readers
+                        setTimeout(() => {
+                          console.log(`Navigated to section: ${prevSection.name}`);
+                        }, 100);
+                      }
+                    }}
+                    aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
+                  >
+                    <ChevronLeft size={14} />
+                    {t('tasks.previousSection')}
+                  </SectionNavigationButton>
+
+                  {/* Next Section Button */}
+                  <SectionNavigationButton
+                    disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
+                    onClick={() => {
+                      const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
+                      if (currentIndex < currentPage.sections.length - 1) {
+                        const nextSection = currentPage.sections[currentIndex + 1];
+                        const nextSectionId = nextSection.id || nextSection._id;
+                        setSelectedSection(nextSectionId);
+                        // Announce navigation for screen readers
+                        setTimeout(() => {
+                          console.log(`Navigated to section: ${nextSection.name}`);
+                        }, 100);
+                      }
+                    }}
+                    aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
+                  >
+                    {t('tasks.nextSection')}
+                    <ChevronRight size={14} />
+                  </SectionNavigationButton>
+                </SectionButtonsRow>
 
                 {/* Section Counter */}
                 <SectionCounter aria-live="polite">
                   {t('tasks.section')} {currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1} {t('common.of')} {currentPage.sections.length}
                 </SectionCounter>
-
-                {/* Next Section Button */}
-                <SectionNavigationButton
-                  disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
-                  onClick={() => {
-                    const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
-                    if (currentIndex < currentPage.sections.length - 1) {
-                      const nextSection = currentPage.sections[currentIndex + 1];
-                      const nextSectionId = nextSection.id || nextSection._id;
-                      setSelectedSection(nextSectionId);
-                      // Announce navigation for screen readers
-                      setTimeout(() => {
-                        console.log(`Navigated to section: ${nextSection.name}`);
-                      }, 100);
-                    }
-                  }}
-                  aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
-                >
-                  {t('tasks.nextSection')}
-                  <ChevronRight size={14} />
-                </SectionNavigationButton>
               </SectionNavigationControls>
             )}
 
@@ -7331,12 +7609,12 @@ const UserTaskDetail = () => {
               </CloseButton>
             </ModalHeader>
 
-            <div>
-              <p style={{ marginBottom: '20px', color: '#64748b', fontSize: '14px' }}>
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <p style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px', flexShrink: 0 }}>
                 {t('tasks.pleaseProvideSignature')}
               </p>
 
-              <SignatureTabs>
+              <SignatureTabs style={{ flexShrink: 0 }}>
                 <SignatureTab
                   active={signatureMethod === 'draw'}
                   onClick={() => setSignatureMethod('draw')}
@@ -7355,8 +7633,14 @@ const UserTaskDetail = () => {
                 <SignatureCanvas>
                   <canvas
                     ref={signatureCanvasRef}
-                    width="500"
-                    height="200"
+                    width={typeof window !== 'undefined' && window.innerWidth <= 480 ? 350 : 500}
+                    height={typeof window !== 'undefined' && window.innerWidth <= 480 ? 150 : 200}
+                    style={{
+                      width: '100%',
+                      maxWidth: '100%',
+                      height: typeof window !== 'undefined' && window.innerWidth <= 480 ? '150px' : '200px',
+                      touchAction: 'none'
+                    }}
                     onMouseDown={handleStartDrawing}
                     onMouseMove={handleDrawing}
                     onMouseUp={handleStopDrawing}

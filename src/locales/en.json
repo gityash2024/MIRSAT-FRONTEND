@@ -731,7 +731,20 @@
     "unknownUser": "Unknown User",
     "apply": "Apply",
     "selectDateRange": "Select date range",
-    "dateRange": "Date Range"
+    "dateRange": "Date Range",
+    "searchPlaceholder": "Search...",
+    "allTemplates": "All Templates",
+    "allAssets": "All Assets",
+    "allInspectors": "All Inspectors",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "results": "results",
+    "nonCompliant": "Non-compliant",
+    "flaggedAt": "Flagged At",
+    "failedToLoadFlaggedItems": "Failed to load flagged items",
+    "failedToLoadFilterOptions": "Failed to load filter options",
+    "exportFunctionalityComingSoon": "Export functionality coming soon",
+    "filters": "Filters"
   },
   "auth": {
     "heading": "Marine services made easier and faster.",
@@ -819,7 +832,11 @@
     "avgDurationMin": "Avg Duration (min)",
     "inspections": "Inspections",
     "late": "Late",
-    "pending": "Pending"
+    "pending": "Pending",
+    "question": "Question",
+    "response": "Response",
+    "noFlaggedItems": "No Flagged Items",
+    "noFlaggedItemsDescription": "There are no flagged items matching your filters."
   },
   "inspections": {
     "title": "Templates",
@@ -989,6 +1006,7 @@
     "updateTask": "Update Inspection",
     "updateTaskDetailsAndInformation": "Update task details and information",
     "deleteTask": "Delete Inspection",
+    "viewPreTemplateQuestions": "View pre-template questions",
     "refreshedSuccessfully": "Inspections refreshed successfully",
     "markComplete": "Mark Complete",
     "reassignTask": "Reassign Task",

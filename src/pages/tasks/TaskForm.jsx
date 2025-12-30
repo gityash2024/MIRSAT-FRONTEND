@@ -46,7 +46,8 @@ const TaskForm = ({ initialData = {}, onCancel, submitButtonText = 'Create Task'
       dispatch(fetchUsers());
     }
     if (inspectionLevels?.length === 0 && inspectionLevelsProp.length === 0) {
-      dispatch(fetchInspectionLevels());
+      // Fetch all templates for dropdown (use high limit to get all)
+      dispatch(fetchInspectionLevels({ limit: 10000, status: 'active' }));
     }
     if (assets?.length === 0) {
       dispatch(fetchAllAssetsForDropdown());

@@ -395,7 +395,7 @@ export const generateTaskPDF = async (taskData) => {
       });
       yPosition += 15;
 
-      processedTaskData.preInspectionQuestions.forEach((question, index) => {
+      for (const [index, question] of processedTaskData.preInspectionQuestions.entries()) {
         checkNewPage(30);
 
         const questionId = question._id?.toString() || question.id?.toString();
@@ -434,6 +434,9 @@ export const generateTaskPDF = async (taskData) => {
         yPosition += 8;
 
         let responseText = '';
+        let isImageResponse = false;
+        let imageData = null;
+        
         if (response !== null && response !== undefined) {
           if (Array.isArray(response)) {
             responseText = response.join(', ');
@@ -441,11 +444,28 @@ export const generateTaskPDF = async (taskData) => {
             const responseStr = String(response);
 
             if (responseStr.startsWith('data:image/')) {
+              // Store image data for embedding
+              imageData = responseStr;
+              isImageResponse = true;
               responseText = 'Image uploaded';
             } else if (responseStr.startsWith('data:')) {
               responseText = 'File uploaded';
             } else if (responseStr.length > 100 && /^[A-Za-z0-9+/=]+$/.test(responseStr)) {
               responseText = 'File uploaded';
+            } else if (responseStr.startsWith('http://') || responseStr.startsWith('https://')) {
+              // Try to fetch image from URL
+              try {
+                const fetchedData = await fetchImage(responseStr);
+                if (fetchedData && fetchedData.startsWith('data:image/')) {
+                  imageData = fetchedData;
+                  isImageResponse = true;
+                  responseText = 'Image uploaded';
+                } else {
+                  responseText = `Image: ${responseStr}`;
+                }
+              } catch (error) {
+                responseText = `Image: ${responseStr}`;
+              }
             } else {
               responseText = responseStr;
             }
@@ -459,8 +479,43 @@ export const generateTaskPDF = async (taskData) => {
           fontStyle: 'normal',
           color: colors.text
         });
-        yPosition += 15;
-      });
+        yPosition += 8;
+
+        // Embed small image inline if available
+        if (isImageResponse && imageData) {
+          try {
+            // Fetch if URL
+            let finalImageData = imageData;
+            if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+              const fetchedData = await fetchImage(imageData);
+              if (fetchedData && fetchedData.startsWith('data:image/')) {
+                finalImageData = fetchedData;
+              }
+            }
+            
+            // Small inline image next to text
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = finalImageData;
+            });
+            
+            // Small image size (40x30)
+            const imgWidth = 40;
+            const imgHeight = 30;
+            
+            // Add image inline after the response text
+            doc.addImage(finalImageData, 'PNG', margin + 15, yPosition - 5, imgWidth, imgHeight);
+            yPosition += 8;
+          } catch (error) {
+            console.warn('Error embedding image in PDF:', error);
+            yPosition += 7;
+          }
+        } else {
+          yPosition += 7;
+        }
+      }
 
       yPosition += 10;
     }
@@ -585,7 +640,7 @@ export const generateTaskPDF = async (taskData) => {
       });
 
       // Add questions to PDF
-      Object.entries(categories).forEach(([category, questions]) => {
+      for (const [category, questions] of Object.entries(categories)) {
         checkNewPage(50);
 
         addText(category, margin, yPosition, {
@@ -595,8 +650,13 @@ export const generateTaskPDF = async (taskData) => {
         });
         yPosition += 10;
 
-        const tableData = questions.map(question => {
+        // Process questions and store image data for inline rendering
+        const imageDataMap = new Map();
+        const tableData = questions.map((question, qIndex) => {
           let responseText = '';
+          let hasImage = false;
+          let imageData = null;
+          
           if (question.response !== null && question.response !== undefined) {
             if (Array.isArray(question.response)) {
               responseText = question.response.join(', ');
@@ -604,11 +664,17 @@ export const generateTaskPDF = async (taskData) => {
               const responseStr = String(question.response);
 
               if (responseStr.startsWith('data:image/')) {
-                responseText = 'Image uploaded';
+                hasImage = true;
+                imageData = responseStr;
+                responseText = 'Image'; // Simple text, image will be shown inline
               } else if (responseStr.startsWith('data:')) {
                 responseText = 'File uploaded';
               } else if (responseStr.length > 100 && /^[A-Za-z0-9+/=]+$/.test(responseStr)) {
                 responseText = 'File uploaded';
+              } else if (responseStr.startsWith('http://') || responseStr.startsWith('https://')) {
+                hasImage = true;
+                imageData = responseStr;
+                responseText = 'Image'; // Simple text, image will be shown inline
               } else {
                 responseText = responseStr;
               }
@@ -621,6 +687,11 @@ export const generateTaskPDF = async (taskData) => {
             (question.isScorable && question.max > 0) ? `${question.earned}/${question.max}` :
               'N/A';
 
+          // Store image data with row index for inline rendering
+          if (hasImage && imageData) {
+            imageDataMap.set(qIndex, imageData);
+          }
+
           return [
             question.text,
             responseText,
@@ -628,8 +699,41 @@ export const generateTaskPDF = async (taskData) => {
           ];
         });
 
+        const finalY = doc.lastAutoTable?.finalY || yPosition;
+        
+        // Preload all images before drawing table
+        const preloadedImages = new Map();
+        for (const [rowIndex, imageData] of imageDataMap.entries()) {
+          try {
+            let finalImageData = imageData;
+            
+            // Fetch if URL
+            if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+              const fetchedData = await fetchImage(imageData);
+              if (fetchedData && fetchedData.startsWith('data:image/')) {
+                finalImageData = fetchedData;
+              } else {
+                continue; // Skip if fetch fails
+              }
+            }
+            
+            // Preload image to ensure it's ready
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = finalImageData;
+            });
+            
+            preloadedImages.set(rowIndex, finalImageData);
+          } catch (error) {
+            console.warn(`Error preloading image for row ${rowIndex}:`, error);
+            // Skip this image
+          }
+        }
+        
         doc.autoTable({
-          startY: yPosition,
+          startY: finalY,
           head: [['Question', 'Response', 'Score']],
           body: tableData,
           theme: 'grid',
@@ -640,15 +744,16 @@ export const generateTaskPDF = async (taskData) => {
           },
           bodyStyles: {
             textColor: colors.text,
-            fontSize: 9
+            fontSize: 9,
+            cellPadding: 3
           },
           styles: {
-            font: 'helvetica', // Default to Helvetica
+            font: 'helvetica',
             fontStyle: 'normal'
           },
           columnStyles: {
             0: { cellWidth: 80 },
-            1: { cellWidth: 60 },
+            1: { cellWidth: 60, cellPadding: { top: 8, bottom: 8, left: 3, right: 3 } }, // Extra padding for images
             2: { cellWidth: 20 }
           },
           margin: { left: margin, right: margin },
@@ -663,28 +768,37 @@ export const generateTaskPDF = async (taskData) => {
               }
               data.cell.styles.halign = 'right';
             }
+          },
+          didDrawCell: function (data) {
+            // Draw images inline in response column (column index 1)
+            if (data.column.index === 1 && preloadedImages.has(data.row.index)) {
+              try {
+                const imageData = preloadedImages.get(data.row.index);
+                if (!imageData) return;
+                
+                // Small image size to fit in cell (30x20 for compact display)
+                const imgWidth = 30;
+                const imgHeight = 20;
+                
+                // Center image in cell
+                const x = data.cell.x + (data.cell.width / 2) - (imgWidth / 2);
+                const y = data.cell.y + 2; // Small offset from top
+                
+                // Add image to PDF
+                doc.addImage(imageData, 'PNG', x, y, imgWidth, imgHeight);
+              } catch (error) {
+                console.warn('Error drawing image in cell:', error);
+                // If image fails, the text "Image" will still show
+              }
+            }
           }
         });
-        yPosition += 20;
-      });
+        
+        yPosition = doc.lastAutoTable.finalY + 20;
+      }
     }
 
-    // Helper to fetch image and convert to base64
-    const fetchImage = async (url) => {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (error) {
-        console.warn('Error fetching image:', error);
-        return null;
-      }
-    };
+    // fetchImage helper is now defined at the top of the function
 
     // Signature section
     if (processedTaskData.signature || processedTaskData.signedBy) {

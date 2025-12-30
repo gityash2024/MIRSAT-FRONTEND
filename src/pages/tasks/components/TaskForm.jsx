@@ -17,6 +17,7 @@ import { fetchAssets, fetchAllAssetsForDropdown } from '../../../store/slices/as
 import { fetchQuestionLibrary } from '../../../store/slices/questionLibrarySlice';
 import { v4 as uuidv4 } from 'uuid';
 import FrontendLogger from '../../../services/frontendLogger.service';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const Form = styled.form`
   display: grid;
@@ -661,6 +662,9 @@ const QuestionItem = styled.div`
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 
   @media (max-width: 480px) {
     padding: 12px;
@@ -670,23 +674,50 @@ const QuestionItem = styled.div`
 
 const QuestionText = styled.div`
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  /* Make room for delete button - adjust based on direction */
+  padding-right: ${props => props.dir === 'rtl' ? '16px' : '50px'};
+  padding-left: ${props => props.dir === 'rtl' ? '50px' : '16px'};
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+  /* Support for RTL languages like Arabic */
+  direction: ${props => props.dir || 'auto'};
+  text-align: ${props => props.dir === 'rtl' ? 'right' : 'left'};
+
+  /* Ensure text wraps properly and takes available space */
+  > span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 100px); /* Reserve space for badge and delete button */
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
 
   @media (max-width: 480px) {
-    margin-bottom: 10px;
     font-size: 13px;
+    padding-right: ${props => props.dir === 'rtl' ? '12px' : '45px'};
+    padding-left: ${props => props.dir === 'rtl' ? '45px' : '12px'};
+    
+    > span:first-child {
+      max-width: calc(100% - 90px);
+    }
   }
 `;
 
 const QuestionType = styled.div`
   font-size: 12px;
   color: #64748b;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -709,9 +740,18 @@ const QuestionOption = styled.div`
 const QuestionActions = styled.div`
   position: absolute;
   top: 16px;
-  right: 16px;
+  right: ${props => props.dir === 'rtl' ? 'auto' : '16px'};
+  left: ${props => props.dir === 'rtl' ? '16px' : 'auto'};
   display: flex;
   gap: 8px;
+  z-index: 10; /* Ensure button is above text */
+  flex-shrink: 0; /* Prevent button from shrinking */
+
+  @media (max-width: 480px) {
+    top: 12px;
+    right: ${props => props.dir === 'rtl' ? 'auto' : '12px'};
+    left: ${props => props.dir === 'rtl' ? '12px' : 'auto'};
+  }
 `;
 
 const LibrarySelector = styled.div`
@@ -803,11 +843,21 @@ const LibraryItemType = styled.div`
 const RequiredBadge = styled.span`
   background: ${props => props.required ? '#e3f2fd' : '#f3f4f6'};
   color: ${props => props.required ? '#0277bd' : '#9ca3af'};
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0; /* Prevent badge from shrinking */
+  white-space: nowrap; /* Keep badge text on one line */
+  display: inline-flex; /* Use inline-flex for better alignment */
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  line-height: 1;
+  min-width: fit-content;
+  max-width: fit-content;
+  box-sizing: border-box;
+  /* Don't add margin, let gap handle spacing */
 `;
 
 const AddQuestionButton = styled.button`
@@ -857,8 +907,9 @@ const PreInspectionQuestions = ({
   initialQuestions = [],
   isEditMode = false
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
+  const { isRTL } = useLanguage();
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
   
@@ -1467,12 +1518,18 @@ const PreInspectionQuestions = ({
         </EmptyState>
       ) : (
         <QuestionList>
-          {questions.map((question, index) => (
+          {questions.map((question, index) => {
+            // Use UI language direction, not question text content
+            // In English (LTR): badge and delete always on right
+            // In Arabic (RTL): badge and delete always on left
+            const textDirection = isRTL ? 'rtl' : 'ltr';
+            
+            return (
             <QuestionItem key={index}>
-              <QuestionText>
-                {question.text}
-                <RequiredBadge required={question.required}>
-                  {question.required ? t('common.required') : t('common.optional')}
+              <QuestionText dir={textDirection}>
+                <span>{question.text}</span>
+                <RequiredBadge required={question.required !== false}>
+                  {question.required !== false ? t('common.required') : t('common.optional')}
                 </RequiredBadge>
               </QuestionText>
               <QuestionType>
@@ -1487,13 +1544,14 @@ const PreInspectionQuestions = ({
                 </QuestionOptions>
               )}
 
-              <QuestionActions>
+              <QuestionActions dir={textDirection}>
                 <IconButton type="button" onClick={(e) => handleRemoveQuestion(index, e)}>
                   <Trash2 size={16} />
                 </IconButton>
               </QuestionActions>
             </QuestionItem>
-          ))}
+            );
+          })}
         </QuestionList>
       )}
 
@@ -1976,7 +2034,8 @@ const TaskForm = ({
 
       if (!fetchInitiated) {
         sessionStorage.setItem(localStorageKey, 'true');
-        dispatch(fetchInspectionLevels())
+        // Fetch all templates for dropdown (use high limit to get all)
+        dispatch(fetchInspectionLevels({ limit: 10000, status: 'active' }))
           .unwrap()
           .catch(error => {
             console.error('Error fetching inspection levels:', error);

@@ -9,6 +9,7 @@ import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 
 import Dashboard from '../pages/Dashboard';
+import FlaggedItems from '../pages/flaggedItems/FlaggedItems';
 import Notifications from '../pages/notifications';
 
 import Tasks from '../pages/tasks';
@@ -91,6 +92,7 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/flagged-items" element={<FlaggedItems />} />
           
           <Route path="/tasks" element={<Tasks />}>
             <Route index element={<TaskList />} />

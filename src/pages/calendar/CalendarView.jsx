@@ -652,7 +652,8 @@ const CalendarView = () => {
   useEffect(() => {
     // Fetch necessary data when component mounts
     dispatch(fetchUsers());
-    dispatch(fetchInspectionLevels());
+    // Fetch all templates for dropdown (use high limit to get all)
+    dispatch(fetchInspectionLevels({ limit: 10000, status: 'active' }));
     dispatch(fetchAssets());
     loadEvents();
   }, [dispatch, filters, pagination.page, pagination.limit]);

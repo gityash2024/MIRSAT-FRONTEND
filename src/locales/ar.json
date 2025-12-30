@@ -647,7 +647,20 @@
     "option3": "الخيار 3",
     "option": "الخيار",
     "selectDateRange": "حدد نطاق التاريخ",
-    "dateRange": "نطاق التاريخ"
+    "dateRange": "نطاق التاريخ",
+    "searchPlaceholder": "بحث...",
+    "allTemplates": "جميع القوالب",
+    "allAssets": "جميع الأصول",
+    "allInspectors": "جميع المفتشين",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "results": "نتائج",
+    "nonCompliant": "غير متوافق",
+    "flaggedAt": "تم التمييز في",
+    "failedToLoadFlaggedItems": "فشل تحميل العناصر المميزة",
+    "failedToLoadFilterOptions": "فشل تحميل خيارات التصفية",
+    "exportFunctionalityComingSoon": "وظيفة التصدير قريباً",
+    "filters": "مرشحات"
   },
   "auth": {
     "heading": "خدمات بحرية أسهل وأسرع.",
@@ -735,7 +748,11 @@
     "avgDurationMin": "متوسط ​​المدة (دقيقة)",
     "inspections": "التفتيشات",
     "late": "متأخر",
-    "pending": "قيد الانتظار"
+    "pending": "قيد الانتظار",
+    "question": "السؤال",
+    "response": "الاستجابة",
+    "noFlaggedItems": "لا توجد عناصر مميزة",
+    "noFlaggedItemsDescription": "لا توجد عناصر مميزة تطابق المرشحات الخاصة بك."
   },
   "inspections": {
     "title": "قوالب",
@@ -904,6 +921,7 @@
     "updateTask": "تحديث التفتيش",
     "updateTaskDetailsAndInformation": "تحديث تفاصيل ومعلومات المهمة",
     "deleteTask": "حذف التفتيش",
+    "viewPreTemplateQuestions": "عرض أسئلة ما قبل القالب",
     "refreshedSuccessfully": "تم تحديث التفتيشات بنجاح",
     "markComplete": "وضع علامة مكتمل",
     "reassignTask": "إعادة تعيين المهمة",

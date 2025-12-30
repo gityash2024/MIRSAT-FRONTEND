@@ -157,7 +157,8 @@ const TaskEdit = () => {
       await Promise.all([
         dispatch(getTaskById(taskId)).unwrap(),
         dispatch(fetchUsers()).unwrap(),
-        dispatch(fetchInspectionLevels()).unwrap(),
+        // Fetch all templates for dropdown (use high limit to get all)
+        dispatch(fetchInspectionLevels({ limit: 10000, status: 'active' })).unwrap(),
         dispatch(fetchAssets()).unwrap()
       ]);
     } catch (error) {

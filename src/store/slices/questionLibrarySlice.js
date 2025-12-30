@@ -28,7 +28,8 @@ export const addQuestionToLibrary = createAsyncThunk(
         text: questionData.text,
         answerType: questionData.answerType,
         options: questionData.options || [],
-        required: questionData.required !== undefined ? questionData.required : true
+        required: questionData.required !== undefined ? questionData.required : true,
+        requirementType: questionData.requirementType || 'mandatory'
       };
       
       // If we're updating an existing question, include the ID
