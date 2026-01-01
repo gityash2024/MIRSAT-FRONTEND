@@ -2,6 +2,7 @@ import api from './api';
 import { toast } from 'react-hot-toast';
 import { downloadTaskPDF } from './pdfGenerator';
 import FrontendLogger from './frontendLogger.service';
+import { validateFileSizeWithToast, handleFileSizeError } from '../utils/fileValidation';
 
 export const userTaskService = {
   // Get user dashboard statistics
@@ -85,16 +86,29 @@ export const userTaskService = {
 
   // Upload attachment for a task
   uploadTaskAttachment: async (taskId, file) => {
+    // Validate file size (900KB limit)
+    if (!validateFileSizeWithToast(file, toast)) {
+      throw new Error('File size exceeds 900 KB limit');
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await api.post(`/tasks/${taskId}/attachments`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    try {
+      const response = await api.post(`/tasks/${taskId}/attachments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      // Handle 413 Content Too Large error
+      if (handleFileSizeError(error, toast)) {
+        throw new Error('File size exceeds 900 KB limit');
       }
-    });
-    
-    return response.data;
+      throw error;
+    }
   },
   
   exportTaskReport: async (taskId, format = 'excel', fileName = null, taskData = null) => {

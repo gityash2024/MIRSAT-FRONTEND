@@ -1956,6 +1956,13 @@ const TaskForm = ({
     const file = event.target.files[0];
     if (!file) return;
 
+    // Validate file size (900KB limit) before upload
+    const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
+    if (!validateFileSizeWithToast(file, toast, t)) {
+      event.target.value = '';
+      return;
+    }
+
     try {
       setIsUploading(true);
 
@@ -1982,7 +1989,14 @@ const TaskForm = ({
     } catch (error) {
       console.error('Error uploading file:', error);
       console.error('Upload error details:', error.message);
-      toast.error(t('tasks.errorUploadingFile'));
+      
+      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
+      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
+      const isNetworkError = !error.response && error.request;
+      
+      // if (!isServerError && !isNetworkError) {
+      //   toast.error(t('tasks.errorUploadingFile'));
+      // }
     } finally {
       setIsUploading(false);
       // Reset the file input

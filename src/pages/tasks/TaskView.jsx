@@ -963,14 +963,34 @@ const TaskView = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    // Validate file sizes (900KB limit) before upload
+    const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
+    let hasInvalidFile = false;
+    
+    for (let i = 0; i < files.length; i++) {
+      if (!validateFileSizeWithToast(files[i], toast, t)) {
+        hasInvalidFile = true;
+      }
+    }
+    
+    if (hasInvalidFile) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
     try {
       setUploadingFile(true);
       console.log('Uploading files:', files.length);
 
-      await dispatch(uploadTaskAttachment({
-        id: taskId,
-        files
-      })).unwrap();
+      // Upload files one by one (since uploadTaskAttachment expects a single file)
+      for (let i = 0; i < files.length; i++) {
+        await dispatch(uploadTaskAttachment({
+          id: taskId,
+          file: files[i]
+        })).unwrap();
+      }
 
       // Refresh task data to show the new attachment
       dispatch(getTaskById(taskId));
@@ -978,7 +998,14 @@ const TaskView = () => {
 
     } catch (error) {
       console.error('Error uploading files:', error);
-      toast.error('Failed to upload files. Please try again.');
+      
+      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
+      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
+      const isNetworkError = !error.response && error.request;
+      
+      if (!isServerError && !isNetworkError) {
+        toast.error('Failed to upload files. Please try again.');
+      }
     } finally {
       setUploadingFile(false);
       // Clear the file input

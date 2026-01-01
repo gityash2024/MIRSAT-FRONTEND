@@ -1275,6 +1275,7 @@
     "timerStarted": "Timer started",
     "timerStopped": "Timer stopped",
     "fileSizeShouldBeLessThan5MB": "File size should be less than 5MB",
+    "fileSizeExceedsLimit": "File size exceeds the maximum allowed size of 900 KB. Please choose a smaller file.",
     "onlyJpgPngGifAllowed": "Only JPG, PNG and GIF images are allowed",
     "uploadingFile": "Uploading file...",
     "failedToUploadFile": "Failed to upload file",

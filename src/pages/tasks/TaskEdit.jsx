@@ -163,7 +163,7 @@ const TaskEdit = () => {
       ]);
     } catch (error) {
       console.error('Error loading task data:', error);
-      toast.error(t('tasks.failedToLoadTaskData'));
+      // toast.error(t('tasks.failedToLoadTaskData'));
       navigate('/tasks');
     }
   };

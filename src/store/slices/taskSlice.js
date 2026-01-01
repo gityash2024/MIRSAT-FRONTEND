@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
+import { validateFileSizeWithToast, handleFileSizeError } from '../../utils/fileValidation';
 
 const initialState = {
   tasks: [],
@@ -109,6 +110,11 @@ export const uploadTaskAttachment = createAsyncThunk(
         throw new Error('No file provided');
       }
 
+      // Validate file size (900KB limit)
+      if (!validateFileSizeWithToast(file, toast)) {
+        return rejectWithValue({ message: 'File size exceeds 900 KB limit' });
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -132,8 +138,24 @@ export const uploadTaskAttachment = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error('Upload error in thunk:', error);
+      
+      // Handle 413 Content Too Large error
+      if (handleFileSizeError(error, toast)) {
+        return rejectWithValue({ message: 'File size exceeds 900 KB limit' });
+      }
+      
+      // Don't show error toast for server errors (5xx) - global interceptor already shows info toast
+      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
+      const isNetworkError = !error.response && error.request;
+      
+      if (!isServerError && !isNetworkError) {
+        const errorMsg = error.response?.data?.message || 'Error uploading file';
+        toast.error(errorMsg);
+        return rejectWithValue({ message: errorMsg });
+      }
+      
+      // For server/network errors, just reject without showing error toast
       const errorMsg = error.response?.data?.message || 'Error uploading file';
-      toast.error(errorMsg);
       return rejectWithValue({ message: errorMsg });
     }
   }

@@ -1190,6 +1190,7 @@
     "timerStarted": "تم بدء المؤقت",
     "timerStopped": "تم إيقاف المؤقت",
     "fileSizeShouldBeLessThan5MB": "يجب أن يكون حجم الملف أقل من 5 ميجابايت",
+    "fileSizeExceedsLimit": "يتجاوز حجم الملف الحد الأقصى المسموح به وهو 900 كيلوبايت. يرجى اختيار ملف أصغر.",
     "onlyJpgPngGifAllowed": "يُسمح فقط بصور JPG و PNG و GIF",
     "uploadingFile": "جاري رفع الملف...",
     "failedToUploadFile": "فشل رفع الملف",

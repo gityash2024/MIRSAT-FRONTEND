@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_CONFIG } from '../config/api';
+import { toast } from 'react-hot-toast';
 
 // Track pending requests to avoid duplicates
 const pendingRequests = new Map();
@@ -192,6 +193,35 @@ api.interceptors.response.use(
       
       // Attempt to retry with backoff
       return retryRequestWithBackoff(error);
+    }
+    
+    // Handle server errors (5xx) - show info toast without breaking existing flow
+    if (error.response?.status >= 500 && error.response?.status < 600) {
+      const status = error.response.status;
+      console.error(`Server error (${status}):`, error);
+      
+      // Show info toast message
+      toast('Please try again. Server seems to be busy.', { 
+        icon: 'ℹ️',
+        duration: 4000 
+      });
+      
+      // Still reject the error so existing error handling continues to work
+      return Promise.reject(error);
+    }
+    
+    // Handle network errors (no response) - could be server issues
+    if (!error.response && error.request) {
+      console.error('Network error - server may be unavailable:', error);
+      
+      // Show info toast message for network errors
+      toast('Please try again. Server seems to be busy.', { 
+        icon: 'ℹ️',
+        duration: 4000 
+      });
+      
+      // Still reject the error so existing error handling continues to work
+      return Promise.reject(error);
     }
     
     return Promise.reject(error);

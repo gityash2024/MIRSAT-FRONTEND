@@ -4791,13 +4791,23 @@ const UserTaskDetail = () => {
     setSignatureImage(null);
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file size (900KB limit) before processing
+    const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
+    if (!validateFileSizeWithToast(file, toast, t)) {
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       setSignatureImage(event.target.result);
+    };
+    reader.onerror = () => {
+      toast.error(t('tasks.failedToReadFile'));
     };
     reader.readAsDataURL(file);
   };
@@ -5351,6 +5361,13 @@ const UserTaskDetail = () => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
 
+                      // Validate file size (900KB limit) before processing
+                      const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
+                      if (!validateFileSizeWithToast(file, toast, t)) {
+                        e.target.value = '';
+                        return;
+                      }
+
                       // Convert file to base64 for storage
                       const reader = new FileReader();
                       reader.onload = (event) => {
@@ -5445,16 +5462,75 @@ const UserTaskDetail = () => {
                               canvas.height = video.videoHeight;
                               ctx.drawImage(video, 0, 0);
 
-                              canvas.toBlob(blob => {
-                                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                                const filename = `inspection-photo-${timestamp}.jpg`;
+                              // Function to process blob with size validation
+                              const processBlob = (blob, quality = 0.8) => {
+                                if (!blob) {
+                                  toast.error(t('tasks.failedToReadFile'));
+                                  stream.getTracks().forEach(track => track.stop());
+                                  document.body.removeChild(modal);
+                                  return;
+                                }
 
-                                onSaveResponse(questionId, filename);
-                                stream.getTracks().forEach(track => track.stop());
-                                document.body.removeChild(modal);
+                                // If blob is too large, reduce quality and try again
+                                if (blob.size > 900 * 1024) {
+                                  if (quality > 0.1) {
+                                    // Reduce quality and try again
+                                    canvas.toBlob((newBlob) => processBlob(newBlob, quality - 0.15), 'image/jpeg', quality - 0.15);
+                                    return;
+                                  } else {
+                                    // If still too large even at low quality, reduce canvas size
+                                    const maxDimension = 1200;
+                                    let newWidth = canvas.width;
+                                    let newHeight = canvas.height;
+                                    
+                                    if (newWidth > maxDimension || newHeight > maxDimension) {
+                                      const ratio = Math.min(maxDimension / newWidth, maxDimension / newHeight);
+                                      newWidth = Math.floor(newWidth * ratio);
+                                      newHeight = Math.floor(newHeight * ratio);
+                                      
+                                      const tempCanvas = document.createElement('canvas');
+                                      const tempCtx = tempCanvas.getContext('2d');
+                                      tempCanvas.width = newWidth;
+                                      tempCanvas.height = newHeight;
+                                      tempCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
+                                      
+                                      tempCanvas.toBlob((resizedBlob) => {
+                                        if (resizedBlob && resizedBlob.size <= 900 * 1024) {
+                                          processBlob(resizedBlob, 0.5);
+                                        } else {
+                                          toast(t('tasks.fileSizeExceedsLimit'), { icon: 'ℹ️' });
+                                          stream.getTracks().forEach(track => track.stop());
+                                          document.body.removeChild(modal);
+                                        }
+                                      }, 'image/jpeg', 0.5);
+                                      return;
+                                    } else {
+                                      toast(t('tasks.fileSizeExceedsLimit'), { icon: 'ℹ️' });
+                                      stream.getTracks().forEach(track => track.stop());
+                                      document.body.removeChild(modal);
+                                      return;
+                                    }
+                                  }
+                                }
+                                
+                                // Convert blob to base64
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64Data = event.target.result;
+                                  onSaveResponse(questionId, base64Data);
+                                  stream.getTracks().forEach(track => track.stop());
+                                  document.body.removeChild(modal);
+                                  toast.success(t('tasks.photoCapturedSuccessfully'));
+                                };
+                                reader.onerror = () => {
+                                  toast.error(t('tasks.failedToReadFile'));
+                                  stream.getTracks().forEach(track => track.stop());
+                                  document.body.removeChild(modal);
+                                };
+                                reader.readAsDataURL(blob);
+                              };
 
-                                toast.success(t('tasks.photoCapturedSuccessfully'));
-                              }, 'image/jpeg', 0.8);
+                              canvas.toBlob((blob) => processBlob(blob), 'image/jpeg', 0.8);
                             };
 
                             cancelBtn.onclick = () => {

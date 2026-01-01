@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { API_CONFIG } from '../config/api';
+import { validateFileSizeWithToast, handleFileSizeError } from '../utils/fileValidation';
+import { toast } from 'react-hot-toast';
 
 export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -12,6 +14,14 @@ export const useUpload = () => {
     try {
       setIsUploading(true);
       setProgress(0);
+      
+      // Validate file size (900KB limit)
+      if (!validateFileSizeWithToast(file, toast)) {
+        return {
+          success: false,
+          error: 'File size exceeds 900 KB limit'
+        };
+      }
       
       const formData = new FormData();
       formData.append('file', file);
@@ -34,6 +44,15 @@ export const useUpload = () => {
       };
     } catch (error) {
       console.error('Error uploading file:', error);
+      
+      // Handle 413 Content Too Large error
+      if (handleFileSizeError(error, toast)) {
+        return {
+          success: false,
+          error: 'File size exceeds 900 KB limit'
+        };
+      }
+      
       return {
         success: false,
         error: error.response?.data?.message || 'Failed to upload file'

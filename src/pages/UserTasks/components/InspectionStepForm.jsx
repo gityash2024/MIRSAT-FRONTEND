@@ -1479,15 +1479,21 @@ const InspectionStepForm = ({
     
     const file = e.target.files[0];
     
-    // Basic validation
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      toast.error(t('tasks.fileSizeShouldBeLessThan5MB'));
+    // Validate file size (900KB limit)
+    const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
+    if (!validateFileSizeWithToast(file, toast, t)) {
+      if (fileInputRefs.current[subLevelId]) {
+        fileInputRefs.current[subLevelId].value = '';
+      }
       return;
     }
     
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       toast.error(t('tasks.onlyJpgPngGifAllowed'));
+      if (fileInputRefs.current[subLevelId]) {
+        fileInputRefs.current[subLevelId].value = '';
+      }
       return;
     }
     
@@ -1524,7 +1530,14 @@ const InspectionStepForm = ({
     } catch (error) {
       toast.dismiss();
       console.error('File upload error:', error);
-      toast.error(`${t('tasks.failedToUploadFile')}: ${error.message || t('common.error')}`);
+      
+      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
+      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
+      const isNetworkError = !error.response && error.request;
+      
+      if (!isServerError && !isNetworkError) {
+        toast.error(`${t('tasks.failedToUploadFile')}: ${error.message || t('common.error')}`);
+      }
     } finally {
       // Remove uploading state
       setUploadingPhotos(prev => ({ ...prev, [subLevelId]: false }));
