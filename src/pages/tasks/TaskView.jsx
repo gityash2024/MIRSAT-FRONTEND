@@ -963,7 +963,7 @@ const TaskView = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate file sizes (900KB limit) before upload
+    // Validate file sizes (1MB limit) before upload
     const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
     let hasInvalidFile = false;
     

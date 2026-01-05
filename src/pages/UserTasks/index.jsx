@@ -12,7 +12,8 @@ import {
   fetchUserTasks, 
   startUserTask,
   setFilters,
-  setPagination
+  setPagination,
+  fetchUserTasksProgressData
 } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
@@ -496,6 +497,9 @@ const TaskProgress = styled.div`
   .progress-percentage {
     color: var(--color-navy);
     font-weight: 500;
+    display: inline-block;
+    visibility: visible;
+    opacity: 1;
   }
   
   .progress-bar {
@@ -1182,14 +1186,35 @@ const UserTasks = () => {
     }
   };
 
-  const loadTasks = () => {
+  const loadTasks = async () => {
     const params = {
       ...filters,
       page: pagination.page,
       limit: pagination.limit
     };
     
-    dispatch(fetchUserTasks(params));
+    try {
+      // First fetch tasks
+      const result = await dispatch(fetchUserTasks(params));
+
+      // If tasks were fetched successfully, fetch progress data
+      if (result.type === 'userTasks/fetchUserTasks/fulfilled' && result.payload?.results) {
+        const taskIds = result.payload.results
+          .map(task => task.id || task._id)
+          .filter(id => id && id !== 'undefined' && (typeof id === 'string' || typeof id === 'object') && id.toString().length > 0)
+          .map(id => id.toString());
+
+        if (taskIds.length > 0) {
+          try {
+            await dispatch(fetchUserTasksProgressData(taskIds));
+          } catch (error) {
+            console.warn('Failed to fetch user tasks progress data:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('UserTasks: Error in loadTasks:', error);
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -1377,7 +1402,9 @@ const UserTasks = () => {
       
       {tasks.results && tasks.results.length > 0 ? (
         <TasksGrid ref={tasksGridRef}>
-          {tasks.results.map((task, index) => (
+          {tasks.results.map((task, index) => {
+            const progressValue = typeof task.overallProgress === 'number' ? task.overallProgress : (parseInt(task.overallProgress) || 0);
+            return (
             <TaskCard key={task.id} ref={el => cardRefs.current[index] = el}>
               <TaskHeader>
                 <TaskTitle>{task.title}</TaskTitle>
@@ -1425,13 +1452,22 @@ const UserTasks = () => {
                   </span>
                 </TaskDetailRow>
 
-                <TaskProgress progress={task.overallProgress || 0}>
+                <TaskProgress progress={progressValue}>
                   <div className="progress-header">
                     <span className="progress-label">{t('tasks.progress')}</span>
-                    <span className="progress-percentage">{task.overallProgress || 0}%</span>
+                    <span className="progress-percentage" style={{ display: 'inline-block', visibility: 'visible', opacity: 1 }}>
+                      {progressValue}%
+                    </span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill"></div>
+                    <div 
+                      className="progress-fill"
+                      style={{ 
+                        width: `${progressValue}%`,
+                        minWidth: '0%',
+                        maxWidth: '100%'
+                      }}
+                    ></div>
                   </div>
                 </TaskProgress>
                
@@ -1472,7 +1508,8 @@ const UserTasks = () => {
                 )}
               </TaskActions>
             </TaskCard>
-          ))}
+            );
+          })}
         </TasksGrid>
       ) : (
         <EmptyTasks ref={emptyTasksRef}>

@@ -2049,7 +2049,9 @@ const QuestionTableRow = styled.div`
   box-sizing: border-box;
   gap: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  border: ${props => props.$isDragging ? '1px dashed #64748b' : 'none'};
 
   @media (max-width: 768px) {
     grid-template-columns: 35px 1fr 140px 90px;
@@ -2070,6 +2072,11 @@ const QuestionTableRow = styled.div`
   
   &:last-child {
     border-bottom: none;
+  }
+
+  &.drag-over {
+    background: #e0f2fe;
+    border-top: 2px solid #0284c7;
   }
 
   > div {
@@ -2144,7 +2151,13 @@ const QuestionItemComponent = ({
   updateQuestion,
   removeQuestion,
   allLevels = [],
-  onMoveQuestion
+  onMoveQuestion,
+  sectionIndex,
+  isDragging,
+  onQuestionDragStart,
+  onQuestionDragOver,
+  onQuestionDrop,
+  onQuestionDragEnd
 }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -2434,15 +2447,15 @@ const QuestionItemComponent = ({
   // This is the minimized view of the question in the three-column layout
   return (
     <>
-      <div
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData('questionIndex', questionIndex.toString());
-          e.dataTransfer.setData('questionData', JSON.stringify(question));
-        }}
-        style={{ width: '100%' }}
+      <QuestionTableRow 
+        draggable="true"
+        $isDragging={isDragging}
+        onClick={() => setExpanded(!expanded)}
+        onDragStart={(e) => onQuestionDragStart && onQuestionDragStart(e, questionIndex)}
+        onDragOver={(e) => onQuestionDragOver && onQuestionDragOver(e, questionIndex)}
+        onDrop={(e) => onQuestionDrop && onQuestionDrop(e, sectionIndex, questionIndex)}
+        onDragEnd={(e) => onQuestionDragEnd && onQuestionDragEnd(e)}
       >
-        <QuestionTableRow onClick={() => setExpanded(!expanded)}>
           <DragHandleIcon
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
@@ -2584,7 +2597,6 @@ const QuestionItemComponent = ({
             </IconButton>
           </QuestionActionsMenu>
         </QuestionTableRow>
-      </div>
 
       {/* Expanded view when a question is clicked */}
       {expanded && (
@@ -5866,6 +5878,8 @@ const InspectionLevelForm = () => {
   const [draggingSectionIndex, setDraggingSectionIndex] = useState(null);
   // Manual Drag and Drop Handlers for Pages
   const [draggingPageIndex, setDraggingPageIndex] = useState(null);
+  // Manual Drag and Drop Handlers for Questions
+  const [draggingQuestionIndex, setDraggingQuestionIndex] = useState(null);
 
   const handlePageManualDragStart = (e, index) => {
     setDraggingPageIndex(index);
@@ -5979,6 +5993,68 @@ const InspectionLevelForm = () => {
     e.currentTarget.style.opacity = '1';
 
     // Ensure all drag-over classes are removed if drop was cancelled
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  };
+
+  // Question Drag and Drop Handlers
+  const handleQuestionDragStart = (e, questionIndex) => {
+    setDraggingQuestionIndex(questionIndex);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', questionIndex);
+    e.currentTarget.style.opacity = '0.4';
+  };
+
+  const handleQuestionDragOver = (e, questionIndex) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggingQuestionIndex !== null && draggingQuestionIndex !== questionIndex) {
+      e.currentTarget.classList.add('drag-over');
+    }
+  };
+
+  const handleQuestionDrop = (e, sectionIndex, destinationQuestionIndex) => {
+    e.preventDefault();
+    const sourceQuestionIndex = draggingQuestionIndex;
+    e.currentTarget.classList.remove('drag-over');
+
+    if (sourceQuestionIndex === null || sourceQuestionIndex === destinationQuestionIndex) {
+      return;
+    }
+
+    setFormData(prevFormData => {
+      const newPages = prevFormData.pages.map((page, idx) => {
+        if (idx !== activePageIndex) return page;
+
+        const newSections = page.sections.map((section, secIdx) => {
+          if (secIdx !== sectionIndex) return section;
+
+          const newQuestions = [...section.questions];
+          const [reorderedQuestion] = newQuestions.splice(sourceQuestionIndex, 1);
+          newQuestions.splice(destinationQuestionIndex, 0, reorderedQuestion);
+
+          return {
+            ...section,
+            questions: newQuestions
+          };
+        });
+
+        return {
+          ...page,
+          sections: newSections
+        };
+      });
+
+      setUnsavedChanges(true);
+      return {
+        ...prevFormData,
+        pages: newPages
+      };
+    });
+  };
+
+  const handleQuestionDragEnd = (e) => {
+    setDraggingQuestionIndex(null);
+    e.currentTarget.style.opacity = '1';
     document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
   };
 
@@ -6486,6 +6562,12 @@ const InspectionLevelForm = () => {
                   updateQuestion={(updatedQuestion) => updateQuestion(sectionIndex, questionIndex, updatedQuestion)}
                   removeQuestion={() => removeQuestion(sectionIndex, questionIndex)}
                   onMoveQuestion={() => openMoveQuestionModal(sectionIndex, questionIndex)}
+                  sectionIndex={sectionIndex}
+                  isDragging={draggingQuestionIndex === questionIndex}
+                  onQuestionDragStart={handleQuestionDragStart}
+                  onQuestionDragOver={handleQuestionDragOver}
+                  onQuestionDrop={handleQuestionDrop}
+                  onQuestionDragEnd={handleQuestionDragEnd}
                 />
               ))}
             </div>
@@ -7287,6 +7369,12 @@ const InspectionLevelForm = () => {
                                     updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
                                     removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
                                     onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
+                                    sectionIndex={activeSectionTab}
+                                    isDragging={draggingQuestionIndex === questionIndex}
+                                    onQuestionDragStart={handleQuestionDragStart}
+                                    onQuestionDragOver={handleQuestionDragOver}
+                                    onQuestionDrop={handleQuestionDrop}
+                                    onQuestionDragEnd={handleQuestionDragEnd}
                                   />
                                 ))}
                               </QuestionTable>

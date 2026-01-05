@@ -1479,7 +1479,7 @@ const InspectionStepForm = ({
     
     const file = e.target.files[0];
     
-    // Validate file size (900KB limit)
+    // Validate file size (1MB limit)
     const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
     if (!validateFileSizeWithToast(file, toast, t)) {
       if (fileInputRefs.current[subLevelId]) {

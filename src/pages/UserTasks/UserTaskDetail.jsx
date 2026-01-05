@@ -1069,7 +1069,7 @@ const InspectionContainer = styled.div`
     0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  overflow: hidden;
+  overflow: visible;
   min-height: 80vh;
   margin: 6px;
   min-width: 0;
@@ -1109,8 +1109,9 @@ const InspectionHeader = styled.div`
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
+  z-index: 1;
   z-index: 1;
 
   > div:first-child {
@@ -1162,8 +1163,9 @@ const InspectionControls = styled.div`
   max-width: 100%;
   width: auto;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
+  position: relative;
 
   @media (max-width: 768px) {
     gap: 8px;
@@ -1202,7 +1204,7 @@ const DropdownContainer = styled.div`
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 
   @media (max-width: 480px) {
     flex: 1 1 100%;
@@ -1231,7 +1233,7 @@ const DropdownButton = styled.button`
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 
   @media (max-width: 768px) {
     min-width: 0;
@@ -1311,9 +1313,12 @@ const DropdownMenu = styled.div`
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  z-index: 10001;
+  z-index: 10003 !important;
   max-height: 300px;
   overflow-y: auto;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 `;
 
 const DropdownItem = styled.div`
@@ -3810,6 +3815,7 @@ const UserTaskDetail = () => {
   // Refs for focus management
   const sectionNavigationRef = useRef(null);
   const pageNavigationRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Derive currentPage from inspectionPages and selectedPage
   const currentPage = useMemo(() => {
@@ -3827,6 +3833,25 @@ const UserTaskDetail = () => {
   useEffect(() => {
     console.log('Auto-update enabled:', autoUpdateEnabled);
   }, [autoUpdateEnabled]);
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    if (!showPageDropdown) return;
+    
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowPageDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showPageDropdown]);
 
   const {
     currentTask,
@@ -4795,7 +4820,7 @@ const UserTaskDetail = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file size (900KB limit) before processing
+    // Validate file size (1MB limit) before processing
     const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
     if (!validateFileSizeWithToast(file, toast, t)) {
       e.target.value = '';
@@ -5361,7 +5386,7 @@ const UserTaskDetail = () => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
 
-                      // Validate file size (900KB limit) before processing
+                      // Validate file size (1MB limit) before processing
                       const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
                       if (!validateFileSizeWithToast(file, toast, t)) {
                         e.target.value = '';
@@ -5472,7 +5497,7 @@ const UserTaskDetail = () => {
                                 }
 
                                 // If blob is too large, reduce quality and try again
-                                if (blob.size > 900 * 1024) {
+                                if (blob.size > 1024 * 1024) {
                                   if (quality > 0.1) {
                                     // Reduce quality and try again
                                     canvas.toBlob((newBlob) => processBlob(newBlob, quality - 0.15), 'image/jpeg', quality - 0.15);
@@ -5495,7 +5520,7 @@ const UserTaskDetail = () => {
                                       tempCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
                                       
                                       tempCanvas.toBlob((resizedBlob) => {
-                                        if (resizedBlob && resizedBlob.size <= 900 * 1024) {
+                                        if (resizedBlob && resizedBlob.size <= 1024 * 1024) {
                                           processBlob(resizedBlob, 0.5);
                                         } else {
                                           toast(t('tasks.fileSizeExceedsLimit'), { icon: 'ℹ️' });
@@ -6151,55 +6176,73 @@ const UserTaskDetail = () => {
               {t('common.previous')}
             </NavigationButton>
 
-            <DropdownContainer>
+            <DropdownContainer ref={dropdownRef}>
               <DropdownButton
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowPageDropdown(!showPageDropdown);
+                  e.preventDefault();
+                  setShowPageDropdown(prev => !prev);
                 }}
                 style={{
                   cursor: 'pointer',
-                  opacity: 1
+                  opacity: 1,
+                  position: 'relative',
+                  zIndex: 10002
                 }}
+                type="button"
               >
                 <span>
                   {currentPage ? `${t('common.page')} ${inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) + 1}: ${currentPage.name}` : t('tasks.selectPage')}
                 </span>
-                <ChevronDown size={16} />
+                <ChevronDown size={16} style={{ transform: showPageDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
               </DropdownButton>
 
               {showPageDropdown && (
-                <DropdownMenu>
-                  {inspectionPages.map((page, index) => {
-                    const pageId = page.id || page._id;
-                    const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
+                <DropdownMenu 
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {inspectionPages && inspectionPages.length > 0 ? (
+                    inspectionPages.map((page, index) => {
+                      const pageId = page.id || page._id;
+                      const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
 
-                    return (
-                      <DropdownItem
-                        key={pageId}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPage(pageId);
-                          setShowPageDropdown(false);
-                          if (page.sections && page.sections.length > 0) {
-                            const firstSectionId = page.sections[0].id || page.sections[0]._id;
-                            setSelectedSection(firstSectionId);
-                          }
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>{`${index + 1}. ${page.name}`}</span>
-                          <span style={{
-                            fontSize: '12px',
-                            color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
-                            fontWeight: '600'
-                          }}>
-                            {pageScore.achieved}/{pageScore.total}
-                          </span>
-                        </div>
-                      </DropdownItem>
-                    );
-                  })}
+                      return (
+                        <DropdownItem
+                          key={pageId}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setSelectedPage(pageId);
+                            setShowPageDropdown(false);
+                            if (page.sections && page.sections.length > 0) {
+                              const firstSectionId = page.sections[0].id || page.sections[0]._id;
+                              setSelectedSection(firstSectionId);
+                            }
+                          }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>{`${index + 1}. ${page.name}`}</span>
+                            <span style={{
+                              fontSize: '12px',
+                              color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
+                              fontWeight: '600'
+                            }}>
+                              {pageScore.achieved}/{pageScore.total}
+                            </span>
+                          </div>
+                        </DropdownItem>
+                      );
+                    })
+                  ) : (
+                    <DropdownItem>
+                      <span>No pages available</span>
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               )}
             </DropdownContainer>

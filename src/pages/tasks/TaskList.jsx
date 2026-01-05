@@ -14,6 +14,7 @@ import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
+import ArabicReshaper from 'arabic-reshaper';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
 
@@ -745,13 +746,13 @@ const TaskList = () => {
     setShowExportDropdown(false);
   };
 
-  const handleConfirmExport = (fileName) => {
+  const handleConfirmExport = async (fileName) => {
     if (!pendingExport) return;
 
     const { format, data } = pendingExport;
 
     if (format === 'pdf') {
-      generatePDFExport(data, fileName);
+      await generatePDFExport(data, fileName);
     } else if (format === 'csv') {
       generateCSVExport(data, fileName);
     }
@@ -760,12 +761,62 @@ const TaskList = () => {
     setPendingExport(null);
   };
 
-  const generatePDFExport = (tasksData, fileName) => {
+  // Helper function to check if text contains Arabic characters
+  const containsArabic = (text) => {
+    if (!text) return false;
+    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    return arabicPattern.test(text);
+  };
+
+  // Helper function to process Arabic text
+  const processArabicText = (text) => {
+    if (!text) return '';
+    try {
+      // Check if text contains Arabic characters
+      if (!containsArabic(text)) return text;
+      
+      // Reshape Arabic characters for proper display
+      const reshaped = ArabicReshaper.convertArabic(text);
+      return reshaped;
+    } catch (e) {
+      console.error('Error processing Arabic text:', e);
+      return text;
+    }
+  };
+
+  const generatePDFExport = async (tasksData, fileName) => {
     try {
       toast.loading('Generating PDF...');
 
       // Create PDF document
       const doc = new jsPDF('landscape');
+
+      // Load Arabic font
+      const loadArabicFont = async () => {
+        try {
+          // Fetch the Noto Naskh Arabic font from CDN
+          const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf');
+          const fontArrayBuffer = await response.arrayBuffer();
+          const fontBase64 = btoa(
+            new Uint8Array(fontArrayBuffer).reduce(
+              (data, byte) => data + String.fromCharCode(byte),
+              ''
+            )
+          );
+
+          // Add the font to jsPDF
+          doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontBase64);
+          doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
+
+          return true;
+        } catch (error) {
+          console.warn('Could not load Arabic font, Arabic text may not display correctly:', error);
+          return false;
+        }
+      };
+
+      // Load the font
+      const fontLoaded = await loadArabicFont();
 
       // Add title
       doc.setFontSize(20);
@@ -789,21 +840,23 @@ const TaskList = () => {
         { header: 'Progress', dataKey: 'progress' }
       ];
 
-      // Prepare data for the table
+      // Prepare data for the table - process Arabic text
       const tableData = tasksData.map((task, index) => ({
         index: (index + 1).toString(),
-        title: task.title || 'Untitled',
-        template: task.inspectionLevel?.name || 'N/A',
-        assignee: task.assignedTo && task.assignedTo.length > 0
-          ? task.assignedTo[0].name || 'Unnamed'
-          : 'Unassigned',
+        title: processArabicText(task.title || 'Untitled'),
+        template: processArabicText(task.inspectionLevel?.name || 'N/A'),
+        assignee: processArabicText(
+          task.assignedTo && task.assignedTo.length > 0
+            ? task.assignedTo[0].name || 'Unnamed'
+            : 'Unassigned'
+        ),
         priority: task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'N/A',
         status: task.status?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || 'N/A',
         dueDate: formatDate(task.deadline),
         progress: `${task.overallProgress || 0}%`
       }));
 
-      // Generate the table
+      // Generate the table with Arabic font support
       doc.autoTable({
         columns: columns,
         body: tableData,
@@ -812,19 +865,37 @@ const TaskList = () => {
           fontSize: 8,
           cellPadding: 3,
           halign: 'center',
-          valign: 'middle'
+          valign: 'middle',
+          font: 'helvetica' // Default font for all cells (English and mixed content)
         },
         headStyles: {
           fillColor: [26, 35, 126],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
-          halign: 'center'
+          halign: 'center',
+          font: 'helvetica' // Headers in English, use default font
         },
         alternateRowStyles: {
           fillColor: [245, 247, 250]
         },
         tableWidth: 'auto',
-        margin: { left: 14, right: 14 }
+        margin: { left: 14, right: 14 },
+        didParseCell: function (data) {
+          // Check if cell contains Arabic text and apply Arabic font only to Arabic cells
+          if (data.cell && data.cell.text && data.cell.text.length > 0) {
+            const cellText = Array.isArray(data.cell.text) ? data.cell.text[0] : data.cell.text;
+            if (cellText && containsArabic(cellText)) {
+              if (fontLoaded) {
+                data.cell.styles.font = 'NotoNaskhArabic';
+                data.cell.styles.halign = 'right'; // Arabic is RTL
+              }
+            } else {
+              // Ensure non-Arabic cells use helvetica
+              data.cell.styles.font = 'helvetica';
+              data.cell.styles.halign = 'center';
+            }
+          }
+        }
       });
 
       // Save the PDF

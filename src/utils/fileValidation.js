@@ -1,9 +1,9 @@
 /**
  * File validation utility
- * Validates file size (900KB limit) and provides error messages
+ * Validates file size (1MB limit) and provides error messages
  */
 
-const MAX_FILE_SIZE = 900 * 1024; // 900KB in bytes
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB in bytes
 
 /**
  * Validates file size
@@ -16,10 +16,10 @@ export const validateFileSize = (file) => {
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    const fileSizeKB = (file.size / 1024).toFixed(2);
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
     return {
       valid: false,
-      error: `File size (${fileSizeKB} KB) exceeds the maximum allowed size of 900 KB. Please choose a smaller file.`
+      error: `File size (${fileSizeMB} MB) exceeds the maximum allowed size of 1 MB. Please choose a smaller file.`
     };
   }
 
@@ -56,8 +56,8 @@ export const validateFileSizeWithToast = (file, toast, t = null) => {
 export const handleFileSizeError = (error, toast, t = null) => {
   if (error.response?.status === 413 || error.status === 413) {
     const errorMessage = t
-      ? t('tasks.fileSizeExceedsLimit', { defaultValue: 'File size exceeds the maximum allowed size of 900 KB. Please choose a smaller file.' })
-      : 'File size exceeds the maximum allowed size of 900 KB. Please choose a smaller file.';
+      ? t('tasks.fileSizeExceedsLimit', { defaultValue: 'File size exceeds the maximum allowed size of 1 MB. Please choose a smaller file.' })
+      : 'File size exceeds the maximum allowed size of 1 MB. Please choose a smaller file.';
     toast(errorMessage, { icon: 'ℹ️' });
     return true;
   }

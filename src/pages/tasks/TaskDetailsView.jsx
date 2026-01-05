@@ -806,8 +806,35 @@ const TaskDetailsView = () => {
   };
 
   const getQuestionResponse = (question, responses) => {
-    if (!responses || !question._id) return null;
-    return responses[question._id];
+    if (!responses || !question) return null;
+    
+    // Try multiple ID formats
+    const questionId = question._id || question.id;
+    if (!questionId) return null;
+    
+    // Direct match
+    if (responses[questionId] !== undefined) {
+      return responses[questionId];
+    }
+    
+    // Try with string conversion
+    if (responses[String(questionId)] !== undefined) {
+      return responses[String(questionId)];
+    }
+    
+    // Try finding by partial match (for section-question format)
+    const matchingKey = Object.keys(responses).find(key => 
+      key === questionId || 
+      key === String(questionId) ||
+      key.endsWith(questionId) ||
+      key.includes(questionId)
+    );
+    
+    if (matchingKey) {
+      return responses[matchingKey];
+    }
+    
+    return null;
   };
 
   const calculateQuestionScore = (question, response) => {
@@ -1692,6 +1719,149 @@ const TaskDetailsView = () => {
                                     )}
                                     {question.type === 'multiple_choice' && !Array.isArray(response) && (
                                       <span>{response}</span>
+                                    )}
+                                    {question.type === 'media' && response && (
+                                      <div style={{ marginTop: '8px' }}>
+                                        {response.startsWith('data:image/') || response.startsWith('data:image') ? (
+                                          <div>
+                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              📷 Image uploaded
+                                            </div>
+                                            <img
+                                              src={response}
+                                              alt="Uploaded media"
+                                              style={{
+                                                maxWidth: '300px',
+                                                maxHeight: '200px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #e2e8f0',
+                                                cursor: 'pointer',
+                                                objectFit: 'contain'
+                                              }}
+                                              onClick={() => window.open(response, '_blank')}
+                                            />
+                                          </div>
+                                        ) : response.startsWith('data:') ? (
+                                          <div>
+                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              📎 Media file uploaded
+                                            </div>
+                                            <button
+                                              onClick={() => {
+                                                const link = document.createElement('a');
+                                                link.href = response;
+                                                link.download = 'uploaded-media';
+                                                link.click();
+                                              }}
+                                              style={{
+                                                padding: '8px 12px',
+                                                background: '#0369a1',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px'
+                                              }}
+                                            >
+                                              Download Media
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <span style={{ color: '#0369a1' }}>📎 Media: {response}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {question.type === 'number' && response && (
+                                      <span style={{ fontWeight: '500' }}>{response}</span>
+                                    )}
+                                    {question.type === 'select' && response && (
+                                      <span style={{
+                                        padding: '4px 8px',
+                                        background: '#e0f2fe',
+                                        borderRadius: '4px',
+                                        color: '#0369a1'
+                                      }}>
+                                        {response}
+                                      </span>
+                                    )}
+                                    {question.type === 'checkbox' && Array.isArray(response) && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {response.map((item, idx) => (
+                                          <span
+                                            key={idx}
+                                            style={{
+                                              padding: '4px 8px',
+                                              background: '#dcfce7',
+                                              borderRadius: '4px',
+                                              color: '#16a34a',
+                                              fontSize: '13px'
+                                            }}
+                                          >
+                                            ✓ {item}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {question.type === 'checkbox' && !Array.isArray(response) && response && (
+                                      <span style={{
+                                        padding: '4px 8px',
+                                        background: '#dcfce7',
+                                        borderRadius: '4px',
+                                        color: '#16a34a'
+                                      }}>
+                                        ✓ {response}
+                                      </span>
+                                    )}
+                                    {question.type === 'multiple' && Array.isArray(response) && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {response.map((item, idx) => (
+                                          <span
+                                            key={idx}
+                                            style={{
+                                              padding: '4px 8px',
+                                              background: '#e0f2fe',
+                                              borderRadius: '4px',
+                                              color: '#0369a1',
+                                              fontSize: '13px'
+                                            }}
+                                          >
+                                            {item}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {question.type === 'multiple' && !Array.isArray(response) && response && (
+                                      <span style={{
+                                        padding: '4px 8px',
+                                        background: '#e0f2fe',
+                                        borderRadius: '4px',
+                                        color: '#0369a1'
+                                      }}>
+                                        {response}
+                                      </span>
+                                    )}
+                                    {question.type === 'radio' && response && (
+                                      <span style={{
+                                        padding: '4px 8px',
+                                        background: '#e0f2fe',
+                                        borderRadius: '4px',
+                                        color: '#0369a1'
+                                      }}>
+                                        {response}
+                                      </span>
+                                    )}
+                                    {question.type === 'dropdown' && response && (
+                                      <span style={{
+                                        padding: '4px 8px',
+                                        background: '#e0f2fe',
+                                        borderRadius: '4px',
+                                        color: '#0369a1'
+                                      }}>
+                                        {response}
+                                      </span>
+                                    )}
+                                    {!['yesno', 'compliance', 'text', 'date', 'file', 'signature', 'multiple_choice', 'media', 'number', 'select', 'checkbox', 'multiple', 'radio', 'dropdown'].includes(question.type) && response && (
+                                      <span>{typeof response === 'object' ? JSON.stringify(response) : String(response)}</span>
                                     )}
                                   </ResponseValue>
                                 </ResponseSection>

@@ -110,9 +110,9 @@ export const uploadTaskAttachment = createAsyncThunk(
         throw new Error('No file provided');
       }
 
-      // Validate file size (900KB limit)
+      // Validate file size (1MB limit)
       if (!validateFileSizeWithToast(file, toast)) {
-        return rejectWithValue({ message: 'File size exceeds 900 KB limit' });
+        return rejectWithValue({ message: 'File size exceeds 1 MB limit' });
       }
 
       const formData = new FormData();
@@ -141,7 +141,7 @@ export const uploadTaskAttachment = createAsyncThunk(
       
       // Handle 413 Content Too Large error
       if (handleFileSizeError(error, toast)) {
-        return rejectWithValue({ message: 'File size exceeds 900 KB limit' });
+        return rejectWithValue({ message: 'File size exceeds 1 MB limit' });
       }
       
       // Don't show error toast for server errors (5xx) - global interceptor already shows info toast

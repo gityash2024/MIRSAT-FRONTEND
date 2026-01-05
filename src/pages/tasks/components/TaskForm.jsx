@@ -1956,7 +1956,7 @@ const TaskForm = ({
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validate file size (900KB limit) before upload
+    // Validate file size (1MB limit) before upload
     const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
     if (!validateFileSizeWithToast(file, toast, t)) {
       event.target.value = '';

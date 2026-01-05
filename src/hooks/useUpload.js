@@ -15,11 +15,11 @@ export const useUpload = () => {
       setIsUploading(true);
       setProgress(0);
       
-      // Validate file size (900KB limit)
+      // Validate file size (1MB limit)
       if (!validateFileSizeWithToast(file, toast)) {
         return {
           success: false,
-          error: 'File size exceeds 900 KB limit'
+          error: 'File size exceeds 1 MB limit'
         };
       }
       
@@ -49,7 +49,7 @@ export const useUpload = () => {
       if (handleFileSizeError(error, toast)) {
         return {
           success: false,
-          error: 'File size exceeds 900 KB limit'
+          error: 'File size exceeds 1 MB limit'
         };
       }
       

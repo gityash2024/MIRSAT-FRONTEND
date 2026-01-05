@@ -176,6 +176,18 @@ export const archiveTask = createAsyncThunk(
   }
 );
 
+export const fetchUserTasksProgressData = createAsyncThunk(
+  'userTasks/fetchUserTasksProgressData',
+  async (taskIds, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.getTasksProgressData(taskIds);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 const userTasksSlice = createSlice({
   name: 'userTasks',
   initialState: {
@@ -233,6 +245,39 @@ const userTasksSlice = createSlice({
       .addCase(fetchUserTasks.fulfilled, (state, action) => {
         state.loading = false;
         state.tasks = action.payload;
+      })
+      .addCase(fetchUserTasksProgressData.fulfilled, (state, action) => {
+        // Update tasks with progress data
+        // The payload is an array of progress data objects
+        const progressDataArray = Array.isArray(action.payload) ? action.payload : (action.payload?.data || []);
+        
+        if (progressDataArray && progressDataArray.length > 0) {
+          console.log('Redux: Updating user tasks with progress data:', progressDataArray);
+          progressDataArray.forEach(progressData => {
+            if (!progressData || !progressData.taskId) return;
+            
+            // Try to match by both id and _id fields
+            const taskIndex = state.tasks.results.findIndex(task => {
+              const taskId = task.id || task._id;
+              const progressTaskId = progressData.taskId;
+              return taskId && progressTaskId && (
+                taskId.toString() === progressTaskId.toString() ||
+                taskId === progressTaskId
+              );
+            });
+            
+            if (taskIndex !== -1) {
+              console.log(`Redux: Updating user task ${progressData.taskId} with progress ${progressData.overallProgress}%`);
+              state.tasks.results[taskIndex].overallProgress = progressData.overallProgress || 0;
+            } else {
+              console.warn(`Redux: User task ${progressData.taskId} not found in state.tasks.results. Available task IDs:`, state.tasks.results.map(t => ({ id: t.id, _id: t._id })));
+            }
+          });
+          console.log('Redux: User tasks after progress update:', state.tasks.results.map(t => ({ id: t.id, _id: t._id, progress: t.overallProgress })));
+        }
+      })
+      .addCase(fetchUserTasksProgressData.rejected, (state, action) => {
+        console.warn('Failed to fetch user tasks progress data:', action.payload);
       })
       .addCase(fetchUserTasks.rejected, (state, action) => {
         state.loading = false;

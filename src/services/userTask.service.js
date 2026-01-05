@@ -86,9 +86,9 @@ export const userTaskService = {
 
   // Upload attachment for a task
   uploadTaskAttachment: async (taskId, file) => {
-    // Validate file size (900KB limit)
+    // Validate file size (1MB limit)
     if (!validateFileSizeWithToast(file, toast)) {
-      throw new Error('File size exceeds 900 KB limit');
+      throw new Error('File size exceeds 1 MB limit');
     }
 
     const formData = new FormData();
@@ -105,7 +105,7 @@ export const userTaskService = {
     } catch (error) {
       // Handle 413 Content Too Large error
       if (handleFileSizeError(error, toast)) {
-        throw new Error('File size exceeds 900 KB limit');
+        throw new Error('File size exceeds 1 MB limit');
       }
       throw error;
     }
@@ -232,17 +232,18 @@ export const userTaskService = {
   // Get task progress data for multiple tasks (for admin panel) - using bulk endpoint
   getTasksProgressData: async (taskIds) => {
     try {
-      const validTaskIds = taskIds.filter(id => id && id !== 'undefined' && typeof id === 'string');
+      const validTaskIds = taskIds.filter(id => id && id !== 'undefined' && (typeof id === 'string' || typeof id === 'object') && id.toString().length > 0);
       
       if (validTaskIds.length === 0) {
         return [];
       }
       
       const response = await api.post('/user-tasks/bulk-progress', {
-        taskIds: validTaskIds
+        taskIds: validTaskIds.map(id => id.toString())
       });
       
-      return response.data;
+      // Backend returns { status: 'success', data: [...] }
+      return response.data?.data || response.data || [];
     } catch (error) {
       console.error('Error fetching tasks progress data:', error);
       throw error;
