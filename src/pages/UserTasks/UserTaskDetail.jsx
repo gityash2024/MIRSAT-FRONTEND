@@ -3352,6 +3352,32 @@ const formatTimeSpent = (timeInHours) => {
   }
 };
 
+// Format time from seconds with milliseconds
+const formatTimeFromSeconds = (timeInSeconds) => {
+  if (!timeInSeconds || timeInSeconds === 0) return '00:00:00.000';
+  
+  const totalSeconds = Math.floor(timeInSeconds);
+  const milliseconds = Math.floor((timeInSeconds - totalSeconds) * 1000);
+  
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  // Show HH:MM:SS.mmm format
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+};
+
+// Format time as HH:MM for display (simpler format)
+const formatTimeAsHHMM = (timeInSeconds) => {
+  if (!timeInSeconds || timeInSeconds === 0) return '00:00';
+  
+  const totalSeconds = Math.floor(timeInSeconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -3800,10 +3826,14 @@ const UserTaskDetail = () => {
   const [commentLoadingStates, setCommentLoadingStates] = useState({});
 
   // Enhanced time tracking state
-  const [isScreenActive, setIsScreenActive] = useState(true);
+  const [isScreenActive, setIsScreenActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState(null);
-  const [accumulatedTime, setAccumulatedTime] = useState(0);
+  const [accumulatedTime, setAccumulatedTime] = useState(0); // in seconds
+  const [displayTime, setDisplayTime] = useState(0); // in seconds with milliseconds for display
   const sessionTimerRef = useRef(null);
+  const displayTimerRef = useRef(null);
+  const accumulatedTimeRef = useRef(0); // Ref to track accumulated time for timer updates
+  const sessionStartTimeRef = useRef(null); // Ref to track session start time for timer updates
 
   // Auto-update functionality
   const autoUpdateRef = useRef(null);
@@ -3949,27 +3979,44 @@ const UserTaskDetail = () => {
 
   // Define timer functions BEFORE useEffects that use them
   const startScreenTimer = useCallback(() => {
-    if (currentTask?.status === 'completed' || currentTask?.signature) {
-      return; // Don't start timer for completed tasks
+    // Only start timer if task is in_progress and not completed/archived
+    if (currentTask?.status !== 'in_progress' || currentTask?.signature || currentTask?.status === 'completed' || currentTask?.status === 'archived') {
+      return; // Don't start timer for completed/archived tasks
     }
 
-    if (!isScreenActive && currentTask?.status === 'in_progress') {
+    if (!isScreenActive) {
       setIsScreenActive(true);
-      setSessionStartTime(Date.now());
+      const now = Date.now();
+      sessionStartTimeRef.current = now;
+      setSessionStartTime(now);
 
-      sessionTimerRef.current = setInterval(() => {
-        setTimer(prev => prev + 1);
-      }, 1000);
+      // Clear any existing timer
+      if (displayTimerRef.current) {
+        clearInterval(displayTimerRef.current);
+      }
+
+      // Update display timer every 100ms for smooth milliseconds display
+      displayTimerRef.current = setInterval(() => {
+        if (sessionStartTimeRef.current) {
+          const elapsed = (Date.now() - sessionStartTimeRef.current) / 1000; // in seconds
+          const totalTime = accumulatedTimeRef.current + elapsed;
+          setDisplayTime(totalTime);
+        }
+      }, 100);
     }
   }, [currentTask, isScreenActive]);
 
-  const pauseScreenTimer = useCallback(() => {
+  const pauseScreenTimer = useCallback(async (saveToBackend = true) => {
     if (isScreenActive) {
       setIsScreenActive(false);
 
-      if (sessionStartTime) {
-        const sessionDuration = (Date.now() - sessionStartTime) / 1000; // in seconds
-        setAccumulatedTime(prev => prev + sessionDuration);
+      if (sessionStartTimeRef.current) {
+        const sessionDuration = (Date.now() - sessionStartTimeRef.current) / 1000; // in seconds
+        const newAccumulatedTime = accumulatedTimeRef.current + sessionDuration;
+        accumulatedTimeRef.current = newAccumulatedTime;
+        setAccumulatedTime(newAccumulatedTime);
+        setDisplayTime(newAccumulatedTime); // Update display time to accumulated time
+        sessionStartTimeRef.current = null;
         setSessionStartTime(null);
       }
 
@@ -3977,28 +4024,54 @@ const UserTaskDetail = () => {
         clearInterval(sessionTimerRef.current);
         sessionTimerRef.current = null;
       }
+
+      if (displayTimerRef.current) {
+        clearInterval(displayTimerRef.current);
+        displayTimerRef.current = null;
+      }
+
+      // Save time to backend when pausing (e.g., when navigating away)
+      if (saveToBackend && currentTask && currentTask.status === 'in_progress' && !currentTask.signature && currentTask.status !== 'completed' && currentTask.status !== 'archived') {
+        const totalActiveTimeInSeconds = accumulatedTimeRef.current;
+        if (totalActiveTimeInSeconds > 0) {
+          try {
+            // Use synchronous dispatch or ensure it completes
+            await dispatch(updateUserTaskProgress({
+              taskId: currentTask._id,
+              subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+              status: currentTask.status,
+              taskMetrics: {
+                ...currentTask.taskMetrics,
+                timeSpent: totalActiveTimeInSeconds // Save in seconds
+              }
+            }));
+          } catch (error) {
+            console.error('Failed to save time to backend on pause:', error);
+          }
+        }
+      }
     }
-  }, [isScreenActive, sessionStartTime]);
+  }, [isScreenActive, currentTask, dispatch]);
 
   const stopTimerPermanently = useCallback(() => {
     pauseScreenTimer();
     // Save final time to backend when task is completed
-    if (currentTask && (accumulatedTime > 0 || sessionStartTime)) {
-      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
-      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+    if (currentTask && (accumulatedTimeRef.current > 0 || sessionStartTimeRef.current)) {
+      const finalSessionTime = sessionStartTimeRef.current ? (Date.now() - sessionStartTimeRef.current) / 1000 : 0;
+      const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime;
 
-      // Update task metrics with final time
+      // Update task metrics with final time in seconds (backend will handle conversion if needed)
       dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
         subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
         status: currentTask.status,
         taskMetrics: {
           ...currentTask.taskMetrics,
-          timeSpent: totalActiveTime
+          timeSpent: totalActiveTimeInSeconds // Save in seconds
         }
       }));
     }
-  }, [pauseScreenTimer, currentTask, accumulatedTime, sessionStartTime, dispatch]);
+  }, [pauseScreenTimer, currentTask, dispatch]);
 
   const calculateScores = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
@@ -4140,40 +4213,125 @@ const UserTaskDetail = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [activeTab, inspectionPages, selectedPage, selectedSection, currentPage]);
 
-  // Initialize timer and setup screen visibility tracking
+  // Initialize timer when task is loaded
+  const taskInitializedRef = useRef(false);
+  const lastTaskIdRef = useRef(null);
+  
   useEffect(() => {
-    if (currentTask?.taskMetrics?.timeSpent) {
-      setTimer(currentTask.taskMetrics.timeSpent * 3600);
-      setAccumulatedTime(currentTask.taskMetrics.timeSpent * 3600); // Convert hours to seconds
+    // Reset initialization flag when task ID changes
+    if (lastTaskIdRef.current !== currentTask?._id) {
+      // Save time for previous task before switching (if timer was active)
+      if (lastTaskIdRef.current && isScreenActive) {
+        pauseScreenTimer(true);
+      }
+      
+      taskInitializedRef.current = false;
+      lastTaskIdRef.current = currentTask?._id;
+      
+      // Reset timer state when task changes
+      accumulatedTimeRef.current = 0;
+      sessionStartTimeRef.current = null;
+      setAccumulatedTime(0);
+      setDisplayTime(0);
+      setIsScreenActive(false);
     }
+    
+    // Always initialize from backend when task is first loaded or task ID changes
+    if (currentTask?._id && !taskInitializedRef.current) {
+      taskInitializedRef.current = true;
+      
+      // Always load time from backend when returning to the page
+      if (currentTask?.taskMetrics?.timeSpent !== undefined) {
+        const timeInSeconds = currentTask.taskMetrics.timeSpent;
+        accumulatedTimeRef.current = timeInSeconds;
+        setAccumulatedTime(timeInSeconds);
+        setDisplayTime(timeInSeconds);
+      } else {
+        accumulatedTimeRef.current = 0;
+        setAccumulatedTime(0);
+        setDisplayTime(0);
+      }
+    }
+  }, [currentTask?._id, currentTask?.taskMetrics?.timeSpent, isScreenActive, pauseScreenTimer]);
 
+  // Start/stop timer based on task status (separate effect to avoid resetting timer)
+  useEffect(() => {
     // Start timer for in-progress tasks
-    if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
-      startScreenTimer();
+    if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
+      if (!isScreenActive) {
+        // Small delay to ensure state is set
+        const timer = setTimeout(() => {
+          startScreenTimer();
+        }, 100);
+        return () => {
+          clearTimeout(timer);
+        };
+      }
+    } else {
+      // Stop timer if task is not in progress
+      if (isScreenActive) {
+        pauseScreenTimer();
+      }
     }
+  }, [currentTask?.status, currentTask?.signature, isScreenActive, startScreenTimer, pauseScreenTimer]);
 
-    // Add page visibility listeners
+  // Handle page visibility changes
+  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        pauseScreenTimer();
-      } else if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
+        pauseScreenTimer(true); // Save to backend when page becomes hidden
+      } else if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
         startScreenTimer();
       }
     };
 
     const handleBeforeUnload = () => {
-      pauseScreenTimer();
+      // Save time synchronously before unload
+      if (sessionStartTimeRef.current) {
+        const sessionDuration = (Date.now() - sessionStartTimeRef.current) / 1000;
+        const totalActiveTimeInSeconds = accumulatedTimeRef.current + sessionDuration;
+        
+        // Use sendBeacon or synchronous save for beforeunload
+        if (currentTask && currentTask.status === 'in_progress' && totalActiveTimeInSeconds > 0) {
+          // Save synchronously using navigator.sendBeacon or sync fetch
+          const data = JSON.stringify({
+            taskId: currentTask._id,
+            subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+            status: currentTask.status,
+            taskMetrics: {
+              ...currentTask.taskMetrics,
+              timeSpent: totalActiveTimeInSeconds
+            }
+          });
+          
+          // Try to save using sendBeacon (works even after page unload starts)
+          if (navigator.sendBeacon) {
+            const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+            navigator.sendBeacon(
+              `${apiBaseUrl}/api/v1/user-tasks/${currentTask._id}/progress/${currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default'}`,
+              data
+            );
+          }
+        }
+      }
+      pauseScreenTimer(false); // Don't save again, already saved above
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      pauseScreenTimer();
+      // Save time when component unmounts (e.g., navigating to another page)
+      // This ensures time is saved before component is destroyed
+      if (isScreenActive || sessionStartTimeRef.current) {
+        pauseScreenTimer(true).catch(err => {
+          console.error('Error saving time on unmount:', err);
+        });
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [currentTask]);
+  }, [currentTask?.status, currentTask?.signature, startScreenTimer, pauseScreenTimer, isScreenActive]);
 
   useEffect(() => {
     if (currentTask) {
@@ -4276,14 +4434,14 @@ const UserTaskDetail = () => {
 
   // Periodic save function to backup time data (define BEFORE useEffect)
   const saveTimeToBackend = useCallback(async () => {
-    if (!currentTask || currentTask.status === 'completed' || currentTask.signature) {
+    if (!currentTask || currentTask.status === 'completed' || currentTask.signature || currentTask.status === 'archived') {
       return;
     }
 
-    const currentSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
-    const totalActiveTime = (accumulatedTime + currentSessionTime) / 3600; // Convert to hours
+    const currentSessionTime = sessionStartTimeRef.current ? (Date.now() - sessionStartTimeRef.current) / 1000 : 0;
+    const totalActiveTimeInSeconds = accumulatedTimeRef.current + currentSessionTime; // Keep in seconds
 
-    if (totalActiveTime > 0) {
+    if (totalActiveTimeInSeconds > 0) {
       try {
         await dispatch(updateUserTaskProgress({
           taskId: currentTask._id,
@@ -4291,14 +4449,14 @@ const UserTaskDetail = () => {
           status: currentTask.status,
           taskMetrics: {
             ...currentTask.taskMetrics,
-            timeSpent: totalActiveTime
+            timeSpent: totalActiveTimeInSeconds // Save in seconds
           }
         }));
       } catch (error) {
         console.error('Failed to save time to backend:', error);
       }
     }
-  }, [currentTask, accumulatedTime, sessionStartTime, dispatch]);
+  }, [currentTask, sessionStartTime, dispatch]);
 
   // Set up periodic time saving (every 2 minutes)
   useEffect(() => {
@@ -4853,8 +5011,8 @@ const UserTaskDetail = () => {
       toast.loading(t('tasks.savingSignature'));
 
       // Stop timer permanently when task is signed
-      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
-      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+      const finalSessionTime = sessionStartTimeRef.current ? (Date.now() - sessionStartTimeRef.current) / 1000 : 0;
+      const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime; // Keep in seconds
 
       const completionPercentage = calculateTaskCompletionPercentage();
 
@@ -4864,7 +5022,7 @@ const UserTaskDetail = () => {
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: completionPercentage,
-          timeSpent: totalActiveTime, // Save final active time
+          timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
       })).unwrap();
@@ -4905,8 +5063,8 @@ const UserTaskDetail = () => {
       toast.loading(t('tasks.savingAndSubmittingComplianceData'));
 
       // Stop timer permanently when task is submitted
-      const finalSessionTime = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
-      const totalActiveTime = (accumulatedTime + finalSessionTime) / 3600; // Convert to hours
+      const finalSessionTime = sessionStartTimeRef.current ? (Date.now() - sessionStartTimeRef.current) / 1000 : 0;
+      const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime; // Keep in seconds
 
       const completionPercentage = calculateTaskCompletionPercentage();
 
@@ -4917,7 +5075,7 @@ const UserTaskDetail = () => {
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: completionPercentage,
-          timeSpent: totalActiveTime,
+          timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
       })).unwrap();
@@ -4933,7 +5091,7 @@ const UserTaskDetail = () => {
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: 100,
-          timeSpent: totalActiveTime,
+          timeSpent: totalActiveTimeInSeconds, // Save in seconds
           completedAt: new Date().toISOString()
         }
       })).unwrap();
@@ -6981,10 +7139,16 @@ const UserTaskDetail = () => {
 
                       <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
                         <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
-                        <MetricValue $color="#f39c12">
-                          {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
+                        <MetricValue $color="#f39c12" style={{ fontFamily: 'monospace', fontSize: '20px' }}>
+                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                            ? formatTimeFromSeconds(displayTime)
+                            : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                         </MetricValue>
-                        <MetricDescription>{t('tasks.totalDuration')}</MetricDescription>
+                        <MetricDescription>
+                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                            ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
+                            : t('tasks.totalDuration')}
+                        </MetricDescription>
                       </MetricCard>
 
                       <MetricCard $color="gray" $bgColor="rgba(44, 62, 80, 0.1)">
@@ -7195,11 +7359,15 @@ const UserTaskDetail = () => {
 
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12' }}>
-                        {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12', fontFamily: 'monospace' }}>
+                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          ? formatTimeFromSeconds(displayTime)
+                          : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        {t('tasks.totalDuration')}
+                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
+                          : t('tasks.totalDuration')}
                       </div>
                     </div>
 
@@ -7685,8 +7853,10 @@ const UserTaskDetail = () => {
                   borderRadius: '8px'
                 }}>
                   <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.time')}</span>
-                  <span style={{ fontWeight: '700', color: '#f39c12' }}>
-                    {formatTimeSpent(currentTask.taskMetrics?.timeSpent || 0)}
+                  <span style={{ fontWeight: '700', color: '#f39c12', fontFamily: 'monospace' }}>
+                    {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                      ? formatTimeFromSeconds(displayTime)
+                      : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                   </span>
                 </div>
 
