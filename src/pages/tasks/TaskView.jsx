@@ -963,12 +963,12 @@ const TaskView = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate file sizes (1MB limit) before upload
-    const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
+    // Validate file formats and sizes (1MB limit) before upload
+    const { validateFileWithToast } = await import('../../utils/fileValidation');
     let hasInvalidFile = false;
     
     for (let i = 0; i < files.length; i++) {
-      if (!validateFileSizeWithToast(files[i], toast, t)) {
+      if (!validateFileWithToast(files[i], toast, t)) {
         hasInvalidFile = true;
       }
     }
@@ -999,13 +999,15 @@ const TaskView = () => {
     } catch (error) {
       console.error('Error uploading files:', error);
       
-      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
-      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
-      const isNetworkError = !error.response && error.request;
+      // Extract actual error message from backend
+      const errorMessage = error.message || 
+                          error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          'Upload failed';
       
-      if (!isServerError && !isNetworkError) {
-        toast.error('Failed to upload files. Please try again.');
-      }
+      // Show the actual backend error message (already shown by Redux thunk)
+      // Don't show duplicate error messages
+      console.log('Upload failed with message:', errorMessage);
     } finally {
       setUploadingFile(false);
       // Clear the file input
@@ -2433,6 +2435,7 @@ const TaskView = () => {
               <input
                 ref={fileInputRef}
                 type="file"
+                accept="image/jpeg,image/jpg,image/png"
                 style={{ display: 'none' }}
                 onChange={handleFileUpload}
                 multiple

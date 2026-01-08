@@ -17,6 +17,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: API_CONFIG.TIMEOUTS.DEFAULT, // 30 seconds default timeout
+  maxContentLength: 10 * 1024 * 1024, // 10MB max content length
+  maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
 });
 
 // Create a function to generate a unique key for each request
@@ -50,30 +53,35 @@ setInterval(() => {
 }, 10000);
 
 // Exponential backoff retry function
-const retryRequestWithBackoff = async (error) => {
+const retryRequestWithBackoff = async (error, retryCount = 0) => {
   const { config } = error;
   
-  // Only retry for 429 errors and if we haven't exceeded max retries
-  if (error.response?.status !== 429 || backoffRetryCount >= MAX_RETRIES) {
-    // Reset retry count for next 429 error
-    if (error.response?.status !== 429) {
+  // Retry for 429, 502, 503, 504, 522 errors (rate limit and server errors)
+  const retryableStatuses = [429, 502, 503, 504, 522];
+  const shouldRetry = retryableStatuses.includes(error.response?.status) || 
+                      (error.code === 'ECONNABORTED' && config.url?.includes('/attachments'));
+  
+  // Don't retry if max retries exceeded or not a retryable error
+  if (!shouldRetry || retryCount >= MAX_RETRIES) {
+    if (!shouldRetry) {
       backoffRetryCount = 0;
     }
     return Promise.reject(error);
   }
   
   // Increment retry count
-  backoffRetryCount++;
+  const currentRetry = retryCount + 1;
+  backoffRetryCount = currentRetry;
   
-  // Calculate delay with exponential backoff
-  const delay = Math.pow(2, backoffRetryCount) * 1000;
-  console.log(`Retrying request after ${delay}ms (retry ${backoffRetryCount} of ${MAX_RETRIES})`);
+  // Calculate delay with exponential backoff (1s, 2s, 4s)
+  const delay = Math.pow(2, currentRetry) * 1000;
+  console.log(`Retrying request after ${delay}ms (retry ${currentRetry} of ${MAX_RETRIES}) - Status: ${error.response?.status || 'TIMEOUT'}`);
   
   // Wait for the calculated delay
   await new Promise(resolve => setTimeout(resolve, delay));
   
-  // Retry the request
-  return axios(config);
+  // Retry the request with same config
+  return api(config);
 };
 
 // Add request interceptor to add auth token
@@ -82,6 +90,17 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Set timeout for file uploads (attachments)
+    if (config.url?.includes('/attachments') || config.url?.includes('/upload')) {
+      config.timeout = API_CONFIG.TIMEOUTS.UPLOAD; // 60 seconds for uploads
+    }
+    
+    // For large POST/PUT requests, increase timeout
+    if ((config.method === 'post' || config.method === 'put') && 
+        (config.url.includes('/templates') || config.url.includes('/inspection'))) {
+      config.timeout = API_CONFIG.TIMEOUTS.LARGE_REQUEST; // 60s timeout for large operations
     }
     
     // Ensure assignedTo is always an array in task API calls
@@ -183,6 +202,22 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     
+    // Handle timeout errors - retry for attachment uploads
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error('Request timeout:', error.config?.url);
+      
+      // Retry attachment uploads on timeout
+      if (error.config?.url?.includes('/attachments') || error.config?.url?.includes('/upload')) {
+        return retryRequestWithBackoff(error, 0);
+      }
+      
+      toast('Request timed out. Please try again.', { 
+        icon: '⏱️',
+        duration: 4000 
+      });
+      return Promise.reject(error);
+    }
+    
     // Handle rate limiting (429 Too Many Requests)
     if (error.response?.status === 429) {
       console.error('Rate limit exceeded (429). Enforcing cooldown period.');
@@ -192,21 +227,33 @@ api.interceptors.response.use(
       enforceGlobalCooldown(cooldownDuration);
       
       // Attempt to retry with backoff
-      return retryRequestWithBackoff(error);
+      return retryRequestWithBackoff(error, 0);
     }
     
-    // Handle server errors (5xx) - show info toast without breaking existing flow
+    // Handle server errors (5xx) - retry for 502, 503, 504, 522
     if (error.response?.status >= 500 && error.response?.status < 600) {
       const status = error.response.status;
       console.error(`Server error (${status}):`, error);
       
-      // Show info toast message
+      // Retry for gateway/timeout errors (502, 503, 504, 522)
+      if ([502, 503, 504, 522].includes(status)) {
+        // Only show toast on first attempt, retry will handle subsequent attempts
+        if (!error.config._retryCount || error.config._retryCount === 0) {
+          toast('Server is busy. Retrying...', { 
+            icon: '🔄',
+            duration: 3000 
+          });
+        }
+        error.config._retryCount = (error.config._retryCount || 0) + 1;
+        return retryRequestWithBackoff(error, error.config._retryCount - 1);
+      }
+      
+      // For other 5xx errors, show message but don't retry
       toast('Please try again. Server seems to be busy.', { 
         icon: 'ℹ️',
         duration: 4000 
       });
       
-      // Still reject the error so existing error handling continues to work
       return Promise.reject(error);
     }
     
@@ -214,13 +261,16 @@ api.interceptors.response.use(
     if (!error.response && error.request) {
       console.error('Network error - server may be unavailable:', error);
       
-      // Show info toast message for network errors
+      // Retry attachment uploads on network errors
+      if (error.config?.url?.includes('/attachments') || error.config?.url?.includes('/upload')) {
+        return retryRequestWithBackoff(error, 0);
+      }
+      
       toast('Please try again. Server seems to be busy.', { 
         icon: 'ℹ️',
         duration: 4000 
       });
       
-      // Still reject the error so existing error handling continues to work
       return Promise.reject(error);
     }
     

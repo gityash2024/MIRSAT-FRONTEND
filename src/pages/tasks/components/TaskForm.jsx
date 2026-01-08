@@ -1954,14 +1954,32 @@ const TaskForm = ({
 
   const handleAttachmentChange = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file size (1MB limit) before upload
-    const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
-    if (!validateFileSizeWithToast(file, toast, t)) {
+    if (!file) {
       event.target.value = '';
       return;
     }
+
+    // Validate file format and size (1MB limit) BEFORE any upload attempt
+    // Import validation synchronously to ensure it runs before upload
+    const { validateFileWithToast } = await import('../../../utils/fileValidation');
+    
+    // Log file details for debugging
+    console.log('Frontend validation - File details:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      extension: file.name.split('.').pop()?.toLowerCase()
+    });
+    
+    // Validate and STOP if invalid - don't proceed to upload
+    const isValid = validateFileWithToast(file, toast, t);
+    if (!isValid) {
+      console.error('Frontend validation FAILED - stopping upload:', file.name);
+      event.target.value = '';
+      return; // CRITICAL: Stop here, don't proceed to upload
+    }
+
+    console.log('Frontend validation PASSED - proceeding with upload:', file.name);
 
     try {
       setIsUploading(true);
@@ -1983,20 +2001,21 @@ const TaskForm = ({
           attachments: [...prev.attachments, result.data]
         }));
         toast.success(t('tasks.fileUploadedSuccessfully'));
-      } else {
-        toast.error(t('tasks.failedToUploadFile'));
       }
     } catch (error) {
       console.error('Error uploading file:', error);
       console.error('Upload error details:', error.message);
       
-      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
-      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
-      const isNetworkError = !error.response && error.request;
+      // Extract the actual error message from the backend response
+      const errorMessage = error.message || 
+                          error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          'Upload failed';
       
-      // if (!isServerError && !isNetworkError) {
-      //   toast.error(t('tasks.errorUploadingFile'));
-      // }
+      // Show the actual backend error message (already shown by Redux thunk, but ensure it's clear)
+      // Don't show duplicate error messages - the thunk already shows the error
+      // Only log for debugging
+      console.log('Upload failed with message:', errorMessage);
     } finally {
       setIsUploading(false);
       // Reset the file input
@@ -2428,6 +2447,7 @@ const TaskForm = ({
                     <input
                       type="file"
                       id="file-upload"
+                      accept="image/jpeg,image/jpg,image/png"
                       onChange={handleAttachmentChange}
                       style={{ display: 'none' }}
                     />

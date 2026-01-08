@@ -1052,16 +1052,26 @@ const TaskDetailsView = () => {
 
                 <input
                   type="file"
-                  accept="image/*,.pdf,.doc,.docx"
-                  onChange={(e) => {
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={async (e) => {
                     const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        onSaveResponse(questionId, event.target.result);
-                      };
-                      reader.readAsDataURL(file);
+                    if (!file) return;
+
+                    // Validate file format and size (1MB limit) before processing
+                    const { validateFileWithToast } = await import('../../utils/fileValidation');
+                    if (!validateFileWithToast(file, toast)) {
+                      e.target.value = '';
+                      return;
                     }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      onSaveResponse(questionId, event.target.result);
+                    };
+                    reader.onerror = () => {
+                      toast.error('Failed to read file');
+                    };
+                    reader.readAsDataURL(file);
                   }}
                   style={{
                     width: '100%',

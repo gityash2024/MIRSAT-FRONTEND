@@ -4978,9 +4978,9 @@ const UserTaskDetail = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file size (1MB limit) before processing
-    const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
-    if (!validateFileSizeWithToast(file, toast, t)) {
+    // Validate file format and size (1MB limit) before processing
+    const { validateFileWithToast } = await import('../../utils/fileValidation');
+    if (!validateFileWithToast(file, toast, t)) {
       e.target.value = '';
       return;
     }
@@ -5538,15 +5538,15 @@ const UserTaskDetail = () => {
                 }}>
                   <input
                     type="file"
-                    accept="image/*,video/*,.pdf,.doc,.docx"
+                    accept="image/jpeg,image/jpg,image/png"
                     disabled={isDisabled}
                     onChange={async (e) => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
 
-                      // Validate file size (1MB limit) before processing
-                      const { validateFileSizeWithToast } = await import('../../utils/fileValidation');
-                      if (!validateFileSizeWithToast(file, toast, t)) {
+                      // Validate file format and size (1MB limit) before processing
+                      const { validateFileWithToast } = await import('../../utils/fileValidation');
+                      if (!validateFileWithToast(file, toast, t)) {
                         e.target.value = '';
                         return;
                       }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { API_CONFIG } from '../config/api';
-import { validateFileSizeWithToast, handleFileSizeError } from '../utils/fileValidation';
+import { validateFileWithToast, handleFileSizeError } from '../utils/fileValidation';
 import { toast } from 'react-hot-toast';
 
 export const useUpload = () => {
@@ -15,11 +15,11 @@ export const useUpload = () => {
       setIsUploading(true);
       setProgress(0);
       
-      // Validate file size (1MB limit)
-      if (!validateFileSizeWithToast(file, toast)) {
+      // Validate file format and size (1MB limit)
+      if (!validateFileWithToast(file, toast)) {
         return {
           success: false,
-          error: 'File size exceeds 1 MB limit'
+          error: 'File validation failed. Please check file format and size (max 1 MB).'
         };
       }
       

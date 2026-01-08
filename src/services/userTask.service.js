@@ -2,7 +2,7 @@ import api from './api';
 import { toast } from 'react-hot-toast';
 import { downloadTaskPDF } from './pdfGenerator';
 import FrontendLogger from './frontendLogger.service';
-import { validateFileSizeWithToast, handleFileSizeError } from '../utils/fileValidation';
+import { validateFileWithToast, handleFileSizeError } from '../utils/fileValidation';
 
 export const userTaskService = {
   // Get user dashboard statistics
@@ -86,9 +86,9 @@ export const userTaskService = {
 
   // Upload attachment for a task
   uploadTaskAttachment: async (taskId, file) => {
-    // Validate file size (1MB limit)
-    if (!validateFileSizeWithToast(file, toast)) {
-      throw new Error('File size exceeds 1 MB limit');
+    // Validate file format and size (1MB limit)
+    if (!validateFileWithToast(file, toast)) {
+      throw new Error('File validation failed. Please check file format and size (max 1 MB).');
     }
 
     const formData = new FormData();

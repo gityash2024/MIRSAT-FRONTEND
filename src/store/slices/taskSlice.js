@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
-import { validateFileSizeWithToast, handleFileSizeError } from '../../utils/fileValidation';
+import { handleFileSizeError } from '../../utils/fileValidation';
 
 const initialState = {
   tasks: [],
@@ -105,15 +105,24 @@ export const uploadTaskAttachment = createAsyncThunk(
   'tasks/uploadTaskAttachment',
   async ({ id, file }, { rejectWithValue }) => {
     try {
-      console.log('uploadTaskAttachment called with:', { id, file });
+      console.log('uploadTaskAttachment thunk called with:', { id, file: file?.name, size: file?.size, type: file?.type });
       if (!file) {
+        console.error('uploadTaskAttachment: No file provided');
         throw new Error('No file provided');
       }
 
-      // Validate file size (1MB limit)
-      if (!validateFileSizeWithToast(file, toast)) {
-        return rejectWithValue({ message: 'File size exceeds 1 MB limit' });
+      // Validate file format and size (1MB limit) - SECONDARY validation (frontend should catch first)
+      const { validateFile } = await import('../../utils/fileValidation');
+      const validation = validateFile(file);
+      
+      if (!validation.valid) {
+        console.error('uploadTaskAttachment: File validation failed:', validation.error);
+        // Show toast with validation error
+        toast(validation.error, { icon: 'ℹ️' });
+        return rejectWithValue({ message: validation.error });
       }
+      
+      console.log('uploadTaskAttachment: File validation passed, proceeding with upload');
 
       const formData = new FormData();
       formData.append('file', file);
@@ -134,7 +143,7 @@ export const uploadTaskAttachment = createAsyncThunk(
       });
 
       console.log('Upload response:', response.data);
-      toast.success('File uploaded successfully');
+      // Don't show toast here - component will handle it
       return response.data;
     } catch (error) {
       console.error('Upload error in thunk:', error);
@@ -144,18 +153,16 @@ export const uploadTaskAttachment = createAsyncThunk(
         return rejectWithValue({ message: 'File size exceeds 1 MB limit' });
       }
       
-      // Don't show error toast for server errors (5xx) - global interceptor already shows info toast
-      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
-      const isNetworkError = !error.response && error.request;
+      // Extract error message from backend response
+      const errorMsg = error.response?.data?.error?.message || 
+                      error.response?.data?.message || 
+                      error.message || 
+                      'Upload failed';
       
-      if (!isServerError && !isNetworkError) {
-        const errorMsg = error.response?.data?.message || 'Error uploading file';
-        toast.error(errorMsg);
-        return rejectWithValue({ message: errorMsg });
-      }
+      // Show the actual backend error message with info icon (not error icon)
+      // This provides clear feedback about what went wrong
+      toast(errorMsg, { icon: 'ℹ️' });
       
-      // For server/network errors, just reject without showing error toast
-      const errorMsg = error.response?.data?.message || 'Error uploading file';
       return rejectWithValue({ message: errorMsg });
     }
   }

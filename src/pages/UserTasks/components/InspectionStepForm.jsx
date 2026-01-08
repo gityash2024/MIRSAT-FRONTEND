@@ -1479,18 +1479,9 @@ const InspectionStepForm = ({
     
     const file = e.target.files[0];
     
-    // Validate file size (1MB limit)
-    const { validateFileSizeWithToast } = await import('../../../utils/fileValidation');
-    if (!validateFileSizeWithToast(file, toast, t)) {
-      if (fileInputRefs.current[subLevelId]) {
-        fileInputRefs.current[subLevelId].value = '';
-      }
-      return;
-    }
-    
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      toast.error(t('tasks.onlyJpgPngGifAllowed'));
+    // Validate file format and size (1MB limit)
+    const { validateFileWithToast } = await import('../../../utils/fileValidation');
+    if (!validateFileWithToast(file, toast, t)) {
       if (fileInputRefs.current[subLevelId]) {
         fileInputRefs.current[subLevelId].value = '';
       }
@@ -1531,13 +1522,15 @@ const InspectionStepForm = ({
       toast.dismiss();
       console.error('File upload error:', error);
       
-      // Don't show error toast for server errors (5xx) or network errors - global interceptor already shows info toast
-      const isServerError = error.response?.status >= 500 && error.response?.status < 600;
-      const isNetworkError = !error.response && error.request;
+      // Extract actual error message from backend
+      const errorMessage = error.message || 
+                          error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          'Upload failed';
       
-      if (!isServerError && !isNetworkError) {
-        toast.error(`${t('tasks.failedToUploadFile')}: ${error.message || t('common.error')}`);
-      }
+      // Show the actual backend error message (already shown by Redux thunk, but ensure it's clear)
+      // Don't show duplicate error messages
+      console.log('Upload failed with message:', errorMessage);
     } finally {
       // Remove uploading state
       setUploadingPhotos(prev => ({ ...prev, [subLevelId]: false }));
@@ -2009,7 +2002,7 @@ const InspectionStepForm = ({
             id={`file-input-${selectedSubLevel._id}`}
             ref={el => fileInputRefs.current[selectedSubLevel._id] = el}
             onChange={(e) => handleFileChange(selectedSubLevel._id, e)}
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png"
             disabled={task.status === 'completed'}
           />
           
