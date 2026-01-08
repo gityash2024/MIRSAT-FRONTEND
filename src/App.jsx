@@ -31,6 +31,7 @@ function App() {
               <AppRoutes />
               <Toaster
                 position="bottom-center"
+                limit={2}
                 toastOptions={{
                   duration: 4000,
                   style: {
