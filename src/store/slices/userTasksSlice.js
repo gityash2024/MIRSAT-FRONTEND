@@ -348,13 +348,34 @@ const userTasksSlice = createSlice({
         state.actionLoading = false;
         const updatedTask = action.payload;
         
+        // OPTIMIZED: Only update progress-related fields instead of entire task
+        // to prevent unnecessary re-renders and cascade effects
         if (state.currentTask && state.currentTask._id === updatedTask._id) {
-          state.currentTask = updatedTask;
+          // Only update the specific fields that are relevant to progress
+          if (updatedTask.overallProgress !== undefined) {
+            state.currentTask.overallProgress = updatedTask.overallProgress;
+          }
+          if (updatedTask.progress !== undefined) {
+            state.currentTask.progress = updatedTask.progress;
+          }
+          if (updatedTask.taskMetrics !== undefined) {
+            state.currentTask.taskMetrics = updatedTask.taskMetrics;
+          }
+          if (updatedTask.status !== undefined) {
+            state.currentTask.status = updatedTask.status;
+          }
         }
         
-        state.tasks.results = state.tasks.results.map(task => 
-          task._id === updatedTask._id ? updatedTask : task
-        );
+        // Update in tasks list (minimal update)
+        const taskIndex = state.tasks.results.findIndex(task => task._id === updatedTask._id);
+        if (taskIndex !== -1) {
+          if (updatedTask.overallProgress !== undefined) {
+            state.tasks.results[taskIndex].overallProgress = updatedTask.overallProgress;
+          }
+          if (updatedTask.status !== undefined) {
+            state.tasks.results[taskIndex].status = updatedTask.status;
+          }
+        }
         
         // toast.success('Progress updated successfully');
       })
@@ -372,13 +393,28 @@ const userTasksSlice = createSlice({
         state.actionLoading = false;
         const updatedTask = action.payload;
         
+        // OPTIMIZED: Only update questionnaireResponses and related fields
+        // instead of replacing the entire task to prevent unnecessary re-renders
         if (state.currentTask && state.currentTask._id === updatedTask._id) {
-          state.currentTask = updatedTask;
+          // Only update the specific fields that changed
+          state.currentTask.questionnaireResponses = updatedTask.questionnaireResponses;
+          state.currentTask.questionnaireNotes = updatedTask.questionnaireNotes;
+          state.currentTask.questionnaireCompleted = updatedTask.questionnaireCompleted;
+          // Update overallProgress if it changed
+          if (updatedTask.overallProgress !== undefined) {
+            state.currentTask.overallProgress = updatedTask.overallProgress;
+          }
         }
         
-        state.tasks.results = state.tasks.results.map(task => 
-          task._id === updatedTask._id ? updatedTask : task
-        );
+        // Update in tasks list as well (minimal update)
+        const taskIndex = state.tasks.results.findIndex(task => task._id === updatedTask._id);
+        if (taskIndex !== -1) {
+          state.tasks.results[taskIndex].questionnaireResponses = updatedTask.questionnaireResponses;
+          state.tasks.results[taskIndex].questionnaireCompleted = updatedTask.questionnaireCompleted;
+          if (updatedTask.overallProgress !== undefined) {
+            state.tasks.results[taskIndex].overallProgress = updatedTask.overallProgress;
+          }
+        }
         
         // toast.success('Questionnaire saved successfully');
       })

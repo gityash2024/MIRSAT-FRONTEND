@@ -1034,6 +1034,10 @@ const InspectionStepForm = ({
   const fileInputRefs = useRef({});
   const timerRefs = useRef({});
   
+  // Refs for debouncing API calls to reduce server load
+  const responseDebounceRef = useRef({});
+  const pendingResponsesRef = useRef({});
+  
   // Move getSections function inside the component
   const getSections = () => {
     // This would normally extract sections from the task data
@@ -1141,8 +1145,13 @@ const InspectionStepForm = ({
   // Clean up timers on unmount
   useEffect(() => {
     return () => {
+      // Clear activity timers
       Object.values(timerRefs.current).forEach(timer => {
         if (timer) clearInterval(timer);
+      });
+      // Clear response debounce timers
+      Object.values(responseDebounceRef.current).forEach(timer => {
+        if (timer) clearTimeout(timer);
       });
     };
   }, []);
@@ -2332,7 +2341,7 @@ const InspectionStepForm = ({
     return { achieved, total, percentage };
   };
   
-  // Fix handleQuestionResponse to properly save responses
+  // OPTIMIZED: handleQuestionResponse with debouncing to reduce API calls
   const handleQuestionResponse = (questionId, sectionId, value) => {
     const key = `${sectionId}_${questionId}`;
     
@@ -2390,66 +2399,75 @@ const InspectionStepForm = ({
     
     let scoreMsg = '';
     if (question && question.scores && question.scores[value] !== undefined) {
-      // Show the score value in toast
       scoreMsg = ` (${question.scores[value]} points)`;
     }
     
-    // Find the progress item for this section
-    const progressItem = task.progress?.find(p => 
-      p.subLevelId && (p.subLevelId === sectionId || 
-                       p.subLevelId._id === sectionId || 
-                       p.subLevelId.toString() === sectionId.toString())
-    );
+    // Store the pending response
+    pendingResponsesRef.current[key] = { questionId, sectionId, value, scoreMsg };
     
-    // Collect all current responses for this section
-    const responses = progressItem?.responses || {}; 
+    // Clear existing debounce timer for this section
+    if (responseDebounceRef.current[sectionId]) {
+      clearTimeout(responseDebounceRef.current[sectionId]);
+    }
     
-    // Add the new response
-    responses[questionId] = value;
-    
-    // Save to database
-    setLoading(prev => ({ ...prev, [sectionId]: true }));
-    
-    // First update the progress item with the response
-    const updateProgressPromise = dispatch(updateUserTaskProgress({
-      taskId: task._id,
-      subLevelId: sectionId,
-      status: progressItem?.status || 'pending', // Maintain current status
-      notes: notes[sectionId] || progressItem?.notes || '',
-      photos: photos[sectionId] || progressItem?.photos || [],
-      timeSpent: timeSpent[sectionId] || progressItem?.timeSpent || 0,
-      responses: responses
-    })).unwrap();
-    
-    // Then update the task questionnaire to ensure the score is updated
-    const currentResponses = { ...(task.questionnaireResponses || {}) };
-    
-    // Update using both key formats to ensure compatibility
-    currentResponses[questionId] = value;
-    currentResponses[`${sectionId}-${questionId}`] = value;
-    
-    const updateQuestionnairePromise = dispatch(updateTaskQuestionnaire({
-      taskId: task._id,
-      questionnaire: {
-        responses: currentResponses,
-        notes: task.questionnaireNotes || '',
-        completed: false // Don't auto-complete the entire questionnaire
-      }
-    })).unwrap();
-    
-    // Execute both updates in parallel
-    Promise.all([updateProgressPromise, updateQuestionnairePromise])
-      .then(([updatedTask]) => {
-        if (onUpdateProgress) onUpdateProgress(updatedTask);
-        toast.success(t('tasks.responseRecorded', { value, score: scoreMsg }));
-        // Recalculate scores
+    // Debounce the API call - wait 500ms before saving
+    // This batches multiple rapid responses into a single API call
+    responseDebounceRef.current[sectionId] = setTimeout(async () => {
+      try {
+        setLoading(prev => ({ ...prev, [sectionId]: true }));
+        
+        // Collect all pending responses for this section
+        const sectionResponses = {};
+        const allResponses = { ...(task.questionnaireResponses || {}) };
+        
+        Object.entries(pendingResponsesRef.current).forEach(([k, v]) => {
+          if (v.sectionId === sectionId) {
+            sectionResponses[v.questionId] = v.value;
+            // Update using both key formats for compatibility
+            allResponses[v.questionId] = v.value;
+            allResponses[`${v.sectionId}-${v.questionId}`] = v.value;
+            delete pendingResponsesRef.current[k];
+          }
+        });
+        
+        // Find the progress item for this section
+        const progressItem = task.progress?.find(p => 
+          p.subLevelId && (p.subLevelId === sectionId || 
+                           p.subLevelId._id === sectionId || 
+                           p.subLevelId.toString() === sectionId.toString())
+        );
+        
+        // Merge with existing responses
+        const existingResponses = progressItem?.responses || {};
+        const mergedResponses = { ...existingResponses, ...sectionResponses };
+        
+        // OPTIMIZED: Only make ONE API call (questionnaire update)
+        // The progress update is handled separately by the parent component
+        await dispatch(updateTaskQuestionnaire({
+          taskId: task._id,
+          questionnaire: {
+            responses: allResponses,
+            notes: task.questionnaireNotes || '',
+            completed: false
+          }
+        })).unwrap();
+        
+        toast.success(t('tasks.responseSavedSuccessfully'));
+        
+        // Recalculate scores locally
         calculateScores();
-        setLoading(prev => ({ ...prev, [sectionId]: false }));
-      })
-      .catch(error => {
+        
+        // Notify parent to update progress (debounced in parent)
+        if (onUpdateProgress) {
+          onUpdateProgress({ questionnaireResponses: allResponses });
+        }
+        
+      } catch (error) {
         toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
+      } finally {
         setLoading(prev => ({ ...prev, [sectionId]: false }));
-      });
+      }
+    }, 500); // 500ms debounce
   };
   
   // Add a new function to handle section updates based on question responses

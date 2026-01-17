@@ -967,6 +967,7 @@
     "startTask": "Start Inspection",
     "continue": "Continue",
     "noTasksMatchFilters": "No inspections match your current filters. Try adjusting your search criteria.",
+    "noTasksFoundMatchingCriteria": "No tasks found matching your criteria",
     "errorLoadingTask": "Error Loading Task",
     "taskNotFound": "Inspection Not Found",
     "taskNotFoundDescription": "The inspection you are looking for does not exist.",

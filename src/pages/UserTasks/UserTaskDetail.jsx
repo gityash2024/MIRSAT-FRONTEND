@@ -3785,6 +3785,10 @@ const UserTaskDetail = () => {
   const timerRef = useRef(null);
   const signatureCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  
+  // Refs for debouncing progress updates to reduce API calls
+  const progressUpdateTimeoutRef = useRef(null);
+  const lastProgressUpdateRef = useRef(0);
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -3835,9 +3839,9 @@ const UserTaskDetail = () => {
   const accumulatedTimeRef = useRef(0); // Ref to track accumulated time for timer updates
   const sessionStartTimeRef = useRef(null); // Ref to track session start time for timer updates
 
-  // Auto-update functionality
+  // Auto-update functionality - DISABLED by default to prevent infinite API calls
   const autoUpdateRef = useRef(null);
-  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(false);
 
   // Track user interactions to prevent auto-update interference
   const userActiveRef = useRef(false);
@@ -3977,10 +3981,20 @@ const UserTaskDetail = () => {
   //   }
   // }, [isArchivedTask, activeTab]);
 
+  // Ref to store current task data for timer functions (prevents recreation on task updates)
+  const currentTaskRef = useRef(null);
+  
+  // Keep ref in sync with currentTask
+  useEffect(() => {
+    currentTaskRef.current = currentTask;
+  }, [currentTask]);
+
   // Define timer functions BEFORE useEffects that use them
+  // CRITICAL FIX: Use refs instead of currentTask to prevent infinite loops
   const startScreenTimer = useCallback(() => {
+    const task = currentTaskRef.current;
     // Only start timer if task is in_progress and not completed/archived
-    if (currentTask?.status !== 'in_progress' || currentTask?.signature || currentTask?.status === 'completed' || currentTask?.status === 'archived') {
+    if (task?.status !== 'in_progress' || task?.signature || task?.status === 'completed' || task?.status === 'archived') {
       return; // Don't start timer for completed/archived tasks
     }
 
@@ -4004,8 +4018,9 @@ const UserTaskDetail = () => {
         }
       }, 100);
     }
-  }, [currentTask, isScreenActive]);
+  }, [isScreenActive]); // FIXED: Removed currentTask dependency
 
+  // CRITICAL FIX: Use refs instead of currentTask to prevent infinite loops
   const pauseScreenTimer = useCallback(async (saveToBackend = true) => {
     if (isScreenActive) {
       setIsScreenActive(false);
@@ -4031,17 +4046,18 @@ const UserTaskDetail = () => {
       }
 
       // Save time to backend when pausing (e.g., when navigating away)
-      if (saveToBackend && currentTask && currentTask.status === 'in_progress' && !currentTask.signature && currentTask.status !== 'completed' && currentTask.status !== 'archived') {
+      const task = currentTaskRef.current;
+      if (saveToBackend && task && task.status === 'in_progress' && !task.signature && task.status !== 'completed' && task.status !== 'archived') {
         const totalActiveTimeInSeconds = accumulatedTimeRef.current;
         if (totalActiveTimeInSeconds > 0) {
           try {
             // Use synchronous dispatch or ensure it completes
             await dispatch(updateUserTaskProgress({
-              taskId: currentTask._id,
-              subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-              status: currentTask.status,
+              taskId: task._id,
+              subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
+              status: task.status,
               taskMetrics: {
-                ...currentTask.taskMetrics,
+                ...task.taskMetrics,
                 timeSpent: totalActiveTimeInSeconds // Save in seconds
               }
             }));
@@ -4051,27 +4067,29 @@ const UserTaskDetail = () => {
         }
       }
     }
-  }, [isScreenActive, currentTask, dispatch]);
+  }, [isScreenActive, dispatch]); // FIXED: Removed currentTask dependency
 
+  // CRITICAL FIX: Use refs instead of currentTask to prevent infinite loops
   const stopTimerPermanently = useCallback(() => {
     pauseScreenTimer();
     // Save final time to backend when task is completed
-    if (currentTask && (accumulatedTimeRef.current > 0 || sessionStartTimeRef.current)) {
+    const task = currentTaskRef.current;
+    if (task && (accumulatedTimeRef.current > 0 || sessionStartTimeRef.current)) {
       const finalSessionTime = sessionStartTimeRef.current ? (Date.now() - sessionStartTimeRef.current) / 1000 : 0;
       const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime;
 
       // Update task metrics with final time in seconds (backend will handle conversion if needed)
       dispatch(updateUserTaskProgress({
-        taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: currentTask.status,
+        taskId: task._id,
+        subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
+        status: task.status,
         taskMetrics: {
-          ...currentTask.taskMetrics,
+          ...task.taskMetrics,
           timeSpent: totalActiveTimeInSeconds // Save in seconds
         }
       }));
     }
-  }, [pauseScreenTimer, currentTask, dispatch]);
+  }, [pauseScreenTimer, dispatch]); // FIXED: Removed currentTask dependency
 
   const calculateScores = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
@@ -4255,6 +4273,7 @@ const UserTaskDetail = () => {
   }, [currentTask?._id, currentTask?.taskMetrics?.timeSpent, isScreenActive, pauseScreenTimer]);
 
   // Start/stop timer based on task status (separate effect to avoid resetting timer)
+  // CRITICAL FIX: Only depend on status and signature, not on callbacks (they use refs now)
   useEffect(() => {
     // Start timer for in-progress tasks
     if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
@@ -4270,17 +4289,19 @@ const UserTaskDetail = () => {
     } else {
       // Stop timer if task is not in progress
       if (isScreenActive) {
-        pauseScreenTimer();
+        pauseScreenTimer(false); // Don't save to backend here to avoid loops
       }
     }
-  }, [currentTask?.status, currentTask?.signature, isScreenActive, startScreenTimer, pauseScreenTimer]);
+  }, [currentTask?.status, currentTask?.signature, isScreenActive]); // FIXED: Removed callback dependencies
 
   // Handle page visibility changes
+  // CRITICAL FIX: Use refs for task data to prevent infinite loops
   useEffect(() => {
     const handleVisibilityChange = () => {
+      const task = currentTaskRef.current;
       if (document.hidden) {
         pauseScreenTimer(true); // Save to backend when page becomes hidden
-      } else if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
+      } else if (task?.status === 'in_progress' && !task?.signature && task?.status !== 'completed' && task?.status !== 'archived') {
         startScreenTimer();
       }
     };
@@ -4291,15 +4312,16 @@ const UserTaskDetail = () => {
         const sessionDuration = (Date.now() - sessionStartTimeRef.current) / 1000;
         const totalActiveTimeInSeconds = accumulatedTimeRef.current + sessionDuration;
         
+        const task = currentTaskRef.current;
         // Use sendBeacon or synchronous save for beforeunload
-        if (currentTask && currentTask.status === 'in_progress' && totalActiveTimeInSeconds > 0) {
+        if (task && task.status === 'in_progress' && totalActiveTimeInSeconds > 0) {
           // Save synchronously using navigator.sendBeacon or sync fetch
           const data = JSON.stringify({
-            taskId: currentTask._id,
-            subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-            status: currentTask.status,
+            taskId: task._id,
+            subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
+            status: task.status,
             taskMetrics: {
-              ...currentTask.taskMetrics,
+              ...task.taskMetrics,
               timeSpent: totalActiveTimeInSeconds
             }
           });
@@ -4308,7 +4330,7 @@ const UserTaskDetail = () => {
           if (navigator.sendBeacon) {
             const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
             navigator.sendBeacon(
-              `${apiBaseUrl}/api/v1/user-tasks/${currentTask._id}/progress/${currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default'}`,
+              `${apiBaseUrl}/api/v1/user-tasks/${task._id}/progress/${task.inspectionLevel?.subLevels?.[0]?._id || 'default'}`,
               data
             );
           }
@@ -4331,7 +4353,7 @@ const UserTaskDetail = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [currentTask?.status, currentTask?.signature, startScreenTimer, pauseScreenTimer, isScreenActive]);
+  }, [isScreenActive]); // FIXED: Removed all callback and currentTask dependencies - they use refs now
 
   useEffect(() => {
     if (currentTask) {
@@ -4433,8 +4455,10 @@ const UserTaskDetail = () => {
   }, [showSignatureModal]);
 
   // Periodic save function to backup time data (define BEFORE useEffect)
+  // CRITICAL FIX: Use refs instead of currentTask to prevent infinite loops
   const saveTimeToBackend = useCallback(async () => {
-    if (!currentTask || currentTask.status === 'completed' || currentTask.signature || currentTask.status === 'archived') {
+    const task = currentTaskRef.current;
+    if (!task || task.status === 'completed' || task.signature || task.status === 'archived') {
       return;
     }
 
@@ -4444,11 +4468,11 @@ const UserTaskDetail = () => {
     if (totalActiveTimeInSeconds > 0) {
       try {
         await dispatch(updateUserTaskProgress({
-          taskId: currentTask._id,
-          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-          status: currentTask.status,
+          taskId: task._id,
+          subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
+          status: task.status,
           taskMetrics: {
-            ...currentTask.taskMetrics,
+            ...task.taskMetrics,
             timeSpent: totalActiveTimeInSeconds // Save in seconds
           }
         }));
@@ -4456,20 +4480,36 @@ const UserTaskDetail = () => {
         console.error('Failed to save time to backend:', error);
       }
     }
-  }, [currentTask, sessionStartTime, dispatch]);
+  }, [dispatch]); // FIXED: Removed currentTask and sessionStartTime dependencies
 
   // Set up periodic time saving (every 2 minutes)
+  // CRITICAL FIX: Use a ref to track if interval is set up to prevent recreation
+  const saveIntervalRef = useRef(null);
+  
   useEffect(() => {
+    // Clear any existing interval first
+    if (saveIntervalRef.current) {
+      clearInterval(saveIntervalRef.current);
+      saveIntervalRef.current = null;
+    }
+    
     if (currentTask?.status === 'in_progress' && !currentTask?.signature) {
-      const saveInterval = setInterval(() => {
+      saveIntervalRef.current = setInterval(() => {
         saveTimeToBackend();
       }, 120000); // Save every 2 minutes
-
-      return () => clearInterval(saveInterval);
     }
-  }, [currentTask, saveTimeToBackend]);
 
-  // Auto-update functionality - update progress and scores every 5 seconds
+    return () => {
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
+      }
+    };
+  }, [currentTask?.status, currentTask?.signature]); // FIXED: Removed saveTimeToBackend dependency since it uses refs
+
+  // Auto-update functionality - DISABLED by default to prevent server overload
+  // This interval is kept only for manual enabling by user (via Live toggle) with a longer interval
+  // Progress updates are now triggered only when user responds to questions (see handleSaveInspectionResponse)
   useEffect(() => {
     // Cleanup any existing interval first
     if (autoUpdateRef.current) {
@@ -4477,95 +4517,41 @@ const UserTaskDetail = () => {
       autoUpdateRef.current = null;
     }
 
-    if (autoUpdateEnabled && currentTask && currentTask._id) {
-      console.log('Setting up progress auto-update every 5 seconds for task:', currentTask._id);
+    // Only set up interval if explicitly enabled by user AND task is in progress
+    if (autoUpdateEnabled && currentTask && currentTask._id && currentTask.status === 'in_progress') {
+      console.log('Setting up progress auto-update every 60 seconds for task:', currentTask._id);
 
+      // Use 60 second interval instead of 5 seconds to reduce server load
       autoUpdateRef.current = setInterval(async () => {
         try {
           // Skip update if user is actively interacting
           if (userActiveRef.current) {
-            console.log('Skipping auto-update - user is active');
             return;
           }
 
-          console.log('Auto-updating progress and scores... Current progress:', currentTask.overallProgress);
-
-          // Store current UI state BEFORE any updates
-          const currentPageId = selectedPage;
-          const currentSectionId = selectedSection;
-          const currentActiveTab = activeTab;
-
-          // Fetch latest task data silently
-          const updatedTask = await dispatch(fetchUserTaskDetails(currentTask._id));
-          console.log('Updated task progress:', updatedTask?.payload?.overallProgress);
-          console.log('Fresh task data has', Object.keys(updatedTask?.payload?.questionnaireResponses || {}).length, 'responses');
-
-          // Force recalculate completion percentage using fresh task data
-          const newCompletionPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
-          console.log('Recalculated completion percentage with fresh data:', newCompletionPercentage);
-
-          // Always update if there's any difference, even small ones
-          if (updatedTask?.payload && newCompletionPercentage !== (updatedTask.payload.overallProgress || 0)) {
-            console.log('Updating task progress from', updatedTask.payload.overallProgress, 'to', newCompletionPercentage);
-
-            try {
-              await dispatch(updateUserTaskProgress({
-                taskId: currentTask._id,
-                subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-                status: currentTask.status,
-                taskMetrics: {
-                  ...currentTask.taskMetrics,
-                  completionPercentage: newCompletionPercentage
-                }
-              }));
-
-              console.log('Progress update successful');
-              // DO NOT fetch task details again immediately to prevent progress reset
-
-            } catch (error) {
-              console.error('Failed to update progress:', error);
-            }
-          } else {
-            console.log('No progress update needed - values match');
-          }
-
-          // Restore UI state to prevent tab switching (only if user hasn't changed it)
-          setTimeout(() => {
-            if (!userActiveRef.current) {
-              if (currentActiveTab && currentActiveTab !== activeTab) {
-                setActiveTab(currentActiveTab);
-              }
-              if (currentPageId && currentPageId !== selectedPage) {
-                setSelectedPage(currentPageId);
-              }
-              if (currentSectionId && currentSectionId !== selectedSection) {
-                setSelectedSection(currentSectionId);
-              }
-
-              // Update scores and recalculate everything using fresh data
-              calculateScores(updatedTask?.payload);
-
-              // Force recalculate completion percentage with updated data
-              const refreshedPercentage = calculateTaskCompletionPercentage(updatedTask?.payload);
-              console.log('Auto-update: Refreshed completion percentage:', refreshedPercentage);
-            }
-          }, 100);
+          // Only recalculate local progress without hitting the server
+          // Server updates happen only when user responds to questions
+          const newCompletionPercentage = calculateTaskCompletionPercentage();
+          
+          // Update local scores without API call
+          calculateScores();
+          
+          console.log('Auto-update: Local progress recalculated:', newCompletionPercentage);
 
         } catch (error) {
           console.error('Auto-update failed:', error);
         }
-      }, 5000); // Update every 5 seconds
+      }, 60000); // Update every 60 seconds (was 5 seconds)
     }
 
     // Cleanup function to clear interval
     return () => {
       if (autoUpdateRef.current) {
-        console.log('Clearing auto-update interval on cleanup');
         clearInterval(autoUpdateRef.current);
         autoUpdateRef.current = null;
       }
     };
-  }, [autoUpdateEnabled, currentTask?._id]); // Keep dependencies minimal
+  }, [autoUpdateEnabled, currentTask?._id, currentTask?.status]); // Keep dependencies minimal
 
   // Component cleanup effect
   useEffect(() => {
@@ -4578,6 +4564,15 @@ const UserTaskDetail = () => {
       if (sessionTimerRef.current) {
         clearInterval(sessionTimerRef.current);
         sessionTimerRef.current = null;
+      }
+      // Clear debounced progress update timeout
+      if (progressUpdateTimeoutRef.current) {
+        clearTimeout(progressUpdateTimeoutRef.current);
+        progressUpdateTimeoutRef.current = null;
+      }
+      // Clear debounce timers for text inputs
+      if (debounceTimersRef.current) {
+        Object.values(debounceTimersRef.current).forEach(timer => clearTimeout(timer));
       }
       console.log('UserTaskDetail component unmounted - all timers cleared');
     };
@@ -4853,7 +4848,7 @@ const UserTaskDetail = () => {
   };
 
   const handleSaveInspectionResponse = async (questionId, value) => {
-    if (!currentTask || currentTask.status === 'completed') {
+    if (!currentTask || currentTask.status === 'completed' || currentTask.status === 'archived') {
       return;
     }
 
@@ -4870,6 +4865,13 @@ const UserTaskDetail = () => {
       const currentPageId = selectedPage;
       const currentSectionId = selectedSection;
       const currentActiveTab = activeTab;
+      
+      // CRITICAL FIX: Store task data for use in setTimeout to avoid stale closures
+      const taskId = currentTask._id;
+      const subLevelId = currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default';
+      const taskStatus = currentTask.status;
+      const taskMetrics = currentTask.taskMetrics;
+      const currentOverallProgress = currentTask.overallProgress || 0;
 
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
@@ -4877,8 +4879,9 @@ const UserTaskDetail = () => {
         [questionId]: value
       };
 
-      const result = await dispatch(updateTaskQuestionnaire({
-        taskId: currentTask._id,
+      // Only make ONE API call to save the questionnaire response
+      await dispatch(updateTaskQuestionnaire({
+        taskId: taskId,
         questionnaire: {
           responses: updatedResponses,
           notes: currentTask.questionnaireNotes || '',
@@ -4888,33 +4891,55 @@ const UserTaskDetail = () => {
 
       toast.success(t('tasks.responseSavedSuccessfully'));
 
-      const completionPercentage = calculateTaskCompletionPercentage();
-
-      if (Math.abs(completionPercentage - (currentTask.overallProgress || 0)) > 2) {
-        await dispatch(updateUserTaskProgress({
-          taskId: currentTask._id,
-          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-          status: currentTask.status,
-          taskMetrics: {
-            ...currentTask.taskMetrics,
-            completionPercentage: completionPercentage
-          }
-        })).unwrap();
-      }
-
-      // Refresh task details while preserving UI state
-      await dispatch(fetchUserTaskDetails(currentTask._id));
+      // Recalculate local scores without API call
       calculateScores();
 
-      // Restore state immediately to prevent UI jumping
+      // OPTIMIZED: Debounce progress updates to reduce API calls
+      // Only update progress if more than 5 seconds have passed since last update
+      const now = Date.now();
+      const completionPercentage = calculateTaskCompletionPercentage();
+      const progressDiff = Math.abs(completionPercentage - currentOverallProgress);
+
+      // Clear any pending progress update
+      if (progressUpdateTimeoutRef.current) {
+        clearTimeout(progressUpdateTimeoutRef.current);
+      }
+
+      // Only schedule progress update if there's a significant change (>5%)
+      // OR if enough time has passed (10 seconds) since last update
+      if (progressDiff > 5 || (now - lastProgressUpdateRef.current > 10000 && progressDiff > 0)) {
+        // Debounce progress update by 2 seconds to batch multiple rapid responses
+        // CRITICAL FIX: Use captured values instead of currentTask to avoid stale closures
+        progressUpdateTimeoutRef.current = setTimeout(async () => {
+          try {
+            await dispatch(updateUserTaskProgress({
+              taskId: taskId,
+              subLevelId: subLevelId,
+              status: taskStatus,
+              taskMetrics: {
+                ...taskMetrics,
+                completionPercentage: completionPercentage
+              }
+            })).unwrap();
+            lastProgressUpdateRef.current = Date.now();
+            console.log('Progress updated to:', completionPercentage);
+          } catch (error) {
+            console.error('Failed to update progress:', error);
+          }
+        }, 2000);
+      }
+
+      // REMOVED: Unnecessary fetchUserTaskDetails call
+      // The questionnaire response is saved, no need to refetch entire task data
+      // This was causing extra API calls and potential re-render loops
+
+      // Restore state to prevent UI jumping
       if (currentActiveTab) {
         setActiveTab(currentActiveTab);
       }
-
       if (currentPageId) {
         setSelectedPage(currentPageId);
       }
-
       if (currentSectionId) {
         setSelectedSection(currentSectionId);
       }

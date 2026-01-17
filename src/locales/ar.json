@@ -883,6 +883,7 @@
     "startTask": "بدء التفتيش",
     "continue": "متابعة",
     "noTasksMatchFilters": "لا توجد تفتيشات تطابق المرشحات الحالية. حاول ضبط معايير البحث الخاصة بك.",
+    "noTasksFoundMatchingCriteria": "لم يتم العثور على مهام تطابق معاييرك",
     "errorLoadingTask": "خطأ في تحميل المهمة",
     "taskNotFound": "التفتيش غير موجود",
     "taskNotFoundDescription": "التفتيش الذي تبحث عنه غير موجود.",
