@@ -1241,7 +1241,15 @@
     "reportFilename": "اسم ملف التقرير",
     "enterCustomFilename": "أدخل اسم ملف مخصص",
     "dontIncludeFileExtension": "لا تقم بتضمين امتداد الملف (.{{format}})",
-    "preview": "معاينة"
+    "preview": "معاينة",
+    "progressDetails": "تفاصيل التقدم",
+    "currentProgress": "التقدم الحالي",
+    "unansweredQuestions": "الأسئلة الإلزامية غير المجابة",
+    "allQuestionsAnswered": "تم الإجابة على جميع الأسئلة الإلزامية!",
+    "readyToComplete": "التفتيش الخاص بك مكتمل وجاهز للتقديم.",
+    "progressCalculating": "جاري حساب التقدم. سيتم تحديث العرض إلى 100٪ قريباً.",
+    "clickToNavigate": "انقر للانتقال إلى هذا السؤال",
+    "navigatedTo": "تم الانتقال إلى"
   },
   "reports": {
     "title": "التقارير",

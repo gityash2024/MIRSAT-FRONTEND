@@ -3846,6 +3846,7 @@ const UserTaskDetail = () => {
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureImage, setSignatureImage] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState('draw');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
@@ -4021,6 +4022,63 @@ const UserTaskDetail = () => {
     }
 
     return percentage;
+  }, [currentTask, inspectionPages]);
+
+  // Function to get detailed list of unanswered required questions
+  const getUnansweredQuestionsDetails = useCallback(() => {
+    const unansweredDetails = [];
+
+    if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
+      return unansweredDetails;
+    }
+
+    inspectionPages.forEach((page, pageIndex) => {
+      if (page.sections) {
+        page.sections.forEach((section, sectionIndex) => {
+          if (section.questions) {
+            section.questions.forEach((question, questionIndex) => {
+              // Only check required questions
+              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+                return; // Skip recommended/non-mandatory questions
+              }
+
+              const questionId = question._id || question.id;
+              let hasResponse = false;
+
+              if (currentTask.questionnaireResponses) {
+                if (currentTask.questionnaireResponses[questionId] !== undefined) {
+                  const response = currentTask.questionnaireResponses[questionId];
+                  hasResponse = response !== null && response !== undefined && response !== '';
+                } else {
+                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
+                    key.includes(questionId) || key.endsWith(questionId)
+                  );
+
+                  if (responseKey) {
+                    const response = currentTask.questionnaireResponses[responseKey];
+                    hasResponse = response !== null && response !== undefined && response !== '';
+                  }
+                }
+              }
+
+              if (!hasResponse) {
+                unansweredDetails.push({
+                  pageName: page.name || `Page ${pageIndex + 1}`,
+                  pageIndex: pageIndex + 1,
+                  sectionName: section.name || `Section ${sectionIndex + 1}`,
+                  sectionIndex: sectionIndex + 1,
+                  questionText: question.question || question.text || `Question ${questionIndex + 1}`,
+                  questionIndex: questionIndex + 1,
+                  questionId: questionId
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+
+    return unansweredDetails;
   }, [currentTask, inspectionPages]);
 
   // Add readonly mode check for archived tasks
@@ -7255,7 +7313,7 @@ const UserTaskDetail = () => {
 
                       <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
                         <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
-                        <MetricValue $color="#f39c12" style={{ fontFamily: 'monospace', fontSize: '20px' }}>
+                        <MetricValue $color="#f39c12" style={{ fontFamily: 'monospace', fontSize: '18px' }}>
                           {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
                             ? formatTimeFromSeconds(displayTime)
                             : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
@@ -7340,15 +7398,44 @@ const UserTaskDetail = () => {
                     </ProgressTitle>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <ProgressValue>
-                        {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
-                        {/* Debug info in development */}
-                        {process.env.NODE_ENV === 'development' && (
-                          <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
-                            DB: {currentTask?.overallProgress || 0}% | Calc: {taskCompletionPercentage}%
-                          </div>
-                        )}
-                      </ProgressValue>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ProgressValue>
+                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                          {/* Debug info in development */}
+                          {process.env.NODE_ENV === 'development' && (
+                            <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
+                              DB: {currentTask?.overallProgress || 0}% | Calc: {taskCompletionPercentage}%
+                            </div>
+                          )}
+                        </ProgressValue>
+                        <button
+                          onClick={() => setShowProgressDetails(true)}
+                          style={{
+                            background: 'rgba(55, 136, 216, 0.1)',
+                            border: '1px solid rgba(55, 136, 216, 0.3)',
+                            borderRadius: '50%',
+                            width: '28px',
+                            height: '28px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            color: '#3788d8'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(55, 136, 216, 0.2)';
+                            e.currentTarget.style.borderColor = '#3788d8';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(55, 136, 216, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(55, 136, 216, 0.3)';
+                          }}
+                          title="View progress details"
+                        >
+                          <Info size={16} />
+                        </button>
+                      </div>
 
                       {autoUpdateEnabled && (
                         <div style={{
@@ -7475,7 +7562,7 @@ const UserTaskDetail = () => {
 
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#f39c12', fontFamily: 'monospace' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '800', color: '#f39c12', fontFamily: 'monospace' }}>
                         {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
                           ? formatTimeFromSeconds(displayTime)
                           : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
@@ -7969,7 +8056,7 @@ const UserTaskDetail = () => {
                   borderRadius: '8px'
                 }}>
                   <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.time')}</span>
-                  <span style={{ fontWeight: '700', color: '#f39c12', fontFamily: 'monospace' }}>
+                  <span style={{ fontWeight: '700', color: '#f39c12', fontFamily: 'monospace', fontSize: '14px' }}>
                     {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
                       ? formatTimeFromSeconds(displayTime)
                       : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
@@ -8384,6 +8471,165 @@ const UserTaskDetail = () => {
                 <Download size={16} />
                 {t('tasks.downloadReport')}
               </QuickActionButton>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Progress Details Modal */}
+      {showProgressDetails && (
+        <ModalOverlay onClick={() => setShowProgressDetails(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <ModalHeader>
+              <ModalTitle>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <BarChart2 size={24} />
+                  {t('tasks.progressDetails') || 'Progress Details'}
+                </div>
+              </ModalTitle>
+              <CloseButton onClick={() => setShowProgressDetails(false)}>
+                <X size={18} />
+              </CloseButton>
+            </ModalHeader>
+
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{
+                padding: '16px',
+                background: taskCompletionPercentage === 100 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(243, 156, 18, 0.1)',
+                borderRadius: '12px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+                  {t('tasks.currentProgress') || 'Current Progress'}
+                </div>
+                <div style={{ 
+                  fontSize: '32px', 
+                  fontWeight: '800', 
+                  color: taskCompletionPercentage === 100 ? '#27ae60' : '#f39c12' 
+                }}>
+                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+                  {(() => {
+                    const unanswered = getUnansweredQuestionsDetails();
+                    const total = unanswered.length + (inspectionPages?.reduce((sum, page) => {
+                      return sum + (page.sections?.reduce((sectionSum, section) => {
+                        return sectionSum + (section.questions?.filter(q => 
+                          q.requirementType !== 'recommended' && q.mandatory !== false && q.required !== false
+                        )?.length || 0);
+                      }, 0) || 0);
+                    }, 0) || 0);
+                    const answered = total - unanswered.length;
+                    return `${answered} of ${total} required questions answered`;
+                  })()}
+                </div>
+              </div>
+
+              {(() => {
+                const unansweredQuestions = getUnansweredQuestionsDetails();
+                
+                if (unansweredQuestions.length === 0) {
+                  return (
+                    <div style={{
+                      padding: '24px',
+                      background: 'rgba(39, 174, 96, 0.1)',
+                      borderRadius: '12px',
+                      textAlign: 'center'
+                    }}>
+                      <CheckCircle size={48} style={{ color: '#27ae60', marginBottom: '12px' }} />
+                      <div style={{ fontSize: '18px', fontWeight: '600', color: '#27ae60', marginBottom: '8px' }}>
+                        {t('tasks.allQuestionsAnswered') || 'All Required Questions Answered!'}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        {taskCompletionPercentage === 100 
+                          ? (t('tasks.readyToComplete') || 'Your inspection is complete and ready for submission.')
+                          : (t('tasks.progressCalculating') || 'Progress is being calculated. The display should update to 100% shortly.')}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1a202c',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={20} style={{ color: '#f39c12' }} />
+                      {t('tasks.unansweredQuestions') || 'Unanswered Required Questions'} ({unansweredQuestions.length})
+                    </div>
+
+                    <div style={{ 
+                      maxHeight: '400px', 
+                      overflowY: 'auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}>
+                      {unansweredQuestions.map((item, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: '12px 16px',
+                            background: 'rgba(243, 156, 18, 0.05)',
+                            border: '1px solid rgba(243, 156, 18, 0.2)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onClick={() => {
+                            // Navigate to the question
+                            const pageIndex = item.pageIndex - 1;
+                            if (inspectionPages[pageIndex]) {
+                              setSelectedPage(inspectionPages[pageIndex]._id);
+                              setActiveTab('inspection');
+                              setShowProgressDetails(false);
+                              toast.info(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
+                            }
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(243, 156, 18, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(243, 156, 18, 0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(243, 156, 18, 0.05)';
+                            e.currentTarget.style.borderColor = 'rgba(243, 156, 18, 0.2)';
+                          }}
+                        >
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: '#f39c12', 
+                            fontWeight: '600',
+                            marginBottom: '4px'
+                          }}>
+                            {item.pageName} › {item.sectionName}
+                          </div>
+                          <div style={{ 
+                            fontSize: '14px', 
+                            color: '#1a202c',
+                            lineHeight: '1.5'
+                          }}>
+                            {item.questionText}
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#64748b',
+                            marginTop: '4px',
+                            fontStyle: 'italic'
+                          }}>
+                            {t('tasks.clickToNavigate') || 'Click to navigate to this question'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </ModalContent>
         </ModalOverlay>

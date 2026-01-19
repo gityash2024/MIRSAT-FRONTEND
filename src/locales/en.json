@@ -1326,7 +1326,15 @@
     "reportFilename": "Report Filename",
     "enterCustomFilename": "Enter custom filename",
     "dontIncludeFileExtension": "Don't include the file extension (.{{format}})",
-    "preview": "Preview"
+    "preview": "Preview",
+    "progressDetails": "Progress Details",
+    "currentProgress": "Current Progress",
+    "unansweredQuestions": "Unanswered Required Questions",
+    "allQuestionsAnswered": "All Required Questions Answered!",
+    "readyToComplete": "Your inspection is complete and ready for submission.",
+    "progressCalculating": "Progress is being calculated. The display should update to 100% shortly.",
+    "clickToNavigate": "Click to navigate to this question",
+    "navigatedTo": "Navigated to"
   },
   "reports": {
     "title": "Reports",
