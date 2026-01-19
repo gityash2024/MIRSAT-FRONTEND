@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useLoading } from '../../../context/LoadingContext';
 import { 
   ChevronDown, ChevronUp, ChevronRight, CheckCircle, XCircle, 
   AlertTriangle, Clock, Loader, FileText,
@@ -1010,6 +1011,7 @@ const InspectionStepForm = ({
 }) => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const { startLoading, stopLoading } = useLoading();
   const [selectedSubLevel, setSelectedSubLevel] = useState(null);
   const [expandedNodes, setExpandedNodes] = useState({});
   const [loading, setLoading] = useState({});
@@ -1488,7 +1490,7 @@ const InspectionStepForm = ({
     
     const file = e.target.files[0];
     
-    // Validate file format and size (1MB limit)
+    // Validate file format and size (10MB limit)
     const { validateFileWithToast } = await import('../../../utils/fileValidation');
     if (!validateFileWithToast(file, toast, t)) {
       if (fileInputRefs.current[subLevelId]) {
@@ -1500,7 +1502,12 @@ const InspectionStepForm = ({
     // Set uploading state
     setUploadingPhotos(prev => ({ ...prev, [subLevelId]: true }));
     
-    toast.loading(t('tasks.uploadingFile'));
+    // Show loading overlay to block interactions
+    startLoading(t('tasks.uploadingFile') || 'Uploading file...', {
+      blockInteraction: true,
+      showDelay: 0,
+      timeout: 120000
+    });
     
     try {
       // Use the Redux action to upload the file
@@ -1509,8 +1516,8 @@ const InspectionStepForm = ({
         file
       })).unwrap();
       
-      toast.dismiss();
-      toast.success(t('tasks.fileUploadedSuccessfully'));
+      stopLoading();
+      toast.success(t('tasks.fileUploadedSuccessfully') || 'File uploaded successfully');
       
       // Add to photos state for this sublevel
       const fileUrl = result.attachments?.[result.attachments.length - 1]?.url || '';
@@ -1528,7 +1535,7 @@ const InspectionStepForm = ({
         fileInputRefs.current[subLevelId].value = '';
       }
     } catch (error) {
-      toast.dismiss();
+      stopLoading();
       console.error('File upload error:', error);
       
       // Extract actual error message from backend
@@ -1537,9 +1544,8 @@ const InspectionStepForm = ({
                           error.response?.data?.message || 
                           'Upload failed';
       
-      // Show the actual backend error message (already shown by Redux thunk, but ensure it's clear)
-      // Don't show duplicate error messages
-      console.log('Upload failed with message:', errorMessage);
+      // Show user-friendly error message
+      toast.error(t('tasks.fileUploadFailed') || `Upload failed: ${errorMessage}`);
     } finally {
       // Remove uploading state
       setUploadingPhotos(prev => ({ ...prev, [subLevelId]: false }));
@@ -2341,6 +2347,17 @@ const InspectionStepForm = ({
     return { achieved, total, percentage };
   };
   
+  // For text/number inputs - only update local state, no API call
+  const handleTextInputChange = (questionId, sectionId, value) => {
+    const key = `${sectionId}_${questionId}`;
+    
+    // Update local state only for instant UI feedback
+    setQuestionResponses(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   // OPTIMIZED: handleQuestionResponse with debouncing to reduce API calls
   const handleQuestionResponse = (questionId, sectionId, value) => {
     const key = `${sectionId}_${questionId}`;
@@ -2410,9 +2427,17 @@ const InspectionStepForm = ({
       clearTimeout(responseDebounceRef.current[sectionId]);
     }
     
-    // Debounce the API call - wait 500ms before saving
+    // Debounce the API call - wait 2000ms before saving
     // This batches multiple rapid responses into a single API call
+    // Increased from 500ms to 2000ms to better handle long questionnaires
     responseDebounceRef.current[sectionId] = setTimeout(async () => {
+      // Show loading overlay to block interactions
+      startLoading(t('tasks.savingResponse') || 'Saving response...', {
+        blockInteraction: true,
+        showDelay: 0,
+        timeout: 120000
+      });
+      
       try {
         setLoading(prev => ({ ...prev, [sectionId]: true }));
         
@@ -2452,6 +2477,8 @@ const InspectionStepForm = ({
           }
         })).unwrap();
         
+        // Stop loading and show success
+        stopLoading();
         toast.success(t('tasks.responseSavedSuccessfully'));
         
         // Recalculate scores locally
@@ -2463,11 +2490,33 @@ const InspectionStepForm = ({
         }
         
       } catch (error) {
-        toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
+        // Stop loading overlay
+        stopLoading();
+        
+        // Improved error handling with more specific messages
+        console.error('Error saving response:', error);
+        const errorMsg = error.message || error.response?.data?.message || t('common.error');
+        
+        // Check for specific error types
+        if (error.code === 'ECONNABORTED' || errorMsg.includes('timeout')) {
+          toast.error(t('tasks.savingTimeoutRetry') || 'Request timed out. Please try again.');
+        } else if (error.response?.status === 413) {
+          toast.error(t('tasks.payloadTooLarge') || 'Data size too large. Please try again.');
+        } else if (errorMsg.includes('Network Error')) {
+          toast.error(t('tasks.networkErrorRetry') || 'Network error. Please check your connection.');
+        } else {
+          toast.error(`${t('tasks.failedToSaveResponse')}: ${errorMsg}`);
+        }
+        
+        // Put the responses back to pending for retry
+        Object.entries(sectionResponses).forEach(([questionId, value]) => {
+          const key = `${sectionId}-${questionId}`;
+          pendingResponsesRef.current[key] = { questionId, sectionId, value };
+        });
       } finally {
         setLoading(prev => ({ ...prev, [sectionId]: false }));
       }
-    }, 500); // 500ms debounce
+    }, 2000); // 2000ms debounce (2 seconds)
   };
   
   // Add a new function to handle section updates based on question responses
@@ -2641,7 +2690,8 @@ const InspectionStepForm = ({
             placeholder={t('tasks.enterYourAnswer')}
             disabled={disabled}
             value={currentResponse || ''}
-            onChange={(e) => handleQuestionResponse(question._id, sectionId, e.target.value)}
+            onChange={(e) => handleTextInputChange(question._id, sectionId, e.target.value)}
+            onBlur={(e) => handleQuestionResponse(question._id, sectionId, e.target.value)}
           />
         );
       

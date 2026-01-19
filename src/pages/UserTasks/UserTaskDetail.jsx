@@ -6,6 +6,7 @@ import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
+import { useLoading } from '../../context/LoadingContext';
 import {
   Info,
   Activity,
@@ -1872,21 +1873,30 @@ const QuestionsContent = styled.div`
 `;
 
 const QuestionCard = styled.div`
-  background: rgba(255, 255, 255, 0.9);
+  background: ${props => props.$isHighlighted ? 'rgba(255, 243, 205, 0.95)' : 'rgba(255, 255, 255, 0.9)'};
   border-radius: 16px;
   padding: 24px;
   margin: 6px 0 20px 0;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border: 2px solid ${props => props.$isHighlighted ? '#f59e0b' : 'rgba(255, 255, 255, 0.4)'};
   transition: all 0.3s ease;
   box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    ${props => props.$isHighlighted ? '0 6px 20px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : '0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.3)'};
   position: relative;
   min-width: 0;
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  ${props => props.$isHighlighted ? 'animation: pulse-highlight 2s ease-in-out infinite;' : ''}
+
+  @keyframes pulse-highlight {
+    0%, 100% {
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    50% {
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+  }
 
   @media (max-width: 768px) {
     padding: 16px;
@@ -3420,6 +3430,43 @@ const StatusIcon = ({ status, size = 18 }) => {
   }
 };
 
+// NEW: Function to get unanswered questions in a section
+const getUnansweredQuestionsInSection = (section, responses) => {
+  if (!section || !section.questions || !responses) {
+    return [];
+  }
+
+  const unanswered = [];
+
+  section.questions.forEach(question => {
+    // Only check required questions
+    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+      return; // Skip non-required questions
+    }
+
+    const questionId = question._id || question.id;
+    let hasResponse = false;
+
+    // Check if question has a response
+    if (responses[questionId] !== undefined && responses[questionId] !== null && responses[questionId] !== '') {
+      hasResponse = true;
+    } else {
+      const responseKey = Object.keys(responses).find(key =>
+        key.includes(questionId) || key.endsWith(questionId)
+      );
+      if (responseKey && responses[responseKey] !== undefined && responses[responseKey] !== null && responses[responseKey] !== '') {
+        hasResponse = true;
+      }
+    }
+
+    if (!hasResponse) {
+      unanswered.push(questionId);
+    }
+  });
+
+  return unanswered;
+};
+
 const calculateSectionScore = (section, responses) => {
   if (!section || !section.questions || !responses) {
     return { total: 0, achieved: 0, percentage: 0 };
@@ -3781,6 +3828,7 @@ const UserTaskDetail = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   const { t } = useTranslation();
+  const { startLoading, stopLoading } = useLoading();
   const commentBoxRef = useRef(null);
   const timerRef = useRef(null);
   const signatureCanvasRef = useRef(null);
@@ -3823,6 +3871,10 @@ const UserTaskDetail = () => {
 
   // CRITICAL FIX: Track unanswered required questions for validation
   const [unansweredRequiredQuestions, setUnansweredRequiredQuestions] = useState(new Set());
+  
+  // NEW: Track highlight mode for unanswered questions in current section
+  const [highlightUnansweredMode, setHighlightUnansweredMode] = useState(false);
+  const [currentSectionUnansweredQuestions, setCurrentSectionUnansweredQuestions] = useState(new Set());
 
   // Section comments state
   const [sectionComments, setSectionComments] = useState({});
@@ -3988,6 +4040,20 @@ const UserTaskDetail = () => {
   useEffect(() => {
     currentTaskRef.current = currentTask;
   }, [currentTask]);
+
+  // Effect to update unanswered questions when section changes or responses change
+  useEffect(() => {
+    if (highlightUnansweredMode && currentSection && currentTask) {
+      const unanswered = getUnansweredQuestionsInSection(currentSection, currentTask.questionnaireResponses || {});
+      setCurrentSectionUnansweredQuestions(new Set(unanswered));
+      
+      // If all questions are now answered, turn off highlight mode
+      if (unanswered.length === 0 && highlightUnansweredMode) {
+        setHighlightUnansweredMode(false);
+        toast.success('All questions answered!', { duration: 2000 });
+      }
+    }
+  }, [highlightUnansweredMode, currentSection, currentTask?.questionnaireResponses]);
 
   // Define timer functions BEFORE useEffects that use them
   // CRITICAL FIX: Use refs instead of currentTask to prevent infinite loops
@@ -4822,29 +4888,26 @@ const UserTaskDetail = () => {
     }
   };
 
-  // CRITICAL FIX: Add debounce timer refs for text input saves
+  // Refs for handling saves
   const debounceTimersRef = useRef({});
   const pendingSavesRef = useRef(new Set());
 
+  // For text/number inputs - only update local state, API call happens on blur
   const handleInputChange = (questionId, value) => {
     setLocalInputValues(prev => ({
       ...prev,
       [questionId]: value
     }));
+  };
 
-    // CRITICAL FIX: Clear existing debounce timer for this question
-    if (debounceTimersRef.current[questionId]) {
-      clearTimeout(debounceTimersRef.current[questionId]);
-    }
-
-    // CRITICAL FIX: Set new debounce timer (500ms delay)
-    debounceTimersRef.current[questionId] = setTimeout(() => {
-      // Only save if value is not empty or if it was previously saved
-      if (value !== '' || currentTask?.questionnaireResponses?.[questionId]) {
-        handleSaveInspectionResponse(questionId, value);
-      }
-      delete debounceTimersRef.current[questionId];
-    }, 500);
+  // For select/dropdown/radio/checkbox - call API immediately
+  const handleOptionChange = (questionId, value) => {
+    setLocalInputValues(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+    // Save immediately for option-based inputs
+    handleSaveInspectionResponse(questionId, value);
   };
 
   const handleSaveInspectionResponse = async (questionId, value) => {
@@ -4860,6 +4923,13 @@ const UserTaskDetail = () => {
     try {
       pendingSavesRef.current.add(questionId);
       setResponseLoading(true);
+      
+      // Show loading overlay to block interactions
+      startLoading(t('tasks.savingResponse') || 'Saving response...', {
+        blockInteraction: true,
+        showDelay: 0,
+        timeout: 120000
+      });
 
       // Store current state before API calls
       const currentPageId = selectedPage;
@@ -4889,6 +4959,7 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
 
+      stopLoading();
       toast.success(t('tasks.responseSavedSuccessfully'));
 
       // Recalculate local scores without API call
@@ -4945,6 +5016,7 @@ const UserTaskDetail = () => {
       }
 
     } catch (error) {
+      stopLoading();
       toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
     } finally {
       pendingSavesRef.current.delete(questionId);
@@ -5524,16 +5596,6 @@ const UserTaskDetail = () => {
               <select
                 value={response || ''}
                 onChange={(e) => !isDisabled && onSaveResponse(questionId, e.target.value)}
-                onBlur={(e) => {
-                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
-                  if (debounceTimersRef.current[questionId]) {
-                    clearTimeout(debounceTimersRef.current[questionId]);
-                    delete debounceTimersRef.current[questionId];
-                  }
-                  if (!isDisabled && e.target.value !== undefined) {
-                    onSaveResponse(questionId, e.target.value);
-                  }
-                }}
                 disabled={isDisabled}
               >
                 <option value="">Select an option</option>
@@ -6089,11 +6151,7 @@ const UserTaskDetail = () => {
                   }
                 }}
                 onBlur={(e) => {
-                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
-                  if (debounceTimersRef.current[questionId]) {
-                    clearTimeout(debounceTimersRef.current[questionId]);
-                    delete debounceTimersRef.current[questionId];
-                  }
+                  // Save on blur (when user unfocuses from field)
                   if (!isDisabled && e.target.value !== undefined) {
                     onSaveResponse(questionId, e.target.value);
                   }
@@ -6130,11 +6188,7 @@ const UserTaskDetail = () => {
                   }
                 }}
                 onBlur={(e) => {
-                  // CRITICAL FIX: Clear debounce timer and save immediately on blur
-                  if (debounceTimersRef.current[questionId]) {
-                    clearTimeout(debounceTimersRef.current[questionId]);
-                    delete debounceTimersRef.current[questionId];
-                  }
+                  // Save on blur (when user unfocuses from field)
                   if (!isDisabled && e.target.value !== undefined) {
                     onSaveResponse(questionId, e.target.value);
                   }
@@ -6582,6 +6636,40 @@ const UserTaskDetail = () => {
                   <QuestionCounter>
                     <CheckSquare size={16} />
                     {answeredQuestions} of {totalQuestions} answered
+                    <button
+                      onClick={() => {
+                        const unanswered = getUnansweredQuestionsInSection(currentSection, currentTask.questionnaireResponses || {});
+                        if (unanswered.length > 0) {
+                          setHighlightUnansweredMode(!highlightUnansweredMode);
+                          setCurrentSectionUnansweredQuestions(new Set(unanswered));
+                          toast.info(
+                            highlightUnansweredMode 
+                              ? 'Highlighting disabled' 
+                              : `Highlighting ${unanswered.length} unanswered question(s)`,
+                            { duration: 2000 }
+                          );
+                        } else {
+                          toast.success('All questions answered!', { duration: 2000 });
+                        }
+                      }}
+                      style={{
+                        background: highlightUnansweredMode ? '#3788d8' : 'transparent',
+                        color: highlightUnansweredMode ? 'white' : '#64748b',
+                        border: highlightUnansweredMode ? 'none' : '1px solid #e2e8f0',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        marginLeft: '4px'
+                      }}
+                      title={highlightUnansweredMode ? 'Hide unanswered questions' : 'Show unanswered questions'}
+                    >
+                      <Info size={14} />
+                    </button>
                   </QuestionCounter>
                   <ScoreBadge hasResponse={answeredQuestions > 0}>
                     <Award size={14} />
@@ -6643,8 +6731,11 @@ const UserTaskDetail = () => {
                         }
                       }
 
+                      // Check if this question should be highlighted
+                      const isHighlighted = highlightUnansweredMode && currentSectionUnansweredQuestions.has(questionId);
+
                       return (
-                        <QuestionCard key={questionId || qIndex}>
+                        <QuestionCard key={questionId || qIndex} $isHighlighted={isHighlighted}>
                           <QuestionHeader>
                             <QuestionNumber>{qIndex + 1}</QuestionNumber>
                             <QuestionText>

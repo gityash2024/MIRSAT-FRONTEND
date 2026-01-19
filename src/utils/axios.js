@@ -8,8 +8,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: API_CONFIG.TIMEOUTS.DEFAULT,
-  maxContentLength: 10 * 1024 * 1024, // 10MB max content length
-  maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
+  maxContentLength: 50 * 1024 * 1024, // 50MB max content length for large uploads
+  maxBodyLength: 50 * 1024 * 1024, // 50MB max body length for large uploads
 });
 
 api.interceptors.request.use(
@@ -19,10 +19,22 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // For large POST/PUT requests, increase timeout
+    // For file uploads and attachments, increase timeout
+    if (config.url?.includes('/attachments') || config.url?.includes('/upload')) {
+      config.timeout = API_CONFIG.TIMEOUTS.UPLOAD; // 120 seconds for uploads
+    }
+    
+    // For questionnaire and inspection operations, increase timeout
+    if (config.url?.includes('/questionnaire') || 
+        config.url?.includes('/inspection') ||
+        config.url?.includes('/progress')) {
+      config.timeout = API_CONFIG.TIMEOUTS.INSPECTION; // 120 seconds for inspection operations
+    }
+    
+    // For large POST/PUT requests to templates, increase timeout
     if ((config.method === 'post' || config.method === 'put') && 
-        (config.url.includes('/templates') || config.url.includes('/inspection'))) {
-      config.timeout = 60000; // 60s timeout for inspection template operations
+        config.url.includes('/templates')) {
+      config.timeout = API_CONFIG.TIMEOUTS.LARGE_REQUEST; // 120s timeout for template operations
     }
     
     return config;

@@ -11,7 +11,8 @@ const LoadingOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: ${props => props.transparent ? 'transparent' : 'rgba(255, 255, 255, 0.7)'};
+  background-color: ${props => props.transparent ? 'transparent' : 'rgba(0, 0, 0, 0.6)'};
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,9 +23,9 @@ const LoadingOverlay = styled.div`
 const Spinner = styled.div`
   width: 50px;
   height: 50px;
-  border: 5px solid rgba(26, 35, 126, 0.2);
+  border: 5px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top-color: var(--color-navy);
+  border-top-color: #ffffff;
   animation: spin 1s ease-in-out infinite;
   
   @keyframes spin {
@@ -34,10 +35,20 @@ const Spinner = styled.div`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+`;
+
 const LoadingMessage = styled.div`
   margin-top: 16px;
-  color: var(--color-navy);
+  color: #ffffff;
   font-weight: 500;
+  font-size: 16px;
+  text-align: center;
 `;
 
 // Provider component
@@ -136,10 +147,10 @@ export const LoadingProvider = ({ children }) => {
           blockInteraction={blockInteraction} 
           transparent={transparent}
         >
-          <div style={{ textAlign: 'center' }}>
+          <LoadingContainer>
             <Spinner />
             {message && <LoadingMessage>{message}</LoadingMessage>}
-          </div>
+          </LoadingContainer>
         </LoadingOverlay>
       )}
     </LoadingContext.Provider>

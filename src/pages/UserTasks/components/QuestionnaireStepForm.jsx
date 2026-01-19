@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useLoading } from '../../../context/LoadingContext';
 import { 
   CheckCircle, XCircle, HelpCircle, AlertTriangle, Save, Loader,
   Award, AlertCircle, Info, Clipboard, BarChart2, Layers
@@ -464,6 +465,7 @@ const getQuestionNumber = (question, allQuestions, index) => {
 const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestion }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { startLoading, stopLoading } = useLoading();
   // Store questions separately from responses
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState({});
@@ -615,6 +617,13 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
     
     setIsSubmitting(true);
     
+    // Show loading overlay to block interactions
+    startLoading(t('tasks.savingQuestionnaire') || 'Saving questionnaire...', {
+      blockInteraction: true,
+      showDelay: 0,
+      timeout: 120000
+    });
+    
     try {
       // Format responses for the API
       const formattedResponses = {};
@@ -640,9 +649,11 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
         }
       })).unwrap();
       
+      stopLoading();
       // toast.success('Questionnaire saved successfully!');
       if (onSave) onSave(result);
     } catch (error) {
+      stopLoading();
       toast.error(error.message || t('questionnaire.failedToSaveQuestionnaire'));
     } finally {
       setIsSubmitting(false);

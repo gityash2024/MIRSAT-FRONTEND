@@ -155,11 +155,11 @@ export const uploadTaskAttachment = createAsyncThunk(
         throw new Error('No file provided');
       }
 
-      // Validate file format and size (1MB limit) before upload
+      // Validate file format and size (10MB limit) before upload
       const { validateFileWithToast } = await import('../../utils/fileValidation');
       const { toast } = await import('react-hot-toast');
       if (!validateFileWithToast(file, toast)) {
-        return rejectWithValue({ message: 'File validation failed. Please check file format and size (max 1 MB).' });
+        return rejectWithValue({ message: 'File validation failed. Please check file format and size (max 10 MB).' });
       }
       
       const response = await userTaskService.uploadTaskAttachment(taskId, file);

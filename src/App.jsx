@@ -30,7 +30,7 @@ function App() {
             <BrowserRouter>
               <AppRoutes />
               <Toaster
-                position="bottom-center"
+                position="bottom-right"
                 limit={2}
                 toastOptions={{
                   duration: 4000,
@@ -59,6 +59,7 @@ function App() {
                 }}
                 containerStyle={{
                   bottom: '20px',
+                  right: '20px',
                 }}
               />
             </BrowserRouter>

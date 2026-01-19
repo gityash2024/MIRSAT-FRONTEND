@@ -1,9 +1,10 @@
 /**
  * File validation utility
- * Validates file size (1MB limit) and file formats
+ * Validates file size (10MB limit) and file formats
+ * Updated to support larger image files and better handle inspection uploads
  */
 
-const MAX_FILE_SIZE = 1024 * 1024; // 1MB in bytes
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 // Allowed file formats - ONLY IMAGES (jpg, jpeg, png)
 const ALLOWED_FILE_TYPES = [
@@ -118,7 +119,7 @@ export const validateFileSize = (file) => {
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
     return {
       valid: false,
-      error: `File size (${fileSizeMB} MB) exceeds the maximum allowed size of 1 MB. Please choose a smaller file.`
+      error: `File size (${fileSizeMB} MB) exceeds the maximum allowed size of 10 MB. Please choose a smaller file.`
     };
   }
 
@@ -241,8 +242,8 @@ export const validateFileWithToast = (file, toast, t = null) => {
 export const handleFileSizeError = (error, toast, t = null) => {
   if (error.response?.status === 413 || error.status === 413) {
     const errorMessage = t
-      ? t('tasks.fileSizeExceedsLimit', { defaultValue: 'File size exceeds the maximum allowed size of 1 MB. Please choose a smaller file.' })
-      : 'File size exceeds the maximum allowed size of 1 MB. Please choose a smaller file.';
+      ? t('tasks.fileSizeExceedsLimit', { defaultValue: 'File size exceeds the maximum allowed size of 10 MB. Please choose a smaller file.' })
+      : 'File size exceeds the maximum allowed size of 10 MB. Please choose a smaller file.';
     toast(errorMessage, { icon: 'ℹ️' });
     return true;
   }

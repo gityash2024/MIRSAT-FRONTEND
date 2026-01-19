@@ -5,13 +5,13 @@
 
 // Get API base URL from environment variables
 const getApiBaseUrl = () => {
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api/v1';
-  }
-  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+  // if (import.meta.env.PROD) {
+  //   return import.meta.env.VITE_API_URL || 'https://mirsat.mymultimeds.com/api/v1';
+  // }
+  // return import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
   
   
-  // return 'http://localhost:5001/api/v1';
+  return 'http://localhost:5001/api/v1';
 };
 
 // API Configuration
@@ -33,8 +33,9 @@ export const API_CONFIG = {
   },
   TIMEOUTS: {
     DEFAULT: 30000,
-    UPLOAD: 60000,
-    LARGE_REQUEST: 60000
+    UPLOAD: 120000, // 2 minutes for file uploads
+    LARGE_REQUEST: 120000, // 2 minutes for questionnaires and inspections
+    INSPECTION: 120000 // 2 minutes for inspection operations
   }
 };
 
