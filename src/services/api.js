@@ -256,10 +256,10 @@ api.interceptors.response.use(
       }
       
       // For other 5xx errors, show message but don't retry
-      toast('Please try again. Server seems to be busy.', { 
-        icon: 'ℹ️',
-        duration: 4000 
-      });
+      // toast('Please try again. Server seems to be busy.', { 
+      //   icon: 'ℹ️',
+      //   duration: 4000 
+      // });
       
       return Promise.reject(error);
     }
@@ -273,10 +273,10 @@ api.interceptors.response.use(
         return retryRequestWithBackoff(error, 0);
       }
       
-      toast('Please try again. Server seems to be busy.', { 
-        icon: 'ℹ️',
-        duration: 4000 
-      });
+      // toast('Please try again. Server seems to be busy.', { 
+      //   icon: 'ℹ️',
+      //   duration: 4000 
+      // });
       
       return Promise.reject(error);
     }

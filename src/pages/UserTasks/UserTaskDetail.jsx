@@ -5017,6 +5017,9 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
 
+      // Fetch updated task details to refresh DOM with latest data from backend
+      await dispatch(fetchUserTaskDetails(taskId));
+
       stopLoading();
       toast.success(t('tasks.responseSavedSuccessfully'));
 
