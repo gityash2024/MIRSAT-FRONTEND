@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { Plus, Search, Download, RefreshCw, Loader, ChevronDown, X, User, AlertCircle } from 'lucide-react';
 import TaskTable from './components/TaskTable';
 import { fetchTasks, setFilters, setPagination, fetchTasksProgressData } from '../../store/slices/taskSlice';
-import { fetchAssets } from '../../store/slices/assetSlice';
+import { fetchAllAssetsForDropdown } from '../../store/slices/assetSlice';
 import { fetchUsers } from '../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
+import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import { toast } from 'react-hot-toast';
@@ -73,9 +74,9 @@ const SubTitle = styled.p`
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16px;
   width: 100%;
   max-width: 100%;
@@ -96,10 +97,9 @@ const ActionBar = styled.div`
 
 const FilterRow = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  flex: 1;
-  max-width: 900px;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   min-width: 0;
   width: 100%;
@@ -317,8 +317,11 @@ const FilterTag = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-left: auto;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -528,6 +531,9 @@ const TaskList = () => {
   const { t } = useTranslation();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
+  const { allAssetsForDropdown } = useSelector((state) => state.assets || { allAssetsForDropdown: [] });
+  const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
+  const { assetTypes } = useSelector((state) => state.assetTypes || { assetTypes: [] });
 
   // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
@@ -541,7 +547,17 @@ const TaskList = () => {
   const [pendingExport, setPendingExport] = useState(null);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
+  const [showAssetTypeDropdown, setShowAssetTypeDropdown] = useState(false);
+  const [showAssetDropdown, setShowAssetDropdown] = useState(false);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const searchTimeoutRef = useRef(null);
+
+  const inspectionTemplateOptions = Array.isArray(levels?.results)
+    ? levels.results
+    : Array.isArray(levels)
+      ? levels
+      : [];
 
   // Filter options
   const statusOptions = [
@@ -564,6 +580,7 @@ const TaskList = () => {
         priority: [],
         assignedTo: [],
         inspectionLevel: [],
+        assetType: [],
         asset: [],
         search: ''
       }));
@@ -575,14 +592,23 @@ const TaskList = () => {
     }
 
     // Load necessary data for filters
-    dispatch(fetchAssets());
+    dispatch(fetchAllAssetsForDropdown());
+    dispatch(fetchAssetTypes());
     dispatch(fetchUsers());
-    dispatch(fetchInspectionLevels());
+    dispatch(fetchInspectionLevels({ limit: 1000 }));
   }, [dispatch]);
 
   useEffect(() => {
     loadTasks();
   }, [dispatch, filters, pagination?.page, pagination?.limit]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -592,6 +618,15 @@ const TaskList = () => {
       }
       if (showPriorityDropdown && !event.target.closest('[data-dropdown="priority"]')) {
         setShowPriorityDropdown(false);
+      }
+      if (showTemplateDropdown && !event.target.closest('[data-dropdown="template"]')) {
+        setShowTemplateDropdown(false);
+      }
+      if (showAssetTypeDropdown && !event.target.closest('[data-dropdown="assetType"]')) {
+        setShowAssetTypeDropdown(false);
+      }
+      if (showAssetDropdown && !event.target.closest('[data-dropdown="asset"]')) {
+        setShowAssetDropdown(false);
       }
       if (showAssigneeDropdown && !event.target.closest('[data-dropdown="assignee"]')) {
         setShowAssigneeDropdown(false);
@@ -605,17 +640,34 @@ const TaskList = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showStatusDropdown, showPriorityDropdown, showAssigneeDropdown, showExportDropdown]);
+  }, [
+    showStatusDropdown,
+    showPriorityDropdown,
+    showTemplateDropdown,
+    showAssetTypeDropdown,
+    showAssetDropdown,
+    showAssigneeDropdown,
+    showExportDropdown
+  ]);
 
-  const loadTasks = async () => {
+const loadTasks = async () => {
     try {
-      // Create query params from filters
       const queryParams = {
-        ...filters,
         page: pagination?.page || 1,
-        limit: pagination?.limit || 10,
-        sortBy: '-createdAt' // Ensure latest tasks appear first
+        limit: pagination?.limit || 10
       };
+
+      // Send only non-empty filters to keep query clean and avoid malformed requests
+      const arrayFilterKeys = ['status', 'priority', 'assignedTo', 'inspectionLevel', 'assetType', 'asset'];
+      arrayFilterKeys.forEach((key) => {
+        if (Array.isArray(filters?.[key]) && filters[key].length > 0) {
+          queryParams[key] = filters[key];
+        }
+      });
+
+      if (typeof filters?.search === 'string' && filters.search.trim()) {
+        queryParams.search = filters.search.trim();
+      }
 
       // First fetch tasks
       const result = await dispatch(fetchTasks(queryParams));
@@ -640,13 +692,18 @@ const TaskList = () => {
   };
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    // Debounce search to avoid too many requests
-    const timeoutId = setTimeout(() => {
-      dispatch(setFilters({ ...filters, search: e.target.value }));
-    }, 500);
+    const value = e.target.value;
+    setSearchTerm(value);
 
-    return () => clearTimeout(timeoutId);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search to avoid too many requests
+    searchTimeoutRef.current = setTimeout(() => {
+      dispatch(setFilters({ ...filters, search: value }));
+      dispatch(setPagination({ page: 1 }));
+    }, 400);
   };
 
   const handleFilterChange = (category, value) => {
@@ -689,11 +746,19 @@ const TaskList = () => {
   };
 
   const clearAllFilters = () => {
-    const clearedFilters = Object.keys(filters).reduce((acc, key) => ({
-      ...acc,
-      [key]: []
-    }), {});
+    const clearedFilters = {
+      ...filters,
+      status: [],
+      priority: [],
+      assignedTo: [],
+      inspectionLevel: [],
+      assetType: [],
+      asset: [],
+      search: ''
+    };
+    setSearchTerm('');
     dispatch(setFilters(clearedFilters));
+    dispatch(setPagination({ page: 1 }));
   };
 
   const getFilterLabel = (category, value) => {
@@ -706,12 +771,25 @@ const TaskList = () => {
     if (category === 'assignedTo') {
       return users.find(u => u._id === value || u.id === value)?.name || value;
     }
+    if (category === 'inspectionLevel') {
+      return inspectionTemplateOptions.find(level => (level._id || level.id) === value)?.name || value;
+    }
+    if (category === 'assetType') {
+      return assetTypes.find(type => (type._id || type.id || type.name) === value || type.name === value)?.name || value;
+    }
+    if (category === 'asset') {
+      const asset = allAssetsForDropdown.find(a => (a._id || a.id) === value);
+      return asset?.displayName || asset?.uniqueId || value;
+    }
     return value;
   };
 
   const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) =>
     key !== 'search' && Array.isArray(value) && value.length > 0
   );
+
+  const hasAppliedCriteria = hasActiveFilters || !!(filters?.search && String(filters.search).trim());
+  const clearAllLabel = t('common.clearAll') === 'common.clearAll' ? 'Clear All' : t('common.clearAll');
 
   const handlePageChange = (newPage) => {
     dispatch(setPagination({ page: newPage }));
@@ -1048,6 +1126,75 @@ const TaskList = () => {
             </DropdownContent>
           </FilterDropdown>
 
+          <FilterDropdown data-dropdown="template">
+            <DropdownButton onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}>
+              {t('common.template')} {filters?.inspectionLevel?.length > 0 && `(${filters.inspectionLevel.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showTemplateDropdown}>
+              {inspectionTemplateOptions?.map(level => (
+                <DropdownItem
+                  key={level._id || level.id}
+                  $selected={filters?.inspectionLevel?.includes(level._id || level.id) || false}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters?.inspectionLevel?.includes(level._id || level.id) || false}
+                    onChange={() => handleFilterChange('inspectionLevel', level._id || level.id)}
+                  />
+                  <span>{level.name}</span>
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </FilterDropdown>
+
+          <FilterDropdown data-dropdown="assetType">
+            <DropdownButton onClick={() => setShowAssetTypeDropdown(!showAssetTypeDropdown)}>
+              {t('assets.assetType', { defaultValue: 'Asset Type' })} {filters?.assetType?.length > 0 && `(${filters.assetType.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showAssetTypeDropdown}>
+              {assetTypes?.map(type => {
+                const typeValue = type.name || type.value || type._id || type.id;
+                return (
+                  <DropdownItem
+                    key={type._id || type.id || type.name}
+                    $selected={filters?.assetType?.includes(typeValue) || false}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters?.assetType?.includes(typeValue) || false}
+                      onChange={() => handleFilterChange('assetType', typeValue)}
+                    />
+                    <span>{type.name}</span>
+                  </DropdownItem>
+                );
+              })}
+            </DropdownContent>
+          </FilterDropdown>
+
+          <FilterDropdown data-dropdown="asset">
+            <DropdownButton onClick={() => setShowAssetDropdown(!showAssetDropdown)}>
+              {t('common.asset')} {filters?.asset?.length > 0 && `(${filters.asset.length})`}
+              <ChevronDown size={16} />
+            </DropdownButton>
+            <DropdownContent show={showAssetDropdown}>
+              {allAssetsForDropdown?.map(asset => (
+                <DropdownItem
+                  key={asset._id || asset.id}
+                  $selected={filters?.asset?.includes(asset._id || asset.id) || false}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters?.asset?.includes(asset._id || asset.id) || false}
+                    onChange={() => handleFilterChange('asset', asset._id || asset.id)}
+                  />
+                  <span>{asset.displayName || asset.uniqueId}</span>
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </FilterDropdown>
+
           <FilterDropdown data-dropdown="assignee">
             <DropdownButton onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}>
               {t('tasks.assignedTo')} {filters?.assignedTo?.length > 0 && `(${filters.assignedTo.length})`}
@@ -1073,6 +1220,13 @@ const TaskList = () => {
         </FilterRow>
 
         <ButtonGroup>
+          {hasAppliedCriteria && (
+            <ActionButton onClick={clearAllFilters} title="Clear all filters">
+              <X size={16} />
+              {clearAllLabel}
+            </ActionButton>
+          )}
+
           <ActionButton onClick={handleRefresh} title="Refresh tasks">
             <RefreshCw size={16} />
           </ActionButton>
@@ -1109,7 +1263,7 @@ const TaskList = () => {
       {hasActiveFilters && (
         <ActiveFilters>
           {Object.entries(filters || {})
-            .filter(([key]) => key !== 'search' && key !== 'inspectionLevel' && key !== 'asset')
+            .filter(([key]) => key !== 'search')
             .map(([category, values]) =>
               Array.isArray(values) ? values.map(value => (
                 <FilterTag key={`${category}-${value}`}>
@@ -1122,12 +1276,6 @@ const TaskList = () => {
                 </FilterTag>
               )) : null
             )}
-          <FilterTag>
-            {t('common.clearAll')}
-            <button onClick={clearAllFilters}>
-              <X size={12} />
-            </button>
-          </FilterTag>
         </ActiveFilters>
       )}
 

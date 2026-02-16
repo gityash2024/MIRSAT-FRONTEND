@@ -13,6 +13,7 @@ const initialState = {
     priority: [],
     assignedTo: [],
     inspectionLevel: [],
+    assetType: [],
     asset: [],
     search: ''
   },

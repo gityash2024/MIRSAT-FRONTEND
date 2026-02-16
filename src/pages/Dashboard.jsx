@@ -273,7 +273,11 @@ const LoadingContainer = styled.div`
   }
 `;
 
-const COLORS = ['#10b981', '#f59e0b', '#ef4444']; // Completed (Green), Pending (Orange), Late (Red)
+const STATUS_COLORS = {
+  Completed: '#10b981',
+  Pending: '#f59e0b',
+  Late: '#ef4444'
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -445,6 +449,8 @@ const Dashboard = () => {
     { name: 'Late', value: data?.charts?.statusDistribution?.late || 0 }
   ].filter(d => d.value > 0);
 
+  const getStatusColor = (statusName) => STATUS_COLORS[statusName] || '#94a3b8';
+
   // Custom Tooltip component
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -573,7 +579,7 @@ const Dashboard = () => {
                   dataKey="value"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={getStatusColor(entry.name)} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />

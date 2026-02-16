@@ -6982,6 +6982,15 @@ const UserTaskDetail = () => {
     );
   }
 
+  const inspectionNameLabel = t('tasks.inspectionName') === 'tasks.inspectionName' ? 'Inspection Name' : t('tasks.inspectionName');
+  const templateNameLabel = t('tasks.templateName') === 'tasks.templateName' ? 'Template Name' : t('tasks.templateName');
+  const taskDisplayName = currentTask?.title || currentTask?.name || t('common.notApplicable');
+  const templateDisplayName =
+    (typeof currentTask?.inspectionLevel === 'object' && currentTask?.inspectionLevel?.name) ||
+    currentTask?.templateSnapshot?.name ||
+    currentTask?.inspectionLevelName ||
+    t('common.notApplicable');
+
   return (
     <PageContainer onClick={() => showPageDropdown && setShowPageDropdown(false)}>
       <MainContent>
@@ -7029,8 +7038,26 @@ const UserTaskDetail = () => {
         </TopBar>
 
         <TaskHeader>
-          <TaskTitle>{currentTask.name}</TaskTitle>
-          {currentTask.description && (
+          {/* <TaskTitle>{taskDisplayName}</TaskTitle> */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {inspectionNameLabel}
+              </div>
+              <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                {taskDisplayName}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {templateNameLabel}
+              </div>
+              <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                {templateDisplayName}
+              </div>
+            </div>
+          </div>
+          {currentTask.description && currentTask.description.trim() !== String(taskDisplayName).trim() && (
             <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
               {currentTask.description}
             </p>
@@ -7191,6 +7218,12 @@ const UserTaskDetail = () => {
                         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.asset')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {currentTask.asset?.displayName || currentTask.asset?.name || currentTask.asset || t('common.notApplicable')}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{templateNameLabel}</div>
+                        <div style={{ fontWeight: '600', color: '#1a202c' }}>
+                          {templateDisplayName}
                         </div>
                       </div>
                       <div>
