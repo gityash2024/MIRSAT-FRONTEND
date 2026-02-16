@@ -6,7 +6,6 @@ import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
-import { useLoading } from '../../context/LoadingContext';
 import {
   Info,
   Activity,
@@ -3828,7 +3827,6 @@ const UserTaskDetail = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   const { t } = useTranslation();
-  const { startLoading, stopLoading } = useLoading();
   const commentBoxRef = useRef(null);
   const timerRef = useRef(null);
   const signatureCanvasRef = useRef(null);
@@ -3867,7 +3865,6 @@ const UserTaskDetail = () => {
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [showPageDropdown, setShowPageDropdown] = useState(false);
-  const [responseLoading, setResponseLoading] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
 
   // CRITICAL FIX: Track unanswered required questions for validation
@@ -4980,14 +4977,6 @@ const UserTaskDetail = () => {
 
     try {
       pendingSavesRef.current.add(questionId);
-      setResponseLoading(true);
-      
-      // Show loading overlay to block interactions
-      startLoading(t('tasks.savingResponse') || 'Saving response...', {
-        blockInteraction: true,
-        showDelay: 0,
-        timeout: 120000
-      });
 
       // Store current state before API calls
       const currentPageId = selectedPage;
@@ -5017,10 +5006,7 @@ const UserTaskDetail = () => {
         }
       })).unwrap();
 
-      // Fetch updated task details to refresh DOM with latest data from backend
-      await dispatch(fetchUserTaskDetails(taskId));
-
-      stopLoading();
+      // Keep UI responsive: avoid blocking overlays and expensive forced refetches.
       toast.success(t('tasks.responseSavedSuccessfully'));
 
       // Recalculate local scores without API call
@@ -5077,11 +5063,9 @@ const UserTaskDetail = () => {
       }
 
     } catch (error) {
-      stopLoading();
       toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
     } finally {
       pendingSavesRef.current.delete(questionId);
-      setResponseLoading(false);
     }
   };
 
@@ -8119,13 +8103,6 @@ const UserTaskDetail = () => {
           </SidePanel>
         </ContentContainer>
       </MainContent>
-
-      {responseLoading && (
-        <LoadingIndicator>
-          <Loader size={16} />
-          {t('tasks.savingResponse')}
-        </LoadingIndicator>
-      )}
 
       {showSignatureModal && !isArchivedTask && (
         <ModalOverlay>

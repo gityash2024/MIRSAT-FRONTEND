@@ -391,27 +391,47 @@ const userTasksSlice = createSlice({
       })
       .addCase(updateTaskQuestionnaire.fulfilled, (state, action) => {
         state.actionLoading = false;
-        const updatedTask = action.payload;
+        const updatedTask = action.payload?.data || action.payload;
+        const requestTaskId = action.meta?.arg?.taskId;
+        const requestQuestionnaire = action.meta?.arg?.questionnaire || {};
+        const requestResponses = requestQuestionnaire.responses || {};
         
         // OPTIMIZED: Only update questionnaireResponses and related fields
         // instead of replacing the entire task to prevent unnecessary re-renders
-        if (state.currentTask && state.currentTask._id === updatedTask._id) {
-          // Only update the specific fields that changed
-          state.currentTask.questionnaireResponses = updatedTask.questionnaireResponses;
-          state.currentTask.questionnaireNotes = updatedTask.questionnaireNotes;
-          state.currentTask.questionnaireCompleted = updatedTask.questionnaireCompleted;
-          // Update overallProgress if it changed
-          if (updatedTask.overallProgress !== undefined) {
+        if (state.currentTask && String(state.currentTask._id) === String(requestTaskId)) {
+          state.currentTask.questionnaireResponses = {
+            ...(state.currentTask.questionnaireResponses || {}),
+            ...requestResponses
+          };
+
+          if (requestQuestionnaire.notes !== undefined) {
+            state.currentTask.questionnaireNotes = requestQuestionnaire.notes;
+          }
+
+          if (requestQuestionnaire.completed !== undefined) {
+            state.currentTask.questionnaireCompleted = requestQuestionnaire.completed;
+          }
+
+          if (updatedTask?.overallProgress !== undefined) {
             state.currentTask.overallProgress = updatedTask.overallProgress;
+          }
+
+          if (updatedTask?.updatedAt) {
+            state.currentTask.updatedAt = updatedTask.updatedAt;
           }
         }
         
         // Update in tasks list as well (minimal update)
-        const taskIndex = state.tasks.results.findIndex(task => task._id === updatedTask._id);
+        const taskIndex = state.tasks.results.findIndex(task => String(task._id) === String(requestTaskId));
         if (taskIndex !== -1) {
-          state.tasks.results[taskIndex].questionnaireResponses = updatedTask.questionnaireResponses;
-          state.tasks.results[taskIndex].questionnaireCompleted = updatedTask.questionnaireCompleted;
-          if (updatedTask.overallProgress !== undefined) {
+          state.tasks.results[taskIndex].questionnaireResponses = {
+            ...(state.tasks.results[taskIndex].questionnaireResponses || {}),
+            ...requestResponses
+          };
+          if (requestQuestionnaire.completed !== undefined) {
+            state.tasks.results[taskIndex].questionnaireCompleted = requestQuestionnaire.completed;
+          }
+          if (updatedTask?.overallProgress !== undefined) {
             state.tasks.results[taskIndex].overallProgress = updatedTask.overallProgress;
           }
         }

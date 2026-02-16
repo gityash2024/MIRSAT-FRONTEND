@@ -4,6 +4,91 @@ import { downloadTaskPDF } from './pdfGenerator';
 import FrontendLogger from './frontendLogger.service';
 import { validateFileWithToast, handleFileSizeError } from '../utils/fileValidation';
 
+const QUESTIONNAIRE_QUEUE_DELAY_MS = 350;
+const questionnaireQueueByTask = new Map();
+
+const mergeQuestionnairePayload = (base = {}, patch = {}) => {
+  const baseResponses = (base.responses && typeof base.responses === 'object' && !Array.isArray(base.responses)) ? base.responses : {};
+  const patchResponses = (patch.responses && typeof patch.responses === 'object' && !Array.isArray(patch.responses)) ? patch.responses : {};
+
+  return {
+    responses: { ...baseResponses, ...patchResponses },
+    notes: patch.notes !== undefined ? patch.notes : base.notes,
+    completed: patch.completed !== undefined ? patch.completed : base.completed
+  };
+};
+
+const getQuestionnaireQueueState = (taskId) => {
+  if (!questionnaireQueueByTask.has(taskId)) {
+    questionnaireQueueByTask.set(taskId, {
+      pendingPayload: null,
+      timer: null,
+      chain: Promise.resolve(),
+      waiters: []
+    });
+  }
+
+  return questionnaireQueueByTask.get(taskId);
+};
+
+const flushQuestionnaireQueue = (taskId) => {
+  const state = questionnaireQueueByTask.get(taskId);
+  if (!state || !state.pendingPayload) return;
+
+  const payloadToSend = state.pendingPayload;
+  const waiters = state.waiters;
+
+  state.pendingPayload = null;
+  state.waiters = [];
+  state.timer = null;
+
+  state.chain = state.chain
+    .catch(() => undefined)
+    .then(async () => {
+      const queuedAt = new Date().toISOString();
+      const response = await api.post(`/user-tasks/${taskId}/questionnaire`, {
+        ...payloadToSend,
+        clientQueuedAt: queuedAt
+      });
+      return response.data;
+    })
+    .then((result) => {
+      waiters.forEach(({ resolve }) => resolve(result));
+      return result;
+    })
+    .catch((error) => {
+      waiters.forEach(({ reject }) => reject(error));
+      throw error;
+    })
+    .finally(() => {
+      const latestState = questionnaireQueueByTask.get(taskId);
+      if (!latestState) return;
+
+      if (latestState.pendingPayload) {
+        latestState.timer = setTimeout(() => flushQuestionnaireQueue(taskId), QUESTIONNAIRE_QUEUE_DELAY_MS);
+        return;
+      }
+
+      questionnaireQueueByTask.delete(taskId);
+    });
+};
+
+const enqueueQuestionnaireUpdate = (taskId, payload) => {
+  const state = getQuestionnaireQueueState(taskId);
+
+  state.pendingPayload = mergeQuestionnairePayload(state.pendingPayload || {}, payload || {});
+
+  return new Promise((resolve, reject) => {
+    state.waiters.push({ resolve, reject });
+
+    if (state.timer) {
+      clearTimeout(state.timer);
+    }
+
+    state.timer = setTimeout(() => flushQuestionnaireQueue(taskId), QUESTIONNAIRE_QUEUE_DELAY_MS);
+  });
+};
+
 export const userTaskService = {
   // Get user dashboard statistics
   getUserDashboardStats: async () => {
@@ -70,8 +155,7 @@ export const userTaskService = {
   
   // Update task questionnaire responses
   updateTaskQuestionnaire: async (taskId, data) => {
-    const response = await api.post(`/user-tasks/${taskId}/questionnaire`, data);
-    return response.data;
+    return enqueueQuestionnaireUpdate(taskId, data);
   },
 
   // Add a comment to a task

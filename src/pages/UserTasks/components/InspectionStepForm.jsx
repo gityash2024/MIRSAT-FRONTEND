@@ -2431,16 +2431,7 @@ const InspectionStepForm = ({
     // This batches multiple rapid responses into a single API call
     // Increased from 500ms to 2000ms to better handle long questionnaires
     responseDebounceRef.current[sectionId] = setTimeout(async () => {
-      // Show loading overlay to block interactions
-      startLoading(t('tasks.savingResponse') || 'Saving response...', {
-        blockInteraction: true,
-        showDelay: 0,
-        timeout: 120000
-      });
-      
       try {
-        setLoading(prev => ({ ...prev, [sectionId]: true }));
-        
         // Collect all pending responses for this section
         const sectionResponses = {};
         const allResponses = { ...(task.questionnaireResponses || {}) };
@@ -2477,8 +2468,6 @@ const InspectionStepForm = ({
           }
         })).unwrap();
         
-        // Stop loading and show success
-        stopLoading();
         toast.success(t('tasks.responseSavedSuccessfully'));
         
         // Recalculate scores locally
@@ -2490,9 +2479,6 @@ const InspectionStepForm = ({
         }
         
       } catch (error) {
-        // Stop loading overlay
-        stopLoading();
-        
         // Improved error handling with more specific messages
         console.error('Error saving response:', error);
         const errorMsg = error.message || error.response?.data?.message || t('common.error');
@@ -2514,7 +2500,7 @@ const InspectionStepForm = ({
           pendingResponsesRef.current[key] = { questionId, sectionId, value };
         });
       } finally {
-        setLoading(prev => ({ ...prev, [sectionId]: false }));
+        // no-op: response saves are non-blocking by design
       }
     }, 2000); // 2000ms debounce (2 seconds)
   };
@@ -3336,4 +3322,3 @@ const InputLabel = styled.div`
   align-items: center;
   gap: 8px;
 `;
-
