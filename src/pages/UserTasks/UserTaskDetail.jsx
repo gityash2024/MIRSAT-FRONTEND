@@ -3566,7 +3566,7 @@ const calculatePageScore = (page, responses) => {
 };
 
 // Signature Canvas Component for individual questions - moved outside to prevent re-renders
-const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled, onSaveResponse }) => {
+const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, isDisabled, onSaveResponse, formatCaptureMetadata }) => {
   const { t } = useTranslation();
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const signaturePadRef = useRef(null);
@@ -3588,7 +3588,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
     }
   }, []);
 
-  const handleSaveSignature = useCallback(() => {
+  const handleSaveSignature = useCallback(async () => {
     if (!signaturePadRef.current) return;
 
     if (signaturePadRef.current.isEmpty()) {
@@ -3597,10 +3597,12 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
     }
 
     const dataURL = signaturePadRef.current.toDataURL('image/png');
-    onSaveResponse(questionId, dataURL);
-    setShowSignatureModal(false);
-    toast.success(t('tasks.signatureSavedSuccessfully'));
-  }, [questionId, onSaveResponse]);
+    const saved = await onSaveResponse(questionId, dataURL, { captureType: 'question_signature' });
+    if (saved) {
+      setShowSignatureModal(false);
+      toast.success(t('tasks.signatureSavedSuccessfully'));
+    }
+  }, [questionId, onSaveResponse, t]);
 
   const handleDeleteSignature = useCallback((e) => {
     e.preventDefault();
@@ -3667,6 +3669,16 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, isDisabled,
               />
             </div>
           </div>
+
+          {metadata && (
+            <div style={{
+              fontSize: '12px',
+              color: '#475569',
+              marginBottom: '12px'
+            }}>
+              Captured: {formatCaptureMetadata ? formatCaptureMetadata(metadata) : 'N/A'}
+            </div>
+          )}
 
           {!isDisabled && (
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -3831,6 +3843,7 @@ const UserTaskDetail = () => {
   const timerRef = useRef(null);
   const signatureCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const lastKnownLocationRef = useRef(null);
   
   // Refs for debouncing progress updates to reduce API calls
   const progressUpdateTimeoutRef = useRef(null);
@@ -3866,6 +3879,13 @@ const UserTaskDetail = () => {
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [showPageDropdown, setShowPageDropdown] = useState(false);
   const [localInputValues, setLocalInputValues] = useState({});
+  const [locationHelpModal, setLocationHelpModal] = useState({
+    open: false,
+    reason: '',
+    permissionState: 'unknown',
+    errorCode: null,
+    steps: []
+  });
 
   // CRITICAL FIX: Track unanswered required questions for validation
   const [unansweredRequiredQuestions, setUnansweredRequiredQuestions] = useState(new Set());
@@ -4955,6 +4975,270 @@ const UserTaskDetail = () => {
     }));
   };
 
+  const getCaptureMetadataFromLocation = useCallback(async (captureType = 'file') => {
+    if (!navigator.geolocation) {
+      throw new Error('Location services are not available on this device/browser.');
+    }
+
+    const detectOS = () => {
+      const ua = (navigator.userAgent || '').toLowerCase();
+      const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+
+      if (platform.includes('mac') || ua.includes('mac os')) return 'macos';
+      if (platform.includes('win') || ua.includes('windows')) return 'windows';
+      if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ios')) return 'ios';
+      if (ua.includes('android')) return 'android';
+      return 'other';
+    };
+
+    const showLocationSetupPopup = ({ permissionState, errorCode }) => {
+      const os = detectOS();
+
+      let osSteps = [];
+      if (os === 'macos') {
+        osSteps = [
+          'macOS steps:',
+          '1. Open System Settings > Privacy & Security > Location Services.',
+          '2. Turn ON Location Services globally.',
+          '3. Enable Google Chrome in the app list.',
+          '4. If visible, enable Precise Location for Chrome.',
+          '5. Quit Chrome fully (Cmd+Q), reopen, and reload this page.'
+        ];
+      } else if (os === 'windows') {
+        osSteps = [
+          'Windows steps:',
+          '1. Open Settings > Privacy & security > Location.',
+          '2. Turn ON Location services.',
+          '3. Turn ON "Let desktop apps access your location".',
+          '4. Restart Chrome and reload this page.'
+        ];
+      } else if (os === 'ios') {
+        osSteps = [
+          'iPhone/iPad steps:',
+          '1. Open Settings > Privacy & Security > Location Services.',
+          '2. Turn ON Location Services.',
+          '3. Open Chrome > Location and set to "While Using the App".',
+          '4. Reopen Chrome and reload this page.'
+        ];
+      } else if (os === 'android') {
+        osSteps = [
+          'Android steps:',
+          '1. Open Settings > Location and turn it ON.',
+          '2. Open App permissions > Chrome > Location and Allow.',
+          '3. Open Chrome site settings for this site and Allow location.',
+          '4. Reload this page.'
+        ];
+      } else {
+        osSteps = [
+          'Device steps:',
+          '1. Enable system location services.',
+          '2. Allow location access for your browser.',
+          '3. Reload this page and retry.'
+        ];
+      }
+
+      let reason = 'Unable to get a valid GPS/location fix.';
+      if (permissionState === 'denied') {
+        reason = 'Location permission is denied for this site/session.';
+      } else if (errorCode === 1 && permissionState === 'granted') {
+        reason = 'Browser permission is granted, but geolocation request was denied by the runtime (OS/Chrome).';
+      } else if (errorCode === 1) {
+        reason = 'Location permission is blocked at runtime.';
+      }
+
+      setLocationHelpModal({
+        open: true,
+        reason,
+        permissionState: permissionState || 'unknown',
+        errorCode: errorCode ?? null,
+        steps: osSteps
+      });
+    };
+
+    const readPermissionState = async () => {
+      try {
+        if (!navigator.permissions?.query) return 'unknown';
+        const status = await navigator.permissions.query({ name: 'geolocation' });
+        return status?.state || 'unknown';
+      } catch (permissionError) {
+        return 'unknown';
+      }
+    };
+
+    const getPosition = (options) => new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const getPositionFromWatch = (options) => new Promise((resolve, reject) => {
+      let settled = false;
+      let watchId = null;
+      let latestError = null;
+      const timeoutMs = options?.timeout || 12000;
+
+      const finalize = (fn, payload) => {
+        if (settled) return;
+        settled = true;
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+        fn(payload);
+      };
+
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => finalize(resolve, pos),
+        (err) => {
+          latestError = err;
+          if (err?.code === 1) {
+            finalize(reject, err);
+          }
+        },
+        options
+      );
+
+      setTimeout(() => {
+        if (!settled) {
+          finalize(reject, latestError || { code: 3, message: 'Location watch timed out.' });
+        }
+      }, timeoutMs);
+    });
+
+    const permissionState = await readPermissionState();
+    if (permissionState === 'denied') {
+      showLocationSetupPopup({ permissionState, errorCode: 1 });
+      throw new Error('Location permission is required to save image/signature captures.');
+    }
+
+    let position = null;
+    let lastError = null;
+    const attempts = [
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }
+    ];
+
+    for (const options of attempts) {
+      try {
+        position = await getPosition(options);
+        break;
+      } catch (error) {
+        console.warn('Geolocation capture failed for attempt', {
+          captureType,
+          permissionState,
+          options,
+          code: error?.code,
+          message: error?.message
+        });
+        lastError = error;
+        const shouldRetry = error?.code === 2 || error?.code === 3 || (error?.code === 1 && permissionState === 'granted');
+        if (!shouldRetry) {
+          break;
+        }
+      }
+    }
+
+    if (!position && permissionState === 'granted' && lastError?.code === 1) {
+      // Extra retries for intermittent Chrome runtime denials.
+      for (let retry = 0; retry < 3 && !position; retry += 1) {
+        try {
+          position = await getPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+        } catch (finalError) {
+          lastError = finalError || lastError;
+          await wait(600);
+        }
+      }
+    }
+
+    if (!position && permissionState === 'granted' && (lastError?.code === 1 || lastError?.code === 2 || lastError?.code === 3)) {
+      // Last fallback: watchPosition can recover in cases where getCurrentPosition intermittently fails.
+      try {
+        position = await getPositionFromWatch({ enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 });
+      } catch (watchError) {
+        lastError = watchError || lastError;
+      }
+    }
+
+    if (!position) {
+      const cachedLocation = lastKnownLocationRef.current;
+      const cacheAgeMs = cachedLocation?.capturedAt
+        ? Date.now() - new Date(cachedLocation.capturedAt).getTime()
+        : Number.POSITIVE_INFINITY;
+
+      // Use recent known coordinates (<=10 min) to avoid false negatives from transient browser runtime denial.
+      if (cachedLocation?.location && cacheAgeMs <= 10 * 60 * 1000) {
+        return {
+          capturedAt: new Date().toISOString(),
+          location: cachedLocation.location,
+          locationStatus: 'granted',
+          captureType
+        };
+      }
+
+      if (lastError?.code === 1) {
+        if (permissionState === 'granted') {
+          // Do not block save when browser permission is granted but runtime intermittently denies geolocation.
+          toast('Location coordinates are temporarily unavailable. Saving with timestamp only.', { icon: 'ℹ️' });
+          return {
+            capturedAt: new Date().toISOString(),
+            locationStatus: 'unavailable',
+            captureType
+          };
+        }
+        showLocationSetupPopup({ permissionState, errorCode: 1 });
+        throw new Error('Location permission is required to save image/signature captures.');
+      }
+      if (lastError?.code === 2) {
+        showLocationSetupPopup({ permissionState, errorCode: 2 });
+        throw new Error('Unable to fetch your location. Please enable GPS/location and try again.');
+      }
+      if (lastError?.code === 3) {
+        showLocationSetupPopup({ permissionState, errorCode: 3 });
+        throw new Error('Location request timed out. Please try again.');
+      }
+      showLocationSetupPopup({ permissionState, errorCode: lastError?.code });
+      throw new Error('Unable to capture location. Please try again.');
+    }
+
+    const metadata = {
+      capturedAt: new Date().toISOString(),
+      location: {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        ...(position.coords.accuracy !== undefined ? { accuracy: position.coords.accuracy } : {})
+      },
+      locationStatus: 'granted',
+      captureType
+    };
+    lastKnownLocationRef.current = metadata;
+    return metadata;
+  }, []);
+
+  const getResponseMetadataForQuestion = useCallback((taskData, questionId) => {
+    const metadataMap = taskData?.responseMetadata || {};
+    const id = String(questionId || '');
+    if (!id) return null;
+
+    if (metadataMap[id]) return metadataMap[id];
+    if (metadataMap[`q-${id}`]) return metadataMap[`q-${id}`];
+    if (metadataMap[`question-${id}`]) return metadataMap[`question-${id}`];
+
+    const fuzzyKey = Object.keys(metadataMap).find((key) =>
+      key === id || key.includes(id) || key.endsWith(id)
+    );
+    return fuzzyKey ? metadataMap[fuzzyKey] : null;
+  }, []);
+
+  const formatCaptureMetadata = useCallback((metadata) => {
+    if (!metadata || typeof metadata !== 'object') return '';
+
+    const capturedAt = metadata.capturedAt ? new Date(metadata.capturedAt).toLocaleString() : 'N/A';
+    const lat = metadata.location?.latitude;
+    const lng = metadata.location?.longitude;
+    const coordinates = (lat !== undefined && lng !== undefined)
+      ? `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
+      : 'N/A';
+
+    return `${capturedAt} | ${coordinates}`;
+  }, []);
+
   // For select/dropdown/radio/checkbox - call API immediately
   const handleOptionChange = (questionId, value) => {
     setLocalInputValues(prev => ({
@@ -4965,18 +5249,19 @@ const UserTaskDetail = () => {
     handleSaveInspectionResponse(questionId, value);
   };
 
-  const handleSaveInspectionResponse = async (questionId, value) => {
+  const handleSaveInspectionResponse = async (questionId, value, options = {}) => {
     if (!currentTask || currentTask.status === 'completed' || currentTask.status === 'archived') {
-      return;
+      return false;
     }
 
     // CRITICAL FIX: Prevent duplicate saves (race condition protection)
-    if (pendingSavesRef.current.has(questionId)) {
-      return; // Already saving this question
+    const normalizedQuestionId = String(questionId);
+    if (pendingSavesRef.current.has(normalizedQuestionId)) {
+      return false; // Already saving this question
     }
 
     try {
-      pendingSavesRef.current.add(questionId);
+      pendingSavesRef.current.add(normalizedQuestionId);
 
       // Store current state before API calls
       const currentPageId = selectedPage;
@@ -4993,14 +5278,31 @@ const UserTaskDetail = () => {
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
-        [questionId]: value
+        [normalizedQuestionId]: value
       };
+      const currentResponseMetadata = currentTask.responseMetadata || {};
+      let metadataPatch = (options?.responseMetadataPatch && typeof options.responseMetadataPatch === 'object')
+        ? { ...options.responseMetadataPatch }
+        : {};
+
+      if (options?.captureType) {
+        const captureMetadata = await getCaptureMetadataFromLocation(options.captureType);
+        metadataPatch = {
+          ...metadataPatch,
+          [normalizedQuestionId]: captureMetadata
+        };
+      }
+
+      const updatedResponseMetadata = Object.keys(metadataPatch).length > 0
+        ? { ...currentResponseMetadata, ...metadataPatch }
+        : currentResponseMetadata;
 
       // Only make ONE API call to save the questionnaire response
       await dispatch(updateTaskQuestionnaire({
         taskId: taskId,
         questionnaire: {
           responses: updatedResponses,
+          responseMetadata: updatedResponseMetadata,
           notes: currentTask.questionnaireNotes || '',
           completed: false
         }
@@ -5062,10 +5364,13 @@ const UserTaskDetail = () => {
         setSelectedSection(currentSectionId);
       }
 
+      return true;
+
     } catch (error) {
       toast.error(`${t('tasks.failedToSaveResponse')}: ${error.message || t('common.error')}`);
+      return false;
     } finally {
-      pendingSavesRef.current.delete(questionId);
+      pendingSavesRef.current.delete(normalizedQuestionId);
     }
   };
 
@@ -5157,10 +5462,12 @@ const UserTaskDetail = () => {
       const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime; // Keep in seconds
 
       const completionPercentage = calculateTaskCompletionPercentage();
+      const signatureMetadata = await getCaptureMetadataFromLocation('question_signature');
 
       await dispatch(saveTaskSignature({
         taskId: currentTask._id,
         signature: signatureImage,
+        signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: completionPercentage,
@@ -5209,11 +5516,13 @@ const UserTaskDetail = () => {
       const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime; // Keep in seconds
 
       const completionPercentage = calculateTaskCompletionPercentage();
+      const signatureMetadata = await getCaptureMetadataFromLocation('question_signature');
 
       // First save signature
       await dispatch(saveTaskSignature({
         taskId: currentTask._id,
         signature: signatureImage,
+        signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
           completionPercentage: completionPercentage,
@@ -5477,6 +5786,7 @@ const UserTaskDetail = () => {
   const renderQuestionInput = (question, task, onSaveResponse) => {
     const questionId = question._id;
     const response = task.questionnaireResponses?.[questionId];
+    const questionCaptureMetadata = getResponseMetadataForQuestion(task, questionId);
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
     const isDisabled = task.status === 'completed' || task.status === 'archived';
@@ -5685,10 +5995,12 @@ const UserTaskDetail = () => {
 
                       // Convert file to base64 for storage
                       const reader = new FileReader();
-                      reader.onload = (event) => {
+                      reader.onload = async (event) => {
                         const base64Data = event.target.result;
-                        onSaveResponse(questionId, base64Data);
-                        toast.success(t('tasks.fileUploadedSuccessfully'));
+                        const saved = await onSaveResponse(questionId, base64Data, { captureType: 'file' });
+                        if (saved) {
+                          toast.success(t('tasks.fileUploadedSuccessfully'));
+                        }
                       };
                       reader.onerror = () => {
                         toast.error(t('tasks.failedToReadFile'));
@@ -5830,12 +6142,14 @@ const UserTaskDetail = () => {
                                 
                                 // Convert blob to base64
                                 const reader = new FileReader();
-                                reader.onload = (event) => {
+                                reader.onload = async (event) => {
                                   const base64Data = event.target.result;
-                                  onSaveResponse(questionId, base64Data);
+                                  const saved = await onSaveResponse(questionId, base64Data, { captureType: 'file' });
                                   stream.getTracks().forEach(track => track.stop());
                                   document.body.removeChild(modal);
-                                  toast.success(t('tasks.photoCapturedSuccessfully'));
+                                  if (saved) {
+                                    toast.success(t('tasks.photoCapturedSuccessfully'));
+                                  }
                                 };
                                 reader.onerror = () => {
                                   toast.error(t('tasks.failedToReadFile'));
@@ -5965,6 +6279,15 @@ const UserTaskDetail = () => {
                         ✅ Uploaded: {response}
                       </div>
                     )}
+                    {questionCaptureMetadata && (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: '#475569'
+                      }}>
+                        Captured: {formatCaptureMetadata(questionCaptureMetadata)}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -6067,10 +6390,12 @@ const UserTaskDetail = () => {
 
                               canvas.toBlob(blob => {
                                 const reader = new FileReader();
-                                reader.onload = (event) => {
+                                reader.onload = async (event) => {
                                   const base64Data = event.target.result;
-                                  onSaveResponse(questionId, base64Data);
-                                  toast.success(t('tasks.photoCapturedSuccessfully'));
+                                  const saved = await onSaveResponse(questionId, base64Data, { captureType: 'media' });
+                                  if (saved) {
+                                    toast.success(t('tasks.photoCapturedSuccessfully'));
+                                  }
                                 };
                                 reader.readAsDataURL(blob);
                                 stream.getTracks().forEach(track => track.stop());
@@ -6160,6 +6485,15 @@ const UserTaskDetail = () => {
                         gap: '6px'
                       }}>
                         ✅ {t('tasks.mediaCaptured')}
+                      </div>
+                    )}
+                    {questionCaptureMetadata && (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: '#475569'
+                      }}>
+                        Captured: {formatCaptureMetadata(questionCaptureMetadata)}
                       </div>
                     )}
                   </div>
@@ -6311,8 +6645,10 @@ const UserTaskDetail = () => {
                 <SignatureCanvasComponent
                   questionId={questionId}
                   response={response}
+                  metadata={questionCaptureMetadata}
                   isDisabled={isDisabled}
                   onSaveResponse={onSaveResponse}
+                  formatCaptureMetadata={formatCaptureMetadata}
                 />
               </div>
             </div>
@@ -7605,6 +7941,45 @@ const UserTaskDetail = () => {
                     </div>
                   </div>
 
+                  {currentTask?.signature && (
+                    <div style={{
+                      marginBottom: '24px',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(226, 232, 240, 0.8)',
+                      background: 'rgba(248, 250, 252, 0.75)'
+                    }}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#1a202c',
+                        marginBottom: '12px'
+                      }}>
+                        {t('tasks.signature')}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                        {typeof currentTask.signature === 'string' && currentTask.signature.startsWith('data:image/') && (
+                          <img
+                            src={currentTask.signature}
+                            alt="Final signature"
+                            style={{
+                              maxWidth: '220px',
+                              maxHeight: '110px',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0'
+                            }}
+                          />
+                        )}
+                        <div style={{ color: '#374151', fontSize: '13px', lineHeight: '1.7' }}>
+                          <div>Signed at: {currentTask?.signedAt ? new Date(currentTask.signedAt).toLocaleString() : 'N/A'}</div>
+                          {currentTask?.signatureMetadata && (
+                            <div>Captured: {formatCaptureMetadata(currentTask.signatureMetadata)}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {currentTask?.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0 && (
                     <div style={{ marginTop: '32px' }}>
                       <h3 style={{
@@ -7678,6 +8053,7 @@ const UserTaskDetail = () => {
                                         currentTask.questionnaireResponses[question._id] ?
                                         currentTask.questionnaireResponses[question._id] :
                                         null;
+                                      const responseMetadata = getResponseMetadataForQuestion(currentTask, question._id);
 
                                       if (!response) return t('tasks.notAnswered');
 
@@ -7701,6 +8077,11 @@ const UserTaskDetail = () => {
                                                 }}
                                                 onClick={() => window.open(response, '_blank')}
                                               />
+                                              {responseMetadata && (
+                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                  Captured: {formatCaptureMetadata(responseMetadata)}
+                                                </div>
+                                              )}
                                             </div>
                                           );
                                         } else if (response.startsWith('data:')) {
@@ -7728,10 +8109,24 @@ const UserTaskDetail = () => {
                                               >
                                                 {t('tasks.downloadFile')}
                                               </button>
+                                              {responseMetadata && (
+                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                  Captured: {formatCaptureMetadata(responseMetadata)}
+                                                </div>
+                                              )}
                                             </div>
                                           );
                                         } else {
-                                          return `📎 ${t('tasks.fileUploaded')}: ${response}`;
+                                          return (
+                                            <div>
+                                              <div>{`📎 ${t('tasks.fileUploaded')}: ${response}`}</div>
+                                              {responseMetadata && (
+                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                  Captured: {formatCaptureMetadata(responseMetadata)}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
                                         }
                                       }
 
@@ -7755,15 +8150,38 @@ const UserTaskDetail = () => {
                                                 }}
                                                 onClick={() => window.open(response, '_blank')}
                                               />
+                                              {responseMetadata && (
+                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                  Captured: {formatCaptureMetadata(responseMetadata)}
+                                                </div>
+                                              )}
                                             </div>
                                           );
                                         } else {
-                                          return `✍️ ${t('tasks.signatureProvided')}`;
+                                          return (
+                                            <div>
+                                              <div>{`✍️ ${t('tasks.signatureProvided')}`}</div>
+                                              {responseMetadata && (
+                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                  Captured: {formatCaptureMetadata(responseMetadata)}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
                                         }
                                       }
 
                                       // Default response display
-                                      return response;
+                                      return (
+                                        <div>
+                                          <div>{response}</div>
+                                          {responseMetadata && (
+                                            <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                              Captured: {formatCaptureMetadata(responseMetadata)}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
                                     })()
                                   }
                                 </div>
@@ -8103,6 +8521,66 @@ const UserTaskDetail = () => {
           </SidePanel>
         </ContentContainer>
       </MainContent>
+
+      {locationHelpModal.open && (
+        <ModalOverlay>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>Location Access Required</ModalTitle>
+              <CloseButton onClick={() => setLocationHelpModal((prev) => ({ ...prev, open: false }))}>
+                <X size={20} />
+              </CloseButton>
+            </ModalHeader>
+
+            <div style={{ color: '#374151', lineHeight: '1.6' }}>
+              <p style={{ marginTop: 0, marginBottom: '10px', fontWeight: 600 }}>
+                Location is required to save image/signature captures.
+              </p>
+              <p style={{ marginTop: 0, marginBottom: '6px' }}>
+                Reason: {locationHelpModal.reason}
+              </p>
+              <p style={{ marginTop: 0, marginBottom: '6px' }}>
+                Permission state: {locationHelpModal.permissionState}
+              </p>
+              <p style={{ marginTop: 0, marginBottom: '12px' }}>
+                Error code: {locationHelpModal.errorCode ?? 'N/A'}
+              </p>
+
+              <div style={{
+                padding: '12px',
+                borderRadius: '10px',
+                background: 'rgba(55, 136, 216, 0.06)',
+                border: '1px solid rgba(55, 136, 216, 0.2)'
+              }}>
+                {locationHelpModal.steps.map((step, index) => (
+                  <div
+                    key={`${step}-${index}`}
+                    style={{
+                      fontWeight: index === 0 ? 700 : 400,
+                      marginBottom: index === locationHelpModal.steps.length - 1 ? 0 : 6
+                    }}
+                  >
+                    {step}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              marginTop: '20px',
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '16px'
+            }}>
+              <QuickActionButton onClick={() => setLocationHelpModal((prev) => ({ ...prev, open: false }))}>
+                Close
+              </QuickActionButton>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       {showSignatureModal && !isArchivedTask && (
         <ModalOverlay>

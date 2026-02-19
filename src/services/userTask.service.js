@@ -10,9 +10,16 @@ const questionnaireQueueByTask = new Map();
 const mergeQuestionnairePayload = (base = {}, patch = {}) => {
   const baseResponses = (base.responses && typeof base.responses === 'object' && !Array.isArray(base.responses)) ? base.responses : {};
   const patchResponses = (patch.responses && typeof patch.responses === 'object' && !Array.isArray(patch.responses)) ? patch.responses : {};
+  const baseResponseMetadata = (base.responseMetadata && typeof base.responseMetadata === 'object' && !Array.isArray(base.responseMetadata))
+    ? base.responseMetadata
+    : {};
+  const patchResponseMetadata = (patch.responseMetadata && typeof patch.responseMetadata === 'object' && !Array.isArray(patch.responseMetadata))
+    ? patch.responseMetadata
+    : {};
 
   return {
     responses: { ...baseResponses, ...patchResponses },
+    responseMetadata: { ...baseResponseMetadata, ...patchResponseMetadata },
     notes: patch.notes !== undefined ? patch.notes : base.notes,
     completed: patch.completed !== undefined ? patch.completed : base.completed
   };
@@ -209,7 +216,7 @@ export const userTaskService = {
         
         // Generate and download PDF using frontend
         const pdfFileName = fileName || `inspection_report_${taskId}`;
-        downloadTaskPDF(dataToUse, pdfFileName);
+        await downloadTaskPDF(dataToUse, pdfFileName);
         
         return { success: true };
       }
@@ -267,6 +274,7 @@ export const userTaskService = {
       // Create payload with signature and optional taskMetrics
       const payload = {
         signature: data.signature,
+        ...(data.signatureMetadata && { signatureMetadata: data.signatureMetadata }),
         ...(data.taskMetrics && { taskMetrics: data.taskMetrics })
       };
       

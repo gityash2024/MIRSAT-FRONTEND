@@ -1,729 +1,820 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import ArabicReshaper from 'arabic-reshaper';
 
-// Helper function to detect if text contains Arabic characters
+const HEADER_HEIGHT = 28;
+const TOP_MARGIN = 14;
+const BOTTOM_MARGIN = 14;
+const SIDE_MARGIN = 14;
+const CONTENT_START_Y = TOP_MARGIN + HEADER_HEIGHT;
+
+const NON_COMPLIANT_VALUES = new Set([
+  'non_compliance',
+  'non compliance',
+  'non-compliance',
+  'noncompliance',
+  'non compliant',
+  'no',
+  'غير سليم',
+  'غير مطابق',
+  'غير متوفر'
+]);
+
 const containsArabic = (text) => {
   if (!text) return false;
-  const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-  return arabicPattern.test(text);
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(text));
 };
 
-// Process task data to match backend structure
-function processTaskDataForPDF(taskData) {
-  if (!taskData) return taskData;
+const processArabicText = (value) => {
+  if (value === null || value === undefined) return '';
+  const text = String(value);
+  if (!containsArabic(text)) return text;
+  try {
+    return ArabicReshaper.convertArabic(text);
+  } catch (error) {
+    return text;
+  }
+};
 
-  console.log('Raw task data received:', taskData);
+const safeText = (value) => {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  return processArabicText(String(value));
+};
 
-  // Extract questions from inspection level
-  let questions = [];
-  const questionIds = new Set();
+const normalizeTaskDataInput = (rawTaskData) => {
+  if (!rawTaskData || typeof rawTaskData !== 'object') return {};
 
-  if (taskData.inspectionLevel) {
-    // Extract questions from pages structure (prioritize this)
-    if (taskData.inspectionLevel.pages) {
-      taskData.inspectionLevel.pages.forEach((page) => {
-        if (page.sections && Array.isArray(page.sections)) {
-          page.sections.forEach((section) => {
-            if (section.questions && Array.isArray(section.questions)) {
-              section.questions.forEach((question) => {
-                const questionId = question._id?.toString() || question.id?.toString();
-                if (questionId && !questionIds.has(questionId)) {
-                  questionIds.add(questionId);
-                  questions.push(question);
-                }
-              });
-            }
-          });
-        }
-      });
+  if (rawTaskData.data && typeof rawTaskData.data === 'object') {
+    // Handle Axios API response shapes: { status, data: task } or { data: { status, data: task } }
+    if (rawTaskData.data.data && typeof rawTaskData.data.data === 'object') {
+      return rawTaskData.data.data;
     }
+    return rawTaskData.data;
+  }
 
-    // Extract questions from subLevels structure (fallback)
-    if (questions.length === 0 && taskData.inspectionLevel.subLevels) {
-      const extractQuestions = (subLevels) => {
-        if (!subLevels || !Array.isArray(subLevels)) return;
+  return rawTaskData;
+};
 
-        for (const subLevel of subLevels) {
-          if (!subLevel) continue;
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return safeText(value);
+  return date.toLocaleString();
+};
 
-          if (subLevel.questions && Array.isArray(subLevel.questions)) {
-            subLevel.questions.forEach((question) => {
-              const questionId = question._id?.toString() || question.id?.toString();
-              if (questionId && !questionIds.has(questionId)) {
-                questionIds.add(questionId);
-                questions.push(question);
-              }
-            });
-          }
+const formatDuration = (secondsValue) => {
+  const seconds = Number(secondsValue || 0);
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0 mins';
+  const minutes = Math.round(seconds / 60);
+  if (minutes <= 0) return '0 mins';
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  if (hours <= 0) return `${remaining} min${remaining === 1 ? '' : 's'}`;
+  if (remaining <= 0) return `${hours} hr${hours === 1 ? '' : 's'}`;
+  return `${hours} hr${hours === 1 ? '' : 's'} ${remaining} min${remaining === 1 ? '' : 's'}`;
+};
 
-          if (subLevel.subLevels && Array.isArray(subLevel.subLevels)) {
-            extractQuestions(subLevel.subLevels);
-          }
-        }
-      };
+const isScorableQuestion = (question) => {
+  const qType = (question?.type || question?.answerType || '').toLowerCase();
+  if (!['yesno', 'compliance'].includes(qType)) return false;
+  if (question?.requirementType === 'recommended') return false;
+  if (question?.mandatory === false || question?.required === false) return false;
+  return true;
+};
 
-      extractQuestions(taskData.inspectionLevel.subLevels);
-    }
+const getMaxScore = (question) => {
+  const fromScoring = Number(question?.scoring?.max || 0);
+  if (Number.isFinite(fromScoring) && fromScoring > 0) return fromScoring;
 
-    // Fallback: if no questions found in pages or subLevels, use direct questions
-    if (questions.length === 0 && taskData.inspectionLevel.questions && taskData.inspectionLevel.questions.length) {
-      taskData.inspectionLevel.questions.forEach((question) => {
-        const questionId = question._id?.toString() || question.id?.toString();
-        if (questionId && !questionIds.has(questionId)) {
-          questionIds.add(questionId);
-          questions.push(question);
-        }
-      });
+  if (question?.scores && typeof question.scores === 'object') {
+    const values = Object.values(question.scores)
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+    if (values.length > 0) {
+      const max = Math.max(...values);
+      if (Number.isFinite(max) && max > 0) return max;
     }
   }
 
-  // Get pre-inspection questions
-  let preInspectionQuestions = [];
-  const preInspectionQuestionIds = new Set();
+  return 2;
+};
 
-  if (taskData.inspectionLevel && taskData.inspectionLevel.preInspectionQuestions) {
-    taskData.inspectionLevel.preInspectionQuestions.forEach((question) => {
-      const questionId = question._id?.toString() || question.id?.toString();
-      if (questionId && !preInspectionQuestionIds.has(questionId)) {
-        preInspectionQuestionIds.add(questionId);
-        preInspectionQuestions.push(question);
-      }
+const findResponseEntry = (responses, questionId) => {
+  if (!responses || !questionId) return { key: null, value: null };
+
+  const id = String(questionId);
+  const directKeys = [id, `q-${id}`, `question-${id}`];
+
+  for (const key of directKeys) {
+    if (Object.prototype.hasOwnProperty.call(responses, key)) {
+      return { key, value: responses[key] };
+    }
+  }
+
+  const fuzzyKey = Object.keys(responses).find((key) => (
+    !key.startsWith('c-') && (key === id || key.endsWith(id) || key.includes(id))
+  ));
+
+  if (!fuzzyKey) return { key: null, value: null };
+  return { key: fuzzyKey, value: responses[fuzzyKey] };
+};
+
+const findResponseMetadata = (metadataMap, questionId, responseKey = null) => {
+  if (!metadataMap || !questionId) return null;
+
+  const id = String(questionId);
+  const lookupKeys = [id, `q-${id}`, `question-${id}`];
+  if (responseKey) lookupKeys.unshift(responseKey);
+
+  for (const key of lookupKeys) {
+    if (key && metadataMap[key]) return metadataMap[key];
+  }
+
+  const fuzzyKey = Object.keys(metadataMap).find((key) => (
+    key === id || key.endsWith(id) || key.includes(id)
+  ));
+
+  return fuzzyKey ? metadataMap[fuzzyKey] : null;
+};
+
+const formatCaptureMetadata = (metadata) => {
+  if (!metadata || typeof metadata !== 'object') return '';
+
+  const captured = metadata.capturedAt ? formatDateTime(metadata.capturedAt) : 'N/A';
+  const latitude = metadata.location?.latitude;
+  const longitude = metadata.location?.longitude;
+  const hasCoords = latitude !== undefined && longitude !== undefined;
+  const coords = hasCoords
+    ? `${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}`
+    : 'Unavailable';
+
+  return `Captured: ${captured}\nCoordinates: ${coords}`;
+};
+
+const extractQuestionRows = (taskData) => {
+  const inspectionLevel = taskData?.inspectionLevel || {};
+  const pages = Array.isArray(inspectionLevel.pages) ? inspectionLevel.pages : [];
+
+  const rows = [];
+  pages.forEach((page, pageIndex) => {
+    const pageNo = String(pageIndex + 1);
+    const sections = Array.isArray(page?.sections) ? page.sections : [];
+
+    sections.forEach((section, sectionIndex) => {
+      const sectionNo = `${pageNo}.${sectionIndex + 1}`;
+      const questions = Array.isArray(section?.questions) ? section.questions : [];
+
+      questions.forEach((question, questionIndex) => {
+        const questionId = question?._id?.toString() || question?.id?.toString();
+        if (!questionId) return;
+
+        rows.push({
+          id: questionId,
+          number: `${sectionNo}.${questionIndex + 1}`,
+          pageNo,
+          sectionNo,
+          pageName: page?.name || `Page ${pageNo}`,
+          sectionName: section?.name || `Section ${sectionNo}`,
+          question
+        });
+      });
     });
-  }
-
-  // Filter out pre-inspection questions from the questions array
-  const filteredQuestions = questions.filter((q) => {
-    if (taskData.inspectionLevel) {
-      // Check pages structure first (prioritize this)
-      if (taskData.inspectionLevel.pages) {
-        const isInPagesStructure = taskData.inspectionLevel.pages.some((page) =>
-          page.sections && page.sections.some((section) =>
-            section.questions && section.questions.some((question) =>
-              question._id && question._id.toString() === (q._id || q.id)?.toString()
-            )
-          )
-        );
-        if (isInPagesStructure) return true;
-      }
-
-      // Check subLevels structure (fallback)
-      if (taskData.inspectionLevel.subLevels) {
-        const isInSubLevelsStructure = taskData.inspectionLevel.subLevels.some((page) =>
-          page.subLevels && page.subLevels.some((section) =>
-            section.questions && section.questions.some((question) =>
-              question._id && question._id.toString() === (q._id || q.id)?.toString()
-            )
-          )
-        );
-        if (isInSubLevelsStructure) return true;
-      }
-
-      // If not found in either structure, exclude it (it's likely a pre-inspection question)
-      return false;
-    }
-    return true;
   });
 
-  // Calculate scores
-  let scores = { totalAchieved: 0, totalMax: 0, percentage: 0 };
+  if (rows.length > 0) return rows;
 
-  if (filteredQuestions.length > 0) {
-    let totalAchieved = 0;
-    let totalMax = 0;
+  const fallbackQuestions = Array.isArray(taskData?.questions) ? taskData.questions : [];
+  return fallbackQuestions
+    .map((question, index) => {
+      const questionId = question?._id?.toString() || question?.id?.toString();
+      if (!questionId) return null;
+      return {
+        id: questionId,
+        number: `1.1.${index + 1}`,
+        pageNo: '1',
+        sectionNo: '1.1',
+        pageName: 'Page 1',
+        sectionName: 'Section 1.1',
+        question
+      };
+    })
+    .filter(Boolean);
+};
 
-    filteredQuestions.forEach((question) => {
-      if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-        return;
-      }
+const extractPreInspectionQuestions = (taskData) => {
+  if (Array.isArray(taskData?.preInspectionQuestions) && taskData.preInspectionQuestions.length > 0) {
+    return taskData.preInspectionQuestions;
+  }
 
-      const questionType = question.type || question.answerType;
-      const scorableTypes = ['yesno', 'compliance'];
-      if (!scorableTypes.includes(questionType)) {
-        return;
-      }
+  const inspectionLevelPre = taskData?.inspectionLevel?.preInspectionQuestions;
+  return Array.isArray(inspectionLevelPre) ? inspectionLevelPre : [];
+};
 
-      const questionId = question._id?.toString() || question.id?.toString();
-      if (!questionId) return;
+const calculateScoreSummary = (questionRows, responses) => {
+  let achieved = 0;
+  let total = 0;
 
-      // Find response
-      let response = null;
-      const possibleKeys = [
-        `q-${questionId}`,
-        `question-${questionId}`,
-        questionId
-      ];
+  questionRows.forEach(({ id, question }) => {
+    if (!isScorableQuestion(question)) return;
 
-      for (const key of possibleKeys) {
-        if (taskData.questionnaireResponses && taskData.questionnaireResponses[key] !== undefined) {
-          response = taskData.questionnaireResponses[key];
-          break;
+    const { value } = findResponseEntry(responses, id);
+    if (value === null || value === undefined || value === '') return;
+
+    const normalized = String(value).toLowerCase();
+    if (['na', 'n/a', 'not_applicable', 'not applicable'].includes(normalized)) {
+      return;
+    }
+
+    const weight = Number(question?.weight || 1);
+    const max = getMaxScore(question);
+    const weightedMax = max * weight;
+
+    total += weightedMax;
+
+    if (question?.scores && typeof question.scores === 'object') {
+      const configured = Number(question.scores[value] ?? question.scores[String(value)] ?? 0);
+      if (Number.isFinite(configured)) achieved += configured * weight;
+      return;
+    }
+
+    if (['full_compliance', 'full compliance', 'yes'].includes(normalized)) {
+      achieved += weightedMax;
+    } else if (['partial_compliance', 'partial compliance'].includes(normalized)) {
+      achieved += weightedMax / 2;
+    }
+  });
+
+  const percentage = total > 0 ? Math.round((achieved / total) * 100) : 0;
+  return { achieved, total, percentage };
+};
+
+const getQuestionScoreLabel = (question, response) => {
+  if (!isScorableQuestion(question)) return 'N/A';
+  if (response === null || response === undefined || response === '') return 'N/A';
+
+  const normalized = String(response).toLowerCase();
+  if (['na', 'n/a', 'not_applicable', 'not applicable'].includes(normalized)) {
+    return 'N/A';
+  }
+
+  const max = getMaxScore(question);
+  const weight = Number(question?.weight || 1);
+  const weightedMax = max * weight;
+
+  let earned = 0;
+  if (question?.scores && typeof question.scores === 'object') {
+    const configured = Number(question.scores[response] ?? question.scores[String(response)] ?? 0);
+    if (Number.isFinite(configured)) earned = configured * weight;
+  } else if (['full_compliance', 'full compliance', 'yes'].includes(normalized)) {
+    earned = weightedMax;
+  } else if (['partial_compliance', 'partial compliance'].includes(normalized)) {
+    earned = weightedMax / 2;
+  }
+
+  return `${Number(earned.toFixed(2))}/${Number(weightedMax.toFixed(2))}`;
+};
+
+const deriveFlaggedItems = (taskData, questionRows, responses) => {
+  if (Array.isArray(taskData?.flaggedItems) && taskData.flaggedItems.length > 0) {
+    return taskData.flaggedItems.map((item, index) => ({
+      itemNo: index + 1,
+      checkpoint: item?.path || item?.title || 'N/A',
+      status: safeText(item?.status)
+    }));
+  }
+
+  const flagged = [];
+  questionRows.forEach((row) => {
+    const { value } = findResponseEntry(responses, row.id);
+    if (!isNonCompliant(value)) return;
+
+    flagged.push({
+      itemNo: flagged.length + 1,
+      checkpoint: `${row.number} ${row.question?.text || row.question?.question || 'N/A'}`,
+      status: safeText(value)
+    });
+  });
+
+  return flagged;
+};
+
+const isNonCompliant = (value) => {
+  if (value === null || value === undefined) return false;
+  return NON_COMPLIANT_VALUES.has(String(value).trim().toLowerCase());
+};
+
+const loadArabicFont = async (doc) => {
+  const sources = [
+    `${window.location.origin}/fonts/Amiri-Regular.ttf`,
+    'https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf'
+  ];
+
+  for (const source of sources) {
+    try {
+      const response = await fetch(source);
+      if (!response.ok) continue;
+      const buffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+      const base64 = btoa(binary);
+      doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', base64);
+      doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
+      return true;
+    } catch (error) {
+      // try next source
+    }
+  }
+
+  console.warn('Could not load Arabic font from local or CDN sources.');
+  return false;
+};
+
+const toDataUrl = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    return null;
+  }
+};
+
+const fetchImageSource = async (imageSource) => {
+  if (!imageSource || typeof imageSource !== 'string') return null;
+  if (imageSource.startsWith('data:image/')) return imageSource;
+  if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+    return toDataUrl(imageSource);
+  }
+  return null;
+};
+
+const responseToDisplay = async (response) => {
+  if (response === null || response === undefined || response === '') {
+    return { text: 'No response', image: null };
+  }
+
+  if (Array.isArray(response)) {
+    return { text: response.map((item) => safeText(item)).join(', '), image: null };
+  }
+
+  const value = String(response);
+  if (value.startsWith('data:image/')) {
+    return { text: 'Image uploaded', image: value };
+  }
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    const fetched = await fetchImageSource(value);
+    return fetched ? { text: 'Image uploaded', image: fetched } : { text: value, image: null };
+  }
+  if (value.startsWith('data:')) {
+    return { text: 'File uploaded', image: null };
+  }
+
+  return { text: safeText(value), image: null };
+};
+
+const buildResponseCellText = (display, metadata) => {
+  const lines = [safeText(display?.text || 'No response')];
+  if (metadata) {
+    const metaText = formatCaptureMetadata(metadata);
+    if (metaText) lines.push(metaText);
+  }
+  return lines.join('\n');
+};
+
+const applyArabicCellFont = (data, fontLoaded) => {
+  if (!fontLoaded) return;
+  if (!data?.cell?.raw) return;
+  if (!containsArabic(String(data.cell.raw))) return;
+  data.cell.styles.font = 'NotoNaskhArabic';
+  data.cell.styles.fontStyle = 'normal';
+  data.cell.styles.halign = 'right';
+};
+
+const drawPageDecorations = ({
+  doc,
+  pageNumber,
+  totalPages,
+  leftLogo,
+  rightLogo,
+  colors,
+  generatedAt
+}) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+
+  const logoW = 22;
+  const logoH = 14;
+  const logoY = TOP_MARGIN - 10;
+
+  if (leftLogo) {
+    doc.addImage(leftLogo, 'PNG', SIDE_MARGIN, logoY, logoW, logoH);
+  }
+
+  if (rightLogo) {
+    doc.addImage(rightLogo, 'PNG', pageWidth - SIDE_MARGIN - logoW, logoY, logoW, logoH);
+  }
+
+  doc.setDrawColor(colors.border);
+  doc.line(SIDE_MARGIN, TOP_MARGIN + 6, pageWidth - SIDE_MARGIN, TOP_MARGIN + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(colors.muted);
+  doc.text(
+    `Generated on ${generatedAt}`,
+    SIDE_MARGIN,
+    pageHeight - 6
+  );
+  doc.text(
+    `Page ${pageNumber}/${totalPages}`,
+    pageWidth - SIDE_MARGIN,
+    pageHeight - 6,
+    { align: 'right' }
+  );
+};
+
+export const generateTaskPDF = async (taskData) => {
+  const normalizedTaskData = normalizeTaskDataInput(taskData);
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const fontLoaded = await loadArabicFont(doc);
+
+  const colors = {
+    navy: '#102a63',
+    text: '#111827',
+    muted: '#6b7280',
+    border: '#d1d5db',
+    soft: '#f3f4f6',
+    success: '#16a34a',
+    warning: '#f59e0b',
+    danger: '#dc2626'
+  };
+
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const contentWidth = pageWidth - (SIDE_MARGIN * 2);
+
+  const responses = normalizedTaskData?.questionnaireResponses || {};
+  const responseMetadata = normalizedTaskData?.responseMetadata || {};
+  const questionRows = extractQuestionRows(normalizedTaskData);
+  const preInspectionQuestions = extractPreInspectionQuestions(normalizedTaskData);
+  const scoreSummary = calculateScoreSummary(questionRows, responses);
+  const flaggedItems = deriveFlaggedItems(normalizedTaskData, questionRows, responses);
+
+  const inspector = Array.isArray(normalizedTaskData?.assignedTo) && normalizedTaskData.assignedTo.length > 0
+    ? (normalizedTaskData.assignedTo[0]?.name || normalizedTaskData.assignedTo[0]?.username || 'N/A')
+    : 'N/A';
+  const department = Array.isArray(normalizedTaskData?.assignedTo) && normalizedTaskData.assignedTo.length > 0
+    ? (normalizedTaskData.assignedTo[0]?.department || 'N/A')
+    : 'N/A';
+
+  const templateName = normalizedTaskData?.inspectionLevel?.name || normalizedTaskData?.inspectionLevel?.title || 'N/A';
+  const assetName =
+    (typeof normalizedTaskData?.asset === 'string' && normalizedTaskData.asset)
+    || normalizedTaskData?.asset?.displayName
+    || normalizedTaskData?.asset?.name
+    || normalizedTaskData?.asset?.assetName
+    || 'N/A';
+
+  let y = CONTENT_START_Y;
+
+  const ensureSpace = (needed = 20) => {
+    if (y + needed > pageHeight - BOTTOM_MARGIN - 8) {
+      doc.addPage();
+      y = CONTENT_START_Y;
+    }
+  };
+
+  const text = (value, x, yPos, opts = {}) => {
+    const {
+      size = 10,
+      style = 'normal',
+      color = colors.text,
+      align = 'left',
+      maxWidth
+    } = opts;
+
+    const content = safeText(value);
+    doc.setFontSize(size);
+    doc.setTextColor(color);
+
+    if (fontLoaded && containsArabic(content)) {
+      doc.setFont('NotoNaskhArabic', 'normal');
+    } else {
+      doc.setFont('helvetica', style);
+    }
+
+    if (maxWidth) {
+      const lines = doc.splitTextToSize(content, maxWidth);
+      doc.text(lines, x, yPos, { align });
+      return lines.length * (size * 0.45);
+    }
+
+    doc.text(content, x, yPos, { align });
+    return size * 0.45;
+  };
+
+  // Title and labels
+  text('Inspection Report', pageWidth / 2, y, { size: 14, style: 'bold', align: 'center', color: colors.navy });
+  y += 8;
+  text(`Template: ${templateName}`, SIDE_MARGIN, y, { size: 10, style: 'bold' });
+  y += 5;
+  text(`Asset: ${assetName}`, SIDE_MARGIN, y, { size: 10, style: 'bold' });
+  y += 8;
+
+  // Inspection details table
+  ensureSpace(40);
+  text('Inspection Details', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+  y += 4;
+
+  const detailsRows = [
+    ['Inspection Title', safeText(normalizedTaskData?.title)],
+    ['Template Name', safeText(templateName)],
+    ['Asset Name', safeText(assetName)],
+    ['Asset Type', safeText(normalizedTaskData?.asset?.type)],
+    ['Asset City', safeText(normalizedTaskData?.asset?.city)],
+    ['Asset Location', safeText(normalizedTaskData?.asset?.location || normalizedTaskData?.location)],
+    ['Description', safeText(normalizedTaskData?.description)],
+    ['Created At', formatDateTime(normalizedTaskData?.createdAt)],
+    ['Closed At', formatDateTime(normalizedTaskData?.signedAt || normalizedTaskData?.updatedAt)],
+    ['Inspector', safeText(inspector)],
+    ['Department', safeText(department)],
+    ['Status', safeText(normalizedTaskData?.status).replace(/_/g, ' ')]
+  ];
+
+  doc.autoTable({
+    startY: y,
+    head: [['Property', 'Value']],
+    body: detailsRows,
+    theme: 'grid',
+    margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
+    headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 8.5, textColor: colors.text },
+    styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2.2 },
+    columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: contentWidth - 40 } },
+    didParseCell: (data) => applyArabicCellFont(data, fontLoaded)
+  });
+
+  y = (doc.lastAutoTable?.finalY || y) + 6;
+
+  // KPI cards
+  ensureSpace(34);
+  const cardGap = 4;
+  const cardW = (contentWidth - (cardGap * 2)) / 3;
+  const cardH = 24;
+  const durationText = formatDuration(normalizedTaskData?.taskMetrics?.timeSpent);
+
+  const cards = [
+    { title: 'Score', value: `${scoreSummary.percentage}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
+    { title: 'Flagged Items', value: String(flaggedItems.length), subtitle: 'Task specific', color: colors.danger },
+    { title: 'Duration', value: durationText, subtitle: 'Total time', color: colors.warning }
+  ];
+
+  cards.forEach((card, index) => {
+    const x = SIDE_MARGIN + (index * (cardW + cardGap));
+    doc.setFillColor(colors.soft);
+    doc.setDrawColor(colors.border);
+    doc.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
+
+    text(card.title, x + 2, y + 6, { size: 8, style: 'bold', color: colors.muted });
+    text(card.value, x + (cardW / 2), y + 14, { size: 14, style: 'bold', align: 'center', color: card.color });
+    text(card.subtitle, x + (cardW / 2), y + 20, { size: 7.5, align: 'center', color: colors.muted });
+  });
+
+  y += cardH + 8;
+
+  // Pre-inspection questionnaire
+  if (preInspectionQuestions.length > 0) {
+    ensureSpace(24);
+    text('Pre-inspection questionnaire', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+    y += 4;
+
+    const preImageMap = new Map();
+    const preRows = await Promise.all(preInspectionQuestions.map(async (question, index) => {
+      const questionId = question?._id?.toString() || question?.id?.toString();
+      const { key, value } = findResponseEntry(responses, questionId);
+      const display = await responseToDisplay(value);
+      const metadata = findResponseMetadata(responseMetadata, questionId, key);
+
+      if (display.image) preImageMap.set(index, display.image);
+
+      const responseCell = buildResponseCellText(display, metadata);
+
+      return [String(index + 1), safeText(question?.text || question?.question), responseCell || 'No response'];
+    }));
+
+    doc.autoTable({
+      startY: y,
+      head: [['SN', 'Question', 'Answer']],
+      body: preRows,
+      theme: 'grid',
+      margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
+      headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 8.2, textColor: colors.text, minCellHeight: 10 },
+      styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
+      rowPageBreak: 'avoid',
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 95 },
+        2: { cellWidth: contentWidth - 105 }
+      },
+      didParseCell: (data) => {
+        applyArabicCellFont(data, fontLoaded);
+        if (data.section === 'body' && data.column.index === 2 && preImageMap.has(data.row.index)) {
+          data.cell.styles.minCellHeight = 14;
+          data.cell.styles.valign = 'top';
+        }
+      },
+      didDrawCell: (data) => {
+        if (data.column.index === 2 && preImageMap.has(data.row.index)) {
+          try {
+            const image = preImageMap.get(data.row.index);
+            const targetH = Math.max(8, Math.min(10, data.cell.height - 2));
+            const targetW = targetH * 1.6;
+            doc.addImage(image, 'PNG', data.cell.x + data.cell.width - targetW - 1, data.cell.y + 1, targetW, targetH);
+          } catch (error) {
+            // keep text fallback only
+          }
         }
       }
+    });
 
-      if (!response && taskData.questionnaireResponses) {
-        const foundKey = Object.keys(taskData.questionnaireResponses).find(key =>
-          !key.startsWith('c-') && (key.includes(questionId) || key.endsWith(questionId))
-        );
-        if (foundKey) {
-          response = taskData.questionnaireResponses[foundKey];
-        }
+    y = (doc.lastAutoTable?.finalY || y) + 6;
+  }
+
+  // Flagged items summary
+  ensureSpace(24);
+  text('Flagged Items Summary', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+  y += 4;
+
+  const flaggedRows = flaggedItems.length > 0
+    ? flaggedItems.map((item) => [String(item.itemNo), safeText(item.checkpoint), safeText(item.status)])
+    : [['-', 'No flagged items for this inspection', '-']];
+
+  doc.autoTable({
+    startY: y,
+    head: [['Item No.', 'Checkpoint', 'Status']],
+    body: flaggedRows,
+    theme: 'grid',
+    margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
+    headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 8.2, textColor: colors.text },
+    styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 18, halign: 'center' },
+      1: { cellWidth: contentWidth - 50 },
+      2: { cellWidth: 32 }
+    },
+    didParseCell: (data) => applyArabicCellFont(data, fontLoaded)
+  });
+
+  y = (doc.lastAutoTable?.finalY || y) + 6;
+
+  // Inspection questionnaire by page and section
+  if (questionRows.length > 0) {
+    const groupedByPage = new Map();
+    questionRows.forEach((row) => {
+      const key = row.pageNo;
+      if (!groupedByPage.has(key)) {
+        groupedByPage.set(key, {
+          pageName: row.pageName,
+          sections: new Map()
+        });
       }
 
-      const weight = question.weight || 1;
-      const maxScore = question.scoring?.max || 2;
-      const maxPointsForQuestion = maxScore * weight;
+      const page = groupedByPage.get(key);
+      if (!page.sections.has(row.sectionNo)) {
+        page.sections.set(row.sectionNo, {
+          sectionName: row.sectionName,
+          rows: []
+        });
+      }
 
-      let earnedPointsForQuestion = 0;
-      let isNA = false;
+      page.sections.get(row.sectionNo).rows.push(row);
+    });
 
-      if (response !== null && response !== undefined) {
-        if (response === 'not_applicable' || response === 'na' || response === 'N/A' || response === 'Not applicable') {
-          isNA = true;
-        } else {
-          if (question.scores && typeof question.scores === 'object') {
-            const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
-            earnedPointsForQuestion = responseScore * weight;
-          } else {
-            if (questionType === 'compliance' || questionType === 'yesno') {
-              if (response === 'full_compliance' || response === 'yes' || response === 'Yes' ||
-                response === 'Full Compliance' || response === 'Full compliance') {
-                earnedPointsForQuestion = maxPointsForQuestion;
-              } else if (response === 'partial_compliance' || response === 'Partial Compliance' ||
-                response === 'Partial compliance') {
-                earnedPointsForQuestion = maxPointsForQuestion / 2;
+    for (const [pageNo, pageData] of groupedByPage.entries()) {
+      ensureSpace(14);
+      text(`Page ${pageNo}: ${safeText(pageData.pageName)}`, SIDE_MARGIN, y, { size: 11, style: 'bold', color: colors.navy });
+      y += 5;
+
+      for (const [sectionNo, sectionData] of pageData.sections.entries()) {
+        ensureSpace(12);
+        text(`Section ${sectionNo}: ${safeText(sectionData.sectionName)}`, SIDE_MARGIN, y, { size: 10, style: 'bold', color: colors.text });
+        y += 4;
+
+        const imageMap = new Map();
+        const rows = await Promise.all(sectionData.rows.map(async (row, index) => {
+          const { key, value } = findResponseEntry(responses, row.id);
+          const display = await responseToDisplay(value);
+          const metadata = findResponseMetadata(responseMetadata, row.id, key);
+
+          if (display.image) imageMap.set(index, display.image);
+
+          const responseCell = buildResponseCellText(display, metadata);
+
+          const scoreLabel = getQuestionScoreLabel(row.question, value);
+          const checkpoint = safeText(row.question?.text || row.question?.question);
+
+          return [row.number, checkpoint, responseCell || 'No response', scoreLabel];
+        }));
+
+        doc.autoTable({
+          startY: y,
+          head: [['No.', 'Checkpoint', 'Response', 'Score']],
+          body: rows,
+          theme: 'grid',
+          margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
+          headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 8.5 },
+          bodyStyles: { fontSize: 8, textColor: colors.text, minCellHeight: 10 },
+          styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
+          rowPageBreak: 'avoid',
+          columnStyles: {
+            0: { cellWidth: 20, halign: 'center' },
+            1: { cellWidth: 72 },
+            2: { cellWidth: contentWidth - 112 },
+            3: { cellWidth: 20, halign: 'center' }
+          },
+          didParseCell: (data) => {
+            applyArabicCellFont(data, fontLoaded);
+            if (data.section === 'body' && data.column.index === 2 && imageMap.has(data.row.index)) {
+              data.cell.styles.minCellHeight = 14;
+              data.cell.styles.valign = 'top';
+            }
+          },
+          didDrawCell: (data) => {
+            if (data.column.index === 2 && imageMap.has(data.row.index)) {
+              try {
+                const image = imageMap.get(data.row.index);
+                const targetH = Math.max(7, Math.min(9, data.cell.height - 2));
+                const targetW = targetH * 1.6;
+                doc.addImage(image, 'PNG', data.cell.x + data.cell.width - targetW - 1, data.cell.y + 1, targetW, targetH);
+              } catch (error) {
+                // keep text fallback only
               }
             }
           }
-        }
-      }
-
-      if (!isNA) {
-        totalAchieved += earnedPointsForQuestion;
-        totalMax += maxPointsForQuestion;
-      }
-    });
-
-    const percentage = totalMax > 0 ? Math.round((totalAchieved / totalMax) * 100) : 0;
-    scores = { totalAchieved, totalMax, percentage };
-  }
-
-  const processedData = {
-    ...taskData,
-    questions: filteredQuestions,
-    preInspectionQuestions,
-    scores
-  };
-
-  return processedData;
-}
-
-export const generateTaskPDF = async (taskData) => {
-  try {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const loadArabicFont = async () => {
-      try {
-        const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf');
-        const fontArrayBuffer = await response.arrayBuffer();
-        const fontBase64 = btoa(
-          new Uint8Array(fontArrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
-        doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontBase64);
-        doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
-        return true;
-      } catch (error) {
-        console.warn('Could not load Arabic font, fallback will be used:', error);
-        return false;
-      }
-    };
-
-    const toDataUrl = async (url) => {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) return null;
-        const blob = await response.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
         });
-      } catch (error) {
-        return null;
+
+        y = (doc.lastAutoTable?.finalY || y) + 5;
       }
-    };
-
-    const fetchImage = async (imageSource) => {
-      if (!imageSource || typeof imageSource !== 'string') return null;
-      if (imageSource.startsWith('data:image/')) return imageSource;
-      if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
-        return await toDataUrl(imageSource);
-      }
-      return null;
-    };
-
-    const fontLoaded = await loadArabicFont();
-
-    const colors = {
-      navy: '#122a6a',
-      darkText: '#111827',
-      muted: '#6b7280',
-      border: '#d1d5db',
-      yellow: '#fef08a',
-      yellowDeep: '#ca8a04',
-      cardGray: '#f3f4f6',
-      success: '#16a34a',
-      amber: '#f59e0b',
-      danger: '#dc2626'
-    };
-
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 14;
-    const contentWidth = pageWidth - (margin * 2);
-    let yPosition = 14;
-
-    const processedTaskData = processTaskDataForPDF(taskData);
-    const allResponses = taskData?.questionnaireResponses || {};
-
-    const pickResponse = (questionId) => {
-      if (!questionId) return null;
-      const id = questionId.toString();
-      const possibleKeys = [`q-${id}`, `question-${id}`, id];
-      for (const key of possibleKeys) {
-        if (allResponses[key] !== undefined) return allResponses[key];
-      }
-      const fuzzyKey = Object.keys(allResponses).find((key) =>
-        !key.startsWith('c-') && (key.includes(id) || key.endsWith(id))
-      );
-      return fuzzyKey ? allResponses[fuzzyKey] : null;
-    };
-
-    const hasArabicText = (value) => containsArabic(String(value || ''));
-
-    const applyFont = (text, fontStyle = 'normal') => {
-      if (hasArabicText(text) && fontLoaded) {
-        doc.setFont('NotoNaskhArabic', fontStyle);
-      } else {
-        doc.setFont('helvetica', fontStyle);
-      }
-    };
-
-    const drawText = (text, x, y, options = {}) => {
-      const {
-        fontSize = 10,
-        fontStyle = 'normal',
-        color = colors.darkText,
-        align = 'left',
-        maxWidth = null
-      } = options;
-
-      const safeText = text === null || text === undefined ? 'N/A' : String(text);
-      doc.setFontSize(fontSize);
-      applyFont(safeText, fontStyle);
-      doc.setTextColor(color);
-
-      if (maxWidth) {
-        const lines = doc.splitTextToSize(safeText, maxWidth);
-        if (hasArabicText(safeText) && align === 'left') {
-          lines.forEach((line, idx) => {
-            doc.text(line, x + maxWidth, y + (idx * (fontSize * 0.46)), { align: 'right' });
-          });
-        } else {
-          doc.text(lines, x, y, { align });
-        }
-        return lines.length * (fontSize * 0.46);
-      }
-
-      if (hasArabicText(safeText) && align === 'left') {
-        doc.text(safeText, x, y, { align: 'right' });
-      } else {
-        doc.text(safeText, x, y, { align });
-      }
-      return fontSize * 0.46;
-    };
-
-    const ensureSpace = (spaceNeeded = 20) => {
-      if (yPosition + spaceNeeded > pageHeight - margin) {
-        doc.addPage();
-        yPosition = margin;
-      }
-    };
-
-    const formatDateTime = (value) => {
-      if (!value) return 'N/A';
-      try {
-        return new Date(value).toLocaleString();
-      } catch (error) {
-        return String(value);
-      }
-    };
-
-    const formatDuration = (secondsValue) => {
-      const seconds = Number(secondsValue || 0);
-      if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
-      const timeInHours = seconds / 3600;
-      const totalMinutes = Math.round(timeInHours * 60);
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return `${hours}:${String(minutes).padStart(2, '0')}`;
-    };
-
-    const responseToDisplay = async (response) => {
-      if (response === null || response === undefined || response === '') {
-        return { text: 'No response', image: null };
-      }
-
-      if (Array.isArray(response)) {
-        return { text: response.join(', '), image: null };
-      }
-
-      const value = String(response);
-      if (value.startsWith('data:image/')) {
-        return { text: 'Image', image: value };
-      }
-      if (value.startsWith('http://') || value.startsWith('https://')) {
-        const fetched = await fetchImage(value);
-        return fetched ? { text: 'Image', image: fetched } : { text: value, image: null };
-      }
-      if (value.startsWith('data:')) {
-        return { text: 'File uploaded', image: null };
-      }
-      if (value.length > 100 && /^[A-Za-z0-9+/=]+$/.test(value)) {
-        return { text: 'File uploaded', image: null };
-      }
-      return { text: value, image: null };
-    };
-
-    const templateName = processedTaskData?.inspectionLevel?.name || processedTaskData?.inspectionLevel?.title || 'N/A';
-    const assetName =
-      (typeof processedTaskData?.asset === 'string' && processedTaskData.asset) ||
-      processedTaskData?.asset?.name ||
-      processedTaskData?.asset?.title ||
-      processedTaskData?.asset?.assetName ||
-      processedTaskData?.asset?.code ||
-      'N/A';
-    const inspector = Array.isArray(processedTaskData?.assignedTo) && processedTaskData.assignedTo.length > 0
-      ? (processedTaskData.assignedTo[0]?.name || processedTaskData.assignedTo[0]?.username || 'N/A')
-      : 'N/A';
-    const department = Array.isArray(processedTaskData?.assignedTo) && processedTaskData.assignedTo.length > 0
-      ? (processedTaskData.assignedTo[0]?.department || 'N/A')
-      : 'N/A';
-
-    const durationText = formatDuration(processedTaskData?.taskMetrics?.timeSpent);
-    const scoreText = `${processedTaskData?.scores?.totalAchieved || 0}/${processedTaskData?.scores?.totalMax || 0}`;
-    const scorePercent = `${processedTaskData?.scores?.percentage || 0}%`;
-
-    // Header logos and title block
-    const logoSizeW = 26;
-    const logoSizeH = 16;
-    const logoY = yPosition;
-    const leftLogoData = await toDataUrl(`${window.location.origin}/logo.png`);
-    const rightLogoData = await toDataUrl(`${window.location.origin}/logo.png`);
-
-    if (leftLogoData) {
-      doc.addImage(leftLogoData, 'PNG', margin, logoY, logoSizeW, logoSizeH);
-    } else {
-      doc.setDrawColor(colors.border);
-      doc.rect(margin, logoY, logoSizeW, logoSizeH);
-      drawText('LOGO', margin + logoSizeW / 2, logoY + 9, { align: 'center', fontSize: 8, color: colors.muted });
     }
-
-    if (rightLogoData) {
-      doc.addImage(rightLogoData, 'PNG', pageWidth - margin - logoSizeW, logoY, logoSizeW, logoSizeH);
-    } else {
-      doc.setDrawColor(colors.border);
-      doc.rect(pageWidth - margin - logoSizeW, logoY, logoSizeW, logoSizeH);
-      drawText('LOGO', pageWidth - margin - (logoSizeW / 2), logoY + 9, { align: 'center', fontSize: 8, color: colors.muted });
-    }
-
-    doc.setDrawColor('#9ca3af');
-    doc.rect((pageWidth / 2) - 14, logoY - 1, 28, 18);
-    drawText('Template Header', pageWidth / 2, logoY + 8, { align: 'center', fontSize: 6, color: colors.danger });
-
-    yPosition += 22;
-    drawText('Inspection Report', pageWidth / 2, yPosition, { align: 'center', fontSize: 13, fontStyle: 'bold', color: colors.darkText });
-    yPosition += 8;
-
-    // Highlight pills (template and asset)
-    const chipHeight = 7;
-    const chipPadding = 1.5;
-    const drawChip = (label, value, y) => {
-      const chipText = `[${label}] ${value || 'N/A'}`;
-      const chipWidth = Math.min(contentWidth * 0.65, doc.getTextWidth(chipText) + 8);
-      doc.setFillColor(colors.yellow);
-      doc.roundedRect(margin, y - 5, chipWidth, chipHeight, 1.5, 1.5, 'F');
-      drawText(chipText, margin + chipPadding, y - 0.8, { fontSize: 9, fontStyle: 'bold', color: colors.darkText });
-    };
-
-    drawChip('Template Name', templateName, yPosition);
-    yPosition += 8;
-    yPosition += 2;
-
-    // Inspection details
-    drawText('Inspection Details', margin, yPosition, { fontSize: 12, fontStyle: 'bold', color: colors.darkText });
-    yPosition += 5;
-
-    const inspectionRows = [
-      ['Inspection Title', processedTaskData?.title || 'N/A'],
-      ['Location', processedTaskData?.location || 'N/A'],
-      ['Description', processedTaskData?.description || 'N/A'],
-      ['Time Spent', durationText],
-      ['Created at', formatDateTime(processedTaskData?.createdAt)],
-      ['Closed at', formatDateTime(processedTaskData?.signedAt || processedTaskData?.updatedAt)],
-      ['Inspector', inspector]
-    ];
-
-    doc.autoTable({
-      startY: yPosition,
-      head: [['Property', 'Value']],
-      body: inspectionRows,
-      theme: 'grid',
-      headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold' },
-      bodyStyles: { textColor: colors.darkText, fontSize: 9 },
-      styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2.2 },
-      columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: contentWidth - 38 } },
-      margin: { left: margin, right: margin },
-      didParseCell: (data) => {
-        if (data.cell.raw && containsArabic(String(data.cell.raw)) && fontLoaded) {
-          data.cell.styles.font = 'NotoNaskhArabic';
-          data.cell.styles.halign = 'right';
-        }
-      }
-    });
-
-    yPosition = (doc.lastAutoTable?.finalY || yPosition) + 7;
-    ensureSpace(48);
-
-    // KPI cards block
-    const statsBlockY = yPosition;
-    const leftCardW = 90;
-    const rightCardW = 34;
-    const rightGap = 6;
-    const rightX = margin + leftCardW + rightGap;
-
-    doc.setFillColor(colors.cardGray);
-    doc.roundedRect(margin, statsBlockY, leftCardW, 46, 3, 3, 'F');
-    drawText('Score', margin + (leftCardW / 2), statsBlockY + 10, { align: 'center', fontSize: 10, fontStyle: 'bold' });
-    doc.setFillColor(colors.yellow);
-    doc.roundedRect(margin + 52, statsBlockY + 3, 20, 10, 2.5, 2.5, 'F');
-    drawText(scorePercent, margin + 62, statsBlockY + 10, { align: 'center', fontSize: 13, fontStyle: 'bold', color: colors.darkText });
-    drawText(`Points scored: ${scoreText}`, margin + 62, statsBlockY + 16, { align: 'center', fontSize: 7, fontStyle: 'bold', color: colors.yellowDeep });
-
-    drawText(`Task Status: ${(processedTaskData?.status || 'N/A').toUpperCase()}`, margin + 4, statsBlockY + 24, { fontSize: 8, color: colors.muted });
-    drawText(`Completion: ${(processedTaskData?.overallProgress || 0)}%`, margin + 4, statsBlockY + 29, { fontSize: 8, color: colors.muted });
-    drawText(`Answered Questions: ${Object.keys(processedTaskData?.questionnaireResponses || {}).length}`, margin + 4, statsBlockY + 34, { fontSize: 8, color: colors.muted });
-    drawText(`Template: ${templateName}`, margin + 4, statsBlockY + 39, { fontSize: 8, color: colors.muted, maxWidth: leftCardW - 8 });
-
-    const drawRightStat = (top, title, value, suffix = '') => {
-      doc.setFillColor(colors.cardGray);
-      doc.roundedRect(rightX, top, rightCardW, 21, 3, 3, 'F');
-      drawText(title, rightX + (rightCardW / 2), top + 7, { align: 'center', fontSize: 8.5, fontStyle: 'bold' });
-      doc.setFillColor(colors.yellow);
-      doc.roundedRect(rightX + 8, top + 9, 18, 8, 2, 2, 'F');
-      drawText(String(value), rightX + (rightCardW / 2), top + 14.5, { align: 'center', fontSize: 12, fontStyle: 'bold' });
-      if (suffix) {
-        drawText(suffix, rightX + (rightCardW / 2), top + 19, { align: 'center', fontSize: 7, color: colors.muted });
-      }
-    };
-
-    drawRightStat(statsBlockY, 'Duration', durationText, 'Hours');
-    yPosition += 53;
-
-    // Pre-inspection table
-    const preInspectionQuestions = processedTaskData?.preInspectionQuestions || [];
-    if (preInspectionQuestions.length > 0) {
-      ensureSpace(35);
-      drawText('Pre-inspection questionnaire', margin, yPosition, { fontSize: 12, fontStyle: 'bold' });
-      yPosition += 4;
-
-      const preImageMap = new Map();
-      const preRows = await Promise.all(
-        preInspectionQuestions.map(async (question, index) => {
-          const questionId = question?._id?.toString() || question?.id?.toString();
-          const response = pickResponse(questionId);
-          const display = await responseToDisplay(response);
-
-          if (display.image) preImageMap.set(index, display.image);
-
-          return [
-            String(index + 1),
-            question?.text || question?.question || 'N/A',
-            display.text
-          ];
-        })
-      );
-
-      doc.autoTable({
-        startY: yPosition,
-        head: [['SN', 'Question', 'Answer']],
-        body: preRows,
-        theme: 'grid',
-        headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8.5, cellPadding: 2, textColor: colors.darkText },
-        styles: { lineColor: colors.border, lineWidth: 0.2 },
-        columnStyles: {
-          0: { cellWidth: 10, halign: 'center' },
-          1: { cellWidth: 94 },
-          2: { cellWidth: contentWidth - 104 }
-        },
-        margin: { left: margin, right: margin },
-        didParseCell: (data) => {
-          if (data.cell.raw && containsArabic(String(data.cell.raw)) && fontLoaded) {
-            data.cell.styles.font = 'NotoNaskhArabic';
-            data.cell.styles.halign = 'right';
-          }
-        },
-        didDrawCell: (data) => {
-          if (data.column.index === 2 && preImageMap.has(data.row.index)) {
-            try {
-              const img = preImageMap.get(data.row.index);
-              const w = 16;
-              const h = 10;
-              const x = data.cell.x + data.cell.width - w - 1.5;
-              const y = data.cell.y + 1.5;
-              doc.addImage(img, 'PNG', x, y, w, h);
-            } catch (error) {
-              // keep text fallback
-            }
-          }
-        }
-      });
-
-      yPosition = (doc.lastAutoTable?.finalY || yPosition) + 8;
-    }
-
-    yPosition += 2;
-
-    // Keep existing data output: inspection questionnaire rows by category with scores
-    const categories = {};
-    (processedTaskData?.questions || []).forEach((question) => {
-      if (!question) return;
-      const category = question.category || 'General';
-      if (!categories[category]) categories[category] = [];
-
-      const questionId = question._id?.toString() || question.id?.toString();
-      const response = pickResponse(questionId);
-
-      const questionType = question.type || question.answerType;
-      const scorableTypes = ['yesno', 'compliance'];
-      const isRecommended = question.requirementType === 'recommended' || question.mandatory === false || question.required === false;
-      const isScorable = scorableTypes.includes(questionType) && !isRecommended;
-
-      const weight = question.weight || 1;
-      const maxScore = isScorable ? (question.scoring?.max || 2) : 0;
-      const maxPoints = maxScore * weight;
-
-      let earned = 0;
-      let isNA = false;
-      if (isScorable && response !== null && response !== undefined) {
-        if (['not_applicable', 'na', 'N/A', 'Not applicable'].includes(String(response))) {
-          isNA = true;
-        } else if (question.scores && typeof question.scores === 'object') {
-          earned = (question.scores[response] || question.scores[String(response)] || 0) * weight;
-        } else if (['full_compliance', 'yes', 'Yes', 'Full Compliance', 'Full compliance'].includes(String(response))) {
-          earned = maxPoints;
-        } else if (['partial_compliance', 'Partial Compliance', 'Partial compliance'].includes(String(response))) {
-          earned = maxPoints / 2;
-        }
-      }
-
-      categories[category].push({
-        text: question.text || question.question || 'N/A',
-        response,
-        score: isNA ? 'N/A' : (isScorable && maxPoints > 0 ? `${earned}/${maxPoints}` : 'N/A')
-      });
-    });
-
-    for (const [category, questions] of Object.entries(categories)) {
-      ensureSpace(26);
-      drawText(category, margin, yPosition, { fontSize: 12, fontStyle: 'bold', color: colors.navy });
-      yPosition += 3;
-
-      const questionImageMap = new Map();
-      const rows = await Promise.all(
-        questions.map(async (q, index) => {
-          const display = await responseToDisplay(q.response);
-          if (display.image) questionImageMap.set(index, display.image);
-          return [q.text, display.text, q.score];
-        })
-      );
-      doc.autoTable({
-        startY: yPosition,
-        head: [['Question', 'Response', 'Score']],
-        body: rows,
-        theme: 'grid',
-        headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8.2, cellPadding: 2, textColor: colors.darkText },
-        styles: { lineColor: colors.border, lineWidth: 0.2 },
-        columnStyles: { 0: { cellWidth: 95 }, 1: { cellWidth: 64 }, 2: { cellWidth: contentWidth - 159 } },
-        margin: { left: margin, right: margin },
-        didParseCell: (data) => {
-          if (data.cell.raw && containsArabic(String(data.cell.raw)) && fontLoaded) {
-            data.cell.styles.font = 'NotoNaskhArabic';
-            data.cell.styles.halign = 'right';
-          }
-        },
-        didDrawCell: (data) => {
-          if (data.column.index === 1 && questionImageMap.has(data.row.index)) {
-            try {
-              const img = questionImageMap.get(data.row.index);
-              const w = 16;
-              const h = 10;
-              const x = data.cell.x + data.cell.width - w - 1.5;
-              const y = data.cell.y + 1.5;
-              doc.addImage(img, 'PNG', x, y, w, h);
-            } catch (error) {
-              // keep text fallback
-            }
-          }
-        }
-      });
-      yPosition = (doc.lastAutoTable?.finalY || yPosition) + 6;
-    }
-
-    // Signature
-    if (processedTaskData?.signature || processedTaskData?.signedBy) {
-      ensureSpace(46);
-      drawText('Signature', margin, yPosition, { fontSize: 12, fontStyle: 'bold', color: colors.navy });
-      yPosition += 4;
-
-      if (processedTaskData.signature) {
-        let signatureImage = processedTaskData.signature;
-        if (typeof signatureImage === 'string' && signatureImage.startsWith('http')) {
-          const fetchedSignature = await fetchImage(signatureImage);
-          if (fetchedSignature) signatureImage = fetchedSignature;
-        }
-        if (typeof signatureImage === 'string' && signatureImage.startsWith('data:image/')) {
-          doc.addImage(signatureImage, 'PNG', margin, yPosition, 62, 24);
-        }
-      }
-
-      drawText('Status: Digitally Signed', margin, yPosition + 30, {
-        fontSize: 10,
-        fontStyle: 'bold',
-        color: colors.success
-      });
-      drawText(`Signed at: ${formatDateTime(processedTaskData?.signedAt)}`, margin, yPosition + 35, {
-        fontSize: 9,
-        color: colors.darkText
-      });
-      yPosition += 40;
-    }
-
-    // Footer
-    const footerY = pageHeight - 8;
-    drawText(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, footerY, {
-      align: 'center',
-      fontSize: 7.5,
-      color: colors.muted
-    });
-
-    return doc;
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    throw error;
   }
+
+  // Signature
+  if (normalizedTaskData?.signature || normalizedTaskData?.signedAt) {
+    ensureSpace(34);
+    text('Signature', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+    y += 4;
+
+    if (normalizedTaskData?.signature && typeof normalizedTaskData.signature === 'string') {
+      const signatureImage = await fetchImageSource(normalizedTaskData.signature) || normalizedTaskData.signature;
+      if (signatureImage && typeof signatureImage === 'string' && signatureImage.startsWith('data:image/')) {
+        try {
+          doc.addImage(signatureImage, 'PNG', SIDE_MARGIN, y, 62, 24);
+        } catch (error) {
+          text('Digital signature available', SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
+        }
+      } else {
+        text('Digital signature available', SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
+      }
+    }
+
+    const signatureMetadataText = formatCaptureMetadata(normalizedTaskData?.signatureMetadata);
+    text(`Signed at: ${formatDateTime(normalizedTaskData?.signedAt)}`, SIDE_MARGIN, y + 28, { size: 9, color: colors.text });
+    if (signatureMetadataText) {
+      text(signatureMetadataText, SIDE_MARGIN, y + 33, { size: 8.5, color: colors.muted, maxWidth: contentWidth });
+      y += 42;
+    } else {
+      y += 34;
+    }
+  }
+
+  const leftLogo = await toDataUrl(`${window.location.origin}/logo.png`);
+  const rightLogo = await toDataUrl(`${window.location.origin}/logo.png`);
+  const generatedAt = new Date().toLocaleString();
+
+  const totalPages = doc.getNumberOfPages();
+  for (let page = 1; page <= totalPages; page += 1) {
+    doc.setPage(page);
+    drawPageDecorations({
+      doc,
+      pageNumber: page,
+      totalPages,
+      leftLogo,
+      rightLogo,
+      colors,
+      generatedAt
+    });
+  }
+
+  return doc;
 };
 
 export const downloadTaskPDF = async (taskData, filename = 'inspection_report') => {

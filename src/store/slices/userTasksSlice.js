@@ -87,10 +87,11 @@ export const updateTaskQuestionnaire = createAsyncThunk(
   async ({ taskId, questionnaire }, { rejectWithValue }) => {
     try {
       // Extract the required fields for the API
-      const { responses, notes, completed } = questionnaire;
+      const { responses, responseMetadata, notes, completed } = questionnaire;
       
       const response = await userTaskService.updateTaskQuestionnaire(taskId, { 
         responses, 
+        ...(responseMetadata && { responseMetadata }),
         notes, 
         completed 
       });
@@ -134,10 +135,11 @@ export const exportTaskReport = createAsyncThunk(
 
 export const saveTaskSignature = createAsyncThunk(
   'userTasks/saveTaskSignature',
-  async ({ taskId, signature, taskMetrics }, { rejectWithValue }) => {
+  async ({ taskId, signature, signatureMetadata, taskMetrics }, { rejectWithValue }) => {
     try {
       const response = await userTaskService.saveTaskSignature(taskId, { 
         signature,
+        ...(signatureMetadata && { signatureMetadata }),
         ...(taskMetrics && { taskMetrics })
       });
       return response.data;
@@ -395,6 +397,7 @@ const userTasksSlice = createSlice({
         const requestTaskId = action.meta?.arg?.taskId;
         const requestQuestionnaire = action.meta?.arg?.questionnaire || {};
         const requestResponses = requestQuestionnaire.responses || {};
+        const requestResponseMetadata = requestQuestionnaire.responseMetadata || {};
         
         // OPTIMIZED: Only update questionnaireResponses and related fields
         // instead of replacing the entire task to prevent unnecessary re-renders
@@ -402,6 +405,10 @@ const userTasksSlice = createSlice({
           state.currentTask.questionnaireResponses = {
             ...(state.currentTask.questionnaireResponses || {}),
             ...requestResponses
+          };
+          state.currentTask.responseMetadata = {
+            ...(state.currentTask.responseMetadata || {}),
+            ...requestResponseMetadata
           };
 
           if (requestQuestionnaire.notes !== undefined) {
@@ -427,6 +434,10 @@ const userTasksSlice = createSlice({
           state.tasks.results[taskIndex].questionnaireResponses = {
             ...(state.tasks.results[taskIndex].questionnaireResponses || {}),
             ...requestResponses
+          };
+          state.tasks.results[taskIndex].responseMetadata = {
+            ...(state.tasks.results[taskIndex].responseMetadata || {}),
+            ...requestResponseMetadata
           };
           if (requestQuestionnaire.completed !== undefined) {
             state.tasks.results[taskIndex].questionnaireCompleted = requestQuestionnaire.completed;
@@ -484,6 +495,13 @@ const userTasksSlice = createSlice({
       })
       .addCase(saveTaskSignature.fulfilled, (state, action) => {
         state.actionLoading = false;
+        const updatedTask = action.payload;
+        if (state.currentTask && updatedTask && String(state.currentTask._id) === String(updatedTask._id)) {
+          state.currentTask.signature = updatedTask.signature;
+          state.currentTask.signatureMetadata = updatedTask.signatureMetadata;
+          state.currentTask.signedAt = updatedTask.signedAt;
+          state.currentTask.signedBy = updatedTask.signedBy;
+        }
         toast.success('Task signature saved successfully');
       })
       .addCase(saveTaskSignature.rejected, (state, action) => {
