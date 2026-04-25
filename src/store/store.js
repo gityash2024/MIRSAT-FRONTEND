@@ -7,6 +7,7 @@ import userTasksReducer from './slices/userTasksSlice';
 import questionLibraryReducer from './slices/questionLibrarySlice';
 import assetReducer from './slices/assetSlice';
 import assetTypeReducer from './slices/assetTypeSlice';
+import departmentReducer from './slices/departmentSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     questionLibrary: questionLibraryReducer,
     assets: assetReducer,
     assetTypes: assetTypeReducer,
+    departments: departmentReducer,
 
   },
   middleware: (getDefaultMiddleware) =>

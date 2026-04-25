@@ -1,0 +1,203 @@
+{
+  "name": "Marina Safety Operations Sample",
+  "description": "Sample large inspection template for marina safety, operations, compliance, and guest service checks.",
+  "type": "marina_operator",
+  "status": "draft",
+  "pages": [
+    {
+      "name": "Safety Readiness",
+      "description": "Emergency readiness and safety equipment checks.",
+      "sections": [
+        {
+          "name": "Emergency Equipment",
+          "description": "Confirm critical safety equipment is available and usable.",
+          "order": 0,
+          "questions": [
+            {
+              "text": "Are fire extinguishers visible, accessible, and within service date?",
+              "description": "Check docks, service areas, and customer access points.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No", "N/A"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0, "N/A": 0 }
+            },
+            {
+              "text": "Life rings and rescue hooks are positioned at required intervals.",
+              "description": "Verify placement and condition along active waterfront edges.",
+              "answerType": "compliance",
+              "required": true,
+              "options": ["Compliant", "Non-Compliant", "N/A"],
+              "scoring": { "enabled": true, "max": 3 },
+              "scores": { "Compliant": 3, "Non-Compliant": 0, "N/A": 0 }
+            },
+            {
+              "text": "Record any missing or damaged safety equipment.",
+              "description": "Include location and corrective action required.",
+              "answerType": "textarea",
+              "required": false,
+              "options": []
+            }
+          ]
+        },
+        {
+          "name": "Incident Response",
+          "description": "Review response readiness for incidents and emergencies.",
+          "order": 1,
+          "questions": [
+            {
+              "text": "Emergency contact list is posted and current.",
+              "description": "Confirm phone numbers and responsible contacts.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0 }
+            },
+            {
+              "text": "Date of last emergency drill.",
+              "description": "Use the latest documented drill date.",
+              "answerType": "date",
+              "required": false,
+              "options": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dock And Utilities",
+      "description": "Physical dock condition, power, water, and lighting.",
+      "sections": [
+        {
+          "name": "Dock Condition",
+          "description": "Inspect walking surfaces, access points, and dock fixtures.",
+          "order": 0,
+          "questions": [
+            {
+              "text": "Dock surface is free from trip hazards, loose boards, and exposed fasteners.",
+              "description": "Check high-traffic areas first.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No", "N/A"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0, "N/A": 0 }
+            },
+            {
+              "text": "Rate the overall dock condition.",
+              "description": "Use the rating that best reflects the inspected area.",
+              "answerType": "select",
+              "required": true,
+              "options": ["Excellent", "Good", "Needs Repair", "Unsafe"],
+              "scoring": { "enabled": true, "max": 4 },
+              "scores": { "Excellent": 4, "Good": 3, "Needs Repair": 1, "Unsafe": 0 }
+            }
+          ]
+        },
+        {
+          "name": "Power Water Lighting",
+          "description": "Verify utility availability and visible condition.",
+          "order": 1,
+          "questions": [
+            {
+              "text": "Shore power pedestals are secured and free from visible damage.",
+              "description": "Do not open panels unless authorized.",
+              "answerType": "compliance",
+              "required": true,
+              "options": ["Compliant", "Non-Compliant", "N/A"],
+              "scoring": { "enabled": true, "max": 3 },
+              "scores": { "Compliant": 3, "Non-Compliant": 0, "N/A": 0 }
+            },
+            {
+              "text": "Lighting is operational in public walkways and dock approaches.",
+              "description": "Inspect during low-light conditions where possible.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No", "N/A"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0, "N/A": 0 }
+            },
+            {
+              "text": "Upload notes for utility repairs needed.",
+              "description": "List pedestal, berth, or dock identifiers.",
+              "answerType": "textarea",
+              "required": false,
+              "options": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Environmental Compliance",
+      "description": "Pollution prevention, waste handling, and spill controls.",
+      "sections": [
+        {
+          "name": "Waste And Spill Controls",
+          "description": "Check environmental controls for daily operations.",
+          "order": 0,
+          "questions": [
+            {
+              "text": "Spill kits are stocked and accessible.",
+              "description": "Check absorbents, gloves, bags, and disposal guidance.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0 }
+            },
+            {
+              "text": "Waste bins are labeled and not overflowing.",
+              "description": "Include recycling, general waste, and hazardous waste areas.",
+              "answerType": "compliance",
+              "required": true,
+              "options": ["Compliant", "Non-Compliant", "N/A"],
+              "scoring": { "enabled": true, "max": 3 },
+              "scores": { "Compliant": 3, "Non-Compliant": 0, "N/A": 0 }
+            },
+            {
+              "text": "Environmental issue severity.",
+              "description": "Select the highest severity observed during inspection.",
+              "answerType": "select",
+              "required": true,
+              "options": ["None", "Low", "Medium", "High"],
+              "scoring": { "enabled": true, "max": 3 },
+              "scores": { "None": 3, "Low": 2, "Medium": 1, "High": 0 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guest Service",
+      "description": "Customer-facing amenities and service quality.",
+      "sections": [
+        {
+          "name": "Public Areas",
+          "description": "Inspect cleanliness and usability of public-facing spaces.",
+          "order": 0,
+          "questions": [
+            {
+              "text": "Reception, restrooms, and walkways are clean and presentable.",
+              "description": "Inspect during regular operating hours.",
+              "answerType": "yes_no",
+              "required": true,
+              "options": ["Yes", "No", "N/A"],
+              "scoring": { "enabled": true, "max": 2 },
+              "scores": { "Yes": 2, "No": 0, "N/A": 0 }
+            },
+            {
+              "text": "Guest signage is clear and visible.",
+              "description": "Include safety, directional, and service signage.",
+              "answerType": "compliance",
+              "required": false,
+              "options": ["Compliant", "Non-Compliant", "N/A"],
+              "scoring": { "enabled": true, "max": 3 },
+              "scores": { "Compliant": 3, "Non-Compliant": 0, "N/A": 0 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

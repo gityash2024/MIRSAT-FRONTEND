@@ -961,10 +961,15 @@ const PreInspectionQuestions = ({
     console.log('Adding question from library:', question);
     console.log('Current questions before adding:', questions);
 
+    const answerType = question.answerType || 'text';
+    const normalizedScoring = normalizeLibraryScoring(question, answerType);
     const newQuestion = {
       text: question.text,
-      type: question.answerType,
-      options: question.options || [],
+      type: answerType,
+      options: normalizedScoring.options,
+      scores: normalizedScoring.scores,
+      scoring: normalizedScoring.scoring,
+      includeNA: normalizedScoring.includeNA,
       required: question.required
     };
 
@@ -1045,6 +1050,91 @@ const PreInspectionQuestions = ({
       ...prev,
       scores
     }));
+  };
+
+  const normalizeScoreValue = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getDefaultLibraryOptions = (answerType, includeNA = true) => {
+    if (answerType === 'yesno' || answerType === 'yes_no') {
+      return includeNA === false
+        ? [t('common.yes'), t('common.no')]
+        : [t('common.yes'), t('common.no'), t('common.na')];
+    }
+
+    if (answerType === 'compliance') {
+      return [
+        t('common.fullCompliance'),
+        t('common.partialCompliance'),
+        t('common.nonCompliant'),
+        t('common.notApplicable')
+      ];
+    }
+
+    return [];
+  };
+
+  const getDefaultScoreForOption = (answerType, option) => {
+    const normalizedOption = String(option || '').toLowerCase();
+
+    if (answerType === 'yesno' || answerType === 'yes_no') {
+      return normalizedOption === String(t('common.yes')).toLowerCase() || normalizedOption === 'yes' ? 2 : 0;
+    }
+
+    if (answerType === 'compliance') {
+      if (normalizedOption.includes('full') || normalizedOption === String(t('common.fullCompliance')).toLowerCase()) {
+        return 2;
+      }
+      if (normalizedOption.includes('partial') || normalizedOption === String(t('common.partialCompliance')).toLowerCase()) {
+        return 1;
+      }
+      return 0;
+    }
+
+    return 0;
+  };
+
+  const normalizeLibraryScoring = (libraryQuestion, answerType) => {
+    const includeNA = libraryQuestion.includeNA !== undefined ? libraryQuestion.includeNA : true;
+    const fallbackOptions = getDefaultLibraryOptions(answerType, includeNA);
+    const options = (libraryQuestion.options && libraryQuestion.options.length > 0)
+      ? libraryQuestion.options
+      : fallbackOptions;
+    const rawScores = libraryQuestion.scores && typeof libraryQuestion.scores === 'object'
+      ? libraryQuestion.scores
+      : {};
+    const hasStoredScores = Object.keys(rawScores).length > 0;
+    const scores = {};
+
+    options.forEach((option) => {
+      if (hasStoredScores && rawScores[option] !== undefined) {
+        scores[option] = normalizeScoreValue(rawScores[option]);
+      } else {
+        scores[option] = hasStoredScores ? 0 : getDefaultScoreForOption(answerType, option);
+      }
+    });
+
+    Object.entries(rawScores).forEach(([key, value]) => {
+      if (scores[key] === undefined) {
+        scores[key] = normalizeScoreValue(value);
+      }
+    });
+
+    const scoreValues = Object.values(scores);
+    const maxScore = scoreValues.length > 0 ? Math.max(...scoreValues.map(normalizeScoreValue)) : 0;
+
+    return {
+      includeNA,
+      options,
+      scores,
+      scoring: {
+        ...(libraryQuestion.scoring || {}),
+        enabled: Boolean(libraryQuestion.scoring?.enabled || maxScore > 0),
+        max: maxScore
+      }
+    };
   };
 
   const handleTypeChange = (e) => {
@@ -1616,6 +1706,10 @@ const TaskForm = ({
     description: initialData.description || '',
     priority: initialData.priority || 'medium',
     status: initialData.status || 'open',
+    startImmediately: initialData.startImmediately !== undefined
+      ? initialData.startImmediately
+      : !initialData.startDate,
+    startDate: initialData.startDate ? new Date(initialData.startDate) : null,
     dueDate: initialData.dueDate || initialData.deadline ? new Date(initialData.dueDate || initialData.deadline) : (initialDeadline || null),
     location: initialData.location || '',
     assignedTo: initialData.assignedTo || [],
@@ -1778,6 +1872,8 @@ const TaskForm = ({
         description: formData.description,
         priority: formData.priority,
         status: formData.status || 'open',
+        startImmediately: formData.startImmediately,
+        startDate: formData.startImmediately ? new Date() : formData.startDate,
         deadline: formData.dueDate,
         location: formData.location || '',
         assignedTo: selectedUserId ? [selectedUserId] : [], // Use selectedUserId
@@ -1875,6 +1971,14 @@ const TaskForm = ({
 
     if (!formData.dueDate) {
       newErrors.dueDate = t('tasks.deadlineRequired');
+    }
+
+    if (!formData.startImmediately && !formData.startDate) {
+      newErrors.startDate = t('tasks.startDateRequired');
+    }
+
+    if (!formData.startImmediately && formData.startDate && formData.dueDate && new Date(formData.startDate) > new Date(formData.dueDate)) {
+      newErrors.startDate = t('tasks.startDateAfterDeadline');
     }
 
     if (!selectedUserId) {
@@ -2215,6 +2319,47 @@ const TaskForm = ({
             required
           />
           {errors.dueDate && <ErrorMessage>{errors.dueDate}</ErrorMessage>}
+        </FormGroup>
+      </FormRow>
+
+      <FormRow>
+        <FormGroup>
+          <Label>{t('tasks.startDateTime')}</Label>
+          <DatePicker
+            selected={formData.startImmediately ? new Date() : formData.startDate}
+            onChange={date => setFormData(prev => ({ ...prev, startDate: date }))}
+            showTimeSelect
+            timeFormat="HH:mm"
+            timeIntervals={15}
+            dateFormat="MMMM d, yyyy h:mm aa"
+            placeholderText={t('tasks.selectStartDateTime')}
+            minDate={new Date()}
+            maxDate={formData.dueDate || undefined}
+            disabled={formData.startImmediately}
+            required={!formData.startImmediately}
+          />
+          {errors.startDate && <ErrorMessage>{errors.startDate}</ErrorMessage>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label>{t('tasks.availability')}</Label>
+          <ToggleSwitch>
+            <ToggleIndicator checked={formData.startImmediately} />
+            <input
+              type="checkbox"
+              checked={formData.startImmediately}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                startImmediately: e.target.checked,
+                startDate: e.target.checked ? new Date() : prev.startDate
+              }))}
+              style={{ display: 'none' }}
+            />
+            <span>{t('tasks.startImmediately')}</span>
+          </ToggleSwitch>
+          <small style={{ color: '#64748b', lineHeight: 1.4 }}>
+            {formData.startImmediately ? t('tasks.startImmediatelyHelp') : t('tasks.startScheduledHelp')}
+          </small>
         </FormGroup>
       </FormRow>
 

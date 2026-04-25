@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
 import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS } from '../../../utils/permissions';
 import { useAuth } from '../../../hooks/useAuth';
+import { fetchDepartments } from '../../../store/slices/departmentSlice';
 
 const Form = styled.form`
   display: grid;
@@ -267,6 +269,8 @@ const Button = styled.button`
 const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Save', isSubmitting = false }) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
+  const dispatch = useDispatch();
+  const { departments } = useSelector(state => state.departments || { departments: [] });
 
   const translateRole = (roleKey) => {
     const roleMap = {
@@ -310,6 +314,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchDepartments());
+  }, [dispatch]);
 
   useEffect(() => {
     if (initialData._id || initialData.id) {
@@ -517,6 +525,18 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
 
   const showPermissionsSection = formData.role === ROLES.MANAGER; // Remove supervisor - no permission management
   const isEditMode = !!(initialData._id || initialData.id);
+  const departmentOptions = [{ value: '', label: t('common.selectDepartment') }];
+  const knownDepartmentNames = new Set();
+
+  departments.forEach((department) => {
+    if (!department?.name) return;
+    departmentOptions.push({ value: department.name, label: department.name });
+    knownDepartmentNames.add(department.name.toLowerCase());
+  });
+
+  if (formData.department && !knownDepartmentNames.has(formData.department.toLowerCase())) {
+    departmentOptions.push({ value: formData.department, label: formData.department });
+  }
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -592,10 +612,11 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               cursor: (currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) ? 'not-allowed' : 'pointer'
             }}
           >
-            <option value="">{t('common.selectDepartment')}</option>
-            <option value="Field Operations">{t('common.fieldOperations')}</option>
-            <option value="Operations Management">{t('common.operationsManagement')}</option>
-            <option value="Administration">{t('common.administration')}</option>
+            {departmentOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
           {(currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR) && (
             <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>

@@ -2227,6 +2227,24 @@ const PreInspectionHeader = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 `;
 
+const PreInspectionLockNotice = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 24px 0;
+  padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+
+  svg {
+    flex-shrink: 0;
+  }
+`;
+
 const PreInspectionContent = styled.div`
   padding: 24px;
   background: rgba(255, 255, 255, 0.95);
@@ -3964,6 +3982,23 @@ const UserTaskDetail = () => {
     actionLoading
   } = useSelector((state) => state.userTasks);
 
+  const scheduledStartLocked = Boolean(
+    currentTask?.startDate && new Date(currentTask.startDate).getTime() > Date.now()
+  );
+
+  useEffect(() => {
+    if (!currentTask?.startDate) return undefined;
+
+    const unlockDelay = new Date(currentTask.startDate).getTime() - Date.now();
+    if (unlockDelay <= 0) return undefined;
+
+    const timer = setTimeout(() => {
+      setLastUpdateTime(Date.now());
+    }, Math.min(unlockDelay + 1000, 2147483647));
+
+    return () => clearTimeout(timer);
+  }, [currentTask?.startDate]);
+
   // Define calculateTaskCompletionPercentage BEFORE all useEffects that use it
   const calculateTaskCompletionPercentage = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
@@ -4736,6 +4771,11 @@ const UserTaskDetail = () => {
 
 
   const handleStartTask = async () => {
+    if (scheduledStartLocked) {
+      toast.error(t('tasks.lockedUntilStart', { date: formatDateTime(currentTask.startDate) }));
+      return;
+    }
+
     try {
       await userTaskService.startTask(taskId);
       toast.success(t('tasks.taskStartedSuccessfully'));
@@ -5251,6 +5291,11 @@ const UserTaskDetail = () => {
 
   const handleSaveInspectionResponse = async (questionId, value, options = {}) => {
     if (!currentTask || currentTask.status === 'completed' || currentTask.status === 'archived') {
+      return false;
+    }
+
+    if (scheduledStartLocked) {
+      toast.error(t('tasks.lockedUntilStart', { date: formatDateTime(currentTask.startDate) }));
       return false;
     }
 
@@ -5783,13 +5828,13 @@ const UserTaskDetail = () => {
   };
 
 
-  const renderQuestionInput = (question, task, onSaveResponse) => {
+  const renderQuestionInput = (question, task, onSaveResponse, inputOptions = {}) => {
     const questionId = question._id;
     const response = task.questionnaireResponses?.[questionId];
     const questionCaptureMetadata = getResponseMetadataForQuestion(task, questionId);
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
-    const isDisabled = task.status === 'completed' || task.status === 'archived';
+    const isDisabled = task.status === 'completed' || task.status === 'archived' || Boolean(inputOptions.disabled);
 
     let questionType = question.type || question.answerType;
 
@@ -6711,6 +6756,13 @@ const UserTaskDetail = () => {
             </CompletionBadge>
           </PreInspectionHeader>
 
+          {scheduledStartLocked && (
+            <PreInspectionLockNotice>
+              <Clock size={16} />
+              {t('tasks.lockedUntilStart', { date: formatDateTime(currentTask.startDate) })}
+            </PreInspectionLockNotice>
+          )}
+
           <PreInspectionContent>
             {currentTask.preInspectionQuestions.map((question, index) => (
               <QuestionRow key={index}>
@@ -6730,7 +6782,9 @@ const UserTaskDetail = () => {
                     </QuestionBadges> */}
                   </QuestionHeader>
 
-                  {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
+                  {renderQuestionInput(question, currentTask, handleSaveInspectionResponse, {
+                    disabled: scheduledStartLocked
+                  })}
                 </QuestionContent>
               </QuestionRow>
             ))}
@@ -7421,7 +7475,36 @@ const UserTaskDetail = () => {
             )}
           </div>
 
+          {scheduledStartLocked && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              background: 'rgba(245, 158, 11, 0.08)',
+              color: '#92400e',
+              border: '1px solid rgba(245, 158, 11, 0.2)',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              <Clock size={16} />
+              {t('tasks.lockedUntilStart', { date: formatDateTime(currentTask.startDate) })}
+            </div>
+          )}
+
           <TaskMeta>
+            {currentTask.startDate && (
+              <MetaCard>
+                <MetaLabel>{t('tasks.scheduledStart')}</MetaLabel>
+                <MetaValue>
+                  <Clock size={18} />
+                  {formatDateTime(currentTask.startDate)}
+                </MetaValue>
+              </MetaCard>
+            )}
+
             {currentTask.dueDate && (
               <MetaCard>
                 <MetaLabel>{t('tasks.dueDate')}</MetaLabel>
@@ -7694,9 +7777,9 @@ const UserTaskDetail = () => {
 
                 {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
-                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading}>
-                      <Play size={20} />
-                      {t('tasks.startInspection')}
+                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading || scheduledStartLocked}>
+                      {scheduledStartLocked ? <Clock size={20} /> : <Play size={20} />}
+                      {scheduledStartLocked ? t('tasks.scheduled') : t('tasks.startInspection')}
                     </StartTaskButton>
                   </div>
                 )}

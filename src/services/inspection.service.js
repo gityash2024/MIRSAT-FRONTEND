@@ -227,6 +227,26 @@ export const inspectionService = {
     }
   },
 
+  async cloneInspectionLevel(id) {
+    try {
+      this.startLoading('Cloning inspection template...');
+
+      const response = await api.post(`/inspection/${id}/clone`);
+
+      // Clear cache after cloning
+      Array.from(inspectionLevelsCache.keys()).forEach(key =>
+        inspectionLevelsCache.delete(key)
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error cloning inspection level:', error);
+      throw error;
+    } finally {
+      this.stopLoading();
+    }
+  },
+
   async updateSubLevel(inspectionId, subLevelId, data) {
     try {
       // Add loading state

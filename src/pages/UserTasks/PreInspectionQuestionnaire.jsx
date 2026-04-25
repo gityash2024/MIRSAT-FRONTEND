@@ -333,9 +333,22 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
 const PreInspectionStepForm = ({ task }) => {
   const { t } = useTranslation();
   if (!task) return <div>{t('common.loading')}...</div>;
+  const scheduledStartLocked = Boolean(task.startDate && new Date(task.startDate).getTime() > Date.now());
   
   // Get asset information, handling both ID and populated object
   const getAssetInfo = () => {
@@ -480,6 +493,13 @@ const PreInspectionStepForm = ({ task }) => {
           <CheckSquare size={18} />
           {t('tasks.preInspectionQuestionnaire')}
         </SectionTitle>
+
+        {scheduledStartLocked && (
+          <ScheduledLockNotice>
+            <Clock size={16} />
+            {t('tasks.lockedUntilStart', { date: formatDateTime(task.startDate) })}
+          </ScheduledLockNotice>
+        )}
         
         <QuestionsList>
           {task.preInspectionQuestions.map((question, index) => (
@@ -493,7 +513,7 @@ const PreInspectionStepForm = ({ task }) => {
                     key={optIndex}
                     selected={task.questionnaireResponses && task.questionnaireResponses[question._id] === option}
                     type="button"
-                    disabled={task.status === 'completed'}
+                    disabled={task.status === 'completed' || task.status === 'archived' || scheduledStartLocked}
                   >
                     {option}
                   </OptionButton>
@@ -705,6 +725,24 @@ const PreInspectionSection = styled.div`
   background: rgba(248, 250, 252, 0.8);
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.7);
+`;
+
+const ScheduledLockNotice = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+
+  svg {
+    flex-shrink: 0;
+  }
 `;
 
 const QuestionsList = styled.div`

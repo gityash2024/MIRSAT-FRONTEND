@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,8 +9,10 @@ import {
   Save,
   X
 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
 import api from '../../utils/axios';
 import { useAuth } from '../../hooks/useAuth';
+import { fetchDepartments } from '../../store/slices/departmentSlice';
 
 const FormCard = styled.div`
   background: white;
@@ -214,26 +216,14 @@ const InfoValue = styled.span`
   font-size: 14px;
 `;
 
-const DEPARTMENT_OPTIONS = [
-  { value: '', label: 'Select Department' },
-  { value: 'Field Operations', label: 'Field Operations' },
-  { value: 'Operations Management', label: 'Operations Management' },
-  { value: 'Administration', label: 'Administration' }
-];
-
 const ProfileForm = () => {
   const { user, updateUser } = useAuth();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const { departments } = useSelector(state => state.departments || { departments: [] });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-
-  const DEPARTMENT_OPTIONS = [
-    { value: '', label: t('profile.selectDepartment') },
-    { value: 'Field Operations', label: t('profile.fieldOperations') },
-    { value: 'Operations Management', label: t('profile.operationsManagement') },
-    { value: 'Administration', label: t('profile.administration') }
-  ];
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -243,6 +233,23 @@ const ProfileForm = () => {
     address: user?.address || '',
     emergencyContact: user?.emergencyContact || ''
   });
+
+  useEffect(() => {
+    dispatch(fetchDepartments());
+  }, [dispatch]);
+
+  const departmentOptions = [{ value: '', label: t('profile.selectDepartment') }];
+  const knownDepartmentNames = new Set();
+
+  departments.forEach((department) => {
+    if (!department?.name) return;
+    departmentOptions.push({ value: department.name, label: department.name });
+    knownDepartmentNames.add(department.name.toLowerCase());
+  });
+
+  if (profileData.department && !knownDepartmentNames.has(profileData.department.toLowerCase())) {
+    departmentOptions.push({ value: profileData.department, label: profileData.department });
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -390,11 +397,7 @@ const ProfileForm = () => {
               <InfoRow>
                 <InfoLabel>{t('common.department')}</InfoLabel>
                 <InfoValue>
-                  {user?.department ? (
-                    ['Field Operations', 'Operations Management', 'Administration'].includes(user.department) ?
-                      t(`common.${user.department.replace(/\s+/g, '').replace(/^\w/, c => c.toLowerCase())}`) :
-                      user.department
-                  ) : t('profile.notSpecified')}
+                  {user?.department || t('profile.notSpecified')}
                 </InfoValue>
               </InfoRow>
               <InfoRow>
@@ -476,7 +479,7 @@ const ProfileForm = () => {
                   cursor: (user?.role === 'manager' || user?.role === 'inspector' || user?.role === 'supervisor') ? 'not-allowed' : 'pointer'
                 }}
               >
-                {DEPARTMENT_OPTIONS.map(option => (
+                {departmentOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

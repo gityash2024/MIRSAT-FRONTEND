@@ -84,6 +84,21 @@ export const updateTaskStatus = createAsyncThunk(
   }
 );
 
+export const startTaskNow = createAsyncThunk(
+  'tasks/startTaskNow',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/tasks/${id}/start-now`);
+      toast.success('Inspection is available to start now');
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to start inspection now';
+      toast.error(errorMessage);
+      return rejectWithValue(error.response?.data || { message: errorMessage });
+    }
+  }
+);
+
 export const addTaskComment = createAsyncThunk(
   'tasks/addTaskComment',
   async ({ id, content }, { rejectWithValue }) => {
@@ -448,6 +463,22 @@ const taskSlice = createSlice({
         }
         if (state.currentTask?._id === action.payload._id) {
           state.currentTask = action.payload;
+        }
+      })
+      .addCase(startTaskNow.fulfilled, (state, action) => {
+        const updatedTask = action.payload?.data;
+        if (!updatedTask) return;
+
+        const updatedTaskId = updatedTask._id || updatedTask.id;
+        const index = state.tasks.findIndex(task => (task._id || task.id) === updatedTaskId);
+        const normalizedTask = { ...updatedTask, id: updatedTask.id || updatedTask._id };
+
+        if (index !== -1) {
+          state.tasks[index] = normalizedTask;
+        }
+
+        if (state.currentTask && (state.currentTask._id || state.currentTask.id) === updatedTaskId) {
+          state.currentTask = normalizedTask;
         }
       })
       .addCase(addTaskComment.fulfilled, (state, action) => {

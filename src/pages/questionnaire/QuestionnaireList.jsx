@@ -902,6 +902,9 @@ const QuestionnaireList = () => {
         text: `${question.text} (Copy)`,
         answerType: question.answerType || 'yesno',
         options: [...(question.options || [])],
+        scores: { ...(question.scores || {}) },
+        scoring: question.scoring ? { ...question.scoring } : undefined,
+        includeNA: question.includeNA,
         required: question.required === undefined ? true : question.required
       };
       

@@ -5,12 +5,14 @@ import {
   Building, 
   Shield,
   User,
-  KeyRound
+  KeyRound,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import ProfileForm from './ProfileForm';
 import PasswordChangeTab from './PasswordChangeTab';
+import DepartmentModal from './components/DepartmentModal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -26,6 +28,21 @@ const PageHeader = styled.div`
   margin-bottom: 24px;
 `;
 
+const PageHeaderContent = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
+`;
+
+const HeaderText = styled.div`
+  min-width: 0;
+`;
+
 const PageTitle = styled.h1`
   font-size: 28px;
   color: #1e293b;
@@ -37,6 +54,28 @@ const PageSubtitle = styled.p`
   color: #64748b;
   font-size: 16px;
   margin: 0;
+`;
+
+const ManageButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-navy);
+  background: var(--color-navy);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+  }
 `;
 
 const ProfileGrid = styled.div`
@@ -200,6 +239,8 @@ const UserProfile = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const canManageDepartments = user?.role === 'admin' || user?.role === 'superadmin';
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -233,8 +274,18 @@ const UserProfile = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>{t('common.profile')}</PageTitle>
-        <PageSubtitle>{t('common.manageAccountSettings')}</PageSubtitle>
+        <PageHeaderContent>
+          <HeaderText>
+            <PageTitle>{t('common.profile')}</PageTitle>
+            <PageSubtitle>{t('common.manageAccountSettings')}</PageSubtitle>
+          </HeaderText>
+          {canManageDepartments && (
+            <ManageButton type="button" onClick={() => setShowDepartmentModal(true)}>
+              <Plus size={16} />
+              {t('departments.manageDepartments')}
+            </ManageButton>
+          )}
+        </PageHeaderContent>
       </PageHeader>
       
       <ProfileGrid>
@@ -297,6 +348,11 @@ const UserProfile = () => {
           </TabContent>
         </TabsContainer>
       </ProfileGrid>
+
+      <DepartmentModal
+        isOpen={showDepartmentModal}
+        onClose={() => setShowDepartmentModal(false)}
+      />
     </PageContainer>
   );
 };

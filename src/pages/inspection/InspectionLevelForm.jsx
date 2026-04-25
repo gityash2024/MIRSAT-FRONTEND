@@ -2372,6 +2372,95 @@ const QuestionItemComponent = ({
     updateQuestion({ ...question, scores });
   };
 
+  const normalizeScoreValue = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getDefaultLibraryOptions = (answerType, includeNA = true) => {
+    if (answerType === 'yesno' || answerType === 'yes_no') {
+      return includeNA === false
+        ? [t('common.yes'), t('common.no')]
+        : [t('common.yes'), t('common.no'), t('common.na')];
+    }
+
+    if (answerType === 'compliance') {
+      return [
+        t('common.fullCompliance'),
+        t('common.partialCompliance'),
+        t('common.nonCompliant'),
+        t('common.notApplicable')
+      ];
+    }
+
+    return [];
+  };
+
+  const getDefaultScoreForOption = (answerType, option) => {
+    const normalizedOption = String(option || '').toLowerCase();
+
+    if (answerType === 'yesno' || answerType === 'yes_no') {
+      return normalizedOption === String(t('common.yes')).toLowerCase() || normalizedOption === 'yes' ? 2 : 0;
+    }
+
+    if (answerType === 'compliance') {
+      if (normalizedOption.includes('full') || normalizedOption === String(t('common.fullCompliance')).toLowerCase()) {
+        return 2;
+      }
+      if (normalizedOption.includes('partial') || normalizedOption === String(t('common.partialCompliance')).toLowerCase()) {
+        return 1;
+      }
+      return 0;
+    }
+
+    return 0;
+  };
+
+  const normalizeLibraryScoring = (libraryQuestion, answerType) => {
+    const includeNA = libraryQuestion.includeNA !== undefined
+      ? libraryQuestion.includeNA
+      : question.includeNA !== undefined
+        ? question.includeNA
+        : true;
+    const fallbackOptions = getDefaultLibraryOptions(answerType, includeNA);
+    const options = (libraryQuestion.options && libraryQuestion.options.length > 0)
+      ? libraryQuestion.options
+      : fallbackOptions;
+    const rawScores = libraryQuestion.scores && typeof libraryQuestion.scores === 'object'
+      ? libraryQuestion.scores
+      : {};
+    const hasStoredScores = Object.keys(rawScores).length > 0;
+    const scores = {};
+
+    options.forEach((option) => {
+      if (hasStoredScores && rawScores[option] !== undefined) {
+        scores[option] = normalizeScoreValue(rawScores[option]);
+      } else {
+        scores[option] = hasStoredScores ? 0 : getDefaultScoreForOption(answerType, option);
+      }
+    });
+
+    Object.entries(rawScores).forEach(([key, value]) => {
+      if (scores[key] === undefined) {
+        scores[key] = normalizeScoreValue(value);
+      }
+    });
+
+    const scoreValues = Object.values(scores);
+    const maxScore = scoreValues.length > 0 ? Math.max(...scoreValues.map(normalizeScoreValue)) : 0;
+
+    return {
+      includeNA,
+      options,
+      scores,
+      scoring: {
+        ...(libraryQuestion.scoring || {}),
+        enabled: Boolean(libraryQuestion.scoring?.enabled || maxScore > 0),
+        max: maxScore
+      }
+    };
+  };
+
   // New function to save question to library
   const saveToLibrary = async () => {
     if (!question.text) {
@@ -2385,6 +2474,12 @@ const QuestionItemComponent = ({
         text: question.text,
         answerType: question.answerType || 'yesno',
         options: question.options || [],
+        scores: question.scores || {},
+        scoring: question.scoring || {
+          enabled: Boolean(question.scores && Object.keys(question.scores).length > 0),
+          max: totalScore || 0
+        },
+        includeNA: question.includeNA,
         required: !!question.required,
         requirementType: question.requirementType || 'mandatory'
       };
@@ -2405,13 +2500,17 @@ const QuestionItemComponent = ({
   const handleSelectFromLibrary = (libraryQuestion) => {
     // Map field names from database to component fields
     const answerType = libraryQuestion.answerType || 'yesno';
+    const normalizedScoring = normalizeLibraryScoring(libraryQuestion, answerType);
     const updatedQuestion = {
       ...question,
       text: libraryQuestion.text || '',
       // Set both type and answerType to ensure dropdown shows correct value
       type: answerType,
       answerType: answerType,
-      options: libraryQuestion.options || [],
+      options: normalizedScoring.options,
+      scores: normalizedScoring.scores,
+      scoring: normalizedScoring.scoring,
+      includeNA: normalizedScoring.includeNA,
       required: !!libraryQuestion.required,
       requirementType: libraryQuestion.requirementType || 'mandatory'
     };
@@ -5358,6 +5457,7 @@ const InspectionLevelForm = () => {
     }, 2000)
   ).current;
   const hasShownRestoreToast = useRef(false);
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -5570,6 +5670,228 @@ const InspectionLevelForm = () => {
       setSaveError(`Error loading template: ${error.response?.data?.error?.message || error.message}`);
       setLoading(false);
     }
+  };
+
+  const isPlainImportObject = (value) => (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  );
+
+  const toTrimmedString = (value) => (
+    typeof value === 'string' ? value.trim() : ''
+  );
+
+  const normalizeNumber = (value, fallback) => {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : fallback;
+  };
+
+  const normalizeImportedScoring = (scoring) => {
+    if (!isPlainImportObject(scoring)) return undefined;
+
+    const normalized = {
+      enabled: Boolean(scoring.enabled),
+      max: normalizeNumber(scoring.max, 0)
+    };
+
+    if (isPlainImportObject(scoring.weights)) {
+      normalized.weights = scoring.weights;
+    }
+
+    return normalized;
+  };
+
+  const normalizeImportedTemplate = (template) => {
+    if (!isPlainImportObject(template)) {
+      throw new Error(t('inspections.importErrorObjectRequired'));
+    }
+
+    const templateName = toTrimmedString(template.name);
+    if (!templateName) {
+      throw new Error(t('inspections.importErrorTemplateNameRequired'));
+    }
+
+    if (!Array.isArray(template.pages) || template.pages.length === 0) {
+      throw new Error(t('inspections.importErrorPagesRequired'));
+    }
+
+    const stats = {
+      pages: 0,
+      sections: 0,
+      questions: 0
+    };
+
+    const pages = template.pages.map((page, pageIndex) => {
+      if (!isPlainImportObject(page)) {
+        throw new Error(t('inspections.importErrorInvalidPage', { index: pageIndex + 1 }));
+      }
+
+      const pageName = toTrimmedString(page.name);
+      if (!pageName) {
+        throw new Error(t('inspections.importErrorPageNameRequired', { index: pageIndex + 1 }));
+      }
+
+      if (!Array.isArray(page.sections) || page.sections.length === 0) {
+        throw new Error(t('inspections.importErrorSectionsRequired', { page: pageName }));
+      }
+
+      stats.pages += 1;
+
+      return {
+        name: pageName,
+        description: toTrimmedString(page.description),
+        order: normalizeNumber(page.order, pageIndex),
+        sections: page.sections.map((section, sectionIndex) => {
+          if (!isPlainImportObject(section)) {
+            throw new Error(t('inspections.importErrorInvalidSection', {
+              page: pageName,
+              index: sectionIndex + 1
+            }));
+          }
+
+          const sectionName = toTrimmedString(section.name);
+          if (!sectionName) {
+            throw new Error(t('inspections.importErrorSectionNameRequired', {
+              page: pageName,
+              index: sectionIndex + 1
+            }));
+          }
+
+          if (section.questions !== undefined && !Array.isArray(section.questions)) {
+            throw new Error(t('inspections.importErrorQuestionsArray', {
+              page: pageName,
+              section: sectionName
+            }));
+          }
+
+          const questions = section.questions || [];
+          stats.sections += 1;
+
+          return {
+            id: uuidv4(),
+            name: sectionName,
+            description: toTrimmedString(section.description),
+            order: normalizeNumber(section.order, sectionIndex),
+            questions: questions.map((question, questionIndex) => {
+              if (!isPlainImportObject(question)) {
+                throw new Error(t('inspections.importErrorInvalidQuestion', {
+                  page: pageName,
+                  section: sectionName,
+                  index: questionIndex + 1
+                }));
+              }
+
+              const questionText = toTrimmedString(question.text);
+              if (!questionText) {
+                throw new Error(t('inspections.importErrorQuestionTextRequired', {
+                  page: pageName,
+                  section: sectionName,
+                  index: questionIndex + 1
+                }));
+              }
+
+              const { _id, id, scoring: rawScoring, scores: rawScores, ...questionData } = question;
+              const scoring = normalizeImportedScoring(rawScoring);
+              stats.questions += 1;
+
+              return {
+                ...questionData,
+                id: uuidv4(),
+                text: questionText,
+                description: toTrimmedString(question.description),
+                answerType: toTrimmedString(question.answerType) || toTrimmedString(question.type) || 'text',
+                required: question.required !== undefined ? Boolean(question.required) : true,
+                options: Array.isArray(question.options) ? question.options.map(option => String(option).trim()).filter(Boolean) : [],
+                scores: isPlainImportObject(rawScores) ? rawScores : {},
+                ...(scoring ? { scoring } : {})
+              };
+            })
+          };
+        })
+      };
+    });
+
+    return {
+      template: {
+        name: templateName,
+        description: toTrimmedString(template.description),
+        type: toTrimmedString(template.type),
+        status: ['active', 'inactive', 'draft', 'archived'].includes(template.status) ? template.status : 'draft',
+        pages
+      },
+      stats
+    };
+  };
+
+  const handleImportButtonClick = () => {
+    if (importInputRef.current) {
+      importInputRef.current.value = '';
+      importInputRef.current.click();
+    }
+  };
+
+  const handleTemplateImport = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      toast.error(t('inspections.importErrorJsonOnly'));
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size === 0) {
+      toast.error(t('inspections.importErrorEmptyFile'));
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const fileContent = typeof reader.result === 'string' ? reader.result.trim() : '';
+        if (!fileContent) {
+          throw new Error(t('inspections.importErrorEmptyFile'));
+        }
+
+        let parsedTemplate;
+        try {
+          parsedTemplate = JSON.parse(fileContent);
+        } catch (parseError) {
+          throw new Error(t('inspections.importErrorMalformedJson'));
+        }
+
+        const { template: normalizedTemplate, stats } = normalizeImportedTemplate(parsedTemplate);
+
+        setFormData(normalizedTemplate);
+        setActivePageIndex(0);
+        setActiveSectionTab(0);
+        setActiveTab('basic-info');
+        setSaveError('');
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizedTemplate));
+        toast.success(t('inspections.templateImportedSuccessfully', stats));
+      } catch (error) {
+        console.error('Template import failed:', error);
+        toast.error(error.message || t('inspections.invalidTemplateFile'));
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.onerror = () => {
+      toast.error(t('inspections.importErrorReadFailed'));
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDownloadSampleTemplate = () => {
+    const link = document.createElement('a');
+    link.href = '/samples/template-import-sample.json';
+    link.download = 'template-import-sample.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSave = async () => {
@@ -6802,6 +7124,25 @@ const InspectionLevelForm = () => {
         </BackButton>
         <h1>{id ? t('common.editTemplate') : t('common.createTemplate')}</h1>
         <div>
+          {!id && (
+            <>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleTemplateImport}
+                style={{ display: 'none' }}
+              />
+              <Button onClick={handleImportButtonClick} disabled={loading}>
+                <Upload size={16} />
+                {t('inspections.importTemplate')}
+              </Button>
+              <Button onClick={handleDownloadSampleTemplate} disabled={loading}>
+                <Download size={16} />
+                {t('inspections.sampleTemplate')}
+              </Button>
+            </>
+          )}
           <Button onClick={() => setIsActivityHistoryOpen(true)}>
             <History size={16} />
             {t('common.activity')}

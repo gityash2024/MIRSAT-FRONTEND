@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle, PlayCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
@@ -10,7 +10,7 @@ import TaskPriority from './TaskPriority';
 import TaskAssignee from './TaskAssignee';
 import { PERMISSIONS } from '../../../utils/permissions';
 import usePermissions from '../../../hooks/usePermissions';
-import { deleteTask } from '../../../store/slices/taskSlice';
+import { deleteTask, startTaskNow } from '../../../store/slices/taskSlice';
 import Skeleton from '../../../components/ui/Skeleton';
 import { themeColors, getStatusColor } from '../../../utils/themeUtils';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -995,6 +995,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   const { hasPermission } = usePermissions();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [startNowConfirm, setStartNowConfirm] = useState(null);
   const [sublevelsModal, setSublevelsModal] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'createdAt',
@@ -1087,6 +1088,29 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       if (!error.message) {
         toast.error(t('tasks.failedToDeleteTask'));
       }
+    }
+  };
+
+  const isFutureStartTask = (task) => {
+    if (!task?.startDate || ['completed', 'archived'].includes(task.status)) {
+      return false;
+    }
+
+    return new Date(task.startDate).getTime() > Date.now();
+  };
+
+  const handleStartNowClick = (task) => {
+    setStartNowConfirm(task);
+    setActiveDropdown(null);
+  };
+
+  const handleConfirmStartNow = async () => {
+    try {
+      const taskId = startNowConfirm._id || startNowConfirm.id;
+      await dispatch(startTaskNow(taskId)).unwrap();
+      setStartNowConfirm(null);
+    } catch (error) {
+      console.error('Error starting inspection now:', error);
     }
   };
 
@@ -1326,6 +1350,20 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                         </ActionButton>
                       </Tooltip>
                     )}
+
+                    {hasPermission(PERMISSIONS.TASKS.EDIT_TASKS) && isFutureStartTask(task) && (
+                      <Tooltip content={t('tasks.startNow')}>
+                        <ActionButton
+                          onClick={() => handleStartNowClick(task)}
+                          style={{
+                            background: '#e0f2fe',
+                            color: '#0284c7'
+                          }}
+                        >
+                          <PlayCircle size={16} />
+                        </ActionButton>
+                      </Tooltip>
+                    )}
                     
                    
                     {hasPreInspectionQuestions(task) && (
@@ -1434,6 +1472,32 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </DialogButton>
               <DialogButton variant="danger" onClick={handleConfirmDelete}>
                 {t('common.delete')}
+              </DialogButton>
+            </DialogActions>
+          </DialogContent>
+        </DeleteConfirmDialog>
+      )}
+
+      {startNowConfirm && (
+        <DeleteConfirmDialog>
+          <DialogContent>
+            <DialogTitle>{t('tasks.startInspectionNow')}</DialogTitle>
+            <DialogMessage>
+              {t('tasks.startNowConfirm', { title: startNowConfirm.title })}
+            </DialogMessage>
+            <DialogActions>
+              <DialogButton onClick={() => setStartNowConfirm(null)}>
+                {t('common.cancel')}
+              </DialogButton>
+              <DialogButton
+                onClick={handleConfirmStartNow}
+                style={{
+                  background: 'var(--color-navy)',
+                  color: 'white',
+                  border: 'none'
+                }}
+              >
+                {t('tasks.startNow')}
               </DialogButton>
             </DialogActions>
           </DialogContent>

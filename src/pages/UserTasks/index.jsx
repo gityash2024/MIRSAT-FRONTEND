@@ -8,6 +8,7 @@ import {
   Activity, Calendar, AlertTriangle, Loader, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-hot-toast';
 import { 
   fetchUserTasks, 
   startUserTask,
@@ -942,6 +943,23 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const isStartLocked = (task) => {
+  if (!task?.startDate) return false;
+  return new Date(task.startDate).getTime() > Date.now();
+};
+
 // UserTasksListSkeleton component - COMMENTED OUT
 /*
 const UserTasksListSkeleton = () => (
@@ -1256,7 +1274,13 @@ const UserTasks = () => {
     dispatch(setPagination({ page: newPage }));
   };
 
-  const handleStartTask = (taskId) => {
+  const handleStartTask = (task) => {
+    if (isStartLocked(task)) {
+      toast.error(t('tasks.lockedUntilStart', { date: formatDateTime(task.startDate) }));
+      return;
+    }
+
+    const taskId = task.id || task._id;
     dispatch(startUserTask(taskId)).then((result) => {
       if (result.meta.requestStatus === 'fulfilled') {
         navigate(`/user-tasks/${taskId}`);
@@ -1404,6 +1428,7 @@ const UserTasks = () => {
         <TasksGrid ref={tasksGridRef}>
           {tasks.results.map((task, index) => {
             const progressValue = typeof task.overallProgress === 'number' ? task.overallProgress : (parseInt(task.overallProgress) || 0);
+            const startLocked = isStartLocked(task);
             return (
             <TaskCard key={task.id} ref={el => cardRefs.current[index] = el}>
               <TaskHeader>
@@ -1431,6 +1456,15 @@ const UserTasks = () => {
                     {isPastDue(task.deadline) && task.status !== 'completed' && ` (${t('tasks.overdue')})`}
                   </span>
                 </TaskDetailRow>
+
+                {task.startDate && (
+                  <TaskDetailRow>
+                    <Clock size={16} />
+                    <span style={{ color: startLocked ? '#b45309' : '#666' }}>
+                      {t('tasks.scheduledStart')}: {formatDateTime(task.startDate)}
+                    </span>
+                  </TaskDetailRow>
+                )}
                 
                 <TaskDetailRow>
                   <AlertTriangle size={16} />
@@ -1483,15 +1517,16 @@ const UserTasks = () => {
                 {task.status === 'pending' && (
                   <TaskButton 
                     primary
-                    onClick={() => handleStartTask(task.id)}
-                    disabled={actionLoading}
+                    onClick={() => handleStartTask(task)}
+                    disabled={actionLoading || startLocked}
+                    title={startLocked ? t('tasks.lockedUntilStart', { date: formatDateTime(task.startDate) }) : undefined}
                   >
                     {actionLoading ? (
                       <Loader size={16} color="white" />
                     ) : (
                       <>
-                        <PlayCircle size={16} />
-                        {t('tasks.startTask')}
+                        {startLocked ? <Clock size={16} /> : <PlayCircle size={16} />}
+                        {startLocked ? t('tasks.scheduled') : t('tasks.startTask')}
                       </>
                     )}
                   </TaskButton>

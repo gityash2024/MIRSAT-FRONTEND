@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X, Upload, Loader } from 'lucide-react';
+import { Plus, Filter, Search, Download, Layers, ChevronRight, Edit, Trash2, Eye, ChevronDown, ChevronDownCircle, X, Upload, Loader, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as Accordion from '@radix-ui/react-accordion';
 import InspectionLevelFilters from './InspectionLevelFilters';
@@ -380,17 +380,17 @@ const Button = styled.button`
 
 const LevelGrid = styled.div`
   display: grid;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    gap: 12px;
+    gap: 10px;
   }
 
   @media (max-width: 480px) {
-    gap: 10px;
+    gap: 8px;
   }
 `;
 
@@ -422,20 +422,62 @@ const AccordionHeader = styled.div`
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  padding: 20px;
+  padding: 13px 18px;
   text-align: ${props => props.$isRTL ? 'right' : 'left'};
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 16px;
-    gap: 10px;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   @media (max-width: 480px) {
-    padding: 12px;
-    gap: 8px;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+`;
+
+const HeaderSummaryButton = styled.button`
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+
+  @media (max-width: 768px) {
+    min-width: 190px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    width: 100%;
+  }
+`;
+
+const HeaderControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: ${props => props.$isRTL ? '0px' : 'auto'};
+  margin-right: ${props => props.$isRTL ? 'auto' : '0px'};
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  @media (max-width: 768px) {
+    gap: 5px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+    margin-right: 0;
   }
 `;
 
@@ -460,9 +502,9 @@ const LevelInfo = styled.div`
 `;
 
 const LevelIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
   border-radius: 8px;
   background: #e3f2fd;
   color: var(--color-navy);
@@ -472,15 +514,15 @@ const LevelIcon = styled.div`
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-  }
-
-  @media (max-width: 480px) {
     width: 32px;
     height: 32px;
     min-width: 32px;
+  }
+
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
   }
 
   svg {
@@ -509,10 +551,10 @@ const LevelDetails = styled.div`
   }
   
   h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--color-navy);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     margin-top: 0;
     padding-left: 0;
     text-align: left;
@@ -529,7 +571,7 @@ const LevelDetails = styled.div`
   }
 
   p {
-    font-size: 14px;
+    font-size: 13px;
     color: #666;
     margin: 0;
     padding-left: 0;
@@ -549,19 +591,83 @@ const LevelDetails = styled.div`
 
 const LevelActions = styled.div`
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
   align-items: center;
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    gap: 6px;
+    gap: 5px;
+    flex-wrap: wrap;
   }
 
   @media (max-width: 480px) {
     gap: 4px;
     width: 100%;
     justify-content: flex-start;
+  }
+`;
+
+const HeaderActionButton = styled.button`
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: ${props => props.$danger ? '#fff' : '#f8fafc'};
+  color: ${props => props.$danger ? '#b91c1c' : 'var(--color-navy)'};
+  border: 1px solid ${props => props.$danger ? '#fecaca' : '#d8e2ef'};
+
+  &:hover {
+    background: ${props => props.$danger ? '#fef2f2' : '#eef6ff'};
+    border-color: ${props => props.$danger ? '#fca5a5' : 'var(--color-navy)'};
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    padding: 5px 7px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    span {
+      display: none;
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+`;
+
+const ChevronToggleButton = styled.button`
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #f1f5f9;
   }
 `;
 
@@ -843,7 +949,7 @@ const ModalActions = styled.div`
 `;
 
 const AccordionItemContent = styled.div`
-  padding: 0 20px 20px;
+  padding: 0 18px 12px;
   background: #f9fafc;
   border-top: 1px solid #edf2f7;
   width: 100%;
@@ -851,11 +957,11 @@ const AccordionItemContent = styled.div`
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 0 16px 16px;
+    padding: 0 14px 10px;
   }
 
   @media (max-width: 480px) {
-    padding: 0 12px 12px;
+    padding: 0 12px 10px;
   }
 `;
 
@@ -863,25 +969,24 @@ const LevelStats = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 16px 0;
+  margin-bottom: 0;
+  padding: 12px 0 8px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 
   @media (max-width: 768px) {
-    margin-bottom: 12px;
-    padding: 12px 0;
-    gap: 10px;
+    padding: 10px 0 6px;
+    gap: 8px;
   }
 
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: stretch;
-    margin-bottom: 10px;
-    padding: 10px 0;
+    margin-bottom: 0;
+    padding: 8px 0 4px;
     gap: 8px;
   }
 `;
@@ -890,8 +995,8 @@ const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
+  gap: 4px;
+  padding: 9px 12px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -900,27 +1005,27 @@ const StatItem = styled.div`
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 10px 12px;
+    padding: 8px 10px;
     min-width: 80px;
     flex: 1 1 calc(33.333% - 8px);
   }
 
   @media (max-width: 480px) {
-    padding: 10px 12px;
+    padding: 8px 10px;
     min-width: 0;
     width: 100%;
     flex: 1 1 100%;
   }
 
   svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     color: #4a5568;
     flex-shrink: 0;
 
     @media (max-width: 768px) {
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
 
     @media (max-width: 480px) {
@@ -937,7 +1042,7 @@ const StatItem = styled.div`
   }
 
   strong {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--color-navy);
     display: block;
@@ -954,7 +1059,7 @@ const StatItem = styled.div`
   }
 
   span {
-    font-size: 12px;
+    font-size: 11px;
     color: #718096;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -988,8 +1093,10 @@ const InspectionLevelList = ({
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [publishModalVisible, setPublishModalVisible] = useState(false);
+  const [cloneModalVisible, setCloneModalVisible] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
   const [levelToPublish, setLevelToPublish] = useState(null);
+  const [levelToClone, setLevelToClone] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
   const exportDropdownRef = useRef(null);
@@ -1055,6 +1162,11 @@ const InspectionLevelList = ({
     setDeleteModalVisible(true);
   };
 
+  const onCloneClick = (level) => {
+    setLevelToClone(level);
+    setCloneModalVisible(true);
+  };
+
   const handleDelete = async (id) => {
     try {
       setLoading(true);
@@ -1073,6 +1185,29 @@ const InspectionLevelList = ({
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error(`Failed to delete template: ${error.message}`);
+      setLoading(false);
+    }
+  };
+
+  const handleClone = async () => {
+    if (!levelToClone) return;
+
+    try {
+      setLoading(true);
+
+      await inspectionService.cloneInspectionLevel(levelToClone._id || levelToClone.id);
+
+      setCloneModalVisible(false);
+      setLevelToClone(null);
+      toast.success(t('inspections.templateClonedSuccessfully'));
+
+      if (fetchData) {
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error cloning template:', error);
+      toast.error(error?.response?.data?.message || error.message || t('inspections.failedToCloneTemplate'));
+    } finally {
       setLoading(false);
     }
   };
@@ -1315,6 +1450,39 @@ const InspectionLevelList = ({
         </ModalOverlay>
       )}
 
+      {cloneModalVisible && levelToClone && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t('inspections.cloneTemplate')}</ModalTitle>
+              <ModalCloseButton
+                onClick={() => setCloneModalVisible(false)}
+                disabled={loading}
+              >
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <p>{t('inspections.confirmCloneTemplate', { name: levelToClone.name })}</p>
+            <p>{t('inspections.cloneTemplateDraftNote')}</p>
+            <ModalActions>
+              <Button
+                onClick={() => setCloneModalVisible(false)}
+                disabled={loading}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleClone}
+                disabled={loading}
+              >
+                {loading ? t('inspections.cloning') : t('inspections.clone')}
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
       {publishModalVisible && levelToPublish && (
         <ModalOverlay>
           <ModalContent>
@@ -1453,8 +1621,9 @@ const InspectionLevelList = ({
               <LevelCard key={level._id || level.id}>
                 <AccordionRoot type="single" collapsible>
                   <Accordion.Item value={level._id || level.id} style={{ width: '100%' }}>
-                    <AccordionTrigger>
-                      <AccordionHeader $isRTL={isRTL}>
+                    <AccordionHeader $isRTL={isRTL}>
+                      <AccordionTrigger asChild>
+                        <HeaderSummaryButton>
                         <div style={{ display: 'flex', alignItems: 'center', width: '48px', marginRight: isRTL ? '0px' : '12px', marginLeft: isRTL ? '12px' : '0px' }}>
                           <LevelIcon>
                             <Layers size={20} />
@@ -1464,22 +1633,75 @@ const InspectionLevelList = ({
                           <h3 style={{ textAlign: isRTL ? 'right' : 'left' }}>{level.name}</h3>
                           <p style={{ textAlign: isRTL ? 'right' : 'left' }}>{level.description || t('common.noDescriptionProvided')}</p>
                         </LevelDetails>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginLeft: isRTL ? '0px' : 'auto',
-                          marginRight: isRTL ? 'auto' : '0px'
-                        }}>
-                          {level.status && (
-                            <StatusBadge type={level.type || 'marina_operator'}>
-                              {translateStatus(level.status) || t('common.active')}
-                            </StatusBadge>
-                          )}
-                          <ChevronDown size={20} className="accordion-chevron" />
-                        </div>
-                      </AccordionHeader>
-                    </AccordionTrigger>
+                        </HeaderSummaryButton>
+                      </AccordionTrigger>
+                      <HeaderControls $isRTL={isRTL}>
+                        <LevelActions>
+                          <HeaderActionButton
+                            as={Link}
+                            to={`/inspection/${level._id || level.id}`}
+                            title={t('common.view')}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Eye size={15} />
+                            <span>{t('common.view')}</span>
+                          </HeaderActionButton>
+                          <HeaderActionButton
+                            as={Link}
+                            to={`/inspection/${level._id || level.id}/edit`}
+                            title={t('common.edit')}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Edit size={15} />
+                            <span>{t('common.edit')}</span>
+                          </HeaderActionButton>
+                          <HeaderActionButton
+                            title={t('inspections.cloneTemplate')}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onCloneClick(level);
+                            }}
+                          >
+                            <Copy size={15} />
+                            <span>{t('inspections.clone')}</span>
+                          </HeaderActionButton>
+                          <HeaderActionButton
+                            $danger
+                            title={t('common.delete')}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onDeleteClick(level);
+                            }}
+                          >
+                            <Trash2 size={15} />
+                            <span>{t('common.delete')}</span>
+                          </HeaderActionButton>
+                          <HeaderActionButton
+                            title={level.status === 'active' ? t('common.unpublish') : t('common.publish')}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onPublishClick(level);
+                            }}
+                          >
+                            {level.status === 'active' ? <Download size={15} /> : <Upload size={15} />}
+                            <span>{level.status === 'active' ? t('common.unpublish') : t('common.publish')}</span>
+                          </HeaderActionButton>
+                        </LevelActions>
+                        {level.status && (
+                          <StatusBadge type={level.type || 'marina_operator'}>
+                            {translateStatus(level.status) || t('common.active')}
+                          </StatusBadge>
+                        )}
+                        <AccordionTrigger asChild>
+                          <ChevronToggleButton aria-label={t('common.expand')}>
+                            <ChevronDown size={20} className="accordion-chevron" />
+                          </ChevronToggleButton>
+                        </AccordionTrigger>
+                      </HeaderControls>
+                    </AccordionHeader>
                     <AccordionContent>
                       <AccordionItemContent>
                         <LevelStats>
@@ -1505,47 +1727,6 @@ const InspectionLevelList = ({
                             </div>
                           </StatItem>
                         </LevelStats>
-                        <LevelActions>
-                          <Button as={Link} to={`/inspection/${level._id || level.id}`} variant="secondary">
-                            <Eye size={16} />
-                            {t('common.view')}
-                          </Button>
-                          <Button as={Link} to={`/inspection/${level._id || level.id}/edit`} variant="secondary">
-                            <Edit size={16} />
-                            {t('common.edit')}
-                          </Button>
-                          <Button
-                            variant="danger"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onDeleteClick(level);
-                            }}
-                          >
-                            <Trash2 size={16} />
-                            {t('common.delete')}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onPublishClick(level);
-                            }}
-                          >
-                            {level.status === 'active' ? (
-                              <>
-                                <Download size={16} />
-                                {t('common.unpublish')}
-                              </>
-                            ) : (
-                              <>
-                                <Upload size={16} />
-                                {t('common.publish')}
-                              </>
-                            )}
-                          </Button>
-                        </LevelActions>
                       </AccordionItemContent>
                     </AccordionContent>
                   </Accordion.Item>

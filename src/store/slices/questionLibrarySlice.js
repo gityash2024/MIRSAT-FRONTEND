@@ -2,6 +2,30 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import questionLibraryService from '../../services/questionLibrary.service';
 import { extractErrorMessage } from '../../utils/errorHandling';
 
+const normalizeScores = (scores = {}) => {
+  if (!scores || typeof scores !== 'object' || Array.isArray(scores)) {
+    return {};
+  }
+
+  return Object.entries(scores).reduce((acc, [key, value]) => {
+    if (!key) return acc;
+    const parsed = Number(value);
+    acc[key] = Number.isFinite(parsed) ? parsed : 0;
+    return acc;
+  }, {});
+};
+
+const normalizeScoring = (scoring, scores) => {
+  const scoreValues = Object.values(scores || {});
+  const maxScore = scoreValues.length > 0 ? Math.max(...scoreValues.map(score => Number(score) || 0)) : 0;
+  const storedMax = Number(scoring?.max);
+
+  return {
+    enabled: Boolean(scoring?.enabled || maxScore > 0),
+    max: scoreValues.length > 0 ? maxScore : (Number.isFinite(storedMax) ? storedMax : 0)
+  };
+};
+
 // Async thunk for fetching questions
 export const fetchQuestionLibrary = createAsyncThunk(
   'questionLibrary/fetchQuestions',
@@ -24,10 +48,14 @@ export const addQuestionToLibrary = createAsyncThunk(
       console.log("Adding question to library:", questionData);
       
       // Make sure we're sending clean data without any internal IDs
+      const scores = normalizeScores(questionData.scores);
       const cleanData = {
         text: questionData.text,
         answerType: questionData.answerType,
         options: questionData.options || [],
+        scores,
+        scoring: normalizeScoring(questionData.scoring, scores),
+        includeNA: questionData.includeNA,
         required: questionData.required !== undefined ? questionData.required : true,
         requirementType: questionData.requirementType || 'mandatory'
       };
@@ -40,12 +68,12 @@ export const addQuestionToLibrary = createAsyncThunk(
       // Check if question already exists to prevent duplicates
       const { questionLibrary } = getState();
       if (!cleanData.id) { // Only check for duplicates when creating new questions
-        const isDuplicate = questionLibrary.questions.some(
+        const duplicateQuestion = questionLibrary.questions.find(
           q => q.text === cleanData.text && q.answerType === cleanData.answerType
         );
         
-        if (isDuplicate) {
-          return rejectWithValue('This question already exists in the library');
+        if (duplicateQuestion) {
+          cleanData.id = duplicateQuestion.id || duplicateQuestion._id;
         }
       }
       
