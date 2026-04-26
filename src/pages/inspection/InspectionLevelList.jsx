@@ -1219,12 +1219,12 @@ const InspectionLevelList = ({
   };
 
   const handleExport = async (format) => {
-    setPendingExport({ format, data: inspectionLevels });
+    setPendingExport({ format });
     setShowDocumentModal(true);
     setShowExportDropdown(false);
   };
 
-  const handleConfirmExport = async (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!pendingExport) return;
 
     try {
@@ -1239,9 +1239,20 @@ const InspectionLevelList = ({
 
       const params = {
         format: pendingExport.format,
-        ids: pendingExport.data.map(level => level._id),
-        fileName
+        fileName,
+        language,
+        search: searchTerm,
+        page: 1,
+        limit: pagination?.totalResults || 10000
       };
+
+      Object.entries(filters || {}).forEach(([key, value]) => {
+        if (Array.isArray(value) && value.length > 0) {
+          params[key] = value;
+        } else if (value) {
+          params[key] = value;
+        }
+      });
 
       await inspectionService.exportInspectionLevels(params);
       toast.success(`Export as ${pendingExport.format.toUpperCase()} successful`);

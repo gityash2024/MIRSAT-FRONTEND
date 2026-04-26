@@ -73,6 +73,7 @@ import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
 import SignaturePad from 'react-signature-canvas';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
@@ -4892,36 +4893,27 @@ const UserTaskDetail = () => {
       return;
     }
 
-    try {
-      toast.loading(t('tasks.generatingReport'));
+    setSelectedReportFormat('excel');
+    setDocumentName(`${currentTask?.name || currentTask?.title || 'Inspection'}_EXCEL_${new Date().toISOString().split('T')[0]}`);
+    setShowDocumentNamingModal(true);
+  };
 
-      const completionPercentage = calculateTaskCompletionPercentage();
+  const prepareTaskForExport = async () => {
+    if (!currentTask) return;
 
-      if (currentTask.overallProgress !== completionPercentage) {
-        await dispatch(updateUserTaskProgress({
-          taskId: currentTask._id,
-          subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-          status: currentTask.status,
-          taskMetrics: {
-            ...currentTask.taskMetrics,
-            completionPercentage: completionPercentage,
-            subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
-          }
-        })).unwrap();
-      }
+    const completionPercentage = calculateTaskCompletionPercentage();
 
-      const result = await dispatch(exportTaskReport({
+    if (currentTask.overallProgress !== completionPercentage) {
+      await dispatch(updateUserTaskProgress({
         taskId: currentTask._id,
-        format: 'excel'
+        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
+        status: currentTask.status,
+        taskMetrics: {
+          ...currentTask.taskMetrics,
+          completionPercentage: completionPercentage,
+          subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
+        }
       })).unwrap();
-
-      toast.dismiss();
-      toast.success(t('tasks.reportExportedSuccessfully'));
-
-      return result;
-    } catch (error) {
-      toast.dismiss();
-      toast.error(`${t('tasks.failedToExportReport')}: ${error.message || t('common.error')}`);
     }
   };
 
@@ -4955,8 +4947,10 @@ const UserTaskDetail = () => {
     }
   };
 
-  const handleConfirmDownload = async () => {
-    if (!documentName.trim()) {
+  const handleConfirmDownload = async (fileName = documentName, language = 'en') => {
+    const finalFileName = (fileName || documentName || '').trim();
+
+    if (!finalFileName) {
       toast.error(t('tasks.pleaseEnterDocumentName'));
       return;
     }
@@ -4964,6 +4958,7 @@ const UserTaskDetail = () => {
     try {
       setShowDocumentNamingModal(false);
       toast.loading(t('tasks.generatingReportFormat', { format: selectedReportFormat.toUpperCase() }));
+      await prepareTaskForExport();
 
       let result;
 
@@ -4971,20 +4966,25 @@ const UserTaskDetail = () => {
         case 'excel':
           result = await dispatch(exportTaskReport({
             taskId: currentTask._id,
-            format: 'excel'
+            format: 'excel',
+            fileName: finalFileName,
+            language
           })).unwrap();
           break;
         case 'pdf':
           result = await dispatch(exportTaskReport({
             taskId: currentTask._id,
-            format: 'pdf'
+            format: 'pdf',
+            fileName: finalFileName,
+            language
           })).unwrap();
           break;
         case 'docx':
-          // For DOCX, you'll need to implement DOCX generation in the backend
           result = await dispatch(exportTaskReport({
             taskId: currentTask._id,
-            format: 'docx'
+            format: 'docx',
+            fileName: finalFileName,
+            language
           })).unwrap();
           break;
         default:
@@ -8417,10 +8417,10 @@ const UserTaskDetail = () => {
                                 <FileText size={16} />
                                 {t('common.exportAsExcel')}
                               </ExportOption>
-                              {/* <ExportOption onClick={() => handleExportFormat('word')}>
+                              <ExportOption onClick={() => handleExportFormat('docx')}>
                                 <FileText size={16} />
                                 Word (.docx)
-                              </ExportOption> */}
+                              </ExportOption>
                               <ExportOption onClick={() => handleExportFormat('pdf')}>
                                 <FileText size={16} />
                                 {t('common.exportAsPDF')}
@@ -8927,128 +8927,14 @@ const UserTaskDetail = () => {
         </ModalOverlay>
       )}
 
-      {/* Document Naming Modal */}
-      {showDocumentNamingModal && (
-        <ModalOverlay>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>{t('tasks.customizeReportFilename')}</ModalTitle>
-              <CloseButton onClick={() => setShowDocumentNamingModal(false)}>
-                <X size={20} />
-              </CloseButton>
-            </ModalHeader>
-
-            <div style={{ padding: '20px 0' }}>
-              <div style={{ marginBottom: '20px' }}>
-                <p style={{ color: '#374151', lineHeight: '1.6', marginBottom: '16px' }}>
-                  {t('tasks.customizeFilenameForReport', { format: selectedReportFormat?.toUpperCase() })}
-                </p>
-
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(55, 136, 216, 0.05)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(55, 136, 216, 0.2)',
-                  marginBottom: '16px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#3788d8'
-                  }}>
-                    <Info size={16} />
-                    {t('tasks.availableVariables')}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {t('tasks.useVariables')} <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{date}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{time}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{taskName}'}</code>, <code style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px' }}>{'{inspector}'}</code>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
-                }}>
-                  {t('tasks.reportFilename')}
-                </label>
-                <input
-                  type="text"
-                  value={documentName}
-                  onChange={(e) => setDocumentName(e.target.value)}
-                  placeholder={t('tasks.enterCustomFilename')}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-                <div style={{
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  marginTop: '4px'
-                }}>
-                  {t('tasks.dontIncludeFileExtension', { format: selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat })}
-                </div>
-              </div>
-
-              <div style={{
-                padding: '12px',
-                background: '#f9fafb',
-                borderRadius: '6px',
-                border: '1px solid #e5e7eb'
-              }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  {t('tasks.preview')}:
-                </div>
-                <div style={{
-                  fontSize: '14px',
-                  color: '#374151',
-                  fontWeight: '500',
-                  fontFamily: 'monospace'
-                }}>
-                  {documentName || 'filename'}.{selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat}
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end',
-              borderTop: '1px solid #e5e7eb',
-              paddingTop: '20px'
-            }}>
-              <QuickActionButton
-                onClick={() => setShowDocumentNamingModal(false)}
-              >
-                {t('common.cancel')}
-              </QuickActionButton>
-              <QuickActionButton
-                primary
-                onClick={handleConfirmDownload}
-                style={{
-                  background: 'linear-gradient(135deg, #3788d8, #2c3e50)',
-                  minWidth: '160px'
-                }}
-              >
-                <Download size={16} />
-                {t('tasks.downloadReport')}
-              </QuickActionButton>
-            </div>
-          </ModalContent>
-        </ModalOverlay>
-      )}
+      <DocumentNamingModal
+        isOpen={showDocumentNamingModal}
+        onClose={() => setShowDocumentNamingModal(false)}
+        onExport={handleConfirmDownload}
+        exportFormat={selectedReportFormat === 'excel' ? 'xlsx' : selectedReportFormat}
+        documentType="Inspection-Report"
+        defaultCriteria={['documentType', 'currentDate']}
+      />
 
       {/* Progress Details Modal */}
       {showProgressDetails && (

@@ -334,9 +334,9 @@ export const inspectionService = {
     try {
       this.startLoading('Exporting inspection levels...');
       
-      const { format = 'pdf', ...otherParams } = params;
+      const { format = 'pdf', fileName = 'inspection-levels', ...otherParams } = params;
       const response = await api.get(`/inspection/export/${format}`, { 
-        params: otherParams,
+        params: { ...otherParams, fileName },
         responseType: 'blob' 
       });
       
@@ -346,7 +346,7 @@ export const inspectionService = {
       // Create a link element and trigger the download
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inspection-levels.${format}`;
+      a.download = `${fileName}.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

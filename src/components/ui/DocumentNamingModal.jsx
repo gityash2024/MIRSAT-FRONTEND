@@ -4,6 +4,7 @@ import { X, FileText, Download, Calendar, User, Tag } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Z_INDEX } from '../../utils/zIndex';
 import { useTranslation } from 'react-i18next';
+import { EXPORT_LANGUAGES, normalizeExportLanguage } from '../../utils/exportLocalization';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -348,6 +349,47 @@ const CriteriaItem = styled.label`
   }
 `;
 
+const LanguageGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+`;
+
+const LanguageOption = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid ${props => props.$active ? 'var(--color-navy)' : '#e5e7eb'};
+  border-radius: 8px;
+  background: ${props => props.$active ? 'rgba(26, 35, 126, 0.06)' : 'white'};
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: ${props => props.$active ? 600 : 500};
+  box-sizing: border-box;
+
+  &:hover {
+    border-color: var(--color-navy);
+    background: rgba(26, 35, 126, 0.04);
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
@@ -437,7 +479,9 @@ const DocumentNamingModal = ({
   onExport, 
   exportFormat = 'pdf',
   documentType = 'Report',
-  defaultCriteria = []
+  defaultCriteria = [],
+  defaultLanguage = EXPORT_LANGUAGES.EN,
+  showLanguageSelector = true
 }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -454,6 +498,7 @@ const DocumentNamingModal = ({
   const [customText, setCustomText] = useState('');
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
   const [timeFormat, setTimeFormat] = useState('HH-MM');
+  const [exportLanguage, setExportLanguage] = useState(normalizeExportLanguage(defaultLanguage));
 
   useEffect(() => {
     if (defaultCriteria.length > 0) {
@@ -464,6 +509,12 @@ const DocumentNamingModal = ({
       setNamingCriteria(prev => ({ ...prev, ...criteria }));
     }
   }, [defaultCriteria]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setExportLanguage(normalizeExportLanguage(defaultLanguage));
+    }
+  }, [defaultLanguage, isOpen]);
 
   const handleCriteriaChange = (criterion) => {
     setNamingCriteria(prev => ({
@@ -532,10 +583,15 @@ const DocumentNamingModal = ({
 
   const handleExport = () => {
     const fileName = generateFileName();
-    onExport(fileName);
+    onExport(fileName, exportLanguage);
   };
 
   if (!isOpen) return null;
+
+  const exportLabel = t('common.export') === 'common.export' ? 'Export' : t('common.export');
+  const formatLabel = exportFormat === 'xlsx' || exportFormat === 'excel'
+    ? 'Excel'
+    : String(exportFormat || 'pdf').toUpperCase();
 
   return (
     <ModalOverlay onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -655,6 +711,37 @@ const DocumentNamingModal = ({
           )}
         </FormSection>
 
+        {showLanguageSelector && (
+          <FormSection>
+            <SectionTitle>
+              <Tag size={16} />
+              {t('common.exportLanguage') === 'common.exportLanguage' ? 'Export Language' : t('common.exportLanguage')}
+            </SectionTitle>
+            <LanguageGrid>
+              <LanguageOption $active={exportLanguage === EXPORT_LANGUAGES.EN}>
+                <input
+                  type="radio"
+                  name="exportLanguage"
+                  value={EXPORT_LANGUAGES.EN}
+                  checked={exportLanguage === EXPORT_LANGUAGES.EN}
+                  onChange={() => setExportLanguage(EXPORT_LANGUAGES.EN)}
+                />
+                {t('common.exportInEnglish') === 'common.exportInEnglish' ? 'English' : t('common.exportInEnglish')}
+              </LanguageOption>
+              <LanguageOption $active={exportLanguage === EXPORT_LANGUAGES.AR}>
+                <input
+                  type="radio"
+                  name="exportLanguage"
+                  value={EXPORT_LANGUAGES.AR}
+                  checked={exportLanguage === EXPORT_LANGUAGES.AR}
+                  onChange={() => setExportLanguage(EXPORT_LANGUAGES.AR)}
+                />
+                {t('common.exportInArabic') === 'common.exportInArabic' ? 'Arabic' : t('common.exportInArabic')}
+              </LanguageOption>
+            </LanguageGrid>
+          </FormSection>
+        )}
+
         <PreviewSection>
           <SectionTitle style={{ marginBottom: '8px', fontSize: '14px' }}>
             {t('common.previewFilename')}:
@@ -670,7 +757,7 @@ const DocumentNamingModal = ({
           </Button>
           <Button variant="primary" onClick={handleExport}>
             <Download size={16} />
-            {t('common.exportPDF')}
+            {exportLabel} {formatLabel}
           </Button>
         </ButtonGroup>
       </ModalContent>

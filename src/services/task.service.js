@@ -27,7 +27,7 @@ export const taskService = {
     return response.data;
   },
 
-  async exportTaskReport(taskId, format = 'excel', fileName = null, taskData = null) {
+  async exportTaskReport(taskId, format = 'excel', fileName = null, taskData = null, language = 'en') {
     try {
       // For PDF, use frontend generation
       if (format === 'pdf') {
@@ -41,7 +41,7 @@ export const taskService = {
 
         // Generate and download PDF using frontend
         const pdfFileName = fileName || `inspection_report_${taskId}`;
-        await downloadTaskPDF(dataToUse, pdfFileName);
+        await downloadTaskPDF(dataToUse, pdfFileName, language);
 
         return { success: true };
       }
@@ -51,13 +51,14 @@ export const taskService = {
       if (fileName) {
         url += `&fileName=${encodeURIComponent(fileName)}`;
       }
+      url += `${url.includes('?') ? '&' : '?'}language=${encodeURIComponent(language || 'en')}`;
 
       const response = await api.get(url, {
         responseType: 'blob'
       });
 
       let mimeType, fileExtension;
-      if (format === 'word') {
+      if (format === 'word' || format === 'docx') {
         mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         fileExtension = 'docx';
       } else {

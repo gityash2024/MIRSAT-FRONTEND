@@ -34,8 +34,11 @@ export const assetService = {
     return response.data;
   },
   
-  exportAssets: async () => {
-    const response = await api.get('/assets/export', { responseType: 'blob' });
+  exportAssets: async (language = 'en') => {
+    const response = await api.get('/assets/export', {
+      params: { language },
+      responseType: 'blob'
+    });
     return response;
   },
   

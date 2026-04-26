@@ -7,9 +7,24 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Filter, Download, Calendar, ArrowLeft, FileText } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { PERMISSIONS } from '../../../utils/permissions';
+import { taskService } from '../../../services/task.service';
+import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import DocumentNamingModal from '../../../components/ui/DocumentNamingModal';
+import {
+  downloadCsv,
+  exportText,
+  formatExportDate,
+  formatPdfText,
+  formatPriorityForExport,
+  formatStatusForExport,
+  isArabicExport,
+  loadPdfArabicFont,
+  localizePdfTable,
+  orderForLanguage,
+  orderRowsForLanguage
+} from '../../../utils/exportLocalization';
 
 const Header = styled.div`
   display: flex;
@@ -330,7 +345,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
   const dropdownRef = useRef(null);
   
   // Get tasks from Redux store
-  const { tasks } = useSelector(state => state.tasks);
+  const { filters, pagination } = useSelector(state => state.tasks);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -348,21 +363,54 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
 
   // Handle export button click
   const handleExport = (format) => {
-    setPendingExport({ format, data: tasks });
+    setPendingExport({ format });
     setShowDocumentModal(true);
     setShowExportDropdown(false);
   };
 
+  const buildExportQueryParams = () => {
+    const params = {
+      page: 1,
+      limit: pagination?.total || 10000,
+      isCalendarView: true
+    };
+
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (Array.isArray(value) && value.length > 0) {
+        params[key] = value;
+      } else if (key === 'search' && typeof value === 'string' && value.trim()) {
+        params.search = value.trim();
+      }
+    });
+
+    return params;
+  };
+
+  const fetchAllTasksForExport = async () => {
+    const response = await taskService.getTasks(buildExportQueryParams());
+    return Array.isArray(response?.data)
+      ? response.data.map(task => ({ ...task, id: task.id || task._id }))
+      : [];
+  };
+
   // Handle confirmed export with custom filename
-  const handleConfirmExport = (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!pendingExport) return;
     
-    const { format, data } = pendingExport;
-    
-    if (format === 'pdf') {
-      generatePDFExport(data, fileName);
-    } else if (format === 'csv') {
-      generateCSVExport(data, fileName);
+    const { format } = pendingExport;
+
+    try {
+      const data = await fetchAllTasksForExport();
+
+      if (format === 'pdf') {
+        await generatePDFExport(data, fileName, language);
+      } else if (format === 'csv') {
+        generateCSVExport(data, fileName, language);
+      }
+    } catch (error) {
+      console.error('Calendar export failed:', error);
+      toast.error(error?.response?.data?.message || error.message || 'Failed to export calendar');
+      return;
     }
     
     setShowDocumentModal(false);
@@ -370,8 +418,11 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
   };
 
   // Generate PDF with custom filename
-  const generatePDFExport = (tasksData, fileName) => {
+  const generatePDFExport = async (tasksData, fileName, language = 'en') => {
     const doc = new jsPDF();
+    const fontLoaded = await loadPdfArabicFont(doc);
+    const L = (key) => exportText(language, key);
+    const pageWidth = doc.internal.pageSize.width;
     
     // Set document properties
     doc.setProperties({
@@ -387,12 +438,13 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
     // Add title with proper positioning
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255); // White text
-    doc.text(fileName || 'Calendar Events Report', doc.internal.pageSize.width / 2, 22, { align: 'center' });
+    if (isArabicExport(language) && fontLoaded) doc.setFont('NotoNaskhArabic', 'normal');
+    doc.text(formatPdfText(fileName || L('calendarEventsReport'), language), pageWidth / 2, 22, { align: 'center' });
     
     // Add date subtitle
     doc.setFontSize(10);
     doc.setTextColor(200, 200, 200); // Light gray for subtitle
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 32, { align: 'center' });
+    doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`, language), pageWidth / 2, 32, { align: 'center' });
     
     // Content starting position
     const contentStartY = 50;
@@ -400,7 +452,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
     // Add summary section
     doc.setFontSize(14);
     doc.setTextColor(26, 35, 126); // Navy blue for section headers
-    doc.text('Events Summary', 14, contentStartY);
+    doc.text(formatPdfText(L('eventsSummary'), language), isArabicExport(language) ? pageWidth - 14 : 14, contentStartY, { align: isArabicExport(language) ? 'right' : 'left' });
     
     // Prepare summary info
     const pendingEvents = tasksData.filter(task => task.status === 'pending').length;
@@ -410,46 +462,46 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
     // Display summary data
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80); // Dark gray for content
-    doc.text(`Total Events: ${tasksData.length}`, 14, contentStartY + 10);
-    doc.text(`Pending Events: ${pendingEvents}`, 14, contentStartY + 20);
-    doc.text(`Completed Events: ${completedEvents}`, 14, contentStartY + 30);
-    doc.text(`High Priority Events: ${highPriorityEvents}`, 14, contentStartY + 40);
+    const summaryX = isArabicExport(language) ? pageWidth - 14 : 14;
+    const summaryAlign = isArabicExport(language) ? 'right' : 'left';
+    doc.text(formatPdfText(`${L('totalEvents')}: ${tasksData.length}`, language), summaryX, contentStartY + 10, { align: summaryAlign });
+    doc.text(formatPdfText(`${L('pendingEvents')}: ${pendingEvents}`, language), summaryX, contentStartY + 20, { align: summaryAlign });
+    doc.text(formatPdfText(`${L('completedEvents')}: ${completedEvents}`, language), summaryX, contentStartY + 30, { align: summaryAlign });
+    doc.text(formatPdfText(`${L('highPriorityEvents')}: ${highPriorityEvents}`, language), summaryX, contentStartY + 40, { align: summaryAlign });
     
     // Add events table with improved styling
-    const tableColumn = [
-      "Title", 
-      "Status", 
-      "Priority", 
-      "Assigned To", 
-      "Description", 
-      "Deadline"
-    ];
+    const tableColumn = orderForLanguage(
+      [L('title'), L('status'), L('priority'), L('assignedTo'), L('description'), L('deadline')]
+        .map(label => formatPdfText(label, language)),
+      language
+    );
     
     const tableRows = tasksData.map(task => [
-      task.title || '',
-      task.status || '',
-      task.priority || '',
-      task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned',
-      task.description || '',
-      formatDate(task.deadline) || ''
+      formatPdfText(task.title || '', language),
+      formatPdfText(formatStatusForExport(task.status, language), language),
+      formatPdfText(formatPriorityForExport(task.priority, language), language),
+      formatPdfText(task.assignedTo?.length > 0 ? task.assignedTo[0].name : L('unassigned'), language),
+      formatPdfText(task.description || '', language),
+      isArabicExport(language) ? formatExportDate(task.deadline, language) : (formatDate(task.deadline) || '')
     ]);
     
     // AutoTable configuration with improved styling
     doc.autoTable({
       head: [tableColumn],
-      body: tableRows,
+      body: orderRowsForLanguage(tableRows, language),
       startY: contentStartY + 60,
       styles: {
         fontSize: 8,
         cellPadding: 3,
         overflow: 'linebreak',
-        halign: 'left'
+        halign: isArabicExport(language) ? 'right' : 'left'
       },
       headStyles: {
         fillColor: [26, 35, 126],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 9
+        fontSize: 9,
+        halign: isArabicExport(language) ? 'right' : 'left'
       },
       alternateRowStyles: {
         fillColor: [245, 245, 245]
@@ -465,6 +517,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
       margin: { top: 10, left: 14, right: 14 },
       tableLineColor: [200, 200, 200],
       tableLineWidth: 0.1,
+      didParseCell: (data) => localizePdfTable(data, language, fontLoaded)
     });
     
     // Add footer to all pages
@@ -474,7 +527,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `Page ${i} of ${pageCount} | MIRSAT Calendar Events Report`, 
+        formatPdfText(`${L('page')} ${i} ${L('of')} ${pageCount} | ${L('calendarEventsReport')}`, language), 
         doc.internal.pageSize.width / 2, 
         doc.internal.pageSize.height - 10, 
         { align: 'center' }
@@ -486,38 +539,24 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
   };
 
   // Generate CSV with custom filename
-  const generateCSVExport = (tasksData, fileName) => {
+  const generateCSVExport = (tasksData, fileName, language = 'en') => {
+    const L = (key) => exportText(language, key);
     // Prepare CSV data
-    const headers = ["Title", "Status", "Priority", "Assigned To", "Description", "Deadline"];
+    const headers = [L('title'), L('status'), L('priority'), L('assignedTo'), L('description'), L('deadline')];
     
     const csvData = tasksData.map(task => [
       task.title || '',
-      task.status || '',
-      task.priority || '',
-      task.assignedTo?.length > 0 ? task.assignedTo[0].name : 'Unassigned',
+      formatStatusForExport(task.status, language),
+      formatPriorityForExport(task.priority, language),
+      task.assignedTo?.length > 0 ? task.assignedTo[0].name : L('unassigned'),
       task.description || '',
-      formatDate(task.deadline) || ''
+      isArabicExport(language) ? formatExportDate(task.deadline, language) : (formatDate(task.deadline) || '')
     ]);
     
     // Add headers
     csvData.unshift(headers);
     
-    // Convert to CSV format
-    const csvContent = csvData.map(row => row.map(cell => {
-      // Escape quotes and wrap cells with quotes if they contain commas or quotes
-      const escaped = String(cell).replace(/"/g, '""');
-      return /[,"]/.test(escaped) ? `"${escaped}"` : escaped;
-    }).join(',')).join('\n');
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${fileName}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(orderRowsForLanguage(csvData, language), fileName, language);
   };
 
   // Helper function to format dates

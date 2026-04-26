@@ -44,6 +44,17 @@ import api from '../../services/api';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import {
+  exportText,
+  formatExportDate,
+  formatPdfText,
+  formatStatusForExport,
+  isArabicExport,
+  loadPdfArabicFont,
+  localizePdfTable,
+  orderForLanguage,
+  orderRowsForLanguage
+} from '../../utils/exportLocalization';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -1384,12 +1395,15 @@ const UserList = () => {
     toast.success('Email copied to clipboard');
   };
   
-  const generatePDF = (users) => {
+  const generatePDF = async (users, language = 'en') => {
     const doc = new jsPDF();
+    const fontLoaded = await loadPdfArabicFont(doc);
+    const L = (key) => exportText(language, key);
+    const pageWidth = doc.internal.pageSize.width;
     
     // Set document properties for better identification
     doc.setProperties({
-      title: 'User Management Report',
+      title: L('userManagementReport'),
       subject: 'MIRSAT System User Report',
       creator: 'MIRSAT System'
     });
@@ -1401,12 +1415,13 @@ const UserList = () => {
     // Add title with proper positioning
     doc.setFontSize(22);
     doc.setTextColor(255, 255, 255); // White color
-    doc.text('User Management Report', doc.internal.pageSize.width / 2, 25, { align: 'center' });
+    if (isArabicExport(language) && fontLoaded) doc.setFont('NotoNaskhArabic', 'normal');
+    doc.text(formatPdfText(L('userManagementReport'), language), pageWidth / 2, 25, { align: 'center' });
     
     // Add subtitle and date with proper spacing
     doc.setFontSize(10);
     doc.setTextColor(200, 200, 200); // Light gray for subtitle in header
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.width / 2, 35, { align: 'center' });
+    doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`, language), pageWidth / 2, 35, { align: 'center' });
     
     // Add organization logo or name if available
     // doc.addImage('path-to-logo', 'PNG', 15, 10, 20, 20);
@@ -1417,41 +1432,37 @@ const UserList = () => {
     // Add summary section
     doc.setFontSize(14);
     doc.setTextColor(26, 35, 126); // var(--color-navy)
-    doc.text('Summary', 15, contentStartY);
+    doc.text(formatPdfText(L('summary'), language), isArabicExport(language) ? pageWidth - 15 : 15, contentStartY, { align: isArabicExport(language) ? 'right' : 'left' });
     
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Total Users: ${users.length}`, 15, contentStartY + 10);
+    const summaryX = isArabicExport(language) ? pageWidth - 15 : 15;
+    const summaryAlign = isArabicExport(language) ? 'right' : 'left';
+    doc.text(formatPdfText(`${L('totalUsers')}: ${users.length}`, language), summaryX, contentStartY + 10, { align: summaryAlign });
     
     // Count active and inactive users
     const activeUsers = users.filter(user => user.isActive).length;
     const inactiveUsers = users.length - activeUsers;
     
-    doc.text(`Active Users: ${activeUsers}`, 15, contentStartY + 20);
-    doc.text(`Inactive Users: ${inactiveUsers}`, 15, contentStartY + 30);
+    doc.text(formatPdfText(`${L('activeUsers')}: ${activeUsers}`, language), summaryX, contentStartY + 20, { align: summaryAlign });
+    doc.text(formatPdfText(`${L('inactiveUsers')}: ${inactiveUsers}`, language), summaryX, contentStartY + 30, { align: summaryAlign });
     
     // Prepare table data with better structure
-    const tableColumn = [
-      "Name", 
-      "Email",
-      "Role",
-      "Status",
-      "Last Active"
-    ];
+    const tableColumn = orderForLanguage([L('name'), L('email'), L('role'), L('status'), L('lastActive')].map(label => formatPdfText(label, language)), language);
     
     // Process data for better presentation
     const tableRows = users.map(user => [
-      user.name || 'Not specified',
-      user.email || 'Not specified',
-      user.role || 'N/A',
-      user.isActive ? 'Active' : 'Inactive',
-      formatTimestamp(user.lastLogin) || 'Never'
+      formatPdfText(user.name || L('notSpecified'), language),
+      user.email || L('notSpecified'),
+      formatPdfText(user.role || L('na'), language),
+      formatPdfText(user.isActive ? L('active') : L('inactive'), language),
+      user.lastLogin ? (isArabicExport(language) ? formatExportDate(user.lastLogin, language, { includeTime: true }) : formatTimestamp(user.lastLogin)) : L('never')
     ]);
     
     // Add table with improved styling
     doc.autoTable({
       head: [tableColumn],
-      body: tableRows,
+      body: orderRowsForLanguage(tableRows, language),
       startY: contentStartY + 45,
       styles: { 
         fontSize: 9,
@@ -1482,7 +1493,7 @@ const UserList = () => {
         // Customize status column appearance
         if (data.section === 'body' && data.column.index === 3) {
           const status = data.cell.raw;
-          if (status === 'Active') {
+          if (status === 'Active' || status === L('active')) {
             doc.setFillColor(232, 245, 233); // Light green for active
             doc.setTextColor(46, 125, 50);   // Dark green text
           } else {
@@ -1493,6 +1504,7 @@ const UserList = () => {
       },
       // Reset colors after cell is drawn
       didParseCell: (data) => {
+        localizePdfTable(data, language, fontLoaded);
         if (data.section === 'body') {
           doc.setTextColor(60, 60, 60); // Default text color
         }
@@ -1511,7 +1523,7 @@ const UserList = () => {
     for(let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.text(
-        `Page ${i} of ${pageCount} | MIRSAT User Management Report`, 
+        formatPdfText(`${L('page')} ${i} ${L('of')} ${pageCount} | ${L('userManagementFooter')}`, language), 
         doc.internal.pageSize.width / 2, 
         doc.internal.pageSize.height - 10,
         { align: 'center' }
@@ -1527,7 +1539,7 @@ const UserList = () => {
     setShowExportDropdown(false);
   };
 
-  const handleConfirmExport = async (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!pendingExport) return;
     
     try {
@@ -1535,7 +1547,7 @@ const UserList = () => {
       
       switch(format) {
         case 'pdf':
-          const doc = generatePDF(data);
+          const doc = await generatePDF(data, language);
           if (doc) {
             doc.save(`${fileName}.pdf`);
             toast.success('PDF exported successfully');
@@ -1544,7 +1556,10 @@ const UserList = () => {
           
         case 'csv':
           try {
-            const response = await api.get('/users/export', { responseType: 'blob' });
+            const response = await api.get('/users/export', {
+              params: { language },
+              responseType: 'blob'
+            });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;

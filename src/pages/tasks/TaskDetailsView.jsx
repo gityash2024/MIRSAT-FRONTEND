@@ -672,12 +672,13 @@ const TaskDetailsView = () => {
     setShowDocumentNamingModal(true);
   };
 
-  const handleConfirmExport = async (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!currentTask) return;
 
     const formatLabels = {
       excel: 'Excel',
       word: 'Word',
+      docx: 'Word',
       pdf: 'PDF'
     };
 
@@ -690,7 +691,8 @@ const TaskDetailsView = () => {
       await dispatch(exportTaskReport({
         taskId: currentTask._id,
         format: selectedExportFormat,
-        fileName: fileName
+        fileName: fileName,
+        language
       })).unwrap();
 
       toast.dismiss();
@@ -1371,10 +1373,10 @@ const TaskDetailsView = () => {
                   <FileSpreadsheet size={16} />
                   {t('common.exportAsExcel')}
                 </ExportOption>
-                {/* <ExportOption onClick={() => handleExportFormat('word')}>
+                <ExportOption onClick={() => handleExportFormat('docx')}>
                   <FileText size={16} />
                   Export as Word
-                </ExportOption> */}
+                </ExportOption>
                 <ExportOption onClick={() => handleExportFormat('pdf')}>
                   <FileText size={16} />
                   {t('common.exportAsPDF')}

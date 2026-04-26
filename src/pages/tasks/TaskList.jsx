@@ -15,9 +15,22 @@ import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
-import ArabicReshaper from 'arabic-reshaper';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
+import { taskService } from '../../services/task.service';
+import {
+  downloadCsv,
+  exportText,
+  formatExportDate,
+  formatPdfText,
+  formatPriorityForExport,
+  formatStatusForExport,
+  isArabicExport,
+  loadPdfArabicFont,
+  localizePdfTable,
+  orderForLanguage,
+  orderRowsForLanguage
+} from '../../utils/exportLocalization';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -791,6 +804,36 @@ const loadTasks = async () => {
   const hasAppliedCriteria = hasActiveFilters || !!(filters?.search && String(filters.search).trim());
   const clearAllLabel = t('common.clearAll') === 'common.clearAll' ? 'Clear All' : t('common.clearAll');
 
+  const buildExportQueryParams = () => {
+    const queryParams = {
+      page: 1,
+      limit: pagination?.total || 10000
+    };
+
+    const arrayFilterKeys = ['status', 'priority', 'assignedTo', 'inspectionLevel', 'assetType', 'asset'];
+    arrayFilterKeys.forEach((key) => {
+      if (Array.isArray(filters?.[key]) && filters[key].length > 0) {
+        queryParams[key] = filters[key];
+      }
+    });
+
+    if (typeof filters?.search === 'string' && filters.search.trim()) {
+      queryParams.search = filters.search.trim();
+    }
+
+    return queryParams;
+  };
+
+  const fetchAllTasksForExport = async () => {
+    const response = await taskService.getTasks(buildExportQueryParams());
+    const rows = Array.isArray(response?.data) ? response.data : [];
+
+    return rows.map(task => ({
+      ...task,
+      id: task.id || task._id
+    }));
+  };
+
   const handlePageChange = (newPage) => {
     dispatch(setPagination({ page: newPage }));
   };
@@ -812,125 +855,89 @@ const loadTasks = async () => {
 
   // Export tasks to PDF
   const handleExportPDF = () => {
-    setPendingExport({ format: 'pdf', data: tasks });
+    setPendingExport({ format: 'pdf' });
     setShowDocumentModal(true);
     setShowExportDropdown(false);
   };
 
   // Export tasks to CSV
   const handleExportCSV = () => {
-    setPendingExport({ format: 'csv', data: tasks });
+    setPendingExport({ format: 'csv' });
     setShowDocumentModal(true);
     setShowExportDropdown(false);
   };
 
-  const handleConfirmExport = async (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!pendingExport) return;
 
-    const { format, data } = pendingExport;
+    const { format } = pendingExport;
 
-    if (format === 'pdf') {
-      await generatePDFExport(data, fileName);
-    } else if (format === 'csv') {
-      generateCSVExport(data, fileName);
+    try {
+      const data = await fetchAllTasksForExport();
+
+      if (format === 'pdf') {
+        await generatePDFExport(data, fileName, language);
+      } else if (format === 'csv') {
+        generateCSVExport(data, fileName, language);
+      }
+    } catch (error) {
+      console.error('Task export failed:', error);
+      toast.error(error?.response?.data?.message || error.message || 'Failed to export tasks');
+      return;
     }
 
     setShowDocumentModal(false);
     setPendingExport(null);
   };
 
-  // Helper function to check if text contains Arabic characters
-  const containsArabic = (text) => {
-    if (!text) return false;
-    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    return arabicPattern.test(text);
-  };
-
-  // Helper function to process Arabic text
-  const processArabicText = (text) => {
-    if (!text) return '';
-    try {
-      // Check if text contains Arabic characters
-      if (!containsArabic(text)) return text;
-      
-      // Reshape Arabic characters for proper display
-      const reshaped = ArabicReshaper.convertArabic(text);
-      return reshaped;
-    } catch (e) {
-      console.error('Error processing Arabic text:', e);
-      return text;
-    }
-  };
-
-  const generatePDFExport = async (tasksData, fileName) => {
+  const generatePDFExport = async (tasksData, fileName, language = 'en') => {
     try {
       toast.loading('Generating PDF...');
+      const L = (key) => exportText(language, key);
 
       // Create PDF document
       const doc = new jsPDF('landscape');
-
-      // Load Arabic font
-      const loadArabicFont = async () => {
-        try {
-          // Fetch the Noto Naskh Arabic font from CDN
-          const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf');
-          const fontArrayBuffer = await response.arrayBuffer();
-          const fontBase64 = btoa(
-            new Uint8Array(fontArrayBuffer).reduce(
-              (data, byte) => data + String.fromCharCode(byte),
-              ''
-            )
-          );
-
-          // Add the font to jsPDF
-          doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontBase64);
-          doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
-
-          return true;
-        } catch (error) {
-          console.warn('Could not load Arabic font, Arabic text may not display correctly:', error);
-          return false;
-        }
-      };
-
-      // Load the font
-      const fontLoaded = await loadArabicFont();
+      const fontLoaded = await loadPdfArabicFont(doc);
+      if (isArabicExport(language) && fontLoaded) {
+        doc.setFont('NotoNaskhArabic', 'normal');
+      }
 
       // Add title
       doc.setFontSize(20);
       doc.setTextColor(26, 35, 126); // Navy color
-      doc.text('MIRSAT - Task Report', 14, 22);
+      doc.text(formatPdfText(L('taskReport'), language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 22, { align: isArabicExport(language) ? 'right' : 'left' });
 
       // Add subtitle with date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Generated on ${format(new Date(), 'MMM d, yyyy, h:mm a')}`, 14, 30);
+      doc.text(formatPdfText(`${L('generatedOn')} ${isArabicExport(language) ? formatExportDate(new Date(), language, { includeTime: true }) : format(new Date(), 'MMM d, yyyy, h:mm a')}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 30, { align: isArabicExport(language) ? 'right' : 'left' });
 
       // Define table columns
-      const columns = [
+      const columns = orderForLanguage([
         { header: '#', dataKey: 'index' },
-        { header: 'Inspection Name', dataKey: 'title' },
-        { header: 'Template', dataKey: 'template' },
-        { header: 'Assignee', dataKey: 'assignee' },
-        { header: 'Priority', dataKey: 'priority' },
-        { header: 'Status', dataKey: 'status' },
-        { header: 'Due Date', dataKey: 'dueDate' },
-        { header: 'Progress', dataKey: 'progress' }
-      ];
+        { header: formatPdfText(L('inspectionName'), language), dataKey: 'title' },
+        { header: formatPdfText(L('template'), language), dataKey: 'template' },
+        { header: formatPdfText(L('assignee'), language), dataKey: 'assignee' },
+        { header: formatPdfText(L('priority'), language), dataKey: 'priority' },
+        { header: formatPdfText(L('status'), language), dataKey: 'status' },
+        { header: formatPdfText(L('dueDate'), language), dataKey: 'dueDate' },
+        { header: formatPdfText(L('progress'), language), dataKey: 'progress' }
+      ], language);
 
       // Prepare data for the table - process Arabic text
       const tableData = tasksData.map((task, index) => ({
         index: (index + 1).toString(),
-        title: processArabicText(task.title || 'Untitled'),
-        template: processArabicText(task.inspectionLevel?.name || 'N/A'),
-        assignee: processArabicText(
+        title: formatPdfText(task.title || L('untitled'), language),
+        template: formatPdfText(task.inspectionLevel?.name || L('na'), language),
+        assignee: formatPdfText(
           task.assignedTo && task.assignedTo.length > 0
-            ? task.assignedTo[0].name || 'Unnamed'
-            : 'Unassigned'
+            ? task.assignedTo[0].name || L('notSpecified')
+            : L('unassigned'),
+          language
         ),
-        priority: task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'N/A',
-        status: task.status?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || 'N/A',
-        dueDate: formatDate(task.deadline),
+        priority: formatPdfText(formatPriorityForExport(task.priority, language), language),
+        status: formatPdfText(formatStatusForExport(task.status, language), language),
+        dueDate: isArabicExport(language) ? formatExportDate(task.deadline, language) : formatDate(task.deadline),
         progress: `${task.overallProgress || 0}%`
       }));
 
@@ -950,7 +957,7 @@ const loadTasks = async () => {
           fillColor: [26, 35, 126],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
-          halign: 'center',
+          halign: isArabicExport(language) ? 'right' : 'center',
           font: 'helvetica' // Headers in English, use default font
         },
         alternateRowStyles: {
@@ -959,20 +966,7 @@ const loadTasks = async () => {
         tableWidth: 'auto',
         margin: { left: 14, right: 14 },
         didParseCell: function (data) {
-          // Check if cell contains Arabic text and apply Arabic font only to Arabic cells
-          if (data.cell && data.cell.text && data.cell.text.length > 0) {
-            const cellText = Array.isArray(data.cell.text) ? data.cell.text[0] : data.cell.text;
-            if (cellText && containsArabic(cellText)) {
-              if (fontLoaded) {
-                data.cell.styles.font = 'NotoNaskhArabic';
-                data.cell.styles.halign = 'right'; // Arabic is RTL
-              }
-            } else {
-              // Ensure non-Arabic cells use helvetica
-              data.cell.styles.font = 'helvetica';
-              data.cell.styles.halign = 'center';
-            }
-          }
+          localizePdfTable(data, language, fontLoaded);
         }
       });
 
@@ -988,47 +982,30 @@ const loadTasks = async () => {
     }
   };
 
-  const generateCSVExport = (tasksData, fileName) => {
+  const generateCSVExport = (tasksData, fileName, language = 'en') => {
     try {
       toast.loading('Generating CSV...');
+      const L = (key) => exportText(language, key);
 
       // Define the headers
-      const headers = ['Inspection Name', 'Template', 'Assignee', 'Priority', 'Status', 'Due Date', 'Progress'];
+      const headers = [L('inspectionName'), L('template'), L('assignee'), L('priority'), L('status'), L('dueDate'), L('progress')];
 
       // Prepare the data
       const csvData = tasksData.map(task => [
-        task.title || 'Untitled',
-        task.inspectionLevel?.name || 'N/A',
+        task.title || L('untitled'),
+        task.inspectionLevel?.name || L('na'),
         task.assignedTo && task.assignedTo.length > 0
-          ? task.assignedTo[0].name || 'Unnamed'
-          : 'Unassigned',
-        task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1) || 'N/A',
-        task.status?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l.toUpperCase()) || 'N/A',
-        formatDate(task.deadline),
+          ? task.assignedTo[0].name || L('notSpecified')
+          : L('unassigned'),
+        formatPriorityForExport(task.priority, language),
+        formatStatusForExport(task.status, language),
+        isArabicExport(language) ? formatExportDate(task.deadline, language) : formatDate(task.deadline),
         `${task.overallProgress || 0}%`
       ]);
 
       // Add headers to the data
       csvData.unshift(headers);
-
-      // Convert to CSV string
-      const csvContent = csvData.map(row =>
-        row.map(cell => {
-          // Escape quotes and wrap in quotes if contains commas or quotes
-          const escaped = String(cell).replace(/"/g, '""');
-          return /[,"]/.test(escaped) ? `"${escaped}"` : escaped;
-        }).join(',')
-      ).join('\n');
-
-      // Create a download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${fileName}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCsv(orderRowsForLanguage(csvData, language), fileName, language);
 
       toast.dismiss();
       toast.success('CSV generated successfully');

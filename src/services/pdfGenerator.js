@@ -1,6 +1,16 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import ArabicReshaper from 'arabic-reshaper';
+import {
+  exportText,
+  formatExportDate,
+  formatPdfText as formatLocalizedPdfText,
+  formatStatusForExport,
+  isArabicExport,
+  normalizeExportLanguage,
+  orderForLanguage,
+  orderRowsForLanguage
+} from '../utils/exportLocalization';
 
 const HEADER_HEIGHT = 28;
 const TOP_MARGIN = 14;
@@ -62,13 +72,19 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
-const formatDuration = (secondsValue) => {
+const formatDuration = (secondsValue, language = 'en') => {
   const seconds = Number(secondsValue || 0);
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0 mins';
+  const rtl = isArabicExport(language);
+  if (!Number.isFinite(seconds) || seconds <= 0) return rtl ? '0 دقيقة' : '0 mins';
   const minutes = Math.round(seconds / 60);
-  if (minutes <= 0) return '0 mins';
+  if (minutes <= 0) return rtl ? '0 دقيقة' : '0 mins';
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
+  if (rtl) {
+    if (hours <= 0) return `${remaining} دقيقة`;
+    if (remaining <= 0) return `${hours} ساعة`;
+    return `${hours} ساعة ${remaining} دقيقة`;
+  }
   if (hours <= 0) return `${remaining} min${remaining === 1 ? '' : 's'}`;
   if (remaining <= 0) return `${hours} hr${hours === 1 ? '' : 's'}`;
   return `${hours} hr${hours === 1 ? '' : 's'} ${remaining} min${remaining === 1 ? '' : 's'}`;
@@ -137,18 +153,20 @@ const findResponseMetadata = (metadataMap, questionId, responseKey = null) => {
   return fuzzyKey ? metadataMap[fuzzyKey] : null;
 };
 
-const formatCaptureMetadata = (metadata) => {
+const formatCaptureMetadata = (metadata, language = 'en') => {
   if (!metadata || typeof metadata !== 'object') return '';
 
-  const captured = metadata.capturedAt ? formatDateTime(metadata.capturedAt) : 'N/A';
+  const captured = metadata.capturedAt
+    ? (isArabicExport(language) ? formatExportDate(metadata.capturedAt, language, { includeTime: true }) : formatDateTime(metadata.capturedAt))
+    : exportText(language, 'na');
   const latitude = metadata.location?.latitude;
   const longitude = metadata.location?.longitude;
   const hasCoords = latitude !== undefined && longitude !== undefined;
   const coords = hasCoords
     ? `${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}`
-    : 'Unavailable';
+    : exportText(language, 'unavailable');
 
-  return `Captured: ${captured}\nCoordinates: ${coords}`;
+  return `${exportText(language, 'captured')}: ${captured}\n${exportText(language, 'coordinates')}: ${coords}`;
 };
 
 const extractQuestionRows = (taskData) => {
@@ -355,9 +373,9 @@ const fetchImageSource = async (imageSource) => {
   return null;
 };
 
-const responseToDisplay = async (response) => {
+const responseToDisplay = async (response, language = 'en') => {
   if (response === null || response === undefined || response === '') {
-    return { text: 'No response', image: null };
+    return { text: exportText(language, 'noResponse'), image: null };
   }
 
   if (Array.isArray(response)) {
@@ -366,23 +384,23 @@ const responseToDisplay = async (response) => {
 
   const value = String(response);
   if (value.startsWith('data:image/')) {
-    return { text: 'Image uploaded', image: value };
+    return { text: exportText(language, 'imageUploaded'), image: value };
   }
   if (value.startsWith('http://') || value.startsWith('https://')) {
     const fetched = await fetchImageSource(value);
-    return fetched ? { text: 'Image uploaded', image: fetched } : { text: value, image: null };
+    return fetched ? { text: exportText(language, 'imageUploaded'), image: fetched } : { text: value, image: null };
   }
   if (value.startsWith('data:')) {
-    return { text: 'File uploaded', image: null };
+    return { text: exportText(language, 'fileUploaded'), image: null };
   }
 
   return { text: safeText(value), image: null };
 };
 
-const buildResponseCellText = (display, metadata) => {
-  const lines = [safeText(display?.text || 'No response')];
+const buildResponseCellText = (display, metadata, language = 'en') => {
+  const lines = [safeText(display?.text || exportText(language, 'noResponse'))];
   if (metadata) {
-    const metaText = formatCaptureMetadata(metadata);
+    const metaText = formatCaptureMetadata(metadata, language);
     if (metaText) lines.push(metaText);
   }
   return lines.join('\n');
@@ -404,7 +422,9 @@ const drawPageDecorations = ({
   leftLogo,
   rightLogo,
   colors,
-  generatedAt
+  generatedAt,
+  language = 'en',
+  fontLoaded = false
 }) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
@@ -424,23 +444,36 @@ const drawPageDecorations = ({
   doc.setDrawColor(colors.border);
   doc.line(SIDE_MARGIN, TOP_MARGIN + 6, pageWidth - SIDE_MARGIN, TOP_MARGIN + 6);
 
-  doc.setFont('helvetica', 'normal');
+  if (isArabicExport(language) && fontLoaded) {
+    doc.setFont('NotoNaskhArabic', 'normal');
+  } else {
+    doc.setFont('helvetica', 'normal');
+  }
   doc.setFontSize(7.5);
   doc.setTextColor(colors.muted);
+  const generatedText = formatLocalizedPdfText(`${exportText(language, 'generatedOn')} ${generatedAt}`, language);
+  const pageText = formatLocalizedPdfText(`${exportText(language, 'page')} ${pageNumber}/${totalPages}`, language);
   doc.text(
-    `Generated on ${generatedAt}`,
-    SIDE_MARGIN,
-    pageHeight - 6
+    generatedText,
+    isArabicExport(language) ? pageWidth - SIDE_MARGIN : SIDE_MARGIN,
+    pageHeight - 6,
+    { align: isArabicExport(language) ? 'right' : 'left' }
   );
   doc.text(
-    `Page ${pageNumber}/${totalPages}`,
-    pageWidth - SIDE_MARGIN,
+    pageText,
+    isArabicExport(language) ? SIDE_MARGIN : pageWidth - SIDE_MARGIN,
     pageHeight - 6,
-    { align: 'right' }
+    { align: isArabicExport(language) ? 'left' : 'right' }
   );
 };
 
-export const generateTaskPDF = async (taskData) => {
+export const generateTaskPDF = async (taskData, language = 'en') => {
+  const exportLanguage = normalizeExportLanguage(language);
+  const L = (key) => exportText(exportLanguage, key);
+  const pdfText = (value) => formatLocalizedPdfText(value, exportLanguage);
+  const blank = (value) => (
+    value === null || value === undefined || value === '' ? L('na') : String(value)
+  );
   const normalizedTaskData = normalizeTaskDataInput(taskData);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const fontLoaded = await loadArabicFont(doc);
@@ -459,6 +492,7 @@ export const generateTaskPDF = async (taskData) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const contentWidth = pageWidth - (SIDE_MARGIN * 2);
+  const rtl = isArabicExport(exportLanguage);
 
   const responses = normalizedTaskData?.questionnaireResponses || {};
   const responseMetadata = normalizedTaskData?.responseMetadata || {};
@@ -500,7 +534,7 @@ export const generateTaskPDF = async (taskData) => {
       maxWidth
     } = opts;
 
-    const content = safeText(value);
+    const content = isArabicExport(exportLanguage) ? pdfText(blank(value)) : safeText(value);
     doc.setFontSize(size);
     doc.setTextColor(color);
 
@@ -516,48 +550,50 @@ export const generateTaskPDF = async (taskData) => {
       return lines.length * (size * 0.45);
     }
 
-    doc.text(content, x, yPos, { align });
+    doc.text(content, x, yPos, { align: isArabicExport(exportLanguage) && align === 'left' ? 'right' : align });
     return size * 0.45;
   };
 
   // Title and labels
-  text('Inspection Report', pageWidth / 2, y, { size: 14, style: 'bold', align: 'center', color: colors.navy });
+  text(L('inspectionReport'), pageWidth / 2, y, { size: 14, style: 'bold', align: 'center', color: colors.navy });
   y += 8;
-  text(`Template: ${templateName}`, SIDE_MARGIN, y, { size: 10, style: 'bold' });
+  text(`${L('template')}: ${templateName}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 10, style: 'bold' });
   y += 5;
-  text(`Asset: ${assetName}`, SIDE_MARGIN, y, { size: 10, style: 'bold' });
+  text(`${L('asset')}: ${assetName}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 10, style: 'bold' });
   y += 8;
 
   // Inspection details table
   ensureSpace(40);
-  text('Inspection Details', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+  text(L('inspectionReport'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
   y += 4;
 
   const detailsRows = [
-    ['Inspection Title', safeText(normalizedTaskData?.title)],
-    ['Template Name', safeText(templateName)],
-    ['Asset Name', safeText(assetName)],
-    ['Asset Type', safeText(normalizedTaskData?.asset?.type)],
-    ['Asset City', safeText(normalizedTaskData?.asset?.city)],
-    ['Asset Location', safeText(normalizedTaskData?.asset?.location || normalizedTaskData?.location)],
-    ['Description', safeText(normalizedTaskData?.description)],
-    ['Created At', formatDateTime(normalizedTaskData?.createdAt)],
-    ['Closed At', formatDateTime(normalizedTaskData?.signedAt || normalizedTaskData?.updatedAt)],
-    ['Inspector', safeText(inspector)],
-    ['Department', safeText(department)],
-    ['Status', safeText(normalizedTaskData?.status).replace(/_/g, ' ')]
-  ];
+    [L('title'), blank(normalizedTaskData?.title)],
+    [L('template'), blank(templateName)],
+    [L('asset'), blank(assetName)],
+    [L('assetType'), blank(normalizedTaskData?.asset?.type)],
+    [L('city'), blank(normalizedTaskData?.asset?.city)],
+    [L('location'), blank(normalizedTaskData?.asset?.location || normalizedTaskData?.location)],
+    [L('description'), blank(normalizedTaskData?.description)],
+    [L('createdAt'), formatExportDate(normalizedTaskData?.createdAt, exportLanguage, { includeTime: true })],
+    [L('closedAt'), formatExportDate(normalizedTaskData?.signedAt || normalizedTaskData?.updatedAt, exportLanguage, { includeTime: true })],
+    [L('inspector'), blank(inspector)],
+    [L('department'), blank(department)],
+    [L('status'), formatStatusForExport(normalizedTaskData?.status, exportLanguage)]
+  ].map((row) => row.map((cell) => pdfText(cell)));
 
   doc.autoTable({
     startY: y,
-    head: [['Property', 'Value']],
-    body: detailsRows,
+    head: [orderForLanguage([L('property'), L('value')].map((cell) => pdfText(cell)), exportLanguage)],
+    body: orderRowsForLanguage(detailsRows, exportLanguage),
     theme: 'grid',
     margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
     headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 8.5, textColor: colors.text },
     styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2.2 },
-    columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: contentWidth - 40 } },
+    columnStyles: rtl
+      ? { 0: { cellWidth: contentWidth - 40, halign: 'right' }, 1: { cellWidth: 40, halign: 'right' } }
+      : { 0: { cellWidth: 40 }, 1: { cellWidth: contentWidth - 40 } },
     didParseCell: (data) => applyArabicCellFont(data, fontLoaded)
   });
 
@@ -568,12 +604,12 @@ export const generateTaskPDF = async (taskData) => {
   const cardGap = 4;
   const cardW = (contentWidth - (cardGap * 2)) / 3;
   const cardH = 24;
-  const durationText = formatDuration(normalizedTaskData?.taskMetrics?.timeSpent);
+  const durationText = formatDuration(normalizedTaskData?.taskMetrics?.timeSpent, exportLanguage);
 
   const cards = [
-    { title: 'Score', value: `${scoreSummary.percentage}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
-    { title: 'Flagged Items', value: String(flaggedItems.length), subtitle: 'Task specific', color: colors.danger },
-    { title: 'Duration', value: durationText, subtitle: 'Total time', color: colors.warning }
+    { title: L('score'), value: `${scoreSummary.percentage}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
+    { title: L('flaggedItems'), value: String(flaggedItems.length), subtitle: L('task'), color: colors.danger },
+    { title: L('duration'), value: durationText, subtitle: L('total'), color: colors.warning }
   ];
 
   cards.forEach((card, index) => {
@@ -582,7 +618,7 @@ export const generateTaskPDF = async (taskData) => {
     doc.setDrawColor(colors.border);
     doc.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
 
-    text(card.title, x + 2, y + 6, { size: 8, style: 'bold', color: colors.muted });
+    text(card.title, rtl ? x + cardW - 2 : x + 2, y + 6, { size: 8, style: 'bold', align: rtl ? 'right' : 'left', color: colors.muted });
     text(card.value, x + (cardW / 2), y + 14, { size: 14, style: 'bold', align: 'center', color: card.color });
     text(card.subtitle, x + (cardW / 2), y + 20, { size: 7.5, align: 'center', color: colors.muted });
   });
@@ -592,52 +628,61 @@ export const generateTaskPDF = async (taskData) => {
   // Pre-inspection questionnaire
   if (preInspectionQuestions.length > 0) {
     ensureSpace(24);
-    text('Pre-inspection questionnaire', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+    text(L('preInspectionQuestionnaire'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
     y += 4;
 
     const preImageMap = new Map();
     const preRows = await Promise.all(preInspectionQuestions.map(async (question, index) => {
       const questionId = question?._id?.toString() || question?.id?.toString();
       const { key, value } = findResponseEntry(responses, questionId);
-      const display = await responseToDisplay(value);
+      const display = await responseToDisplay(value, exportLanguage);
       const metadata = findResponseMetadata(responseMetadata, questionId, key);
 
       if (display.image) preImageMap.set(index, display.image);
 
-      const responseCell = buildResponseCellText(display, metadata);
+      const responseCell = buildResponseCellText(display, metadata, exportLanguage);
 
-      return [String(index + 1), safeText(question?.text || question?.question), responseCell || 'No response'];
+      return [String(index + 1), blank(question?.text || question?.question), responseCell || L('noResponse')].map((cell) => pdfText(cell));
     }));
+
+    const preResponseColumn = rtl ? 0 : 2;
 
     doc.autoTable({
       startY: y,
-      head: [['SN', 'Question', 'Answer']],
-      body: preRows,
+      head: [orderForLanguage(['#', L('question'), L('answer')].map((cell) => pdfText(cell)), exportLanguage)],
+      body: orderRowsForLanguage(preRows, exportLanguage),
       theme: 'grid',
       margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
       headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
       bodyStyles: { fontSize: 8.2, textColor: colors.text, minCellHeight: 10 },
       styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
       rowPageBreak: 'avoid',
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 95 },
-        2: { cellWidth: contentWidth - 105 }
-      },
+      columnStyles: rtl
+        ? {
+          0: { cellWidth: contentWidth - 82, halign: 'right' },
+          1: { cellWidth: 72, halign: 'right' },
+          2: { cellWidth: 10, halign: 'center' }
+        }
+        : {
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 72 },
+          2: { cellWidth: contentWidth - 82 }
+        },
       didParseCell: (data) => {
         applyArabicCellFont(data, fontLoaded);
-        if (data.section === 'body' && data.column.index === 2 && preImageMap.has(data.row.index)) {
+        if (data.section === 'body' && data.column.index === preResponseColumn && preImageMap.has(data.row.index)) {
           data.cell.styles.minCellHeight = 14;
           data.cell.styles.valign = 'top';
         }
       },
       didDrawCell: (data) => {
-        if (data.column.index === 2 && preImageMap.has(data.row.index)) {
+        if (data.column.index === preResponseColumn && preImageMap.has(data.row.index)) {
           try {
             const image = preImageMap.get(data.row.index);
             const targetH = Math.max(8, Math.min(10, data.cell.height - 2));
             const targetW = targetH * 1.6;
-            doc.addImage(image, 'PNG', data.cell.x + data.cell.width - targetW - 1, data.cell.y + 1, targetW, targetH);
+            const imageX = rtl ? data.cell.x + 1 : data.cell.x + data.cell.width - targetW - 1;
+            doc.addImage(image, 'PNG', imageX, data.cell.y + 1, targetW, targetH);
           } catch (error) {
             // keep text fallback only
           }
@@ -650,27 +695,33 @@ export const generateTaskPDF = async (taskData) => {
 
   // Flagged items summary
   ensureSpace(24);
-  text('Flagged Items Summary', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+  text(L('flaggedItemsSummary'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
   y += 4;
 
   const flaggedRows = flaggedItems.length > 0
-    ? flaggedItems.map((item) => [String(item.itemNo), safeText(item.checkpoint), safeText(item.status)])
-    : [['-', 'No flagged items for this inspection', '-']];
+    ? flaggedItems.map((item) => [String(item.itemNo), blank(item.checkpoint), blank(item.status)].map((cell) => pdfText(cell)))
+    : [['-', L('noFlaggedItems'), '-'].map((cell) => pdfText(cell))];
 
   doc.autoTable({
     startY: y,
-    head: [['Item No.', 'Checkpoint', 'Status']],
-    body: flaggedRows,
+    head: [orderForLanguage([L('itemNo'), L('checkpoint'), L('status')].map((cell) => pdfText(cell)), exportLanguage)],
+    body: orderRowsForLanguage(flaggedRows, exportLanguage),
     theme: 'grid',
     margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
     headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 8.2, textColor: colors.text },
     styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
-    columnStyles: {
-      0: { cellWidth: 18, halign: 'center' },
-      1: { cellWidth: contentWidth - 50 },
-      2: { cellWidth: 32 }
-    },
+    columnStyles: rtl
+      ? {
+        0: { cellWidth: 32, halign: 'right' },
+        1: { cellWidth: contentWidth - 50, halign: 'right' },
+        2: { cellWidth: 18, halign: 'center' }
+      }
+      : {
+        0: { cellWidth: 18, halign: 'center' },
+        1: { cellWidth: contentWidth - 50 },
+        2: { cellWidth: 32 }
+      },
     didParseCell: (data) => applyArabicCellFont(data, fontLoaded)
   });
 
@@ -701,60 +752,70 @@ export const generateTaskPDF = async (taskData) => {
 
     for (const [pageNo, pageData] of groupedByPage.entries()) {
       ensureSpace(14);
-      text(`Page ${pageNo}: ${safeText(pageData.pageName)}`, SIDE_MARGIN, y, { size: 11, style: 'bold', color: colors.navy });
+      text(`${L('pageLabel')} ${pageNo}: ${blank(pageData.pageName)}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 11, style: 'bold', color: colors.navy });
       y += 5;
 
       for (const [sectionNo, sectionData] of pageData.sections.entries()) {
         ensureSpace(12);
-        text(`Section ${sectionNo}: ${safeText(sectionData.sectionName)}`, SIDE_MARGIN, y, { size: 10, style: 'bold', color: colors.text });
+        text(`${L('section')} ${sectionNo}: ${blank(sectionData.sectionName)}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 10, style: 'bold', color: colors.text });
         y += 4;
 
         const imageMap = new Map();
         const rows = await Promise.all(sectionData.rows.map(async (row, index) => {
           const { key, value } = findResponseEntry(responses, row.id);
-          const display = await responseToDisplay(value);
+          const display = await responseToDisplay(value, exportLanguage);
           const metadata = findResponseMetadata(responseMetadata, row.id, key);
 
           if (display.image) imageMap.set(index, display.image);
 
-          const responseCell = buildResponseCellText(display, metadata);
+          const responseCell = buildResponseCellText(display, metadata, exportLanguage);
 
           const scoreLabel = getQuestionScoreLabel(row.question, value);
           const checkpoint = safeText(row.question?.text || row.question?.question);
 
-          return [row.number, checkpoint, responseCell || 'No response', scoreLabel];
+          return [row.number, checkpoint, responseCell || L('noResponse'), scoreLabel].map((cell) => pdfText(cell));
         }));
+
+        const responseColumn = rtl ? 1 : 2;
 
         doc.autoTable({
           startY: y,
-          head: [['No.', 'Checkpoint', 'Response', 'Score']],
-          body: rows,
+          head: [orderForLanguage(['#', L('checkpoint'), L('response'), L('score')].map((cell) => pdfText(cell)), exportLanguage)],
+          body: orderRowsForLanguage(rows, exportLanguage),
           theme: 'grid',
           margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
           headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 8.5 },
           bodyStyles: { fontSize: 8, textColor: colors.text, minCellHeight: 10 },
           styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
           rowPageBreak: 'avoid',
-          columnStyles: {
-            0: { cellWidth: 20, halign: 'center' },
-            1: { cellWidth: 72 },
-            2: { cellWidth: contentWidth - 112 },
-            3: { cellWidth: 20, halign: 'center' }
-          },
+          columnStyles: rtl
+            ? {
+              0: { cellWidth: 20, halign: 'center' },
+              1: { cellWidth: contentWidth - 112, halign: 'right' },
+              2: { cellWidth: 72, halign: 'right' },
+              3: { cellWidth: 20, halign: 'center' }
+            }
+            : {
+              0: { cellWidth: 20, halign: 'center' },
+              1: { cellWidth: 72 },
+              2: { cellWidth: contentWidth - 112 },
+              3: { cellWidth: 20, halign: 'center' }
+            },
           didParseCell: (data) => {
             applyArabicCellFont(data, fontLoaded);
-            if (data.section === 'body' && data.column.index === 2 && imageMap.has(data.row.index)) {
+            if (data.section === 'body' && data.column.index === responseColumn && imageMap.has(data.row.index)) {
               data.cell.styles.minCellHeight = 14;
               data.cell.styles.valign = 'top';
             }
           },
           didDrawCell: (data) => {
-            if (data.column.index === 2 && imageMap.has(data.row.index)) {
+            if (data.column.index === responseColumn && imageMap.has(data.row.index)) {
               try {
                 const image = imageMap.get(data.row.index);
                 const targetH = Math.max(7, Math.min(9, data.cell.height - 2));
                 const targetW = targetH * 1.6;
-                doc.addImage(image, 'PNG', data.cell.x + data.cell.width - targetW - 1, data.cell.y + 1, targetW, targetH);
+                const imageX = rtl ? data.cell.x + 1 : data.cell.x + data.cell.width - targetW - 1;
+                doc.addImage(image, 'PNG', imageX, data.cell.y + 1, targetW, targetH);
               } catch (error) {
                 // keep text fallback only
               }
@@ -770,26 +831,26 @@ export const generateTaskPDF = async (taskData) => {
   // Signature
   if (normalizedTaskData?.signature || normalizedTaskData?.signedAt) {
     ensureSpace(34);
-    text('Signature', SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
+    text(L('signature'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 12, style: 'bold', color: colors.navy });
     y += 4;
 
     if (normalizedTaskData?.signature && typeof normalizedTaskData.signature === 'string') {
       const signatureImage = await fetchImageSource(normalizedTaskData.signature) || normalizedTaskData.signature;
       if (signatureImage && typeof signatureImage === 'string' && signatureImage.startsWith('data:image/')) {
         try {
-          doc.addImage(signatureImage, 'PNG', SIDE_MARGIN, y, 62, 24);
+          doc.addImage(signatureImage, 'PNG', rtl ? pageWidth - SIDE_MARGIN - 62 : SIDE_MARGIN, y, 62, 24);
         } catch (error) {
-          text('Digital signature available', SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
+          text(L('digitallySigned'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
         }
       } else {
-        text('Digital signature available', SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
+        text(L('digitallySigned'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
       }
     }
 
-    const signatureMetadataText = formatCaptureMetadata(normalizedTaskData?.signatureMetadata);
-    text(`Signed at: ${formatDateTime(normalizedTaskData?.signedAt)}`, SIDE_MARGIN, y + 28, { size: 9, color: colors.text });
+    const signatureMetadataText = formatCaptureMetadata(normalizedTaskData?.signatureMetadata, exportLanguage);
+    text(`${L('signedAt')}: ${formatExportDate(normalizedTaskData?.signedAt, exportLanguage, { includeTime: true })}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y + 28, { size: 9, color: colors.text });
     if (signatureMetadataText) {
-      text(signatureMetadataText, SIDE_MARGIN, y + 33, { size: 8.5, color: colors.muted, maxWidth: contentWidth });
+      text(signatureMetadataText, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y + 33, { size: 8.5, color: colors.muted, align: rtl ? 'right' : 'left', maxWidth: contentWidth });
       y += 42;
     } else {
       y += 34;
@@ -798,7 +859,7 @@ export const generateTaskPDF = async (taskData) => {
 
   const leftLogo = await toDataUrl(`${window.location.origin}/logo.png`);
   const rightLogo = await toDataUrl(`${window.location.origin}/logo.png`);
-  const generatedAt = new Date().toLocaleString();
+  const generatedAt = formatExportDate(new Date(), exportLanguage, { includeTime: true });
 
   const totalPages = doc.getNumberOfPages();
   for (let page = 1; page <= totalPages; page += 1) {
@@ -810,14 +871,16 @@ export const generateTaskPDF = async (taskData) => {
       leftLogo,
       rightLogo,
       colors,
-      generatedAt
+      generatedAt,
+      language: exportLanguage,
+      fontLoaded
     });
   }
 
   return doc;
 };
 
-export const downloadTaskPDF = async (taskData, filename = 'inspection_report') => {
-  const doc = await generateTaskPDF(taskData);
+export const downloadTaskPDF = async (taskData, filename = 'inspection_report', language = 'en') => {
+  const doc = await generateTaskPDF(taskData, language);
   doc.save(`${filename}.pdf`);
 };

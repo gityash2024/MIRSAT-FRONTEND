@@ -116,7 +116,7 @@ export const addUserTaskComment = createAsyncThunk(
 
 export const exportTaskReport = createAsyncThunk(
   'userTasks/exportTaskReport',
-  async ({ taskId, format = 'excel', fileName = null, taskData = null }, { rejectWithValue, getState }) => {
+  async ({ taskId, format = 'excel', fileName = null, taskData = null, language = 'en' }, { rejectWithValue, getState }) => {
     try {
       // For PDF format, try to use current task data from Redux store
       let dataToUse = taskData;
@@ -125,7 +125,7 @@ export const exportTaskReport = createAsyncThunk(
         dataToUse = state.userTasks.currentTask;
       }
       
-      const response = await userTaskService.exportTaskReport(taskId, format, fileName, dataToUse);
+      const response = await userTaskService.exportTaskReport(taskId, format, fileName, dataToUse, language);
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });

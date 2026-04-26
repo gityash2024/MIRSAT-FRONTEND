@@ -471,12 +471,12 @@ const AssetList = () => {
     setShowDocumentModal(true);
   };
 
-  const handleConfirmExport = async (fileName) => {
+  const handleConfirmExport = async (fileName, language = 'en') => {
     if (!pendingExport) return;
 
     try {
       // Update the export action to use the custom filename
-      await dispatch(exportAssets(fileName)).unwrap();
+      await dispatch(exportAssets({ fileName, language })).unwrap();
     } catch (error) {
       console.error('Export failed:', error);
     } finally {

@@ -83,9 +83,11 @@ export const deleteAsset = createAsyncThunk(
 
 export const exportAssets = createAsyncThunk(
   'assets/exportAssets',
-  async (fileName = 'assets', { rejectWithValue }) => {
+  async (options = {}, { rejectWithValue }) => {
     try {
-      const response = await assetService.exportAssets();
+      const fileName = typeof options === 'string' ? options : (options.fileName || 'assets');
+      const language = typeof options === 'string' ? 'en' : (options.language || 'en');
+      const response = await assetService.exportAssets(language);
       
       // Create a download link for the blob
       const url = window.URL.createObjectURL(new Blob([response.data]));

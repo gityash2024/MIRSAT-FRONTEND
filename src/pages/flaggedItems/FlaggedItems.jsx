@@ -17,6 +17,17 @@ import { useLanguage } from '../../context/LanguageContext';
 import ScrollAnimation from '../../components/common/ScrollAnimation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import {
+  exportText,
+  formatExportDate,
+  formatPdfText,
+  isArabicExport,
+  loadPdfArabicFont as loadExportArabicFont,
+  localizePdfTable,
+  orderForLanguage,
+  orderRowsForLanguage
+} from '../../utils/exportLocalization';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -353,6 +364,7 @@ const FlaggedItems = () => {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
   const navigate = useNavigate();
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [flaggedItems, setFlaggedItems] = useState([]);
   const [pagination, setPagination] = useState({
@@ -451,8 +463,9 @@ const FlaggedItems = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleExportPDF = async () => {
+  const handleConfirmExportPDF = async (fileName, language = 'en') => {
     try {
+      const L = (key) => exportText(language, key);
       // Fetch all flagged items for export
       const params = new URLSearchParams();
       // Only use search filter
@@ -465,34 +478,32 @@ const FlaggedItems = () => {
       const doc = new jsPDF();
       
       // Load Arabic font
-      const fontLoaded = await loadArabicFont(doc);
+      const fontLoaded = await loadExportArabicFont(doc);
+      if (isArabicExport(language) && fontLoaded) {
+        doc.setFont('NotoNaskhArabic', 'normal');
+      }
       
       doc.setFontSize(18);
-      doc.text("Flagged Items Report", 14, 22);
+      doc.text(formatPdfText(L('flaggedItemsReport'), language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 22, { align: isArabicExport(language) ? 'right' : 'left' });
       doc.setFontSize(12);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 32);
+      doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 32, { align: isArabicExport(language) ? 'right' : 'left' });
 
       const tableData = allItems.map(item => [
-        item.taskTitle || 'N/A',
-        item.templateName || 'N/A',
-        item.assetName || 'N/A',
-        item.inspectorName || 'N/A',
-        item.questionText || 'N/A',
-        item.response || 'N/A',
-        new Date(item.flaggedAt).toLocaleDateString()
+        formatPdfText(item.taskTitle || L('na'), language),
+        formatPdfText(item.templateName || L('na'), language),
+        formatPdfText(item.assetName || L('na'), language),
+        formatPdfText(item.inspectorName || L('na'), language),
+        formatPdfText(item.questionText || L('na'), language),
+        formatPdfText(item.response || L('na'), language),
+        formatExportDate(item.flaggedAt, language)
       ]);
 
       autoTable(doc, {
         startY: 40,
-        head: [['Task', 'Template', 'Asset', 'Inspector', 'Question', 'Response', 'Date']],
-        body: tableData,
+        head: [orderForLanguage([L('task'), L('template'), L('asset'), L('inspector'), L('question'), L('response'), L('date')].map(label => formatPdfText(label, language)), language)],
+        body: orderRowsForLanguage(tableData, language),
         didParseCell: function (data) {
-          if (data.cell.raw && containsArabic(String(data.cell.raw))) {
-            if (fontLoaded) {
-              data.cell.styles.font = 'NotoNaskhArabic';
-              data.cell.styles.fontStyle = 'normal';
-            }
-          }
+          localizePdfTable(data, language, fontLoaded);
         },
         styles: {
           font: 'helvetica',
@@ -505,36 +516,10 @@ const FlaggedItems = () => {
         },
       });
 
-      doc.save("flagged_items_report.pdf");
+      doc.save(`${fileName}.pdf`);
+      setShowDocumentModal(false);
     } catch (error) {
       console.error('Error exporting PDF:', error);
-    }
-  };
-
-  // Helper functions for PDF
-  const containsArabic = (text) => {
-    if (!text) return false;
-    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    return arabicPattern.test(String(text));
-  };
-
-  const loadArabicFont = async (doc) => {
-    try {
-      const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf');
-      const fontArrayBuffer = await response.arrayBuffer();
-      const fontBase64 = btoa(
-        new Uint8Array(fontArrayBuffer).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      );
-
-      doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontBase64);
-      doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
-      return true;
-    } catch (error) {
-      console.warn('Could not load Arabic font:', error);
-      return false;
     }
   };
 
@@ -581,13 +566,22 @@ const FlaggedItems = () => {
             {t('dashboard.flaggedItems')}
           </Title>
           <ButtonGroup>
-            <Button className="primary" onClick={handleExportPDF}>
+            <Button className="primary" onClick={() => setShowDocumentModal(true)}>
               <Download size={18} />
               {t('common.export')} PDF
             </Button>
           </ButtonGroup>
         </Header>
       </ScrollAnimation>
+
+      <DocumentNamingModal
+        isOpen={showDocumentModal}
+        onClose={() => setShowDocumentModal(false)}
+        onExport={handleConfirmExportPDF}
+        exportFormat="pdf"
+        documentType="Flagged-Items-Report"
+        defaultCriteria={['documentType', 'currentDate']}
+      />
 
       <ScrollAnimation animation="slideIn" delay={0.1}>
         <FiltersContainer>
@@ -727,4 +721,3 @@ const FlaggedItems = () => {
 };
 
 export default FlaggedItems;
-
