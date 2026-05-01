@@ -73,6 +73,165 @@ import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import api from '../../services/api';
 import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
 import Alert from '@mui/material/Alert';
+import * as XLSX from 'xlsx';
+
+const TEMPLATE_IMPORT_EXCEL_SHEET_NAME = 'Template Import';
+const TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME = 'Basic Info';
+const TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_SHEET_NAME = 'Pages and Questions';
+const TEMPLATE_IMPORT_EXCEL_INSTRUCTIONS_SHEET_NAME = 'Instructions';
+const TEMPLATE_IMPORT_EXCEL_FILE_NAME = 'template-import-sample.xlsx';
+
+const TEMPLATE_IMPORT_EXCEL_BASIC_INFO_COLUMNS = ['Field', 'Value', 'Help'];
+
+const TEMPLATE_IMPORT_EXCEL_BASIC_INFO_FIELDS = [
+  ['Template Name', 'Marina Safety Operations Sample', 'Required. The name shown in Create Template.'],
+  ['Template Description', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'Optional. Long description for the template.'],
+  ['Template Type', 'marina_operator', 'Optional. Match an existing Type when possible.'],
+  ['Template Status', 'draft', 'Optional. Allowed values: active, inactive, draft, archived.']
+];
+
+const TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS = [
+  'Page Name',
+  'Page Description',
+  'Page Order',
+  'Section Name',
+  'Section Description',
+  'Section Order',
+  'Question Text',
+  'Question Description',
+  'Answer Type',
+  'Required',
+  'Requirement Type',
+  'Include N/A',
+  'Weight',
+  'Options',
+  'Score Yes',
+  'Score No',
+  'Score N/A',
+  'Score Full Compliance',
+  'Score Partial Compliance',
+  'Score Non-Compliant',
+  'Score Not Applicable',
+  'Option Scores',
+  'Scoring Enabled',
+  'Scoring Max'
+];
+
+const REQUIRED_TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS = [
+  'Page Name',
+  'Section Name',
+  'Question Text'
+];
+
+const TEMPLATE_IMPORT_EXCEL_COLUMNS = [
+  'Template Name',
+  'Template Description',
+  'Template Type',
+  'Template Status',
+  'Page Name',
+  'Page Description',
+  'Page Order',
+  'Section Name',
+  'Section Description',
+  'Section Order',
+  'Question Text',
+  'Question Description',
+  'Answer Type',
+  'Type',
+  'Required',
+  'Mandatory',
+  'Requirement Type',
+  'Include N/A',
+  'Weight',
+  'Options',
+  'Scores',
+  'Scoring Enabled',
+  'Scoring Max'
+];
+
+const REQUIRED_TEMPLATE_IMPORT_EXCEL_COLUMNS = [
+  'Template Name',
+  'Page Name',
+  'Section Name',
+  'Question Text'
+];
+
+const TEMPLATE_IMPORT_STATUS_VALUES = ['active', 'inactive', 'draft', 'archived'];
+const TEMPLATE_IMPORT_REQUIREMENT_TYPE_VALUES = ['mandatory', 'recommended'];
+const TEMPLATE_IMPORT_ANSWER_TYPE_VALUES = [
+  'text',
+  'textarea',
+  'number',
+  'date',
+  'yesno',
+  'yes_no',
+  'select',
+  'multiple_choice',
+  'multiple',
+  'checkbox',
+  'compliance',
+  'signature',
+  'media',
+  'file'
+];
+
+const TEMPLATE_IMPORT_ANSWER_TYPE_ALIASES = {
+  'yes/no': 'yesno',
+  'yes no': 'yesno',
+  'yes-no': 'yesno',
+  'multiple choice': 'multiple_choice',
+  'multiple-choice': 'multiple_choice',
+  'text area': 'textarea',
+  'file upload': 'file',
+  'media upload': 'media'
+};
+
+const TEMPLATE_IMPORT_BOOLEAN_TRUE_VALUES = new Set(['true', 'yes', 'y', '1']);
+const TEMPLATE_IMPORT_BOOLEAN_FALSE_VALUES = new Set(['false', 'no', 'n', '0']);
+
+const TEMPLATE_IMPORT_SCORE_COLUMNS = {
+  'Score Yes': 'Yes',
+  'Score No': 'No',
+  'Score N/A': 'N/A',
+  'Score Full Compliance': 'Full compliance',
+  'Score Partial Compliance': 'Partial compliance',
+  'Score Non-Compliant': 'Non-compliant',
+  'Score Not Applicable': 'Not applicable'
+};
+
+const TEMPLATE_IMPORT_DEFAULT_OPTIONS = {
+  yesno: ['Yes', 'No', 'N/A'],
+  yes_no: ['Yes', 'No', 'N/A'],
+  compliance: ['Full compliance', 'Partial compliance', 'Non-compliant', 'Not applicable']
+};
+
+const normalizeTemplateImportExcelHeader = (value) => (
+  String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+);
+
+const toTemplateImportExcelCellString = (value) => {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).trim();
+};
+
+const TEMPLATE_IMPORT_EXCEL_SAMPLE_ROWS = [
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Safety Readiness', 'Emergency readiness and safety equipment checks.', 0, 'Emergency Equipment', 'Confirm critical safety equipment is available and usable.', 0, 'Are fire extinguishers visible, accessible, and within service date?', 'Check docks, service areas, and customer access points.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Yes|No|N/A', 'Yes=2|No=0|N/A=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Safety Readiness', 'Emergency readiness and safety equipment checks.', 0, 'Emergency Equipment', 'Confirm critical safety equipment is available and usable.', 0, 'Life rings and rescue hooks are positioned at required intervals.', 'Verify placement and condition along active waterfront edges.', 'compliance', 'compliance', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Compliant|Non-Compliant|N/A', 'Compliant=3|Non-Compliant=0|N/A=0', 'TRUE', 3],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Safety Readiness', 'Emergency readiness and safety equipment checks.', 0, 'Emergency Equipment', 'Confirm critical safety equipment is available and usable.', 0, 'Record any missing or damaged safety equipment.', 'Include location and corrective action required.', 'textarea', 'textarea', 'FALSE', 'FALSE', 'recommended', 'FALSE', 1, '', '', 'FALSE', 0],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Safety Readiness', 'Emergency readiness and safety equipment checks.', 0, 'Incident Response', 'Review response readiness for incidents and emergencies.', 1, 'Emergency contact list is posted and current.', 'Confirm phone numbers and responsible contacts.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'FALSE', 1, 'Yes|No', 'Yes=2|No=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Safety Readiness', 'Emergency readiness and safety equipment checks.', 0, 'Incident Response', 'Review response readiness for incidents and emergencies.', 1, 'Date of last emergency drill.', 'Use the latest documented drill date.', 'date', 'date', 'FALSE', 'FALSE', 'recommended', 'FALSE', 1, '', '', 'FALSE', 0],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Dock And Utilities', 'Physical dock condition, power, water, and lighting.', 1, 'Dock Condition', 'Inspect walking surfaces, access points, and dock fixtures.', 0, 'Dock surface is free from trip hazards, loose boards, and exposed fasteners.', 'Check high-traffic areas first.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Yes|No|N/A', 'Yes=2|No=0|N/A=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Dock And Utilities', 'Physical dock condition, power, water, and lighting.', 1, 'Dock Condition', 'Inspect walking surfaces, access points, and dock fixtures.', 0, 'Rate the overall dock condition.', 'Use the rating that best reflects the inspected area.', 'select', 'select', 'TRUE', 'TRUE', 'mandatory', 'FALSE', 1, 'Excellent|Good|Needs Repair|Unsafe', 'Excellent=4|Good=3|Needs Repair=1|Unsafe=0', 'TRUE', 4],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Dock And Utilities', 'Physical dock condition, power, water, and lighting.', 1, 'Power Water Lighting', 'Verify utility availability and visible condition.', 1, 'Shore power pedestals are secured and free from visible damage.', 'Do not open panels unless authorized.', 'compliance', 'compliance', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Compliant|Non-Compliant|N/A', 'Compliant=3|Non-Compliant=0|N/A=0', 'TRUE', 3],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Dock And Utilities', 'Physical dock condition, power, water, and lighting.', 1, 'Power Water Lighting', 'Verify utility availability and visible condition.', 1, 'Lighting is operational in public walkways and dock approaches.', 'Inspect during low-light conditions where possible.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Yes|No|N/A', 'Yes=2|No=0|N/A=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Dock And Utilities', 'Physical dock condition, power, water, and lighting.', 1, 'Power Water Lighting', 'Verify utility availability and visible condition.', 1, 'Upload notes for utility repairs needed.', 'List pedestal, berth, or dock identifiers.', 'textarea', 'textarea', 'FALSE', 'FALSE', 'recommended', 'FALSE', 1, '', '', 'FALSE', 0],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Environmental Compliance', 'Pollution prevention, waste handling, and spill controls.', 2, 'Waste And Spill Controls', 'Check environmental controls for daily operations.', 0, 'Spill kits are stocked and accessible.', 'Check absorbents, gloves, bags, and disposal guidance.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'FALSE', 1, 'Yes|No', 'Yes=2|No=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Environmental Compliance', 'Pollution prevention, waste handling, and spill controls.', 2, 'Waste And Spill Controls', 'Check environmental controls for daily operations.', 0, 'Waste bins are labeled and not overflowing.', 'Include recycling, general waste, and hazardous waste areas.', 'compliance', 'compliance', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Compliant|Non-Compliant|N/A', 'Compliant=3|Non-Compliant=0|N/A=0', 'TRUE', 3],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Environmental Compliance', 'Pollution prevention, waste handling, and spill controls.', 2, 'Waste And Spill Controls', 'Check environmental controls for daily operations.', 0, 'Environmental issue severity.', 'Select the highest severity observed during inspection.', 'select', 'select', 'TRUE', 'TRUE', 'mandatory', 'FALSE', 1, 'None|Low|Medium|High', 'None=3|Low=2|Medium=1|High=0', 'TRUE', 3],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Guest Service', 'Customer-facing amenities and service quality.', 3, 'Public Areas', 'Inspect cleanliness and usability of public-facing spaces.', 0, 'Reception, restrooms, and walkways are clean and presentable.', 'Inspect during regular operating hours.', 'yes_no', 'yes_no', 'TRUE', 'TRUE', 'mandatory', 'TRUE', 1, 'Yes|No|N/A', 'Yes=2|No=0|N/A=0', 'TRUE', 2],
+  ['Marina Safety Operations Sample', 'Sample large inspection template for marina safety, operations, compliance, and guest service checks.', 'marina_operator', 'draft', 'Guest Service', 'Customer-facing amenities and service quality.', 3, 'Public Areas', 'Inspect cleanliness and usability of public-facing spaces.', 0, 'Guest signage is clear and visible.', 'Include safety, directional, and service signage.', 'compliance', 'compliance', 'FALSE', 'FALSE', 'recommended', 'TRUE', 1, 'Compliant|Non-Compliant|N/A', 'Compliant=3|Non-Compliant=0|N/A=0', 'TRUE', 3]
+];
 
 // Modal component for confirmations
 const ConfirmationModal = ({
@@ -274,19 +433,22 @@ const PageContainer = styled.div`
 `;
 
 const Header = styled.header`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  align-items: start;
   margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px 24px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 
+  @media (max-width: 1280px) {
+    grid-template-columns: 1fr;
+  }
+
   @media (max-width: 768px) {
     margin-bottom: 20px;
-    gap: 10px;
+    gap: 12px;
   }
 
   @media (max-width: 480px) {
@@ -311,54 +473,129 @@ const Header = styled.header`
       font-size: 18px;
     }
   }
-  
-  div {
-    display: flex;
+`;
+
+const HeaderTitleGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  @media (max-width: 480px) {
+    width: 100%;
     gap: 8px;
-    flex-wrap: wrap;
-    flex-shrink: 0;
-    align-items: center;
+  }
+`;
 
-    @media (max-width: 768px) {
-      gap: 6px;
-    }
+const HeaderActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
 
-    @media (max-width: 480px) {
-      width: 100%;
-      justify-content: flex-start;
-      gap: 6px;
-    }
+  @media (max-width: 1280px) {
+    justify-content: flex-start;
+  }
+
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+`;
+
+const HeaderActionGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+`;
+
+const HeaderImportGroup = styled(HeaderActionGroup)`
+  background: #f8fbff;
+  border-color: #dbe7f3;
+`;
+
+const HeaderUtilityGroup = styled(HeaderActionGroup)`
+  background: #fbfcfe;
+`;
+
+const HeaderSaveGroup = styled.div`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 100%;
   }
 `;
 
 const BackButton = styled.button`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: #64748b;
-  font-weight: 500;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  background: #ffffff;
+  border: 1px solid #dbe4ef;
+  border-radius: 999px;
+  color: #42546b;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  padding: 8px 0;
+  padding: 8px 13px 8px 10px;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   
   @media (max-width: 768px) {
     font-size: 13px;
-    padding: 6px 0;
+    min-height: 36px;
+    padding: 7px 12px 7px 9px;
   }
 
   @media (max-width: 480px) {
     font-size: 12px;
-    padding: 4px 0;
+    min-height: 34px;
+    padding: 7px 11px 7px 8px;
   }
   
   &:hover {
-    color: #334155;
+    background: #f8fbff;
+    border-color: #b7c8dc;
+    color: var(--color-navy);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    transform: translateX(-1px);
+  }
+
+  &:active {
+    transform: translateX(-1px) translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    outline-offset: 2px;
   }
 
   svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.25;
+
     @media (max-width: 480px) {
       width: 16px;
       height: 16px;
@@ -388,6 +625,27 @@ const Button = styled.button`
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+`;
+
+const HeaderActionButton = styled(Button)`
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #53657d;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1;
+
+  &:hover {
+    background-color: #eef4fb;
+    color: #173a5e;
+  }
+
+  @media (max-width: 480px) {
+    flex: 1 1 calc(50% - 6px);
+    padding: 8px 10px;
   }
 `;
 
@@ -4898,14 +5156,17 @@ const InspectionSaveButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px 16px;
+  min-height: 38px;
+  padding: 8px 18px;
   background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-weight: 500;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(76, 175, 80, 0.25);
 
   &:hover {
     background-color: #388E3C;
@@ -4914,6 +5175,10 @@ const InspectionSaveButton = styled.button`
   &:disabled {
     background-color: #A5D6A7;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
   }
 `;
 
@@ -5458,6 +5723,7 @@ const InspectionLevelForm = () => {
   ).current;
   const hasShownRestoreToast = useRef(false);
   const importInputRef = useRef(null);
+  const excelImportInputRef = useRef(null);
 
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -5824,11 +6090,634 @@ const InspectionLevelForm = () => {
     };
   };
 
+  const applyImportedTemplate = (template) => {
+    const { template: normalizedTemplate, stats } = normalizeImportedTemplate(template);
+
+    setFormData(normalizedTemplate);
+    setActivePageIndex(0);
+    setActiveSectionTab(0);
+    setActiveTab('basic-info');
+    setSaveError('');
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizedTemplate));
+    toast.success(t('inspections.templateImportedSuccessfully', stats));
+  };
+
   const handleImportButtonClick = () => {
     if (importInputRef.current) {
       importInputRef.current.value = '';
       importInputRef.current.click();
     }
+  };
+
+  const handleExcelImportButtonClick = () => {
+    if (excelImportInputRef.current) {
+      excelImportInputRef.current.value = '';
+      excelImportInputRef.current.click();
+    }
+  };
+
+  const getExcelCellValue = (row, headerMap, columnName) => {
+    const columnIndex = headerMap.get(normalizeTemplateImportExcelHeader(columnName));
+    if (columnIndex === undefined) return '';
+    return toTemplateImportExcelCellString(row[columnIndex]);
+  };
+
+  const buildExcelRowError = (rowNumber, columnName, key, params = {}) => (
+    t(key, { row: rowNumber, column: columnName, ...params })
+  );
+
+  const throwExcelValidationErrors = (errors) => {
+    const visibleErrors = errors.slice(0, 5).join(' ');
+    const remainingCount = errors.length - 5;
+    const remaining = remainingCount > 0
+      ? t('inspections.importErrorExcelMoreErrors', { count: remainingCount })
+      : '';
+
+    throw new Error(t('inspections.importErrorExcelValidationSummary', {
+      count: errors.length,
+      errors: visibleErrors,
+      remaining
+    }));
+  };
+
+  const parseExcelBoolean = (value, rowNumber, columnName, errors) => {
+    if (!value) return undefined;
+
+    const normalizedValue = value.toLowerCase();
+    if (TEMPLATE_IMPORT_BOOLEAN_TRUE_VALUES.has(normalizedValue)) return true;
+    if (TEMPLATE_IMPORT_BOOLEAN_FALSE_VALUES.has(normalizedValue)) return false;
+
+    errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelInvalidBoolean', { value }));
+    return undefined;
+  };
+
+  const parseExcelNumber = (value, rowNumber, columnName, errors) => {
+    if (!value) return undefined;
+
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) {
+      errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelInvalidNumber', { value }));
+      return undefined;
+    }
+
+    return numberValue;
+  };
+
+  const parseExcelStatus = (value, rowNumber, errors) => {
+    if (!value) return undefined;
+
+    const normalizedValue = value.toLowerCase();
+    if (TEMPLATE_IMPORT_STATUS_VALUES.includes(normalizedValue)) return normalizedValue;
+
+    errors.push(buildExcelRowError(rowNumber, 'Template Status', 'inspections.importErrorExcelInvalidStatus', {
+      value,
+      allowed: TEMPLATE_IMPORT_STATUS_VALUES.join(', ')
+    }));
+    return undefined;
+  };
+
+  const parseExcelRequirementType = (value, rowNumber, errors) => {
+    if (!value) return undefined;
+
+    const normalizedValue = value.toLowerCase();
+    if (TEMPLATE_IMPORT_REQUIREMENT_TYPE_VALUES.includes(normalizedValue)) return normalizedValue;
+
+    errors.push(buildExcelRowError(rowNumber, 'Requirement Type', 'inspections.importErrorExcelInvalidRequirementType', {
+      value,
+      allowed: TEMPLATE_IMPORT_REQUIREMENT_TYPE_VALUES.join(', ')
+    }));
+    return undefined;
+  };
+
+  const parseExcelAnswerType = (value, rowNumber, errors) => {
+    if (!value) return undefined;
+
+    const normalizedValue = value.toLowerCase().replace(/\s+/g, ' ').trim();
+    const answerType = TEMPLATE_IMPORT_ANSWER_TYPE_ALIASES[normalizedValue] || normalizedValue;
+    if (TEMPLATE_IMPORT_ANSWER_TYPE_VALUES.includes(answerType)) return answerType;
+
+    errors.push(buildExcelRowError(rowNumber, 'Answer Type', 'inspections.importErrorExcelInvalidAnswerType', {
+      value,
+      allowed: TEMPLATE_IMPORT_ANSWER_TYPE_VALUES.join(', ')
+    }));
+    return undefined;
+  };
+
+  const parseExcelPipeList = (value) => {
+    if (!value) return [];
+    return value.split('|').map(item => item.trim()).filter(Boolean);
+  };
+
+  const resolveExcelOptionName = (option, options) => {
+    if (!options.length) return option;
+
+    return options.find(existingOption => (
+      existingOption.toLowerCase() === option.toLowerCase()
+    )) || '';
+  };
+
+  const getDefaultExcelOptions = (answerType, includeNA) => {
+    const defaultOptions = TEMPLATE_IMPORT_DEFAULT_OPTIONS[answerType] || [];
+    if ((answerType === 'yesno' || answerType === 'yes_no') && includeNA === false) {
+      return ['Yes', 'No'];
+    }
+
+    return [...defaultOptions];
+  };
+
+  const getRelevantExcelScoreColumns = (answerType) => {
+    if (answerType === 'yesno' || answerType === 'yes_no') {
+      return ['Score Yes', 'Score No', 'Score N/A'];
+    }
+
+    if (answerType === 'compliance') {
+      return [
+        'Score Full Compliance',
+        'Score Partial Compliance',
+        'Score Non-Compliant',
+        'Score Not Applicable'
+      ];
+    }
+
+    return [];
+  };
+
+  const parseExcelScores = (value, rowNumber, options, errors, columnName = 'Scores') => {
+    if (!value) return {};
+
+    const scores = {};
+
+    value.split('|').map(item => item.trim()).filter(Boolean).forEach((scoreEntry) => {
+      const separatorIndex = scoreEntry.indexOf('=');
+      const option = separatorIndex > -1 ? scoreEntry.slice(0, separatorIndex).trim() : '';
+      const scoreValue = separatorIndex > -1 ? scoreEntry.slice(separatorIndex + 1).trim() : '';
+      const numericScore = Number(scoreValue);
+
+      if (!option || !scoreValue || !Number.isFinite(numericScore)) {
+        errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelMalformedScores', {
+          value: scoreEntry
+        }));
+        return;
+      }
+
+      if (!options.length) {
+        errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelScoresRequireOptions', {
+          value: option
+        }));
+        return;
+      }
+
+      const resolvedOption = resolveExcelOptionName(option, options);
+      if (!resolvedOption) {
+        errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelScoreOptionMismatch', {
+          value: option
+        }));
+        return;
+      }
+
+      scores[resolvedOption] = numericScore;
+    });
+
+    return scores;
+  };
+
+  const parseExcelScoreColumns = (row, headerMap, rowNumber, options, answerType, errors) => {
+    const scores = {};
+    const relevantColumns = getRelevantExcelScoreColumns(answerType);
+
+    Object.entries(TEMPLATE_IMPORT_SCORE_COLUMNS).forEach(([columnName, optionName]) => {
+      if (!relevantColumns.includes(columnName)) return;
+
+      const scoreValue = getExcelCellValue(row, headerMap, columnName);
+      if (!scoreValue) return;
+
+      const numericScore = parseExcelNumber(scoreValue, rowNumber, columnName, errors);
+      if (numericScore === undefined) return;
+
+      if (!options.length) {
+        errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelScoresRequireOptions', {
+          value: optionName
+        }));
+        return;
+      }
+
+      const resolvedOption = resolveExcelOptionName(optionName, options);
+      if (!resolvedOption) {
+        errors.push(buildExcelRowError(rowNumber, columnName, 'inspections.importErrorExcelScoreOptionMismatch', {
+          value: optionName
+        }));
+        return;
+      }
+
+      scores[resolvedOption] = numericScore;
+    });
+
+    return scores;
+  };
+
+  const getExcelRows = (worksheet) => (
+    XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+      raw: false
+    })
+  );
+
+  const getExcelHeaderInfo = (rows, requiredColumns) => {
+    const headerRowIndex = rows.findIndex(row => row.some(cell => toTemplateImportExcelCellString(cell)));
+    if (headerRowIndex === -1) {
+      throw new Error(t('inspections.importErrorEmptyFile'));
+    }
+
+    const headerMap = new Map();
+    rows[headerRowIndex].forEach((header, index) => {
+      const normalizedHeader = normalizeTemplateImportExcelHeader(header);
+      if (normalizedHeader && !headerMap.has(normalizedHeader)) {
+        headerMap.set(normalizedHeader, index);
+      }
+    });
+
+    const missingHeaders = requiredColumns.filter(
+      column => !headerMap.has(normalizeTemplateImportExcelHeader(column))
+    );
+
+    if (missingHeaders.length > 0) {
+      throw new Error(t('inspections.importErrorExcelMissingHeaders', {
+        headers: missingHeaders.join(', ')
+      }));
+    }
+
+    return { headerRowIndex, headerMap };
+  };
+
+  const convertSingleSheetExcelWorkbookToTemplate = (workbook) => {
+    if (!workbook?.SheetNames?.length) {
+      throw new Error(t('inspections.importErrorExcelNoSheets'));
+    }
+
+    const sheetName = workbook.SheetNames.includes(TEMPLATE_IMPORT_EXCEL_SHEET_NAME)
+      ? TEMPLATE_IMPORT_EXCEL_SHEET_NAME
+      : workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+      raw: false
+    });
+
+    const headerRowIndex = rows.findIndex(row => row.some(cell => toTemplateImportExcelCellString(cell)));
+    if (headerRowIndex === -1) {
+      throw new Error(t('inspections.importErrorEmptyFile'));
+    }
+
+    const headerMap = new Map();
+    rows[headerRowIndex].forEach((header, index) => {
+      const normalizedHeader = normalizeTemplateImportExcelHeader(header);
+      if (normalizedHeader && !headerMap.has(normalizedHeader)) {
+        headerMap.set(normalizedHeader, index);
+      }
+    });
+
+    const missingHeaders = REQUIRED_TEMPLATE_IMPORT_EXCEL_COLUMNS.filter(
+      column => !headerMap.has(normalizeTemplateImportExcelHeader(column))
+    );
+
+    if (missingHeaders.length > 0) {
+      throw new Error(t('inspections.importErrorExcelMissingHeaders', {
+        headers: missingHeaders.join(', ')
+      }));
+    }
+
+    const dataRows = rows
+      .slice(headerRowIndex + 1)
+      .map((row, index) => ({
+        row,
+        rowNumber: headerRowIndex + index + 2
+      }))
+      .filter(({ row }) => row.some(cell => toTemplateImportExcelCellString(cell)));
+
+    if (dataRows.length === 0) {
+      throw new Error(t('inspections.importErrorExcelNoRows'));
+    }
+
+    const errors = [];
+    const template = {
+      name: '',
+      description: '',
+      type: '',
+      status: 'draft',
+      pages: []
+    };
+    const pageMap = new Map();
+
+    dataRows.forEach(({ row, rowNumber }) => {
+      const missingRequiredValues = REQUIRED_TEMPLATE_IMPORT_EXCEL_COLUMNS.filter(
+        column => !getExcelCellValue(row, headerMap, column)
+      );
+
+      missingRequiredValues.forEach((column) => {
+        errors.push(buildExcelRowError(rowNumber, column, 'inspections.importErrorExcelMissingCell'));
+      });
+
+      if (missingRequiredValues.length > 0) return;
+
+      const templateName = getExcelCellValue(row, headerMap, 'Template Name');
+      if (!template.name) {
+        template.name = templateName;
+      } else if (template.name !== templateName) {
+        errors.push(buildExcelRowError(rowNumber, 'Template Name', 'inspections.importErrorExcelTemplateNameMismatch', {
+          expected: template.name,
+          value: templateName
+        }));
+      }
+
+      const templateDescription = getExcelCellValue(row, headerMap, 'Template Description');
+      const templateType = getExcelCellValue(row, headerMap, 'Template Type');
+      const templateStatus = parseExcelStatus(getExcelCellValue(row, headerMap, 'Template Status'), rowNumber, errors);
+      const pageName = getExcelCellValue(row, headerMap, 'Page Name');
+      const pageDescription = getExcelCellValue(row, headerMap, 'Page Description');
+      const pageOrder = parseExcelNumber(getExcelCellValue(row, headerMap, 'Page Order'), rowNumber, 'Page Order', errors);
+      const sectionName = getExcelCellValue(row, headerMap, 'Section Name');
+      const sectionDescription = getExcelCellValue(row, headerMap, 'Section Description');
+      const sectionOrder = parseExcelNumber(getExcelCellValue(row, headerMap, 'Section Order'), rowNumber, 'Section Order', errors);
+      const answerType = parseExcelAnswerType(
+        getExcelCellValue(row, headerMap, 'Answer Type') || getExcelCellValue(row, headerMap, 'Type'),
+        rowNumber,
+        errors
+      ) || 'text';
+      const required = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Required'), rowNumber, 'Required', errors);
+      const mandatory = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Mandatory'), rowNumber, 'Mandatory', errors);
+      const includeNA = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Include N/A'), rowNumber, 'Include N/A', errors);
+      const requirementType = parseExcelRequirementType(getExcelCellValue(row, headerMap, 'Requirement Type'), rowNumber, errors);
+      const weight = parseExcelNumber(getExcelCellValue(row, headerMap, 'Weight'), rowNumber, 'Weight', errors);
+      const options = parseExcelPipeList(getExcelCellValue(row, headerMap, 'Options'));
+      const scores = parseExcelScores(getExcelCellValue(row, headerMap, 'Scores'), rowNumber, options, errors);
+      const scoringEnabled = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Scoring Enabled'), rowNumber, 'Scoring Enabled', errors);
+      const scoringMax = parseExcelNumber(getExcelCellValue(row, headerMap, 'Scoring Max'), rowNumber, 'Scoring Max', errors);
+
+      if (!template.description && templateDescription) template.description = templateDescription;
+      if (!template.type && templateType) template.type = templateType;
+      if (templateStatus && template.status === 'draft') template.status = templateStatus;
+
+      if (!pageMap.has(pageName)) {
+        const page = {
+          name: pageName,
+          description: pageDescription,
+          ...(pageOrder !== undefined ? { order: pageOrder } : {}),
+          sections: []
+        };
+        pageMap.set(pageName, {
+          page,
+          sectionMap: new Map()
+        });
+        template.pages.push(page);
+      }
+
+      const pageEntry = pageMap.get(pageName);
+      if (!pageEntry.sectionMap.has(sectionName)) {
+        const section = {
+          name: sectionName,
+          description: sectionDescription,
+          ...(sectionOrder !== undefined ? { order: sectionOrder } : {}),
+          questions: []
+        };
+        pageEntry.sectionMap.set(sectionName, section);
+        pageEntry.page.sections.push(section);
+      }
+
+      const scoreValues = Object.values(scores);
+      const inferredScoringMax = scoreValues.length > 0 ? Math.max(...scoreValues) : 0;
+      const question = {
+        text: getExcelCellValue(row, headerMap, 'Question Text'),
+        description: getExcelCellValue(row, headerMap, 'Question Description'),
+        answerType,
+        type: answerType,
+        required: required !== undefined ? required : true,
+        options,
+        scores
+      };
+
+      if (mandatory !== undefined) question.mandatory = mandatory;
+      if (requirementType) question.requirementType = requirementType;
+      if (includeNA !== undefined) question.includeNA = includeNA;
+      if (weight !== undefined) question.weight = weight;
+      if (scoringEnabled !== undefined || scoringMax !== undefined || scoreValues.length > 0) {
+        question.scoring = {
+          enabled: scoringEnabled !== undefined ? scoringEnabled : scoreValues.length > 0,
+          max: scoringMax !== undefined ? scoringMax : inferredScoringMax
+        };
+      }
+
+      pageEntry.sectionMap.get(sectionName).questions.push(question);
+    });
+
+    if (errors.length > 0) {
+      throwExcelValidationErrors(errors);
+    }
+
+    return template;
+  };
+
+  const convertTabbedExcelWorkbookToTemplate = (workbook) => {
+    const basicInfoSheet = workbook.Sheets[TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME];
+    const pagesQuestionsSheet = workbook.Sheets[TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_SHEET_NAME];
+
+    if (!basicInfoSheet) {
+      throw new Error(t('inspections.importErrorExcelMissingSheet', {
+        sheet: TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME
+      }));
+    }
+
+    if (!pagesQuestionsSheet) {
+      throw new Error(t('inspections.importErrorExcelMissingSheet', {
+        sheet: TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_SHEET_NAME
+      }));
+    }
+
+    const errors = [];
+    const template = {
+      name: '',
+      description: '',
+      type: '',
+      status: 'draft',
+      pages: []
+    };
+
+    const basicInfoRows = getExcelRows(basicInfoSheet);
+    const basicInfoHeaderInfo = getExcelHeaderInfo(basicInfoRows, ['Field', 'Value']);
+    const basicInfoDataRows = basicInfoRows
+      .slice(basicInfoHeaderInfo.headerRowIndex + 1)
+      .map((row, index) => ({
+        row,
+        rowNumber: basicInfoHeaderInfo.headerRowIndex + index + 2
+      }))
+      .filter(({ row }) => row.some(cell => toTemplateImportExcelCellString(cell)));
+
+    basicInfoDataRows.forEach(({ row, rowNumber }) => {
+      const field = getExcelCellValue(row, basicInfoHeaderInfo.headerMap, 'Field');
+      const value = getExcelCellValue(row, basicInfoHeaderInfo.headerMap, 'Value');
+      if (!field) return;
+
+      switch (normalizeTemplateImportExcelHeader(field)) {
+        case 'template name':
+          template.name = value;
+          break;
+        case 'template description':
+          template.description = value;
+          break;
+        case 'template type':
+          template.type = value;
+          break;
+        case 'template status': {
+          const status = parseExcelStatus(value, rowNumber, errors);
+          if (status) template.status = status;
+          break;
+        }
+        default:
+          break;
+      }
+    });
+
+    if (!template.name) {
+      errors.push(t('inspections.importErrorExcelBasicInfoRequired'));
+    }
+
+    const pagesQuestionsRows = getExcelRows(pagesQuestionsSheet);
+    const pagesQuestionsHeaderInfo = getExcelHeaderInfo(
+      pagesQuestionsRows,
+      REQUIRED_TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS
+    );
+    const dataRows = pagesQuestionsRows
+      .slice(pagesQuestionsHeaderInfo.headerRowIndex + 1)
+      .map((row, index) => ({
+        row,
+        rowNumber: pagesQuestionsHeaderInfo.headerRowIndex + index + 2
+      }))
+      .filter(({ row }) => row.some(cell => toTemplateImportExcelCellString(cell)));
+
+    if (dataRows.length === 0) {
+      throw new Error(t('inspections.importErrorExcelNoRows'));
+    }
+
+    const pageMap = new Map();
+
+    dataRows.forEach(({ row, rowNumber }) => {
+      const headerMap = pagesQuestionsHeaderInfo.headerMap;
+      const missingRequiredValues = REQUIRED_TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS.filter(
+        column => !getExcelCellValue(row, headerMap, column)
+      );
+
+      missingRequiredValues.forEach((column) => {
+        errors.push(buildExcelRowError(rowNumber, column, 'inspections.importErrorExcelMissingCell'));
+      });
+
+      if (missingRequiredValues.length > 0) return;
+
+      const pageName = getExcelCellValue(row, headerMap, 'Page Name');
+      const pageDescription = getExcelCellValue(row, headerMap, 'Page Description');
+      const pageOrder = parseExcelNumber(getExcelCellValue(row, headerMap, 'Page Order'), rowNumber, 'Page Order', errors);
+      const sectionName = getExcelCellValue(row, headerMap, 'Section Name');
+      const sectionDescription = getExcelCellValue(row, headerMap, 'Section Description');
+      const sectionOrder = parseExcelNumber(getExcelCellValue(row, headerMap, 'Section Order'), rowNumber, 'Section Order', errors);
+      const answerType = parseExcelAnswerType(getExcelCellValue(row, headerMap, 'Answer Type'), rowNumber, errors) || 'text';
+      const required = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Required'), rowNumber, 'Required', errors);
+      const mandatory = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Mandatory'), rowNumber, 'Mandatory', errors);
+      const includeNA = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Include N/A'), rowNumber, 'Include N/A', errors);
+      const requirementType = parseExcelRequirementType(getExcelCellValue(row, headerMap, 'Requirement Type'), rowNumber, errors);
+      const weight = parseExcelNumber(getExcelCellValue(row, headerMap, 'Weight'), rowNumber, 'Weight', errors);
+      const explicitOptions = parseExcelPipeList(getExcelCellValue(row, headerMap, 'Options'));
+      const options = explicitOptions.length > 0
+        ? explicitOptions
+        : getDefaultExcelOptions(answerType, includeNA);
+      const scoreColumnScores = parseExcelScoreColumns(row, headerMap, rowNumber, options, answerType, errors);
+      const optionScores = parseExcelScores(
+        getExcelCellValue(row, headerMap, 'Option Scores') || getExcelCellValue(row, headerMap, 'Scores'),
+        rowNumber,
+        options,
+        errors,
+        getExcelCellValue(row, headerMap, 'Option Scores') ? 'Option Scores' : 'Scores'
+      );
+      const scores = {
+        ...scoreColumnScores,
+        ...optionScores
+      };
+      const scoringEnabled = parseExcelBoolean(getExcelCellValue(row, headerMap, 'Scoring Enabled'), rowNumber, 'Scoring Enabled', errors);
+      const scoringMax = parseExcelNumber(getExcelCellValue(row, headerMap, 'Scoring Max'), rowNumber, 'Scoring Max', errors);
+
+      if (!pageMap.has(pageName)) {
+        const page = {
+          name: pageName,
+          description: pageDescription,
+          ...(pageOrder !== undefined ? { order: pageOrder } : {}),
+          sections: []
+        };
+        pageMap.set(pageName, {
+          page,
+          sectionMap: new Map()
+        });
+        template.pages.push(page);
+      }
+
+      const pageEntry = pageMap.get(pageName);
+      if (!pageEntry.sectionMap.has(sectionName)) {
+        const section = {
+          name: sectionName,
+          description: sectionDescription,
+          ...(sectionOrder !== undefined ? { order: sectionOrder } : {}),
+          questions: []
+        };
+        pageEntry.sectionMap.set(sectionName, section);
+        pageEntry.page.sections.push(section);
+      }
+
+      const scoreValues = Object.values(scores);
+      const inferredScoringMax = scoreValues.length > 0 ? Math.max(...scoreValues) : 0;
+      const question = {
+        text: getExcelCellValue(row, headerMap, 'Question Text'),
+        description: getExcelCellValue(row, headerMap, 'Question Description'),
+        answerType,
+        type: answerType,
+        required: required !== undefined ? required : true,
+        options,
+        scores
+      };
+
+      if (mandatory !== undefined) question.mandatory = mandatory;
+      if (requirementType) question.requirementType = requirementType;
+      if (includeNA !== undefined) question.includeNA = includeNA;
+      if (weight !== undefined) question.weight = weight;
+      if (scoringEnabled !== undefined || scoringMax !== undefined || scoreValues.length > 0) {
+        question.scoring = {
+          enabled: scoringEnabled !== undefined ? scoringEnabled : scoreValues.length > 0,
+          max: scoringMax !== undefined ? scoringMax : inferredScoringMax
+        };
+      }
+
+      pageEntry.sectionMap.get(sectionName).questions.push(question);
+    });
+
+    if (errors.length > 0) {
+      throwExcelValidationErrors(errors);
+    }
+
+    return template;
+  };
+
+  const convertExcelWorkbookToTemplate = (workbook) => {
+    if (!workbook?.SheetNames?.length) {
+      throw new Error(t('inspections.importErrorExcelNoSheets'));
+    }
+
+    const usesTabbedTemplate = workbook.Sheets[TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME]
+      || workbook.Sheets[TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_SHEET_NAME];
+
+    if (usesTabbedTemplate) {
+      return convertTabbedExcelWorkbookToTemplate(workbook);
+    }
+
+    return convertSingleSheetExcelWorkbookToTemplate(workbook);
   };
 
   const handleTemplateImport = (event) => {
@@ -5862,15 +6751,7 @@ const InspectionLevelForm = () => {
           throw new Error(t('inspections.importErrorMalformedJson'));
         }
 
-        const { template: normalizedTemplate, stats } = normalizeImportedTemplate(parsedTemplate);
-
-        setFormData(normalizedTemplate);
-        setActivePageIndex(0);
-        setActiveSectionTab(0);
-        setActiveTab('basic-info');
-        setSaveError('');
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizedTemplate));
-        toast.success(t('inspections.templateImportedSuccessfully', stats));
+        applyImportedTemplate(parsedTemplate);
       } catch (error) {
         console.error('Template import failed:', error);
         toast.error(error.message || t('inspections.invalidTemplateFile'));
@@ -5885,6 +6766,43 @@ const InspectionLevelForm = () => {
     reader.readAsText(file);
   };
 
+  const handleTemplateExcelImport = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const lowerCaseFileName = file.name.toLowerCase();
+    if (!lowerCaseFileName.endsWith('.xlsx') && !lowerCaseFileName.endsWith('.xls')) {
+      toast.error(t('inspections.importErrorExcelOnly'));
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size === 0) {
+      toast.error(t('inspections.importErrorEmptyFile'));
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const workbook = XLSX.read(reader.result, { type: 'array' });
+        const parsedTemplate = convertExcelWorkbookToTemplate(workbook);
+        applyImportedTemplate(parsedTemplate);
+      } catch (error) {
+        console.error('Template Excel import failed:', error);
+        toast.error(error.message || t('inspections.invalidExcelTemplateFile'));
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.onerror = () => {
+      toast.error(t('inspections.importErrorExcelReadFailed'));
+      event.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleDownloadSampleTemplate = () => {
     const link = document.createElement('a');
     link.href = '/samples/template-import-sample.json';
@@ -5892,6 +6810,111 @@ const InspectionLevelForm = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDownloadSampleExcelTemplate = () => {
+    const workbook = XLSX.utils.book_new();
+
+    const basicInfoWorksheet = XLSX.utils.aoa_to_sheet([
+      TEMPLATE_IMPORT_EXCEL_BASIC_INFO_COLUMNS,
+      ...TEMPLATE_IMPORT_EXCEL_BASIC_INFO_FIELDS
+    ]);
+    basicInfoWorksheet['!cols'] = [{ wch: 28 }, { wch: 70 }, { wch: 72 }];
+
+    const sampleRowsByColumn = TEMPLATE_IMPORT_EXCEL_SAMPLE_ROWS.map(row => (
+      TEMPLATE_IMPORT_EXCEL_COLUMNS.reduce((rowData, columnName, index) => ({
+        ...rowData,
+        [columnName]: row[index]
+      }), {})
+    ));
+
+    const getSampleScoreMap = (scoresText) => (
+      String(scoresText || '').split('|').reduce((scores, scoreEntry) => {
+        const separatorIndex = scoreEntry.indexOf('=');
+        if (separatorIndex === -1) return scores;
+
+        const optionName = scoreEntry.slice(0, separatorIndex).trim();
+        const scoreValue = scoreEntry.slice(separatorIndex + 1).trim();
+        if (!optionName || !scoreValue) return scores;
+
+        return {
+          ...scores,
+          [optionName.toLowerCase()]: scoreValue
+        };
+      }, {})
+    );
+
+    const pagesQuestionsRows = sampleRowsByColumn.map((sampleRow) => {
+      const answerType = sampleRow['Answer Type'];
+      const includeNA = sampleRow['Include N/A'];
+      const rawScores = getSampleScoreMap(sampleRow.Scores);
+      const scoringMax = sampleRow['Scoring Max'];
+      const isCompliance = answerType === 'compliance';
+      const options = isCompliance
+        ? TEMPLATE_IMPORT_DEFAULT_OPTIONS.compliance.join('|')
+        : sampleRow.Options;
+      const optionScores = answerType === 'select'
+        ? sampleRow.Scores
+        : '';
+
+      return [
+        sampleRow['Page Name'],
+        sampleRow['Page Description'],
+        sampleRow['Page Order'],
+        sampleRow['Section Name'],
+        sampleRow['Section Description'],
+        sampleRow['Section Order'],
+        sampleRow['Question Text'],
+        sampleRow['Question Description'],
+        answerType,
+        sampleRow.Required,
+        sampleRow['Requirement Type'],
+        includeNA,
+        sampleRow.Weight,
+        options,
+        rawScores.yes || '',
+        rawScores.no || '',
+        (answerType === 'yes_no' || answerType === 'yesno') ? rawScores['n/a'] || '' : '',
+        isCompliance ? scoringMax : '',
+        isCompliance ? 1 : '',
+        isCompliance ? 0 : '',
+        isCompliance ? 0 : '',
+        optionScores,
+        sampleRow['Scoring Enabled'],
+        scoringMax
+      ];
+    });
+
+    const pagesQuestionsWorksheet = XLSX.utils.aoa_to_sheet([
+      TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS,
+      ...pagesQuestionsRows
+    ]);
+    pagesQuestionsWorksheet['!cols'] = TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS.map(column => ({
+      wch: Math.min(Math.max(column.length + 4, 16), 44)
+    }));
+    pagesQuestionsWorksheet['!autofilter'] = {
+      ref: `A1:${XLSX.utils.encode_col(TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_COLUMNS.length - 1)}${pagesQuestionsRows.length + 1}`
+    };
+
+    const instructionsWorksheet = XLSX.utils.aoa_to_sheet([
+      ['Instruction', 'Details'],
+      ['Basic Info tab', 'Fill Template Name first. Template Description, Type, and Status are optional.'],
+      ['Pages and Questions tab', 'Use one row per question. Required columns are Page Name, Section Name, and Question Text.'],
+      ['Answer Type values', TEMPLATE_IMPORT_ANSWER_TYPE_VALUES.join(', ')],
+      ['Recommended answer types', 'Use yes_no for Yes/No, compliance for compliance scoring, select for dropdowns, textarea for long text.'],
+      ['Options', 'Separate options with |, for example: Yes|No|N/A. For yes_no and compliance, options can be left blank to use defaults.'],
+      ['Easy scoring fields', 'For yes_no, fill Score Yes, Score No, and Score N/A. For compliance, fill Score Full Compliance, Score Partial Compliance, Score Non-Compliant, and Score Not Applicable.'],
+      ['Option Scores', 'For select or custom options, use Option=Score pairs separated with |, for example: Excellent=4|Good=3|Needs Repair=1|Unsafe=0. Option names should match Options.'],
+      ['Boolean values', 'Use TRUE/FALSE, YES/NO, Y/N, or 1/0.'],
+      ['Template Status values', TEMPLATE_IMPORT_STATUS_VALUES.join(', ')],
+      ['Requirement Type values', TEMPLATE_IMPORT_REQUIREMENT_TYPE_VALUES.join(', ')]
+    ]);
+    instructionsWorksheet['!cols'] = [{ wch: 28 }, { wch: 120 }];
+
+    XLSX.utils.book_append_sheet(workbook, basicInfoWorksheet, TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME);
+    XLSX.utils.book_append_sheet(workbook, pagesQuestionsWorksheet, TEMPLATE_IMPORT_EXCEL_PAGES_QUESTIONS_SHEET_NAME);
+    XLSX.utils.book_append_sheet(workbook, instructionsWorksheet, TEMPLATE_IMPORT_EXCEL_INSTRUCTIONS_SHEET_NAME);
+    XLSX.writeFile(workbook, TEMPLATE_IMPORT_EXCEL_FILE_NAME);
   };
 
   const handleSave = async () => {
@@ -7118,14 +8141,16 @@ const InspectionLevelForm = () => {
       )}
 
       <Header>
-        <BackButton onClick={handleBack}>
-          <ChevronLeft size={20} />
-          {t('common.back')}
-        </BackButton>
-        <h1>{id ? t('common.editTemplate') : t('common.createTemplate')}</h1>
-        <div>
+        <HeaderTitleGroup>
+          <BackButton onClick={handleBack}>
+            <ChevronLeft size={20} />
+            {t('common.back')}
+          </BackButton>
+          <h1>{id ? t('common.editTemplate') : t('common.createTemplate')}</h1>
+        </HeaderTitleGroup>
+        <HeaderActions>
           {!id && (
-            <>
+            <HeaderImportGroup>
               <input
                 ref={importInputRef}
                 type="file"
@@ -7133,34 +8158,52 @@ const InspectionLevelForm = () => {
                 onChange={handleTemplateImport}
                 style={{ display: 'none' }}
               />
-              <Button onClick={handleImportButtonClick} disabled={loading}>
+              <input
+                ref={excelImportInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                onChange={handleTemplateExcelImport}
+                style={{ display: 'none' }}
+              />
+              <HeaderActionButton onClick={handleImportButtonClick} disabled={loading}>
                 <Upload size={16} />
                 {t('inspections.importTemplate')}
-              </Button>
-              <Button onClick={handleDownloadSampleTemplate} disabled={loading}>
+              </HeaderActionButton>
+              <HeaderActionButton onClick={handleDownloadSampleTemplate} disabled={loading}>
                 <Download size={16} />
                 {t('inspections.sampleTemplate')}
-              </Button>
-            </>
+              </HeaderActionButton>
+              <HeaderActionButton onClick={handleExcelImportButtonClick} disabled={loading}>
+                <Upload size={16} />
+                {t('inspections.importExcelTemplate')}
+              </HeaderActionButton>
+              <HeaderActionButton onClick={handleDownloadSampleExcelTemplate} disabled={loading}>
+                <Download size={16} />
+                {t('inspections.sampleExcelTemplate')}
+              </HeaderActionButton>
+            </HeaderImportGroup>
           )}
-          <Button onClick={() => setIsActivityHistoryOpen(true)}>
-            <History size={16} />
-            {t('common.activity')}
-          </Button>
-          <Button onClick={() => setIsMobilePreviewOpen(true)}>
-            <Smartphone size={16} />
-            {t('common.preview')}
-          </Button>
-          <Button onClick={toggleGuide}>
-            <HelpCircle size={16} />
-            {t('common.guide')}
-          </Button>
-          <InspectionSaveButton onClick={handleSave} disabled={loading}>
-            <Save size={16} />
-            {id ? t('common.updateTemplate') : t('common.save')}
-          </InspectionSaveButton>
-
-        </div>
+          <HeaderUtilityGroup>
+            <HeaderActionButton onClick={() => setIsActivityHistoryOpen(true)}>
+              <History size={16} />
+              {t('common.activity')}
+            </HeaderActionButton>
+            <HeaderActionButton onClick={() => setIsMobilePreviewOpen(true)}>
+              <Smartphone size={16} />
+              {t('common.preview')}
+            </HeaderActionButton>
+            <HeaderActionButton onClick={toggleGuide}>
+              <HelpCircle size={16} />
+              {t('common.guide')}
+            </HeaderActionButton>
+          </HeaderUtilityGroup>
+          <HeaderSaveGroup>
+            <InspectionSaveButton onClick={handleSave} disabled={loading}>
+              <Save size={16} />
+              {id ? t('common.updateTemplate') : t('common.save')}
+            </InspectionSaveButton>
+          </HeaderSaveGroup>
+        </HeaderActions>
       </Header>
 
       {templateComplexity.isComplex && (
