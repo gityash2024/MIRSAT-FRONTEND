@@ -2435,8 +2435,9 @@ const QuestionItemComponent = ({
   // Calculate total score based on question type and weights
   useEffect(() => {
     let maxScore = 0;
+    const scoreValues = Object.values(question.scores || {});
 
-    if (question.answerType === 'yesno') {
+    if (question.answerType === 'yesno' || question.answerType === 'yes_no') {
       const yesKey = t('common.yes');
       const noKey = t('common.no');
       const naKey = t('common.na');
@@ -2453,10 +2454,11 @@ const QuestionItemComponent = ({
         scores['Not applicable'] || 0
       ];
       maxScore = Math.max(...complianceScores);
-    } else if (question.answerType === 'multiple' || question.answerType === 'multiple_choice') {
-      const scores = question.scores || {};
-      const optionScores = Object.values(scores).map(s => parseInt(s) || 0);
+    } else if (['multiple', 'multiple_choice', 'select', 'checkbox'].includes(question.answerType)) {
+      const optionScores = scoreValues.map(s => Number(s) || 0);
       maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
+    } else if (question.scoring?.enabled && scoreValues.length === 0) {
+      maxScore = Number(question.scoring?.max) || 0;
     }
 
     setTotalScore(maxScore);
@@ -2470,7 +2472,7 @@ const QuestionItemComponent = ({
       ...question,
       scoring: newScoring
     });
-  }, [question.scores, question.answerType]);
+  }, [question.scores, question.answerType, question.includeNA, question.scoring?.enabled, question.scoring?.max]);
 
   // Load library with proper debugging
   const loadLibrary = async () => {
