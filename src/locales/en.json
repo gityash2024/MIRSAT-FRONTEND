@@ -937,6 +937,7 @@
     "invalidTemplateFile": "Please upload a valid JSON template file.",
     "invalidExcelTemplateFile": "Please upload a valid Excel template file.",
     "invalidTemplateStructure": "Template file must include a name and at least one page with sections.",
+    "templateLimitExceeded": "Template exceeds supported limits. Maximum allowed: {{maxPages}} pages, {{maxSections}} sections, {{maxQuestions}} questions. Current template: {{pages}} pages, {{sections}} sections, {{questions}} questions.",
     "importErrorJsonOnly": "Only JSON template files are supported.",
     "importErrorExcelOnly": "Only Excel template files (.xlsx or .xls) are supported.",
     "importErrorEmptyFile": "The selected template file is empty.",

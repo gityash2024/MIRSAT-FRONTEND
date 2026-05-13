@@ -40,7 +40,6 @@ import {
   Trash,
   ChevronUp,
   Settings,
-  AlertTriangle,
   Minus,
   Loader,
   Info,
@@ -188,6 +187,46 @@ const TEMPLATE_IMPORT_ANSWER_TYPE_ALIASES = {
 
 const TEMPLATE_IMPORT_BOOLEAN_TRUE_VALUES = new Set(['true', 'yes', 'y', '1']);
 const TEMPLATE_IMPORT_BOOLEAN_FALSE_VALUES = new Set(['false', 'no', 'n', '0']);
+
+const TEMPLATE_SIZE_LIMITS = {
+  pages: 1000,
+  sections: 1000,
+  questions: 10000
+};
+const QUESTION_PAGE_SIZE = 50;
+const LOCAL_STORAGE_KEY = 'inspection_template_draft';
+const LOCAL_STORAGE_DRAFT_MAX_CHARACTERS = 4000000;
+const LOCAL_STORAGE_DRAFT_SIZE_LIMITS = {
+  pages: 250,
+  sections: 500,
+  questions: 2500
+};
+
+const getTemplateSizeStats = (template) => {
+  const pages = Array.isArray(template?.pages) ? template.pages : [];
+  let sections = 0;
+  let questions = 0;
+
+  pages.forEach((page) => {
+    const pageSections = Array.isArray(page?.sections) ? page.sections : [];
+    sections += pageSections.length;
+
+    pageSections.forEach((section) => {
+      questions += Array.isArray(section?.questions) ? section.questions.length : 0;
+    });
+  });
+
+  return {
+    pages: pages.length,
+    sections,
+    questions
+  };
+};
+
+const getTemplateLimitViolations = (stats, limits = TEMPLATE_SIZE_LIMITS) => (
+  Object.entries(limits)
+    .filter(([key, limit]) => (stats?.[key] || 0) > limit)
+);
 
 const TEMPLATE_IMPORT_SCORE_COLUMNS = {
   'Score Yes': 'Yes',
@@ -5703,29 +5742,96 @@ const InspectionLevelForm = () => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic-info');
   const [activeSectionTab, setActiveSectionTab] = useState(0); // For section tabs
-  const [templateComplexity, setTemplateComplexity] = useState({
-    totalQuestions: 0,
-    totalSections: 0,
-    totalPages: 0,
-    isComplex: false
-  });
+  const [questionPage, setQuestionPage] = useState(1);
   const [saveError, setSaveError] = useState('');
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const templateStats = useMemo(() => getTemplateSizeStats(formData), [formData.pages]);
+
+  const getTemplateLimitError = useCallback((stats = templateStats) => {
+    if (getTemplateLimitViolations(stats).length === 0) return '';
+
+    return t('inspections.templateLimitExceeded', {
+      maxPages: TEMPLATE_SIZE_LIMITS.pages,
+      maxSections: TEMPLATE_SIZE_LIMITS.sections,
+      maxQuestions: TEMPLATE_SIZE_LIMITS.questions,
+      pages: stats.pages || 0,
+      sections: stats.sections || 0,
+      questions: stats.questions || 0
+    });
+  }, [t, templateStats]);
+
+  const saveTemplateDraft = useCallback((data) => {
+    try {
+      const draftStats = getTemplateSizeStats(data);
+      if (getTemplateLimitViolations(draftStats, LOCAL_STORAGE_DRAFT_SIZE_LIMITS).length > 0) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        return false;
+      }
+
+      const serializedDraft = JSON.stringify(data);
+
+      if (serializedDraft.length > LOCAL_STORAGE_DRAFT_MAX_CHARACTERS) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        return false;
+      }
+
+      localStorage.setItem(LOCAL_STORAGE_KEY, serializedDraft);
+      return true;
+    } catch (error) {
+      console.error('Error saving template draft:', error);
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } catch (cleanupError) {
+        console.error('Error clearing template draft:', cleanupError);
+      }
+      return false;
+    }
+  }, []);
+
+  const autoSaveToLocalStorage = useMemo(() => (
+    debounce((data) => {
+      saveTemplateDraft(data);
+    }, 2000)
+  ), [saveTemplateDraft]);
 
   // Refs
-  const autoSaveToLocalStorage = useRef(
-    debounce((data) => {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-        console.log('Template auto-saved to local storage');
-      } catch (error) {
-        console.error('Error auto-saving to local storage:', error);
-      }
-    }, 2000)
-  ).current;
   const hasShownRestoreToast = useRef(false);
   const importInputRef = useRef(null);
   const excelImportInputRef = useRef(null);
+  const activePage = formData.pages?.[activePageIndex] || null;
+  const activeSection = activePage?.sections?.[activeSectionTab] || null;
+  const activeSectionQuestions = activeSection?.questions || [];
+  const totalQuestionPages = Math.max(1, Math.ceil(activeSectionQuestions.length / QUESTION_PAGE_SIZE));
+  const clampedQuestionPage = Math.min(questionPage, totalQuestionPages);
+  const questionPageStartIndex = (clampedQuestionPage - 1) * QUESTION_PAGE_SIZE;
+  const visibleActiveSectionQuestions = activeSectionQuestions.slice(
+    questionPageStartIndex,
+    questionPageStartIndex + QUESTION_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setQuestionPage(1);
+  }, [activePageIndex, activeSectionTab]);
+
+  useEffect(() => {
+    const sectionCount = formData.pages?.[activePageIndex]?.sections?.length || 0;
+    if (sectionCount === 0 && activeSectionTab !== 0) {
+      setActiveSectionTab(0);
+      return;
+    }
+
+    if (sectionCount > 0 && activeSectionTab > sectionCount - 1) {
+      setActiveSectionTab(sectionCount - 1);
+    }
+  }, [activePageIndex, activeSectionTab, formData.pages]);
+
+  useEffect(() => {
+    setQuestionPage(prevPage => Math.min(Math.max(prevPage, 1), totalQuestionPages));
+  }, [totalQuestionPages]);
+
+  useEffect(() => () => {
+    autoSaveToLocalStorage.cancel();
+  }, [autoSaveToLocalStorage]);
 
   useEffect(() => {
     // Fetch asset types for the dropdown
@@ -5741,16 +5847,20 @@ const InspectionLevelForm = () => {
           const parsedTemplate = JSON.parse(savedTemplate);
           // Ensure parsed template has required structure
           if (parsedTemplate && (parsedTemplate.name !== undefined || parsedTemplate.pages)) {
-            setFormData(parsedTemplate);
-            // Show toast only once per page load
-            if (!hasShownRestoreToast.current) {
-              hasShownRestoreToast.current = true;
-              toast.success(t('inspections.welcomeBackRestored'), {
-                duration: 3000,
-                style: { background: '#10B981', color: 'white' }
-              });
+            if (getTemplateLimitViolations(getTemplateSizeStats(parsedTemplate)).length > 0) {
+              localStorage.removeItem(LOCAL_STORAGE_KEY);
+            } else {
+              setFormData(parsedTemplate);
+              // Show toast only once per page load
+              if (!hasShownRestoreToast.current) {
+                hasShownRestoreToast.current = true;
+                toast.success(t('inspections.welcomeBackRestored'), {
+                  duration: 3000,
+                  style: { background: '#10B981', color: 'white' }
+                });
+              }
+              return; // Exit early after restoring
             }
-            return; // Exit early after restoring
           }
         }
         // Initialize with one empty page only if no saved data exists or invalid data
@@ -6094,13 +6204,19 @@ const InspectionLevelForm = () => {
 
   const applyImportedTemplate = (template) => {
     const { template: normalizedTemplate, stats } = normalizeImportedTemplate(template);
+    const limitError = getTemplateLimitError(stats);
+
+    if (limitError) {
+      throw new Error(limitError);
+    }
 
     setFormData(normalizedTemplate);
     setActivePageIndex(0);
     setActiveSectionTab(0);
+    setQuestionPage(1);
     setActiveTab('basic-info');
     setSaveError('');
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizedTemplate));
+    saveTemplateDraft(normalizedTemplate);
     toast.success(t('inspections.templateImportedSuccessfully', stats));
   };
 
@@ -6925,6 +7041,15 @@ const InspectionLevelForm = () => {
       setSaveError('');
       setSaveMessage('Saving template...');
 
+      const limitError = getTemplateLimitError(templateStats);
+      if (limitError) {
+        setLoading(false);
+        setSaveMessage('');
+        setSaveError(limitError);
+        toast.error(limitError);
+        return null;
+      }
+
       // Add a small delay to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -6991,9 +7116,6 @@ const InspectionLevelForm = () => {
 
       // Set the questions array
       templateData.questions = allQuestions;
-
-      // Debug output to see what we're sending
-      console.log('Template data before sending:', JSON.stringify(templateData));
 
       let response;
 
@@ -7154,6 +7276,8 @@ const InspectionLevelForm = () => {
     });
 
     setActivePageIndex(newPages.length - 1);
+    setActiveSectionTab(0);
+    setQuestionPage(1);
   };
 
   const updatePage = (index, data) => {
@@ -7430,12 +7554,16 @@ const InspectionLevelForm = () => {
 
     const updatedPages = [...formData.pages];
     updatedPages[activePageIndex].sections[sectionIndex].questions.push(newQuestion);
+    const nextQuestionCount = updatedPages[activePageIndex].sections[sectionIndex].questions.length;
 
     setFormData({
       ...formData,
       pages: updatedPages
     });
 
+    if (sectionIndex === activeSectionTab) {
+      setQuestionPage(Math.ceil(nextQuestionCount / QUESTION_PAGE_SIZE));
+    }
     setUnsavedChanges(true);
   };
 
@@ -7510,38 +7638,6 @@ const InspectionLevelForm = () => {
   const toggleGuide = () => {
     setIsGuideOpen(!isGuideOpen);
   };
-
-  // Calculate template complexity
-  useEffect(() => {
-    if (!formData || !formData.pages) return;
-
-    let questionCount = 0;
-    let sectionCount = 0;
-    let pageCount = formData.pages.length;
-
-    formData.pages.forEach(page => {
-      if (page.sections) {
-        sectionCount += page.sections.length;
-
-        page.sections.forEach(section => {
-          if (section.questions) {
-            questionCount += section.questions.length;
-          }
-        });
-      }
-    });
-
-    // Determine if template might be too complex to save
-    // These thresholds should be adjusted based on actual observed limits
-    const isComplex = questionCount > 200 || sectionCount > 50 || pageCount > 20;
-
-    setTemplateComplexity({
-      totalQuestions: questionCount,
-      totalSections: sectionCount,
-      totalPages: pageCount,
-      isComplex
-    });
-  }, [formData]);
 
   // Transform template data to report format
   const transformTemplateToReportData = () => {
@@ -7630,9 +7726,9 @@ const InspectionLevelForm = () => {
     };
   };
 
-  // Add local storage key and functions
-  const LOCAL_STORAGE_KEY = 'inspection_template_draft';
-
+  const reportPreviewData = useMemo(() => (
+    activeTab === 'report' ? transformTemplateToReportData() : null
+  ), [activeTab, formData, id, t]);
 
   // Auto-save template changes to local storage
   useEffect(() => {
@@ -7658,6 +7754,8 @@ const InspectionLevelForm = () => {
       pages: updatedPages
     }));
     setActivePageIndex(newActivePageIndex);
+    setActiveSectionTab(0);
+    setQuestionPage(1);
     setUnsavedChanges(true);
   };
 
@@ -7669,6 +7767,13 @@ const InspectionLevelForm = () => {
       ...prev,
       pages: updatedPages
     }));
+    setActiveSectionTab(prevTab => {
+      if (pageIndex !== activePageIndex) return prevTab;
+      const remainingSections = updatedPages[pageIndex]?.sections?.length || 0;
+      if (remainingSections === 0) return 0;
+      return Math.min(prevTab, remainingSections - 1);
+    });
+    setQuestionPage(1);
     setUnsavedChanges(true);
   };
 
@@ -7693,7 +7798,10 @@ const InspectionLevelForm = () => {
           alignItems: 'center'
         }}>
           <div
-            onClick={() => setActivePageIndex(pageIndex)}
+            onClick={() => {
+              setActivePageIndex(pageIndex);
+              setActiveSectionTab(0);
+            }}
             style={{ flex: '1' }}
           >
             <div style={{
@@ -7727,7 +7835,10 @@ const InspectionLevelForm = () => {
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => setActivePageIndex(pageIndex)}
+              onClick={() => {
+                setActivePageIndex(pageIndex);
+                setActiveSectionTab(0);
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -7985,7 +8096,10 @@ const InspectionLevelForm = () => {
             key={page.id || page._id || index}
             $active={index === activePageIndex}
             $isDragging={draggingPageIndex === index}
-            onClick={() => setActivePageIndex(index)}
+            onClick={() => {
+              setActivePageIndex(index);
+              setActiveSectionTab(0);
+            }}
             draggable="true"
             onDragStart={(e) => handlePageManualDragStart(e, index)}
             onDragOver={(e) => handlePageManualDragOver(e, index)}
@@ -8207,27 +8321,6 @@ const InspectionLevelForm = () => {
           </HeaderSaveGroup>
         </HeaderActions>
       </Header>
-
-      {templateComplexity.isComplex && (
-        <div style={{
-          padding: '12px 16px',
-          background: '#fff3cd',
-          border: '1px solid #ffeeba',
-          borderRadius: '4px',
-          marginBottom: '16px',
-          color: '#856404',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <AlertTriangle size={20} />
-          <div>
-            <strong>Warning:</strong> This template is becoming complex ({templateComplexity.totalQuestions} questions,
-            {templateComplexity.totalSections} sections, {templateComplexity.totalPages} pages).
-            You may experience slow performance or issues when saving. Consider breaking it into multiple templates.
-          </div>
-        </div>
-      )}
 
       {/* Main tabs navigation */}
       <div style={{
@@ -8736,34 +8829,47 @@ const InspectionLevelForm = () => {
                               </Button>
                             </div>
 
-                            {formData.pages[activePageIndex].sections[activeSectionTab].questions &&
-                              formData.pages[activePageIndex].sections[activeSectionTab].questions.length > 0 ? (
-                              <QuestionTable>
-                                <QuestionTableHeader>
-                                  <div style={{ width: '40px' }}>#</div>
-                                  <div>Question</div>
-                                  <div>Type</div>
-                                  <div>Actions</div>
-                                </QuestionTableHeader>
+                            {activeSectionQuestions.length > 0 ? (
+                              <>
+                                <QuestionTable>
+                                  <QuestionTableHeader>
+                                    <div style={{ width: '40px' }}>#</div>
+                                    <div>Question</div>
+                                    <div>Type</div>
+                                    <div>Actions</div>
+                                  </QuestionTableHeader>
 
-                                {formData.pages[activePageIndex].sections[activeSectionTab].questions.map((question, questionIndex) => (
-                                  <QuestionItemComponent
-                                    key={questionIndex}
-                                    question={question}
-                                    questionIndex={questionIndex}
-                                    loading={loading}
-                                    updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
-                                    removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
-                                    onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
-                                    sectionIndex={activeSectionTab}
-                                    isDragging={draggingQuestionIndex === questionIndex}
-                                    onQuestionDragStart={handleQuestionDragStart}
-                                    onQuestionDragOver={handleQuestionDragOver}
-                                    onQuestionDrop={handleQuestionDrop}
-                                    onQuestionDragEnd={handleQuestionDragEnd}
+                                  {visibleActiveSectionQuestions.map((question, visibleQuestionIndex) => {
+                                    const questionIndex = questionPageStartIndex + visibleQuestionIndex;
+
+                                    return (
+                                      <QuestionItemComponent
+                                        key={question.id || question._id || questionIndex}
+                                        question={question}
+                                        questionIndex={questionIndex}
+                                        loading={loading}
+                                        updateQuestion={(updatedQuestion) => updateQuestion(activeSectionTab, questionIndex, updatedQuestion)}
+                                        removeQuestion={() => removeQuestion(activeSectionTab, questionIndex)}
+                                        onMoveQuestion={() => openMoveQuestionModal(activeSectionTab, questionIndex)}
+                                        sectionIndex={activeSectionTab}
+                                        isDragging={draggingQuestionIndex === questionIndex}
+                                        onQuestionDragStart={handleQuestionDragStart}
+                                        onQuestionDragOver={handleQuestionDragOver}
+                                        onQuestionDrop={handleQuestionDrop}
+                                        onQuestionDragEnd={handleQuestionDragEnd}
+                                      />
+                                    );
+                                  })}
+                                </QuestionTable>
+
+                                {totalQuestionPages > 1 && (
+                                  <QuestionPagination
+                                    currentPage={clampedQuestionPage}
+                                    totalPages={totalQuestionPages}
+                                    onPageChange={setQuestionPage}
                                   />
-                                ))}
-                              </QuestionTable>
+                                )}
+                              </>
                             ) : (
                               <TabEmptyState>
                                 <FileText size={32} />
@@ -8893,7 +8999,7 @@ const InspectionLevelForm = () => {
               maxWidth: '800px',
               margin: '0 auto'
             }}>
-              <ReportPreviewComponent reportData={transformTemplateToReportData()} />
+              <ReportPreviewComponent reportData={reportPreviewData || getEmptyReportTemplate()} />
             </div>
           )}
 

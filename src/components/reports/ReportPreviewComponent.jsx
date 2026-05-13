@@ -1182,7 +1182,7 @@ const ReportPreviewComponent = ({
               </SectionItemHeader>
               
               <SectionItemContent isOpen={openSection === section.id}>
-                {(section.items || []).map((item, itemIndex) => (
+                {openSection === section.id && (section.items || []).map((item, itemIndex) => (
                   <SectionItemInner key={item.title || itemIndex}>
                     <SectionItemTitleText>{item.title || `Item ${itemIndex + 1}`}</SectionItemTitleText>
                     <StatusBadge status={item.status || 'not_applicable'}>
@@ -1211,4 +1211,4 @@ const ReportPreviewComponent = ({
   );
 };
 
-export default ReportPreviewComponent; 
+export default ReportPreviewComponent;

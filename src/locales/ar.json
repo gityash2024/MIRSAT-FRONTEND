@@ -853,6 +853,7 @@
     "invalidTemplateFile": "يرجى رفع ملف قالب JSON صالح.",
     "invalidExcelTemplateFile": "يرجى رفع ملف قالب Excel صالح.",
     "invalidTemplateStructure": "يجب أن يحتوي ملف القالب على اسم وصفحة واحدة على الأقل مع أقسام.",
+    "templateLimitExceeded": "يتجاوز القالب الحدود المدعومة. الحد الأقصى المسموح: {{maxPages}} صفحات، {{maxSections}} أقسام، {{maxQuestions}} أسئلة. القالب الحالي: {{pages}} صفحات، {{sections}} أقسام، {{questions}} أسئلة.",
     "importErrorJsonOnly": "يتم دعم ملفات قوالب JSON فقط.",
     "importErrorExcelOnly": "يتم دعم ملفات قوالب Excel فقط (.xlsx أو .xls).",
     "importErrorEmptyFile": "ملف القالب المحدد فارغ.",
