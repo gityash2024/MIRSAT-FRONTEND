@@ -601,7 +601,7 @@ const DocumentNamingModal = ({
             <FileText size={20} />
             {t('common.exportDocumentSettings')}
           </ModalTitle>
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={onClose} data-agent-action="document_export.cancel">
             <X size={20} />
           </CloseButton>
         </ModalHeader>
@@ -616,6 +616,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.documentType"
                 checked={namingCriteria.documentType}
                 onChange={() => handleCriteriaChange('documentType')}
               />
@@ -625,6 +626,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.currentDate"
                 checked={namingCriteria.currentDate}
                 onChange={() => handleCriteriaChange('currentDate')}
               />
@@ -635,6 +637,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.currentTime"
                 checked={namingCriteria.currentTime}
                 onChange={() => handleCriteriaChange('currentTime')}
               />
@@ -644,6 +647,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.username"
                 checked={namingCriteria.username}
                 onChange={() => handleCriteriaChange('username')}
               />
@@ -654,6 +658,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.userRole"
                 checked={namingCriteria.userRole}
                 onChange={() => handleCriteriaChange('userRole')}
               />
@@ -663,6 +668,7 @@ const DocumentNamingModal = ({
             <CriteriaItem>
               <input
                 type="checkbox"
+                data-agent-field="document_export.criteria.customText"
                 checked={namingCriteria.customText}
                 onChange={() => handleCriteriaChange('customText')}
               />
@@ -676,6 +682,7 @@ const DocumentNamingModal = ({
               <Select 
                 value={dateFormat} 
                 onChange={(e) => setDateFormat(e.target.value)}
+                data-agent-field="document_export.dateFormat"
               >
                 <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-08)</option>
                 <option value="DD-MM-YYYY">DD-MM-YYYY (08-01-2025)</option>
@@ -690,6 +697,7 @@ const DocumentNamingModal = ({
               <Select 
                 value={timeFormat} 
                 onChange={(e) => setTimeFormat(e.target.value)}
+                data-agent-field="document_export.timeFormat"
               >
                 <option value="HH-MM">HH-MM (14-30)</option>
                 <option value="HH-MM-SS">HH-MM-SS (14-30-45)</option>
@@ -706,6 +714,7 @@ const DocumentNamingModal = ({
                 onChange={(e) => setCustomText(e.target.value)}
                 placeholder={t('common.enterCustomTextForFilename')}
                 maxLength={50}
+                data-agent-field="document_export.customText"
               />
             </FormGroup>
           )}
@@ -725,6 +734,7 @@ const DocumentNamingModal = ({
                   value={EXPORT_LANGUAGES.EN}
                   checked={exportLanguage === EXPORT_LANGUAGES.EN}
                   onChange={() => setExportLanguage(EXPORT_LANGUAGES.EN)}
+                  data-agent-field="document_export.language.en"
                 />
                 {t('common.exportInEnglish') === 'common.exportInEnglish' ? 'English' : t('common.exportInEnglish')}
               </LanguageOption>
@@ -735,6 +745,7 @@ const DocumentNamingModal = ({
                   value={EXPORT_LANGUAGES.AR}
                   checked={exportLanguage === EXPORT_LANGUAGES.AR}
                   onChange={() => setExportLanguage(EXPORT_LANGUAGES.AR)}
+                  data-agent-field="document_export.language.ar"
                 />
                 {t('common.exportInArabic') === 'common.exportInArabic' ? 'Arabic' : t('common.exportInArabic')}
               </LanguageOption>
@@ -752,10 +763,10 @@ const DocumentNamingModal = ({
         </PreviewSection>
 
         <ButtonGroup>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} data-agent-action="document_export.cancel">
             {t('common.cancel')}
           </Button>
-          <Button variant="primary" onClick={handleExport}>
+          <Button variant="primary" onClick={handleExport} data-agent-action="document_export.confirm">
             <Download size={16} />
             {exportLabel} {formatLabel}
           </Button>

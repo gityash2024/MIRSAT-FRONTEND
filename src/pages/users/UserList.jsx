@@ -1652,7 +1652,7 @@ const UserList = () => {
   }
 
   return (
-    <PageContainer>
+    <PageContainer data-agent-page="users">
       <Header>
         <PageTitle>{t('common.userManagement')}</PageTitle>
         <SubTitle>{t('common.manageUserAccountsAndPermissions')}</SubTitle>
@@ -1663,6 +1663,8 @@ const UserList = () => {
           <Search className="search-icon" size={20} />
           <input 
             type="text" 
+            name="userSearch"
+            data-agent-field="users.search"
             placeholder={t('common.searchUsers')} 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -1678,6 +1680,7 @@ const UserList = () => {
             <ExportDropdown className="export-dropdown">
               <Button 
                 variant="secondary" 
+                data-agent-action="users.export.open"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowExportDropdown(!showExportDropdown);
@@ -1688,6 +1691,7 @@ const UserList = () => {
               </Button>
               <DropdownContent show={showExportDropdown}>
                 <DropdownItem 
+                  data-agent-action="users.export.pdf"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleExport('pdf');
@@ -1709,7 +1713,7 @@ const UserList = () => {
             </ExportDropdown>
           )}
           {hasPermission(PERMISSIONS.USERS.CREATE_USERS) && (
-            <Button variant="primary" as={Link} to="/users/create">
+            <Button variant="primary" as={Link} to="/users/create" data-agent-action="users.create">
               <UserPlus size={18} />
               {t('common.addUser')}
             </Button>

@@ -54,6 +54,7 @@ export const MODULE_PERMISSIONS = {
 };
 
 export const ROLES = {
+  SUPERADMIN: 'superadmin',
   ADMIN: 'admin',
   MANAGER: 'manager',
   SUPERVISOR: 'supervisor',
@@ -66,6 +67,7 @@ const ALL_PERMISSIONS = Object.values(PERMISSIONS).reduce((acc, group) => {
 }, []);
 
 export const ROLE_PERMISSIONS = {
+  [ROLES.SUPERADMIN]: ALL_PERMISSIONS,
   [ROLES.ADMIN]: ALL_PERMISSIONS,
   [ROLES.MANAGER]: [
     PERMISSIONS.DASHBOARD.VIEW_DASHBOARD,
@@ -120,7 +122,7 @@ export const hasPermission = (user, permission) => {
   if (!user || !user.role) return false;
   
   // Admin has all permissions
-  if (user.role === ROLES.ADMIN) return true;
+  if (user.role === ROLES.ADMIN || user.role === ROLES.SUPERADMIN) return true;
   
   // For managers and supervisors, check both module permissions and granular permissions
   if (user.role === ROLES.MANAGER || user.role === ROLES.SUPERVISOR) {
@@ -148,7 +150,7 @@ export const hasModuleAccess = (user, module) => {
   }
   
   // Admin and Inspector have access to all modules
-  if (user.role === ROLES.ADMIN || user.role === ROLES.INSPECTOR) {
+  if (user.role === ROLES.ADMIN || user.role === ROLES.SUPERADMIN || user.role === ROLES.INSPECTOR) {
     console.log('Admin or Inspector, returning true');
     return true;
   }
@@ -185,12 +187,13 @@ export const getRolePermissions = (role) => {
 
 // Helper function to check if a user can manage other users
 export const canManageUsers = (user) => {
-  return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER; // Remove supervisor
+  return user.role === ROLES.ADMIN || user.role === ROLES.SUPERADMIN || user.role === ROLES.MANAGER; // Remove supervisor
 };
 
 // Helper function to get available roles for user creation
 export const getAvailableRoles = (userRole) => {
   const roleHierarchy = {
+    [ROLES.SUPERADMIN]: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.INSPECTOR],
     [ROLES.ADMIN]: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.INSPECTOR],
     [ROLES.MANAGER]: [ROLES.INSPECTOR],
     [ROLES.SUPERVISOR]: [ROLES.INSPECTOR], // Supervisor can only create inspectors
@@ -201,6 +204,7 @@ export const getAvailableRoles = (userRole) => {
 };
 
 export const DEFAULT_PERMISSIONS = {
+  [ROLES.SUPERADMIN]: ROLE_PERMISSIONS[ROLES.SUPERADMIN],
   [ROLES.ADMIN]: ROLE_PERMISSIONS[ROLES.ADMIN],
   [ROLES.MANAGER]: ROLE_PERMISSIONS[ROLES.MANAGER],
   [ROLES.SUPERVISOR]: ROLE_PERMISSIONS[ROLES.SUPERVISOR],

@@ -10,7 +10,7 @@ export const usePermissions = () => {
     if (!user) return false;
 
     // Admin has all permissions
-    if (user.role === ROLES.ADMIN) return true;
+    if (user.role === ROLES.ADMIN || user.role === ROLES.SUPERADMIN) return true;
 
     // For other roles, check if they have the specific permission
     if (Array.isArray(user.permissions) && user.permissions.length > 0) {
@@ -45,9 +45,9 @@ export const usePermissions = () => {
   const getAvailableRoles = () => {
     if (!user) return [];
     
-    if (user.role === ROLES.ADMIN) {
+    if (user.role === ROLES.ADMIN || user.role === ROLES.SUPERADMIN) {
       // Admin can create all roles except admin
-      return Object.values(ROLES).filter(role => role !== ROLES.ADMIN);
+      return Object.values(ROLES).filter(role => user.role === ROLES.SUPERADMIN ? role !== ROLES.SUPERADMIN : ![ROLES.SUPERADMIN, ROLES.ADMIN].includes(role));
     }
 
     // Other roles can create roles lower in hierarchy

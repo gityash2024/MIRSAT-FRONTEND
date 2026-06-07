@@ -89,7 +89,7 @@ const AppRoutes = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Admin, Manager, and Supervisor Routes - Shared Access */}
-      <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
+      <Route element={<PrivateRoute allowedRoles={[ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/flagged-items" element={<FlaggedItems />} />
@@ -107,7 +107,7 @@ const AppRoutes = () => {
       </Route>
 
       {/* Admin and Manager Routes - Full Access Only */}
-      <Route element={<PrivateRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+      <Route element={<PrivateRoute allowedRoles={[ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.MANAGER]} />}>
         <Route element={<MainLayout />}>
           <Route path="/users" element={<UserList />} />
           <Route path="/users/create" element={<UserCreate />} />

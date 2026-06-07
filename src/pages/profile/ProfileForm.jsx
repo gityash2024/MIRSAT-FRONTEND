@@ -438,13 +438,14 @@ const ProfileForm = () => {
             </ButtonGroup>
           </>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} data-agent-page="profile" data-agent-form="profile.form">
             <FormRow>
               <FormGroup>
                 <Label>{t('profile.fullName')} *</Label>
                 <Input
                   type="text"
                   name="name"
+                  data-agent-field="profile.form.name"
                   value={profileData.name}
                   onChange={handleInputChange}
                   placeholder={t('profile.enterFullName')}
@@ -457,6 +458,7 @@ const ProfileForm = () => {
                 <Input
                   type="email"
                   name="email"
+                  data-agent-field="profile.form.email"
                   value={profileData.email}
                   disabled={true}
                   placeholder={t('profile.emailCannotBeChanged')}
@@ -470,6 +472,7 @@ const ProfileForm = () => {
               </Label>
               <Select
                 name="department"
+                data-agent-field="profile.form.department"
                 value={profileData.department}
                 onChange={handleInputChange}
                 required={user?.role !== 'manager' && user?.role !== 'inspector' && user?.role !== 'supervisor'}
@@ -502,6 +505,7 @@ const ProfileForm = () => {
               <Input
                 type="text"
                 name="phone"
+                data-agent-field="profile.form.phone"
                 value={profileData.phone}
                 onChange={handleInputChange}
                 placeholder={t('profile.enterPhoneNumber')}
@@ -513,6 +517,7 @@ const ProfileForm = () => {
               <Input
                 type="text"
                 name="address"
+                data-agent-field="profile.form.address"
                 value={profileData.address}
                 onChange={handleInputChange}
                 placeholder={t('profile.enterAddress')}
@@ -524,6 +529,7 @@ const ProfileForm = () => {
               <Input
                 type="text"
                 name="emergencyContact"
+                data-agent-field="profile.form.emergencyContact"
                 value={profileData.emergencyContact}
                 onChange={handleInputChange}
                 placeholder={t('profile.enterEmergencyContact')}
@@ -535,6 +541,7 @@ const ProfileForm = () => {
                 type="submit"
                 variant="primary"
                 disabled={isLoading}
+                data-agent-action="profile.submit"
               >
                 {isLoading ? (
                   t('profile.saving')

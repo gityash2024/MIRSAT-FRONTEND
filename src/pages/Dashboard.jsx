@@ -506,7 +506,7 @@ const Dashboard = () => {
       <DashboardFilters onFilterChange={handleFilterChange} />
 
       <ExportRow>
-        <ExportButton onClick={() => setShowDocumentModal(true)}>
+        <ExportButton onClick={() => setShowDocumentModal(true)} data-agent-action="dashboard.export.pdf">
           <Download size={20} />
           {t('dashboard.exportDashboardReport')}
         </ExportButton>

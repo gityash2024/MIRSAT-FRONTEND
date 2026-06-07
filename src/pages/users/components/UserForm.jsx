@@ -539,13 +539,14 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   }
 
   return (
-    <Form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit} data-agent-page="users" data-agent-form="users.form">
       <FormRow>
         <FormGroup>
           <Label>{t('common.fullName')}</Label>
           <Input
             type="text"
             name="name"
+            data-agent-field="users.form.name"
             value={formData.name || ''}
             onChange={handleChange}
             placeholder={t('common.enterFullName')}
@@ -558,6 +559,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="email"
             name="email"
+            data-agent-field="users.form.email"
             value={formData.email || ''}
             onChange={handleChange}
             placeholder={t('common.enterEmailAddress')}
@@ -572,6 +574,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="tel"
             name="phone"
+            data-agent-field="users.form.phone"
             value={formData.phone || ''}
             onChange={handleChange}
             placeholder={t('common.enterPhoneNumber')}
@@ -586,6 +589,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>{t('common.role')}</Label>
           <Select
             name="role"
+            data-agent-field="users.form.role"
             value={formData.role || ''}
             onChange={handleChange}
           >
@@ -604,6 +608,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>{t('common.department')}</Label>
           <Select
             name="department"
+            data-agent-field="users.form.department"
             value={formData.department || ''}
             onChange={handleChange}
             disabled={currentUser?.role === ROLES.MANAGER || currentUser?.role === ROLES.INSPECTOR || currentUser?.role === ROLES.SUPERVISOR}
@@ -629,6 +634,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Label>{t('common.status')}</Label>
           <Select
             name="status"
+            data-agent-field="users.form.status"
             value={formData.status || (formData.isActive ? 'active' : 'inactive')}
             onChange={handleChange}
           >
@@ -647,6 +653,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               <PasswordInput
                 type={showPassword ? "text" : "password"}
                 name="password"
+                data-agent-field="users.form.password"
                 value={formData.password || ''}
                 onChange={handleChange}
                 placeholder={t('common.enterPassword')}
@@ -664,6 +671,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
               <PasswordInput
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
+                data-agent-field="users.form.confirmPassword"
                 value={formData.confirmPassword || ''}
                 onChange={handleChange}
                 placeholder={t('common.confirmPasswordPlaceholder')}
@@ -683,6 +691,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="text"
             name="address"
+            data-agent-field="users.form.address"
             value={formData.address || ''}
             onChange={handleChange}
             placeholder={t('common.enterAddress')}
@@ -694,6 +703,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           <Input
             type="text"
             name="emergencyContact"
+            data-agent-field="users.form.emergencyContact"
             value={formData.emergencyContact || ''}
             onChange={handleChange}
             placeholder={t('common.enterEmergencyContact')}
@@ -718,7 +728,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         <Button type="button" onClick={onCancel}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
+        <Button type="submit" variant="primary" disabled={isSubmitting} data-agent-action="users.submit">
           {isSubmitting ? t('common.saving') : submitButtonText}
         </Button>
       </ButtonGroup>

@@ -29,7 +29,8 @@ export const API_CONFIG = {
     UPLOADS: '/uploads',
     DASHBOARD: '/dashboard',
     REPORTS: '/reports',
-    LOGS: '/logs'
+    LOGS: '/logs',
+    AGENT: '/agent'
   },
   TIMEOUTS: {
     DEFAULT: 30000,

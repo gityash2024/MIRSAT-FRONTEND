@@ -1362,6 +1362,7 @@ const TaskDetailsView = () => {
             <ExportButton
               onClick={handleExportClick}
               disabled={isExporting || !currentTask}
+              data-agent-action="tasks.export.open"
             >
               <Download size={16} />
               {isExporting ? t('common.exporting') : t('common.exportReport')}
@@ -1369,15 +1370,15 @@ const TaskDetailsView = () => {
             </ExportButton>
             {showExportDropdown && (
               <ExportDropdown>
-                <ExportOption onClick={() => handleExportFormat('excel')}>
+                <ExportOption onClick={() => handleExportFormat('excel')} data-agent-action="tasks.export.excel">
                   <FileSpreadsheet size={16} />
                   {t('common.exportAsExcel')}
                 </ExportOption>
-                <ExportOption onClick={() => handleExportFormat('docx')}>
+                <ExportOption onClick={() => handleExportFormat('docx')} data-agent-action="tasks.export.docx">
                   <FileText size={16} />
                   Export as Word
                 </ExportOption>
-                <ExportOption onClick={() => handleExportFormat('pdf')}>
+                <ExportOption onClick={() => handleExportFormat('pdf')} data-agent-action="tasks.export.pdf">
                   <FileText size={16} />
                   {t('common.exportAsPDF')}
                 </ExportOption>

@@ -8285,7 +8285,7 @@ const InspectionLevelForm = () => {
                 <Upload size={16} />
                 {t('inspections.importTemplate')}
               </HeaderActionButton>
-              <HeaderActionButton onClick={handleDownloadSampleTemplate} disabled={loading}>
+              <HeaderActionButton onClick={handleDownloadSampleTemplate} disabled={loading} data-agent-action="inspection_templates.download.sample_json">
                 <Download size={16} />
                 {t('inspections.sampleTemplate')}
               </HeaderActionButton>
@@ -8293,7 +8293,7 @@ const InspectionLevelForm = () => {
                 <Upload size={16} />
                 {t('inspections.importExcelTemplate')}
               </HeaderActionButton>
-              <HeaderActionButton onClick={handleDownloadSampleExcelTemplate} disabled={loading}>
+              <HeaderActionButton onClick={handleDownloadSampleExcelTemplate} disabled={loading} data-agent-action="inspection_templates.download.sample_excel">
                 <Download size={16} />
                 {t('inspections.sampleExcelTemplate')}
               </HeaderActionButton>

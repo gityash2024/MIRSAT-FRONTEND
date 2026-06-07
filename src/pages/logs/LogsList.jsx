@@ -1755,7 +1755,7 @@ const LogsList = () => {
   }
 
   return (
-    <LogsContainer>
+    <LogsContainer data-agent-page="logs">
       <Header>
         <Title>{t('logs.activityLogs')}</Title>
         <Subtitle>{t('logs.monitorAndTrackActivities')}</Subtitle>
@@ -1803,6 +1803,7 @@ const LogsList = () => {
             </SearchIcon>
             <SearchInput
               type="text"
+              data-agent-field="logs.search"
               placeholder={t('logs.searchLogs')}
               value={searchTerm}
               onChange={handleSearch}
@@ -1812,6 +1813,7 @@ const LogsList = () => {
           <FilterButton 
             active={showFilters}
             onClick={() => setShowFilters(!showFilters)}
+            data-agent-action="logs.filter"
           >
             <Filter size={16} />
             {t('logs.filters')}

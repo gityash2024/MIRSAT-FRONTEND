@@ -198,6 +198,10 @@ api.interceptors.response.use(
     }
     console.log(error,'error-----');
 
+    if (error.config?._skipRetry) {
+      return Promise.reject(error);
+    }
+
     // Handle unauthorized access
     if (error.response?.status === 401 || error.response?.data?.error?.message?.includes('401')) {
       // Don't auto-redirect for login requests - let the login component handle the error

@@ -763,12 +763,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
             </ToolbarTitle>
 
             <ToolbarActions>
-              <ActionButton onClick={handleDownloadPDF} primary>
+              <ActionButton onClick={handleDownloadPDF} primary data-agent-action="inspection_report.download.pdf">
                 <Download size={16} />
                 {t('inspections.downloadPDF')}
               </ActionButton>
 
-              <ActionButton onClick={handleDownloadDOCX}>
+              <ActionButton onClick={handleDownloadDOCX} data-agent-action="inspection_report.download.docx">
                 <Download size={16} />
                 {t('inspections.downloadDOCX')}
               </ActionButton>

@@ -549,6 +549,8 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
           onClick={handleClose}
         >
           <ModalContainer
+            data-agent-page="assets"
+            data-agent-form="assets.form"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
@@ -583,6 +585,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   type="number"
                   id="uniqueId"
                   name="uniqueId"
+                  data-agent-field="assets.form.uniqueId"
                   value={formData.uniqueId}
                   onChange={handleChange}
                   placeholder={t('common.enterUniqueId')}
@@ -597,6 +600,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                 <Select
                   id="type"
                   name="type"
+                  data-agent-field="assets.form.type"
                   value={formData.type}
                   onChange={handleChange}
                   disabled={isSubmitting}
@@ -625,6 +629,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   type="text"
                   id="displayName"
                   name="displayName"
+                  data-agent-field="assets.form.displayName"
                   value={formData.displayName}
                   onChange={handleChange}
                   placeholder={t('common.enterDisplayName')}
@@ -639,6 +644,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   type="text"
                   id="city"
                   name="city"
+                  data-agent-field="assets.form.city"
                   value={formData.city}
                   onChange={handleChange}
                   placeholder={t('common.enterCity')}
@@ -653,6 +659,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   type="text"
                   id="location"
                   name="location"
+                  data-agent-field="assets.form.location"
                   onChange={handleChange}
                   value={formData.location}
                   placeholder={t('common.enterLocation')}
@@ -668,6 +675,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                     type="color"
                     id="color"
                     name="color"
+                    data-agent-field="assets.form.color"
                     value={formData.color}
                     onChange={handleChange}
                     disabled={isSubmitting}
@@ -691,6 +699,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                 variant="primary" 
                 onClick={handleSubmit} 
                 disabled={isSubmitting || assetTypes.length === 0}
+                data-agent-action="assets.submit"
               >
                 {isSubmitting ? t('common.saving') : asset ? t('common.updateAsset') : t('common.createAsset')}
               </Button>

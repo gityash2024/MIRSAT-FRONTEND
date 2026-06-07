@@ -592,7 +592,7 @@ const AssetList = () => {
   }
 
   return (
-    <PageContainer>
+    <PageContainer data-agent-page="assets">
       <Header>
         <PageTitle>{t('common.assetManagement')}</PageTitle>
         <SubTitle>{t('common.manageAssetsEfficiently')}</SubTitle>
@@ -604,6 +604,7 @@ const AssetList = () => {
             <Search className="search-icon" size={20} />
             <input
               type="text"
+              data-agent-field="assets.search"
               placeholder={t('common.searchAssets')}
               value={searchTerm}
               onChange={handleSearchChange}
@@ -613,6 +614,7 @@ const AssetList = () => {
           {/* Asset Type Filter */}
           <FilterDropdown>
             <Select
+              data-agent-field="assets.filter.type"
               value={filters.type || ''}
               onChange={(e) => handleFilterChange('type', e.target.value)}
               disabled={loading}
@@ -629,6 +631,7 @@ const AssetList = () => {
           {/* City Filter */}
           <FilterDropdown>
             <Select
+              data-agent-field="assets.filter.city"
               value={filters.city || ''}
               onChange={(e) => handleFilterChange('city', e.target.value)}
               disabled={loading}
@@ -645,6 +648,7 @@ const AssetList = () => {
           {/* Unique ID Sort */}
           <FilterDropdown>
             <Select
+              data-agent-field="assets.filter.sort"
               value={filters.sortBy && filters.sortOrder ? `${filters.sortBy}-${filters.sortOrder}` : ''}
               onChange={(e) => handleSortChange(e.target.value)}
               disabled={loading}
@@ -670,6 +674,7 @@ const AssetList = () => {
             variant="secondary"
             onClick={handleExport}
             disabled={loading || assets.length === 0}
+            data-agent-action="assets.export.open"
           >
             <Download size={18} />
             {t('common.export')}
@@ -679,6 +684,7 @@ const AssetList = () => {
             variant="primary"
             onClick={() => handleOpenModal()}
             disabled={loading}
+            data-agent-action="assets.create"
           >
             <Plus size={18} />
             {t('common.addAsset')}

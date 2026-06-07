@@ -1032,7 +1032,7 @@ const loadTasks = async () => {
           : t('tasks.getStartedByCreating')}
       </EmptyStateDescription>
       {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
-        <ActionButton as={Link} to="/tasks/create" $variant="primary">
+        <ActionButton as={Link} to="/tasks/create" $variant="primary" data-agent-action="tasks.create">
           <Plus size={16} />
           {t('tasks.createTask')}
         </ActionButton>
@@ -1041,7 +1041,7 @@ const loadTasks = async () => {
   );
 
   return (
-    <PageContainer>
+    <PageContainer data-agent-page="tasks">
       <Header>
         <PageTitle>{t('navigation.tasks')}</PageTitle>
         <SubTitle>{t('tasks.createAndManage')}</SubTitle>
@@ -1053,6 +1053,7 @@ const loadTasks = async () => {
             <Search className="search-icon" size={16} />
             <input
               type="text"
+              data-agent-field="tasks.search"
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder={t('tasks.searchPlaceholder')}
@@ -1060,7 +1061,7 @@ const loadTasks = async () => {
           </SearchBox>
 
           <FilterDropdown data-dropdown="status">
-            <DropdownButton onClick={() => setShowStatusDropdown(!showStatusDropdown)}>
+            <DropdownButton onClick={() => setShowStatusDropdown(!showStatusDropdown)} data-agent-action="tasks.filter.status">
               {t('tasks.status')} {filters?.status?.length > 0 && `(${filters.status.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1072,6 +1073,7 @@ const loadTasks = async () => {
                 >
                   <input
                     type="checkbox"
+                    data-agent-field={`tasks.filter.status.${option.value}`}
                     checked={filters?.status?.includes(option.value) || false}
                     onChange={() => handleFilterChange('status', option.value)}
                   />
@@ -1082,7 +1084,7 @@ const loadTasks = async () => {
           </FilterDropdown>
 
           <FilterDropdown data-dropdown="priority">
-            <DropdownButton onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}>
+            <DropdownButton onClick={() => setShowPriorityDropdown(!showPriorityDropdown)} data-agent-action="tasks.filter.priority">
               {t('tasks.priority')} {filters?.priority?.length > 0 && `(${filters.priority.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1094,6 +1096,7 @@ const loadTasks = async () => {
                 >
                   <input
                     type="checkbox"
+                    data-agent-field={`tasks.filter.priority.${option.value}`}
                     checked={filters?.priority?.includes(option.value) || false}
                     onChange={() => handleFilterChange('priority', option.value)}
                   />
@@ -1104,7 +1107,7 @@ const loadTasks = async () => {
           </FilterDropdown>
 
           <FilterDropdown data-dropdown="template">
-            <DropdownButton onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}>
+            <DropdownButton onClick={() => setShowTemplateDropdown(!showTemplateDropdown)} data-agent-action="tasks.filter.inspectionLevel">
               {t('common.template')} {filters?.inspectionLevel?.length > 0 && `(${filters.inspectionLevel.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1116,6 +1119,7 @@ const loadTasks = async () => {
                 >
                   <input
                     type="checkbox"
+                    data-agent-field={`tasks.filter.inspectionLevel.${level._id || level.id}`}
                     checked={filters?.inspectionLevel?.includes(level._id || level.id) || false}
                     onChange={() => handleFilterChange('inspectionLevel', level._id || level.id)}
                   />
@@ -1126,7 +1130,7 @@ const loadTasks = async () => {
           </FilterDropdown>
 
           <FilterDropdown data-dropdown="assetType">
-            <DropdownButton onClick={() => setShowAssetTypeDropdown(!showAssetTypeDropdown)}>
+            <DropdownButton onClick={() => setShowAssetTypeDropdown(!showAssetTypeDropdown)} data-agent-action="tasks.filter.assetType">
               {t('assets.assetType', { defaultValue: 'Asset Type' })} {filters?.assetType?.length > 0 && `(${filters.assetType.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1140,6 +1144,7 @@ const loadTasks = async () => {
                   >
                     <input
                       type="checkbox"
+                      data-agent-field={`tasks.filter.assetType.${typeValue}`}
                       checked={filters?.assetType?.includes(typeValue) || false}
                       onChange={() => handleFilterChange('assetType', typeValue)}
                     />
@@ -1151,7 +1156,7 @@ const loadTasks = async () => {
           </FilterDropdown>
 
           <FilterDropdown data-dropdown="asset">
-            <DropdownButton onClick={() => setShowAssetDropdown(!showAssetDropdown)}>
+            <DropdownButton onClick={() => setShowAssetDropdown(!showAssetDropdown)} data-agent-action="tasks.filter.asset">
               {t('common.asset')} {filters?.asset?.length > 0 && `(${filters.asset.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1163,6 +1168,7 @@ const loadTasks = async () => {
                 >
                   <input
                     type="checkbox"
+                    data-agent-field={`tasks.filter.asset.${asset._id || asset.id}`}
                     checked={filters?.asset?.includes(asset._id || asset.id) || false}
                     onChange={() => handleFilterChange('asset', asset._id || asset.id)}
                   />
@@ -1173,7 +1179,7 @@ const loadTasks = async () => {
           </FilterDropdown>
 
           <FilterDropdown data-dropdown="assignee">
-            <DropdownButton onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}>
+            <DropdownButton onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)} data-agent-action="tasks.filter.assignedTo">
               {t('tasks.assignedTo')} {filters?.assignedTo?.length > 0 && `(${filters.assignedTo.length})`}
               <ChevronDown size={16} />
             </DropdownButton>
@@ -1185,6 +1191,7 @@ const loadTasks = async () => {
                 >
                   <input
                     type="checkbox"
+                    data-agent-field={`tasks.filter.assignedTo.${user._id || user.id}`}
                     checked={filters?.assignedTo?.includes(user._id || user.id) || false}
                     onChange={() => handleFilterChange('assignedTo', user._id || user.id)}
                   />
@@ -1212,16 +1219,17 @@ const loadTasks = async () => {
             <ActionButton
               onClick={() => setShowExportDropdown(!showExportDropdown)}
               title="Export tasks"
+              data-agent-action="tasks.export.open"
             >
               <Download size={16} />
               {t('common.export')}
             </ActionButton>
             <DropdownMenu show={showExportDropdown}>
-              <ExportDropdownItem onClick={handleExportPDF}>
+              <ExportDropdownItem onClick={handleExportPDF} data-agent-action="tasks.export.pdf">
                 <Download size={16} />
                 {t('tasks.exportAsPDF')}
               </ExportDropdownItem>
-              <ExportDropdownItem onClick={handleExportCSV}>
+              <ExportDropdownItem onClick={handleExportCSV} data-agent-action="tasks.export.csv">
                 <Download size={16} />
                 {t('tasks.exportAsCSV')}
               </ExportDropdownItem>
@@ -1229,7 +1237,7 @@ const loadTasks = async () => {
           </ExportDropdown>
 
           {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
-            <ActionButton as={Link} to="/tasks/create" $variant="primary">
+            <ActionButton as={Link} to="/tasks/create" $variant="primary" data-agent-action="tasks.create">
               <Plus size={16} />
               {t('tasks.createTask')}
             </ActionButton>

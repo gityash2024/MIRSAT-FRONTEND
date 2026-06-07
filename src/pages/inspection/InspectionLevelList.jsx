@@ -1426,7 +1426,7 @@ const InspectionLevelList = ({
   const isPublishing = levelToPublish && levelToPublish.status !== 'active';
 
   return (
-    <PageContainer>
+    <PageContainer data-agent-page="inspection_templates">
       {deleteModalVisible && levelToDelete && (
         <ModalOverlay>
           <ModalContent>
@@ -1540,6 +1540,7 @@ const InspectionLevelList = ({
           <Search className="search-icon" size={20} />
           <input
             type="text"
+            data-agent-field="inspection_templates.search"
             placeholder={t('inspections.searchTemplates')}
             value={searchTerm}
             onChange={handleSearch}
@@ -1552,6 +1553,7 @@ const InspectionLevelList = ({
             variant="secondary"
             onClick={() => setShowFilters(!showFilters)}
             disabled={loading}
+            data-agent-action="inspection_templates.filter"
           >
             <Filter size={18} />
             {t('common.filter')}
@@ -1582,6 +1584,7 @@ const InspectionLevelList = ({
             as={Link}
             to="/inspection/create"
             disabled={loading}
+            data-agent-action="inspection_templates.create"
           >
             <Plus size={18} />
             {t('inspections.addTemplate')}
@@ -1617,6 +1620,7 @@ const InspectionLevelList = ({
             variant="primary"
             as={Link}
             to="/inspection/create"
+            data-agent-action="inspection_templates.create"
           >
             <Plus size={18} />
             {t('inspections.addTemplate')}

@@ -1025,14 +1025,14 @@ const QuestionnaireList = () => {
   }, []);
 
   return (
-    <PageContainer>
+    <PageContainer data-agent-page="questionnaires">
       <PageHeader>
         <Title>
           <FileText size={24} />
           {t('common.questionLibrary')}
         </Title>
         <ActionButtons>
-          <Button primary onClick={handleCreateQuestionnaire}>
+          <Button primary onClick={handleCreateQuestionnaire} data-agent-action="questionnaires.create">
             <Plus size={16} />
             {t('common.createQuestion')}
           </Button>
@@ -1044,6 +1044,7 @@ const QuestionnaireList = () => {
           <Search size={18} />
           <input 
             type="text" 
+            data-agent-field="questionnaires.search"
             placeholder={t('common.searchQuestions')} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1075,7 +1076,7 @@ const QuestionnaireList = () => {
           <NoResultsWrapper>
             <h3>{t('questionnaire.noQuestionsFound')}</h3>
             <p>{t('questionnaire.tryAdjustingSearch')}</p>
-            <Button primary onClick={handleCreateQuestionnaire}>
+            <Button primary onClick={handleCreateQuestionnaire} data-agent-action="questionnaires.create">
               <Plus size={16} />
               {t('common.createQuestion')}
             </Button>

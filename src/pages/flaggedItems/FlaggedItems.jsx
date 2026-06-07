@@ -566,7 +566,7 @@ const FlaggedItems = () => {
             {t('dashboard.flaggedItems')}
           </Title>
           <ButtonGroup>
-            <Button className="primary" onClick={() => setShowDocumentModal(true)}>
+            <Button className="primary" onClick={() => setShowDocumentModal(true)} data-agent-action="flagged_items.export.pdf">
               <Download size={18} />
               {t('common.export')} PDF
             </Button>

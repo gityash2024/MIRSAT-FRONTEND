@@ -2262,13 +2262,14 @@ const TaskForm = ({
 
   // Update the component rendering to check for data in both initialData and initialData.data
   return (
-    <Form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit} data-agent-page="tasks" data-agent-form="tasks.form">
       <FormRow>
         <FormGroup>
           <Label>{t('common.title')}</Label>
           <Input
             type="text"
             name="title"
+            data-agent-field="tasks.form.title"
             value={formData.title}
             onChange={handleChange}
             placeholder={t('tasks.enterTaskTitle')}
@@ -2282,6 +2283,7 @@ const TaskForm = ({
         <Label>{t('common.description')}</Label>
         <TextArea
           name="description"
+          data-agent-field="tasks.form.description"
           value={formData.description}
           onChange={handleChange}
           placeholder={t('tasks.enterTaskDescription')}
@@ -2296,6 +2298,7 @@ const TaskForm = ({
           <Label>{t('common.priority')}</Label>
           <Select
             name="priority"
+            data-agent-field="tasks.form.priority"
             value={formData.priority}
             onChange={handleChange}
           >
@@ -2368,6 +2371,7 @@ const TaskForm = ({
         <Input
           type="text"
           name="location"
+          data-agent-field="tasks.form.location"
           value={formData.location}
           onChange={handleChange}
           placeholder={t('tasks.enterLocationOptional')}
@@ -2378,6 +2382,7 @@ const TaskForm = ({
         <Label>{t('tasks.assignedUser')}</Label>
         <Select
           name="assignedUser"
+          data-agent-field="tasks.form.assignedUser"
           value={selectedUserId}
           onChange={(e) => {
             const userId = e.target.value;
@@ -2407,6 +2412,7 @@ const TaskForm = ({
           <Label>{t('common.template')}</Label>
           <Select
             name="inspectionLevel"
+            data-agent-field="tasks.form.inspectionLevel"
             value={formData.inspectionLevel}
             onChange={handleChange}
             required
@@ -2425,6 +2431,7 @@ const TaskForm = ({
           <Label>{t('common.asset')}</Label>
           <Select
             name="asset"
+            data-agent-field="tasks.form.asset"
             value={formData.asset}
             onChange={handleChange}
             required
@@ -2638,7 +2645,7 @@ const TaskForm = ({
         <Button type="button" variant="secondary" onClick={handleCancel}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={isSubmitting || isUploading}>
+        <Button type="submit" disabled={isSubmitting || isUploading} data-agent-action="tasks.submit">
           {isSubmitting ? <Spinner size={16} /> : null}
           {isSubmitting ? 'Saving...' : submitButtonText}
         </Button>

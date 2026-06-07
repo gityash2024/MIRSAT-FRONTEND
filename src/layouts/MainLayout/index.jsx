@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
 import { useLanguage } from '../../context/LanguageContext';
+
+const AgentWidget = lazy(() => import('../../components/assistant/AgentWidget'));
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -132,6 +134,9 @@ const MainLayout = () => {
           <Outlet />
         </MainContent>
       </MainContentWrapper>
+      <Suspense fallback={null}>
+        <AgentWidget />
+      </Suspense>
     </LayoutContainer>
   );
 };
