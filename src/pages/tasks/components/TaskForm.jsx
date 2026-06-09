@@ -11,6 +11,7 @@ import Spinner from '../../../components/ui/Spinner';
 import PopoverMenu from '../../../components/ui/PopoverMenu';
 import Switch from '../../../components/ui/Switch';
 import DatePicker from '../../../components/ui/DatePicker';
+import { useAgentField } from '../../../components/assistant/agentFieldBridge';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { fetchInspectionLevels } from '../../../store/slices/inspectionLevelSlice';
 import { fetchAssets, fetchAllAssetsForDropdown } from '../../../store/slices/assetSlice';
@@ -1727,6 +1728,11 @@ const TaskForm = ({
   const [selectedUserId, setSelectedUserId] = useState('');
   const [filteredAssets, setFilteredAssets] = useState(assets || []);
   const [selectedTemplateType, setSelectedTemplateType] = useState(null);
+
+  // Expose the React-controlled date/toggle fields so the agent can operate them on the visible form.
+  useAgentField('tasks.form.dueDate', { setValue: (value) => setFormData(prev => ({ ...prev, dueDate: value ? new Date(value) : null })), getValue: () => formData.dueDate });
+  useAgentField('tasks.form.startDate', { setValue: (value) => setFormData(prev => ({ ...prev, startDate: value ? new Date(value) : null, startImmediately: false })), getValue: () => formData.startDate });
+  useAgentField('tasks.form.startImmediately', { setValue: (value) => setFormData(prev => ({ ...prev, startImmediately: Boolean(value), startDate: value ? new Date() : prev.startDate })), getValue: () => formData.startImmediately });
 
   useEffect(() => {
     if (!initialData?.assignedTo) return;

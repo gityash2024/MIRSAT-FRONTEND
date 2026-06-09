@@ -1,5 +1,6 @@
 import { toast } from 'react-hot-toast';
 import { AGENT_ACTION_TYPES, actionBelongsToRegistry, fieldBelongsToRegistry } from './agentRegistry';
+import { setAgentFieldValue, getAgentFieldOptions } from './agentFieldBridge';
 
 const STEP_DELAY_MS = 360;
 const WAIT_ATTEMPTS = 30;
@@ -57,7 +58,7 @@ export const captureAgentFormSession = () => {
           disabled: Boolean(option.disabled),
           selected: Boolean(option.selected),
         }))
-        : undefined,
+        : (getAgentFieldOptions(fieldId) || undefined),
     });
   });
   return { currentFormKey, currentFormValues, visibleFields, visibleFieldMetadata };
@@ -294,11 +295,41 @@ const runSingleAction = async (action, navigate, handlers = {}) => {
     case 'type_text':
     case 'select_option':
     case 'apply_filter': {
-      const field = await waitFor(() => findField(payload.fieldId || payload.name), 24, 120);
+      const fieldId = payload.fieldId || payload.name;
+      // Prefer a registered imperative setter (handles React-controlled widgets reliably).
+      if (payload.value !== undefined && await setAgentFieldValue(fieldId, payload.value)) {
+        emitStep(handlers.onStep, label, 'completed');
+        return true;
+      }
+      const field = await waitFor(() => findField(fieldId), 24, 120);
       if (!field) return false;
       moveToElement(field, label, handlers.onCursor);
       focusElement(field);
       if (payload.value !== undefined) setNativeValue(field, payload.value);
+      markHighlighted(field, 2000);
+      emitStep(handlers.onStep, label, 'completed');
+      return true;
+    }
+
+    case 'set_date':
+    case 'set_toggle':
+    case 'select_option_by_id': {
+      const fieldId = payload.fieldId || payload.name;
+      // Registered setter first (DatePicker / custom select / toggle), then DOM fallback.
+      if (payload.value !== undefined && await setAgentFieldValue(fieldId, payload.value)) {
+        emitStep(handlers.onStep, label, 'completed');
+        return true;
+      }
+      const field = await waitFor(() => findField(fieldId), 24, 120);
+      if (!field) return false;
+      moveToElement(field, label, handlers.onCursor);
+      focusElement(field);
+      if (action.type === 'set_toggle' && field.type === 'checkbox') {
+        field.checked = Boolean(payload.value);
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (payload.value !== undefined) {
+        setNativeValue(field, payload.value);
+      }
       markHighlighted(field, 2000);
       emitStep(handlers.onStep, label, 'completed');
       return true;
@@ -314,6 +345,8 @@ const runSingleAction = async (action, navigate, handlers = {}) => {
         const resolvedValue = resolveFieldReferenceValue(value, values, formKey);
         values[name] = resolvedValue;
         const fieldId = `${formKey}.${name}`;
+        // Registered imperative setter first (DatePicker/toggle/custom), then DOM.
+        if (await setAgentFieldValue(fieldId, resolvedValue)) { applied += 1; await sleep(payload.fieldDelayMs || 420); continue; }
         const field = await waitFor(() => findField(fieldId), 14, 90);
         if (!field) continue;
         moveToElement(field, `Filling ${name}`, handlers.onCursor);
