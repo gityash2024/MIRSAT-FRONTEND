@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { 
-  Mail, 
-  Building, 
+import {
+  Mail,
+  Building,
   Shield,
   User,
   KeyRound,
@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import ProfileForm from './ProfileForm';
 import PasswordChangeTab from './PasswordChangeTab';
 import DepartmentModal from './components/DepartmentModal';
+import ApiKeyModal from './components/ApiKeyModal';
+import agentService from '../../services/agent.service';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -56,6 +58,17 @@ const PageSubtitle = styled.p`
   margin: 0;
 `;
 
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    width: 100%;
+  }
+`;
+
 const ManageButton = styled.button`
   display: flex;
   align-items: center;
@@ -64,8 +77,8 @@ const ManageButton = styled.button`
   padding: 10px 16px;
   border-radius: 8px;
   border: 1px solid var(--color-navy);
-  background: var(--color-navy);
-  color: white;
+  background: ${props => props.$secondary ? '#fff' : 'var(--color-navy)'};
+  color: ${props => props.$secondary ? 'var(--color-navy)' : 'white'};
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -73,7 +86,7 @@ const ManageButton = styled.button`
   white-space: nowrap;
 
   &:hover {
-    background: #1e40af;
+    background: ${props => props.$secondary ? '#eef2ff' : '#1e40af'};
     transform: translateY(-1px);
   }
 `;
@@ -240,7 +253,20 @@ const UserProfile = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [agentCapabilities, setAgentCapabilities] = useState(null);
   const canManageDepartments = user?.role === 'admin' || user?.role === 'superadmin';
+
+  useEffect(() => {
+    if (!canManageDepartments) return undefined;
+    let active = true;
+    agentService.capabilities()
+      .then((caps) => { if (active) setAgentCapabilities(caps); })
+      .catch(() => { if (active) setAgentCapabilities(null); });
+    return () => { active = false; };
+  }, [canManageDepartments]);
+
+  const canManageApiKey = canManageDepartments && Boolean(agentCapabilities?.keyManagementEnabled);
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -280,10 +306,18 @@ const UserProfile = () => {
             <PageSubtitle>{t('common.manageAccountSettings')}</PageSubtitle>
           </HeaderText>
           {canManageDepartments && (
-            <ManageButton type="button" onClick={() => setShowDepartmentModal(true)}>
-              <Plus size={16} />
-              {t('departments.manageDepartments')}
-            </ManageButton>
+            <HeaderActions>
+              <ManageButton type="button" onClick={() => setShowDepartmentModal(true)}>
+                <Plus size={16} />
+                {t('departments.manageDepartments')}
+              </ManageButton>
+              {canManageApiKey && (
+                <ManageButton type="button" $secondary onClick={() => setShowApiKeyModal(true)}>
+                  <KeyRound size={16} />
+                  {agentCapabilities?.multiProviderEnabled ? t('agent.manageProviderKeys', 'AI Provider Keys') : t('agent.manageApiKey', 'Gemini API Key')}
+                </ManageButton>
+              )}
+            </HeaderActions>
           )}
         </PageHeaderContent>
       </PageHeader>
@@ -352,6 +386,12 @@ const UserProfile = () => {
       <DepartmentModal
         isOpen={showDepartmentModal}
         onClose={() => setShowDepartmentModal(false)}
+      />
+
+      <ApiKeyModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        multiProvider={Boolean(agentCapabilities?.multiProviderEnabled)}
       />
     </PageContainer>
   );

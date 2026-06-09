@@ -14,14 +14,22 @@ import {
   MicOff,
   Minimize2,
   MousePointer2,
+  Paperclip,
   Send,
   Sparkles,
+  Volume2,
+  VolumeX,
   X,
+  Zap,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../hooks/useAuth';
 import agentService from '../../services/agent.service';
 import { captureAgentFormSession, runAgentActions } from './actionBridge';
+import ArtifactCard from './ArtifactCard';
 
 const copy = {
   en: {
@@ -214,8 +222,17 @@ const MessageText = styled.div`
   strong { font-weight: 800; color: inherit; }
   p { margin: 0 0 7px; }
   p:last-child { margin-bottom: 0; }
-  ul { margin: 0; padding-inline-start: 18px; }
+  ul, ol { margin: 0; padding-inline-start: 18px; }
   li { margin: 3px 0; }
+  h1, h2, h3, h4 { margin: 6px 0 4px; font-size: 14px; font-weight: 800; color: inherit; }
+  a { color: var(--color-teal); text-decoration: underline; }
+  code { background: rgba(25,46,65,.08); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  pre { margin: 6px 0; padding: 8px; border-radius: 7px; background: rgba(25,46,65,.08); overflow-x: auto; }
+  pre code { background: transparent; padding: 0; }
+  blockquote { margin: 6px 0; padding-inline-start: 10px; border-inline-start: 3px solid var(--color-seafoam, #bfe3e3); color: #475467; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+  th, td { border: 1px solid rgba(25,46,65,.16); padding: 5px 8px; text-align: start; }
+  th { background: rgba(44,151,153,.12); font-weight: 700; }
 `;
 const MessageTools = styled.div`
   position: absolute;
@@ -368,6 +385,41 @@ const ComposerMeta = styled.div`
   font-size: 11px;
   button { border: 0; background: transparent; color: var(--color-teal); cursor: pointer; padding: 0; }
 `;
+const ComposerExtras = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 0;
+`;
+const ExtraButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid ${props => (props.$active ? 'var(--color-teal)' : 'var(--color-gray-light)')};
+  border-radius: 14px;
+  background: ${props => (props.$active ? 'var(--color-teal)' : '#fff')};
+  color: ${props => (props.$active ? '#fff' : 'var(--color-navy)')};
+  font-size: 11px;
+  cursor: pointer;
+  &:disabled { opacity: .6; cursor: not-allowed; }
+`;
+const AttachChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 13px;
+  background: #eef4f6;
+  color: var(--color-navy);
+  font-size: 11px;
+  max-width: 160px;
+  span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  button { border: 0; background: transparent; color: #b42318; cursor: pointer; padding: 0; display: grid; place-items: center; }
+`;
 const StepFeed = styled.div`
   margin: 0 0 10px;
   padding: 8px 10px;
@@ -433,6 +485,13 @@ const AgentWidget = () => {
   const [userMemory, setUserMemory] = useState(() => localStorage.getItem('mirsat.agent.userMemory') || '');
   const [inputExpanded, setInputExpanded] = useState(false);
   const [copiedMessageKey, setCopiedMessageKey] = useState();
+  const [speakReplies, setSpeakReplies] = useState(() => localStorage.getItem('mirsat.agent.tts') === '1');
+  const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const speakRepliesRef = useRef(speakReplies);
+  const [attachments, setAttachments] = useState([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [deepMode, setDeepMode] = useState(false);
+  const fileInputRef = useRef();
   const endRef = useRef();
   const inputRef = useRef();
   const recognitionRef = useRef();
@@ -511,6 +570,7 @@ const AgentWidget = () => {
       recognitionRef.current?.stop?.();
       stopVoiceMeter();
       window.clearTimeout(copyResetRef.current);
+      if (typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
     };
   }, [stopVoiceMeter]);
   useEffect(() => {
@@ -520,6 +580,11 @@ const AgentWidget = () => {
   useEffect(() => {
     localStorage.setItem('mirsat.agent.userMemory', userMemory);
   }, [userMemory]);
+  useEffect(() => {
+    speakRepliesRef.current = speakReplies;
+    localStorage.setItem('mirsat.agent.tts', speakReplies ? '1' : '0');
+    if (!speakReplies && typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
+  }, [speakReplies]);
   useEffect(() => {
     const element = inputRef.current;
     if (!element || inputExpanded) return;
@@ -552,40 +617,93 @@ const AgentWidget = () => {
     setMessages(current => [...current, { role: 'assistant', content: message || t.unavailable }]);
   }, [t.unavailable]);
 
-  const sendText = useCallback(async (text) => {
+  const speakReply = useCallback((text) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const clean = String(text || '')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+      .replace(/[*_#>|~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 600);
+    if (!clean) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+      window.speechSynthesis.speak(utterance);
+    } catch (_error) {
+      /* speech synthesis is best-effort */
+    }
+  }, [currentLanguage]);
+
+  const sendText = useCallback(async (text, options = {}) => {
     if (!text || loading || !capabilities?.textEnabled) return;
     setInput('');
+    const turnAttachments = attachments;
+    setAttachments([]);
     setMessages(current => [...current, { role: 'user', content: text }]);
     setLoading(true);
-    try {
-      const currentPageKey = location.pathname.split('/').filter(Boolean)[0] || 'home';
-      const formSession = captureAgentFormSession();
-      const result = await agentService.chat(text, conversationId, location.pathname, currentPageKey, {
-        ...formSession,
-        lastAgentIntent,
-        userMemory,
-      });
+    const currentPageKey = location.pathname.split('/').filter(Boolean)[0] || 'home';
+    const formSession = captureAgentFormSession();
+    const context = { ...formSession, lastAgentIntent, userMemory, attachments: turnAttachments };
+    // Deep mode (opt-in): server detects the keyword and runs a planner/critique loop.
+    const outgoing = (deepMode && capabilities?.deepModeEnabled) ? `(thorough) ${text}` : text;
+    const finalize = (result, replaceLast) => {
       setConversationId(result.conversationId);
       setLastAgentIntent(result.lastAgentIntent || result.formReview?.intent || currentPageKey);
-      setMessages(current => [...current, { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [], missingFields: result.missingFields || [] }]);
+      const assistantMessage = { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [], missingFields: result.missingFields || [], artifact: result.artifact };
+      setMessages(current => (replaceLast ? [...current.slice(0, -1), assistantMessage] : [...current, assistantMessage]));
       setPendingAction(result.pendingAction);
       applyActions(result.actions);
+      if (speakRepliesRef.current || options.spoken) speakReply(result.assistantMessage);
+    };
+    try {
+      if (capabilities?.streamingEnabled) {
+        try {
+          setMessages(current => [...current, { role: 'assistant', content: '', streaming: true }]);
+          let accumulated = '';
+          const result = await agentService.chatStream(outgoing, conversationId, location.pathname, currentPageKey, context, {
+            onToken: (delta) => {
+              accumulated += delta;
+              setMessages(current => {
+                const copy = current.slice();
+                const last = copy[copy.length - 1];
+                if (last && last.role === 'assistant') copy[copy.length - 1] = { ...last, content: accumulated };
+                return copy;
+              });
+            },
+          });
+          finalize(result, true);
+          return;
+        } catch (_streamError) {
+          // Drop the empty streaming placeholder and fall back to the non-streaming endpoint.
+          setMessages(current => {
+            const last = current[current.length - 1];
+            return last && last.role === 'assistant' && last.streaming ? current.slice(0, -1) : current;
+          });
+        }
+      }
+      const result = await agentService.chat(outgoing, conversationId, location.pathname, currentPageKey, context);
+      finalize(result, false);
     } catch (error) {
       appendError(error.response?.data?.error?.message);
     } finally {
       setLoading(false);
     }
-  }, [appendError, applyActions, capabilities?.textEnabled, conversationId, lastAgentIntent, loading, location.pathname, userMemory]);
+  }, [appendError, applyActions, attachments, capabilities?.deepModeEnabled, capabilities?.streamingEnabled, capabilities?.textEnabled, conversationId, deepMode, lastAgentIntent, loading, location.pathname, speakReply, userMemory]);
 
   const send = async event => {
     event?.preventDefault();
     const text = (speechPreview || input).trim();
+    const spoken = Boolean(speechPreview);
     if (speechPreview) {
       stopBrowserVoice();
       setSpeechPreview('');
       finalSpeechRef.current = '';
     }
-    await sendText(text);
+    await sendText(text, { spoken });
   };
 
   const resolve = async approve => {
@@ -593,8 +711,9 @@ const AgentWidget = () => {
     try {
       const result = await agentService.approve(pendingAction.id, approve);
       setPendingAction(undefined);
-      setMessages(current => [...current, { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [] }]);
+      setMessages(current => [...current, { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [], artifact: result.artifact }]);
       applyActions(result.actions);
+      if (speakRepliesRef.current) speakReply(result.assistantMessage);
     } catch (error) {
       appendError(error.response?.data?.error?.message);
     } finally {
@@ -611,7 +730,7 @@ const AgentWidget = () => {
     recognitionRef.current?.stop?.();
     finalSpeechRef.current = speechPreview ? `${speechPreview} ` : '';
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    recognition.lang = currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = event => {
@@ -636,7 +755,7 @@ const AgentWidget = () => {
     setBrowserListening(true);
     startVoiceMeter();
     recognition.start();
-  }, [appendError, speechPreview, startVoiceMeter, stopVoiceMeter, t.voice]);
+  }, [appendError, currentLanguage, speechPreview, startVoiceMeter, stopVoiceMeter, t.voice]);
 
   const stopBrowserVoice = () => {
     recognitionRef.current?.stop?.();
@@ -650,7 +769,7 @@ const AgentWidget = () => {
     stopBrowserVoice();
     setSpeechPreview('');
     finalSpeechRef.current = '';
-    await sendText(text);
+    await sendText(text, { spoken: true });
   };
 
   const clearTranscript = () => {
@@ -659,8 +778,24 @@ const AgentWidget = () => {
     finalSpeechRef.current = '';
   };
 
+  const onPickAttachment = async (event) => {
+    const file = event.target.files?.[0];
+    if (event.target) event.target.value = '';
+    if (!file) return;
+    setUploadingAttachment(true);
+    try {
+      const res = await agentService.uploadAttachment(file);
+      setAttachments(current => [...current, { url: res.url, mimeType: res.mimeType, name: res.name || 'image' }]);
+    } catch (_error) {
+      appendError('Could not upload that file.');
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
   const closePanel = () => {
     stopBrowserVoice();
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
     setOpen(false);
   };
 
@@ -680,46 +815,13 @@ const AgentWidget = () => {
     copyResetRef.current = window.setTimeout(() => setCopiedMessageKey(undefined), 1400);
   };
 
-  const renderInlineMarkdown = (text, keyPrefix) => {
-    const parts = String(text || '').split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={`${keyPrefix}-bold-${index}`}>{part.slice(2, -2)}</strong>;
-      }
-      return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part}</React.Fragment>;
-    });
-  };
-
-  const renderMessageContent = (content) => {
-    const lines = String(content || '').split('\n');
-    const blocks = [];
-    let list = [];
-    const flushList = () => {
-      if (!list.length) return;
-      const items = list;
-      list = [];
-      blocks.push(
-        <ul key={`list-${blocks.length}`}>
-          {items.map((item, index) => <li key={`li-${blocks.length}-${index}`}>{renderInlineMarkdown(item, `li-${blocks.length}-${index}`)}</li>)}
-        </ul>
-      );
-    };
-    lines.forEach((line, index) => {
-      const bullet = line.match(/^\s*[*-]\s+(.+)$/);
-      if (bullet) {
-        list.push(bullet[1]);
-        return;
-      }
-      flushList();
-      if (!line.trim()) {
-        blocks.push(<p key={`spacer-${index}`}>&nbsp;</p>);
-        return;
-      }
-      blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(line, `p-${index}`)}</p>);
-    });
-    flushList();
-    return <MessageText>{blocks}</MessageText>;
-  };
+  const renderMessageContent = (content) => (
+    <MessageText>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+        {String(content || '')}
+      </ReactMarkdown>
+    </MessageText>
+  );
 
   const renderPendingPreview = () => {
     const preview = pendingAction?.preview;
@@ -794,23 +896,29 @@ const AgentWidget = () => {
       <Header>
         <Bot size={22} />
         <HeaderText><strong>{t.title}</strong><span>{t.subtitle}</span></HeaderText>
+        {ttsSupported && (
+          <HeaderButton type="button" title={speakReplies ? 'Mute spoken replies' : 'Speak replies aloud'} aria-pressed={speakReplies} onClick={() => setSpeakReplies(current => !current)}>
+            {speakReplies ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </HeaderButton>
+        )}
         <HeaderButton type="button" title={t.memory} onClick={() => setShowMemory(current => !current)}><BrainCircuit size={18} /></HeaderButton>
         <HeaderButton type="button" title="Close" onClick={closePanel}><ChevronDown size={20} /></HeaderButton>
       </Header>
       <Messages>
         {messages.map((message, index) => {
-          const messageKey = `${index}-${message.content}`;
+          const messageKey = `msg-${index}`;
           const copied = copiedMessageKey === messageKey;
           return (
           <React.Fragment key={messageKey}>
             <MessageGroup $user={message.role === 'user'}>
-              <Bubble $user={message.role === 'user'}>{renderMessageContent(message.content)}</Bubble>
+              <Bubble $user={message.role === 'user'}>{message.role === 'user' ? message.content : renderMessageContent(message.content)}</Bubble>
               <MessageTools className="message-tools" $user={message.role === 'user'}>
                 <button type="button" title={copied ? 'Copied' : t.copyMessage} onClick={() => copyMessage(message.content, messageKey)}>
                   {copied ? <Check size={13} /> : <Copy size={13} />}
                 </button>
               </MessageTools>
             </MessageGroup>
+            {message.artifact && <ArtifactCard artifact={message.artifact} rtl={isRTL} />}
             {renderActions(message.actions)}
           </React.Fragment>
         );})}
@@ -836,6 +944,29 @@ const AgentWidget = () => {
             <label htmlFor="agent-memory">{t.memory}</label>
             <textarea id="agent-memory" value={userMemory} placeholder={t.memoryPlaceholder} onChange={event => setUserMemory(event.target.value.slice(0, 2000))} />
           </MemoryPanel>
+        )}
+        {(capabilities.visionEnabled || capabilities.deepModeEnabled || attachments.length > 0) && (
+          <ComposerExtras>
+            {capabilities.visionEnabled && (
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickAttachment} />
+                <ExtraButton type="button" disabled={uploadingAttachment} onClick={() => fileInputRef.current?.click()} title="Attach an image">
+                  {uploadingAttachment ? <Loader size={13} className="spin" /> : <Paperclip size={13} />} Attach
+                </ExtraButton>
+              </>
+            )}
+            {capabilities.deepModeEnabled && (
+              <ExtraButton type="button" $active={deepMode} onClick={() => setDeepMode(value => !value)} title="Deep analysis mode">
+                <Zap size={13} /> Deep
+              </ExtraButton>
+            )}
+            {attachments.map((attachment, index) => (
+              <AttachChip key={`${attachment.url}-${index}`}>
+                <span>{attachment.name || 'image'}</span>
+                <button type="button" onClick={() => setAttachments(current => current.filter((_, idx) => idx !== index))}><X size={11} /></button>
+              </AttachChip>
+            ))}
+          </ComposerExtras>
         )}
         <VoiceWave $active={browserListening} $listening={browserListening} data-testid="agent-live-voice-wave" aria-hidden="true">
           {voiceLevels.map((level, index) => (
