@@ -48,11 +48,43 @@ const Overlay = styled.div`
   @keyframes artifactFade { from { opacity: 0; } to { opacity: 1; } }
 `;
 
+const EditableTitle = styled.input`
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  outline: none;
+  border-bottom: 1px dashed rgba(255,255,255,.35);
+  &:focus { border-bottom-color: #fff; }
+`;
+
+const CanvasFields = styled.div`
+  display: grid;
+  gap: 6px;
+  padding: 0 18px 6px;
+  textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 12px;
+    color: #334155;
+    outline-color: var(--color-teal);
+    background: #fbfdfe;
+  }
+`;
+
 const Modal = styled.div`
   width: min(880px, 100%);
   max-height: min(88vh, 900px);
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
@@ -89,6 +121,7 @@ const Metrics = styled.div`
 `;
 
 const Preview = styled.div`
+  flex: 1;
   overflow: auto;
   padding: 14px 18px;
   font-size: 13px;
@@ -130,13 +163,33 @@ const ExportButton = styled.button`
 const ArtifactModal = ({ artifact, isOpen, onClose, rtl = false }) => {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState('');
+  // Editable canvas: title/summary/notes are user-adjustable before export (read-only data table).
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedSummary, setEditedSummary] = useState('');
+  const [notes, setNotes] = useState('');
+  const [hydratedFor, setHydratedFor] = useState(null);
 
   if (!isOpen || !artifact) return null;
+
+  if (hydratedFor !== artifact) {
+    setHydratedFor(artifact);
+    setEditedTitle(artifact.title || 'Report');
+    setEditedSummary(artifact.summary || '');
+    setNotes('');
+  }
+
+  const exportable = () => ({
+    ...artifact,
+    title: editedTitle || artifact.title,
+    summary: editedSummary || artifact.summary,
+    markdown: `${(artifact.markdown || '').replace(/^### .*$/m, `### ${editedTitle || artifact.title}`)}${notes ? `\n\n#### Notes\n${notes}` : ''}`,
+    metrics: notes ? [...(artifact.metrics || []), { label: 'Notes', value: notes.slice(0, 120) }] : artifact.metrics,
+  });
 
   const run = async (key, fn) => {
     setBusy(key);
     try {
-      await fn(artifact);
+      await fn(exportable());
     } catch (_error) {
       // Export errors are non-fatal; surface nothing destructive.
     } finally {
@@ -145,7 +198,7 @@ const ArtifactModal = ({ artifact, isOpen, onClose, rtl = false }) => {
   };
 
   const handleCopy = async () => {
-    await copyArtifactMarkdown(artifact);
+    await copyArtifactMarkdown(exportable());
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   };
@@ -159,7 +212,7 @@ const ArtifactModal = ({ artifact, isOpen, onClose, rtl = false }) => {
       <Modal $rtl={rtl} role="dialog" aria-modal="true" aria-label={artifact.title}>
         <ModalHeader>
           <FileText size={20} />
-          <h3>{artifact.title || 'Report'}</h3>
+          <EditableTitle value={editedTitle} onChange={e => setEditedTitle(e.target.value)} aria-label="Report title (editable)" />
           <button type="button" title="Close" onClick={onClose}><X size={18} /></button>
         </ModalHeader>
         {Array.isArray(artifact.metrics) && artifact.metrics.length > 0 && (
@@ -187,6 +240,10 @@ const ArtifactModal = ({ artifact, isOpen, onClose, rtl = false }) => {
             {artifact.markdown || artifact.summary || ''}
           </ReactMarkdown>
         </Preview>
+        <CanvasFields>
+          <textarea value={editedSummary} onChange={e => setEditedSummary(e.target.value)} placeholder="Summary (editable)…" aria-label="Report summary (editable)" rows={2} />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes / appendix to include in exports…" aria-label="Report notes (included in exports)" rows={2} />
+        </CanvasFields>
         <Footer>
           <ExportButton type="button" disabled={busy === 'pdf'} onClick={() => run('pdf', exportArtifactPdf)}><FileText size={14} /> PDF</ExportButton>
           <ExportButton type="button" disabled={busy === 'excel'} onClick={() => run('excel', exportArtifactExcel)}><FileSpreadsheet size={14} /> Excel</ExportButton>

@@ -63,10 +63,13 @@ const ArtifactCard = ({ artifact, rtl = false }) => {
   const [open, setOpen] = useState(false);
   if (!artifact) return null;
   const metrics = Array.isArray(artifact.metrics) ? artifact.metrics.slice(0, 4) : [];
+  const rowCount = Array.isArray(artifact.rows) ? artifact.rows.length : 0;
+  const asOf = artifact.generatedAt ? new Date(artifact.generatedAt).toLocaleString() : null;
   return (
     <Card>
       <Head><FileBarChart size={16} />{artifact.title || 'Report'}</Head>
       {artifact.summary && <Summary>{artifact.summary}</Summary>}
+      {asOf && <Summary style={{ fontSize: 11, color: '#98a2b3' }}>Based on {rowCount} record{rowCount === 1 ? '' : 's'} · as of {asOf}</Summary>}
       {metrics.length > 0 && (
         <Chips>
           {metrics.map((metric, index) => (

@@ -12,6 +12,7 @@ const chatStream = async (message, conversationId, currentRoute, currentPageKey,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify({ message, conversationId, currentRoute, currentPageKey, ...context }),
+    signal: handlers.signal,
   });
   if (!response.ok || !response.body) {
     const error = new Error('Assistant stream unavailable');
@@ -74,6 +75,20 @@ export const agentService = {
     form.append('file', file);
     return api.post('/agent/upload', form, { ...noRetry, headers: { 'Content-Type': 'multipart/form-data' } }).then(data);
   },
+  // Conversation history
+  listConversations: () => api.get('/agent/conversations', noRetry).then(data),
+  getConversation: (id) => api.get(`/agent/conversations/${id}`, noRetry).then(data),
+  renameConversation: (id, title) => api.patch(`/agent/conversations/${id}`, { title }, noRetry).then(data),
+  pinConversation: (id, pinned) => api.patch(`/agent/conversations/${id}`, { pinned }, noRetry).then(data),
+  deleteConversation: (id) => api.delete(`/agent/conversations/${id}`, noRetry).then(data),
+  sendMessageFeedback: (id, messageIndex, payload) => api.post(`/agent/conversations/${id}/feedback`, { messageIndex, ...payload }, noRetry).then(data),
+  exportConversation: (id) => api.get(`/agent/conversations/${id}/export`, noRetry).then(data),
+  // v4: undo, governance policies, autocomplete lookup, audit export
+  undoAction: (pendingActionId) => api.post('/agent/action/undo', { pendingActionId }, noRetry).then(data),
+  getToolPolicies: () => api.get('/agent/policies', noRetry).then(data),
+  setToolPolicy: (role, toolName, allowed) => api.put('/agent/policies', { role, toolName, allowed }, noRetry).then(data),
+  lookup: (type, q) => api.get('/agent/lookup', { ...noRetry, params: { type, q } }).then(data),
+  exportAuditCsv: () => api.get('/agent/audit-logs/export', { ...noRetry, responseType: 'blob' }).then((response) => response.data),
 };
 
 export default agentService;

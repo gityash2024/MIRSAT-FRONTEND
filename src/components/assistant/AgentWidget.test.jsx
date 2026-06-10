@@ -15,6 +15,11 @@ vi.mock('../../services/agent.service', () => ({
     capabilities: vi.fn(),
     chat: vi.fn(),
     approve: vi.fn(),
+    uploadAttachment: vi.fn(),
+    undoAction: vi.fn(),
+    listConversations: vi.fn().mockResolvedValue({ conversations: [] }),
+    lookup: vi.fn().mockResolvedValue({ items: [] }),
+    sendMessageFeedback: vi.fn().mockResolvedValue({ ok: true }),
   },
 }));
 
@@ -176,6 +181,62 @@ describe('AgentWidget', () => {
     const wave = screen.getByTestId('agent-live-voice-wave');
     expect(wave.querySelectorAll('span')).toHaveLength(38);
     await waitFor(() => expect(wave.querySelector('span')?.style.getPropertyValue('--voice-level')).not.toBe('0.14'));
+  });
+
+  it('shows suggested prompt chips on the empty state and sends the prompt on click', async () => {
+    agentService.chat.mockResolvedValue({ conversationId: 'conversation-1', assistantMessage: '145 tasks.', actions: [] });
+    renderWidget();
+    fireEvent.click(await screen.findByTitle('MIRSAT Assistant'));
+    const chip = await screen.findByText(/Portal overview report/);
+    fireEvent.click(chip);
+    await waitFor(() => expect(agentService.chat).toHaveBeenCalledWith('Give me a portal overview report', undefined, '/dashboard', 'dashboard', expect.any(Object)));
+    expect(await screen.findByText('145 tasks.')).toBeInTheDocument();
+  });
+
+  it('renders an image attachment thumbnail with a remove icon and removes it on click', async () => {
+    agentService.capabilities.mockResolvedValue({ enabled: true, textEnabled: true, visionEnabled: true, browserVoiceFallbackEnabled: true });
+    agentService.uploadAttachment.mockResolvedValue({ url: 'https://cdn.example/photo.png', mimeType: 'image/png', name: 'photo.png' });
+    const { container } = renderWidget();
+    fireEvent.click(await screen.findByTitle('MIRSAT Assistant'));
+    const fileInput = container.querySelector('input[type="file"]');
+    fireEvent.change(fileInput, { target: { files: [new File(['x'], 'photo.png', { type: 'image/png' })] } });
+    const thumb = await screen.findByAltText('photo.png');
+    expect(thumb.tagName).toBe('IMG');
+    expect(thumb).toHaveAttribute('src', 'https://cdn.example/photo.png');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo.png' }));
+    await waitFor(() => expect(screen.queryByAltText('photo.png')).not.toBeInTheDocument());
+  });
+
+  it('offers Undo after an undoable approval and calls the undo endpoint', async () => {
+    agentService.chat.mockResolvedValue({
+      conversationId: 'conversation-1',
+      assistantMessage: 'I prepared the update.',
+      actions: [],
+      pendingAction: { id: 'pending-9', summary: 'Change task status', preview: { module: 'tasks', action: 'update_status', fields: ['status'], before: { status: 'pending' }, after: { status: 'in_progress' } } },
+    });
+    agentService.approve.mockResolvedValue({ assistantMessage: 'Task updated.', actions: [], undoable: true, undoActionId: 'pending-9', undoWindowMs: 300000 });
+    agentService.undoAction.mockResolvedValue({ assistantMessage: 'Action undone.', actions: [] });
+    renderWidget();
+    fireEvent.click(await screen.findByTitle('MIRSAT Assistant'));
+    fireEvent.change(screen.getByPlaceholderText('Ask about tasks, assets, users, or forms...'), { target: { value: 'Start task' } });
+    fireEvent.click(screen.getByTitle('Send'));
+    // Approval diff renders current → proposed values.
+    expect(await screen.findByText('pending')).toBeInTheDocument();
+    expect(screen.getByText('in_progress')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    const undoButton = await screen.findByRole('button', { name: 'Undo last action' });
+    fireEvent.click(undoButton);
+    await waitFor(() => expect(agentService.undoAction).toHaveBeenCalledWith('pending-9'));
+    expect(await screen.findByText('Action undone.')).toBeInTheDocument();
+  });
+
+  it('opens the slash command palette when typing / and runs a command', async () => {
+    renderWidget();
+    fireEvent.click(await screen.findByTitle('MIRSAT Assistant'));
+    fireEvent.change(screen.getByPlaceholderText('Ask about tasks, assets, users, or forms...'), { target: { value: '/help' } });
+    const palette = await screen.findByRole('listbox', { name: 'Commands' });
+    fireEvent.click(palette.querySelector('button'));
+    expect(await screen.findByText('Keyboard shortcuts & tips')).toBeInTheDocument();
   });
 
   it('sends saved agent memory with the chat context', async () => {

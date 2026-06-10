@@ -21,10 +21,31 @@ import {
   VolumeX,
   X,
   Zap,
+  History,
+  Plus,
+  Pin,
+  Trash2,
+  Download,
+  RefreshCw,
+  Square,
+  ThumbsUp,
+  ThumbsDown,
+  Pencil,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+
+// Allow the custom record:// protocol on links so the agent can emit clickable record chips.
+const markdownSanitizeSchema = {
+  ...defaultSchema,
+  protocols: {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href || []), 'record'],
+  },
+};
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../hooks/useAuth';
 import agentService from '../../services/agent.service';
@@ -184,6 +205,12 @@ const Panel = styled.section`
     height: min(86vh, 760px);
     border-radius: 16px 16px 0 0;
   }
+  /* Assistant-scoped dark mode (never touches app-wide :root / MUI theme). */
+  &[data-agent-theme='dark'] {
+    background: rgba(17, 24, 36, .97);
+    border-color: #2b3a4f;
+    color-scheme: dark;
+  }
 `;
 
 const Header = styled.header`
@@ -197,7 +224,33 @@ const Header = styled.header`
 `;
 const HeaderText = styled.div`flex: 1; min-width: 0; strong, span { display: block; } strong { font-size: 15px; } span { font-size: 12px; opacity: .84; margin-top: 2px; }`;
 const HeaderButton = styled.button`width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; display: grid; place-items: center; background: rgba(255,255,255,.12); color: #fff; cursor: pointer; &:hover { background: rgba(255,255,255,.2); }`;
-const Messages = styled.div`overflow-y: auto; padding: 16px; background: linear-gradient(180deg, #f7f9fa, #eef4f6);`;
+const Messages = styled.div`
+  overflow-y: auto;
+  padding: 16px;
+  background: linear-gradient(180deg, #f7f9fa, #eef4f6);
+  [data-agent-theme='dark'] & { background: linear-gradient(180deg, #141d2c, #101826); }
+`;
+const SuggestedPrompts = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0 4px;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+`;
+const PromptChip = styled.button`
+  text-align: start;
+  padding: 10px 12px;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-navy);
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+  &:hover { border-color: var(--color-teal); background: #f4fbfb; }
+  [data-agent-theme='dark'] & { background: #1c2738; border-color: #2b3a4f; color: #cfe3ea; &:hover { background: #21314a; } }
+`;
 const MessageGroup = styled.div`
   position: relative;
   width: fit-content;
@@ -217,6 +270,11 @@ const Bubble = styled.div`
   background: ${props => props.$user ? 'linear-gradient(135deg, var(--color-teal), #397f96)' : '#fff'};
   border: ${props => props.$user ? 'none' : '1px solid var(--color-gray-light)'};
   box-shadow: ${props => props.$user ? '0 8px 18px rgba(44,151,153,.22)' : '0 8px 18px rgba(25,46,65,.06)'};
+  [data-agent-theme='dark'] & {
+    color: ${props => props.$user ? '#fff' : '#dbe4ee'};
+    background: ${props => props.$user ? 'linear-gradient(135deg, var(--color-teal), #2b5e72)' : '#1c2738'};
+    border-color: ${props => props.$user ? 'transparent' : '#2b3a4f'};
+  }
 `;
 const MessageText = styled.div`
   strong { font-weight: 800; color: inherit; }
@@ -263,6 +321,19 @@ const PendingMeta = styled.div`
   gap: 5px;
   color: #475467;
   code { display: inline-block; max-width: 100%; padding: 2px 5px; border-radius: 4px; background: rgba(223,190,127,.18); white-space: normal; word-break: break-word; }
+  .blast { color: #b54708; font-weight: 600; }
+`;
+const DiffTable = styled.div`
+  display: grid;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.6);
+  .diff-row { display: flex; align-items: baseline; gap: 6px; font-size: 11px; }
+  .field { min-width: 80px; font-weight: 700; color: var(--color-navy); }
+  .from { color: #b42318; text-decoration: line-through; word-break: break-word; }
+  .arrow { color: #667085; }
+  .to { color: #067647; font-weight: 600; word-break: break-word; }
 `;
 const ActionList = styled.div`display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 10px;`;
 const ActionChip = styled.button`min-height: 29px; padding: 0 9px; border: 1px solid var(--color-teal); border-radius: 14px; background: #fff; color: var(--color-navy); font-size: 11px; cursor: pointer;`;
@@ -295,8 +366,13 @@ const ActivityStrip = styled.div`
   color: var(--color-navy);
   font-size: 12px;
   svg { color: var(--color-teal); }
+  [data-agent-theme='dark'] & { background: #16202f; border-top-color: #2b3a4f; color: #cfe3ea; }
 `;
-const ComposerShell = styled.div`border-top: 1px solid var(--color-gray-light); background: rgba(255,255,255,.98);`;
+const ComposerShell = styled.div`
+  border-top: 1px solid var(--color-gray-light);
+  background: rgba(255,255,255,.98);
+  [data-agent-theme='dark'] & { background: #16202f; border-top-color: #2b3a4f; }
+`;
 const MemoryPanel = styled.div`
   padding: 10px 12px;
   border-bottom: 1px solid rgba(214,229,237,.9);
@@ -331,6 +407,7 @@ const Input = styled.textarea`
   line-height: 1.45;
   outline-color: var(--color-teal);
   color: var(--color-gray-dark);
+  [data-agent-theme='dark'] & { background: ${props => props.$voice ? '#152b30' : '#0f1722'}; color: #dbe4ee; border-color: #2b3a4f; &::placeholder { color: #6b7a8f; } }
 `;
 const InputUtility = styled.button`
   position: absolute;
@@ -374,6 +451,11 @@ const VoiceWave = styled.div`
     transform-origin: center;
     opacity: ${props => props.$listening ? '.95' : '.5'};
     transition: transform 70ms linear, opacity 180ms ease;
+  }
+  @media (max-width: 600px) {
+    min-height: 54px;
+    padding-inline-start: 16px;
+    span { width: 4px; height: 44px; }
   }
 `;
 const ComposerMeta = styled.div`
@@ -420,6 +502,31 @@ const AttachChip = styled.span`
   span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button { border: 0; background: transparent; color: #b42318; cursor: pointer; padding: 0; display: grid; place-items: center; }
 `;
+const ImageThumb = styled.span`
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-gray-light);
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  button {
+    position: absolute;
+    top: 2px;
+    ${props => (props.$rtl ? 'left: 2px' : 'right: 2px')};
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(15,23,42,.72);
+    color: #fff;
+    cursor: pointer;
+    padding: 0;
+  }
+`;
 const StepFeed = styled.div`
   margin: 0 0 10px;
   padding: 8px 10px;
@@ -460,6 +567,98 @@ const AgentCursor = styled.div`
   }
 `;
 
+const RecordChip = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border: 1px solid var(--color-teal);
+  border-radius: 10px;
+  background: #f4fbfb;
+  color: var(--color-navy);
+  font-size: 12px;
+  cursor: pointer;
+  vertical-align: baseline;
+  &:hover { background: #e3f4f4; }
+  [data-agent-theme='dark'] & { background: #1c2738; color: #cfe3ea; }
+`;
+const ComposerPopover = styled.div`
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(25,46,65,.16);
+  button {
+    display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; border: 0; background: transparent; cursor: pointer; text-align: start; font-size: 12px;
+    strong { color: var(--color-navy); }
+    span { color: #667085; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &:hover { background: #eef4f6; }
+  }
+`;
+const ShortcutsOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  background: rgba(15,23,42,.45);
+  > div {
+    width: min(360px, 88%);
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 24px 60px rgba(15,23,42,.3);
+    h4 { margin: 0 0 10px; color: var(--color-navy); font-size: 14px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 12px; color: #475467; }
+    kbd { padding: 1px 6px; border: 1px solid var(--color-gray-light); border-bottom-width: 2px; border-radius: 5px; background: #f8fafc; font-size: 11px; }
+    button { margin-top: 10px; width: 100%; padding: 8px; border: 1px solid var(--color-teal); border-radius: 8px; background: var(--color-teal); color: #fff; font-size: 12px; cursor: pointer; }
+  }
+`;
+
+const HistoryDrawer = styled.div`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  ${props => (props.$rtl ? 'right: 0' : 'left: 0')};
+  width: 270px;
+  max-width: 80%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-${props => (props.$rtl ? 'left' : 'right')}: 1px solid var(--color-gray-light);
+  box-shadow: 0 12px 40px rgba(25,46,65,.18);
+  [data-agent-theme='dark'] & { background: #16202f; color: #cfe3ea; }
+  animation: drawerIn 180ms ease both;
+  @keyframes drawerIn { from { transform: translateX(${props => (props.$rtl ? '100%' : '-100%')}); opacity: .4; } to { transform: translateX(0); opacity: 1; } }
+`;
+const HistoryHead = styled.div`
+  display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--color-gray-light);
+  strong { flex: 1; font-size: 13px; color: var(--color-navy); }
+  button { border: 0; background: transparent; color: var(--color-navy); cursor: pointer; display: grid; place-items: center; }
+`;
+const HistorySearch = styled.input`
+  margin: 8px 12px; padding: 7px 10px; border: 1px solid var(--color-gray-light); border-radius: 8px; font: inherit; font-size: 12px;
+`;
+const HistoryList = styled.div`flex: 1; overflow-y: auto; padding: 4px 8px 12px;`;
+const HistoryItem = styled.div`
+  display: flex; align-items: center; gap: 6px; padding: 8px 9px; border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--color-gray-dark);
+  &:hover { background: #eef4f6; }
+  .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acts { display: flex; gap: 2px; opacity: 0; }
+  &:hover .acts { opacity: 1; }
+  .acts button { border: 0; background: transparent; color: #667085; cursor: pointer; display: grid; place-items: center; }
+  svg.pinned { color: var(--color-teal); }
+`;
+
 const AgentWidget = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -469,7 +668,7 @@ const AgentWidget = () => {
   const [capabilities, setCapabilities] = useState(null);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([{ role: 'assistant', content: t.welcome }]);
+  const [messages, setMessages] = useState([{ role: 'assistant', content: t.welcome, welcome: true }]);
   const [conversationId, setConversationId] = useState();
   const [pendingAction, setPendingAction] = useState();
   const [loading, setLoading] = useState(false);
@@ -491,6 +690,21 @@ const AgentWidget = () => {
   const [attachments, setAttachments] = useState([]);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [deepMode, setDeepMode] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [lastUserText, setLastUserText] = useState('');
+  const [feedbackByKey, setFeedbackByKey] = useState({});
+  const [undoable, setUndoable] = useState();
+  const [followUps, setFollowUps] = useState([]);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [mention, setMention] = useState(null); // { trigger: '@'|'#', query, items }
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('mirsat.agent.dark') === '1');
+  const undoTimerRef = useRef();
+  const mentionTimerRef = useRef();
+  const abortRef = useRef();
   const fileInputRef = useRef();
   const endRef = useRef();
   const inputRef = useRef();
@@ -576,7 +790,7 @@ const AgentWidget = () => {
   useEffect(() => {
     if (typeof endRef.current?.scrollIntoView === 'function') endRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, pendingAction, loading]);
-  useEffect(() => setMessages(current => current.length === 1 ? [{ role: 'assistant', content: t.welcome }] : current), [t.welcome]);
+  useEffect(() => setMessages(current => current.length === 1 ? [{ role: 'assistant', content: t.welcome, welcome: true }] : current), [t.welcome]);
   useEffect(() => {
     localStorage.setItem('mirsat.agent.userMemory', userMemory);
   }, [userMemory]);
@@ -585,6 +799,25 @@ const AgentWidget = () => {
     localStorage.setItem('mirsat.agent.tts', speakReplies ? '1' : '0');
     if (!speakReplies && typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
   }, [speakReplies]);
+  useEffect(() => {
+    localStorage.setItem('mirsat.agent.dark', darkMode ? '1' : '0');
+  }, [darkMode]);
+  // Global shortcuts: Cmd/Ctrl+K opens the assistant (no other global handler exists in the app);
+  // "?" shows the shortcut cheat-sheet when not typing in a field.
+  useEffect(() => {
+    if (!canRender) return undefined;
+    const onKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k') {
+        event.preventDefault();
+        setOpen(true);
+        window.setTimeout(() => inputRef.current?.focus?.(), 120);
+      } else if (event.key === '?' && !/^(input|textarea|select)$/i.test(event.target?.tagName || '') && !event.target?.isContentEditable) {
+        setShowShortcuts(current => !current);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canRender]);
   useEffect(() => {
     const element = inputRef.current;
     if (!element || inputExpanded) return;
@@ -643,11 +876,13 @@ const AgentWidget = () => {
     setInput('');
     const turnAttachments = attachments;
     setAttachments([]);
-    setMessages(current => [...current, { role: 'user', content: text }]);
+    if (!options.skipUserEcho) setMessages(current => [...current, { role: 'user', content: text }]);
+    setFollowUps([]);
     setLoading(true);
     const currentPageKey = location.pathname.split('/').filter(Boolean)[0] || 'home';
     const formSession = captureAgentFormSession();
     const context = { ...formSession, lastAgentIntent, userMemory, attachments: turnAttachments };
+    setLastUserText(text);
     // Deep mode (opt-in): server detects the keyword and runs a planner/critique loop.
     const outgoing = (deepMode && capabilities?.deepModeEnabled) ? `(thorough) ${text}` : text;
     const finalize = (result, replaceLast) => {
@@ -656,15 +891,18 @@ const AgentWidget = () => {
       const assistantMessage = { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [], missingFields: result.missingFields || [], artifact: result.artifact };
       setMessages(current => (replaceLast ? [...current.slice(0, -1), assistantMessage] : [...current, assistantMessage]));
       setPendingAction(result.pendingAction);
+      setFollowUps(Array.isArray(result.followUps) ? result.followUps.slice(0, 4) : []);
       applyActions(result.actions);
       if (speakRepliesRef.current || options.spoken) speakReply(result.assistantMessage);
     };
     try {
       if (capabilities?.streamingEnabled) {
         try {
+          abortRef.current = new AbortController();
           setMessages(current => [...current, { role: 'assistant', content: '', streaming: true }]);
           let accumulated = '';
           const result = await agentService.chatStream(outgoing, conversationId, location.pathname, currentPageKey, context, {
+            signal: abortRef.current.signal,
             onToken: (delta) => {
               accumulated += delta;
               setMessages(current => {
@@ -677,8 +915,17 @@ const AgentWidget = () => {
           });
           finalize(result, true);
           return;
-        } catch (_streamError) {
-          // Drop the empty streaming placeholder and fall back to the non-streaming endpoint.
+        } catch (streamError) {
+          // User stopped generation: keep whatever streamed, don't fall back.
+          if (streamError?.name === 'AbortError' || abortRef.current?.signal?.aborted) {
+            setMessages(current => {
+              const last = current[current.length - 1];
+              if (last && last.role === 'assistant') return [...current.slice(0, -1), { ...last, streaming: false, content: last.content || '⏹ Stopped.' }];
+              return current;
+            });
+            return;
+          }
+          // Otherwise drop the empty streaming placeholder and fall back to the non-streaming endpoint.
           setMessages(current => {
             const last = current[current.length - 1];
             return last && last.role === 'assistant' && last.streaming ? current.slice(0, -1) : current;
@@ -706,6 +953,17 @@ const AgentWidget = () => {
     await sendText(text, { spoken });
   };
 
+  const regenerate = () => {
+    if (!lastUserText || loading) return;
+    setMessages(current => {
+      const copy = current.slice();
+      while (copy.length && copy[copy.length - 1].role === 'assistant' && !copy[copy.length - 1].welcome) copy.pop();
+      return copy;
+    });
+    sendText(lastUserText, { skipUserEcho: true });
+  };
+
+
   const resolve = async approve => {
     setLoading(true);
     try {
@@ -714,8 +972,30 @@ const AgentWidget = () => {
       setMessages(current => [...current, { role: 'assistant', content: result.assistantMessage, actions: result.actions || [], steps: result.steps || [], artifact: result.artifact }]);
       applyActions(result.actions);
       if (speakRepliesRef.current) speakReply(result.assistantMessage);
+      // Bounded undo: offer "Undo" for the configured window after an undoable approval.
+      if (approve && result.undoable && result.undoActionId) {
+        window.clearTimeout(undoTimerRef.current);
+        setUndoable({ id: result.undoActionId });
+        undoTimerRef.current = window.setTimeout(() => setUndoable(undefined), Math.min(result.undoWindowMs || 300000, 300000));
+      }
     } catch (error) {
       appendError(error.response?.data?.error?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const undoLastAction = async () => {
+    if (!undoable?.id) return;
+    setLoading(true);
+    try {
+      const result = await agentService.undoAction(undoable.id);
+      setUndoable(undefined);
+      window.clearTimeout(undoTimerRef.current);
+      setMessages(current => [...current, { role: 'assistant', content: result.assistantMessage || 'Action undone.', actions: result.actions || [] }]);
+      applyActions(result.actions);
+    } catch (error) {
+      appendError(error.response?.data?.error?.message || 'Could not undo that action.');
     } finally {
       setLoading(false);
     }
@@ -778,19 +1058,165 @@ const AgentWidget = () => {
     finalSpeechRef.current = '';
   };
 
-  const onPickAttachment = async (event) => {
-    const file = event.target.files?.[0];
-    if (event.target) event.target.value = '';
-    if (!file) return;
+  const uploadFile = useCallback(async (file) => {
+    if (!file || !capabilities?.visionEnabled) return;
     setUploadingAttachment(true);
     try {
       const res = await agentService.uploadAttachment(file);
-      setAttachments(current => [...current, { url: res.url, mimeType: res.mimeType, name: res.name || 'image' }]);
+      setAttachments(current => [...current, { url: res.url, mimeType: res.mimeType || file.type, name: res.name || file.name || 'image' }]);
     } catch (_error) {
       appendError('Could not upload that file.');
     } finally {
       setUploadingAttachment(false);
     }
+  }, [appendError, capabilities?.visionEnabled]);
+
+  const onPickAttachment = async (event) => {
+    const file = event.target.files?.[0];
+    if (event.target) event.target.value = '';
+    await uploadFile(file);
+  };
+
+  const onComposerPaste = (event) => {
+    if (!capabilities?.visionEnabled) return;
+    const item = Array.from(event.clipboardData?.items || []).find(i => i.type?.startsWith('image/'));
+    const file = item?.getAsFile?.();
+    if (file) { event.preventDefault(); uploadFile(file); }
+  };
+
+  const onComposerDrop = (event) => {
+    if (!capabilities?.visionEnabled) return;
+    const file = Array.from(event.dataTransfer?.files || []).find(f => f.type?.startsWith('image/'));
+    if (file) { event.preventDefault(); uploadFile(file); }
+  };
+
+  // ---- v4: conversation history + message controls ----
+  const refreshConversations = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const result = await agentService.listConversations();
+      setConversations(result?.conversations || []);
+    } catch (_error) {
+      setConversations([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const startNewChat = () => {
+    setConversationId(undefined);
+    setMessages([{ role: 'assistant', content: t.welcome, welcome: true }]);
+    setPendingAction(undefined);
+    setLastUserText('');
+    setShowHistory(false);
+  };
+
+  const openConversation = async (id) => {
+    try {
+      const convo = await agentService.getConversation(id);
+      const restored = (convo.messages || []).map(m => ({ role: m.role, content: m.content, serverIndex: m.index, feedback: m.feedback }));
+      setMessages(restored.length ? restored : [{ role: 'assistant', content: t.welcome, welcome: true }]);
+      setConversationId(id);
+      setPendingAction(undefined);
+      setShowHistory(false);
+    } catch (_error) {
+      appendError('Could not open that conversation.');
+    }
+  };
+
+  const renameConversation = async (id, currentTitle) => {
+    const next = window.prompt('Rename conversation', currentTitle || '');
+    if (next === null) return;
+    try { await agentService.renameConversation(id, next.trim() || currentTitle); refreshConversations(); } catch (_e) { /* ignore */ }
+  };
+
+  const togglePin = async (id, pinned) => {
+    try { await agentService.pinConversation(id, !pinned); refreshConversations(); } catch (_e) { /* ignore */ }
+  };
+
+  const removeConversation = async (id) => {
+    try {
+      await agentService.deleteConversation(id);
+      if (id === conversationId) startNewChat();
+      refreshConversations();
+    } catch (_e) { /* ignore */ }
+  };
+
+  const exportConversation = async (id) => {
+    try {
+      const result = await agentService.exportConversation(id || conversationId);
+      const blob = new Blob([result.markdown || ''], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = result.filename || 'conversation.md';
+      document.body.appendChild(link); link.click(); link.remove();
+      URL.revokeObjectURL(url);
+    } catch (_error) {
+      appendError('Could not export this conversation.');
+    }
+  };
+
+  const stopGeneration = () => {
+    try { abortRef.current?.abort(); } catch (_e) { /* ignore */ }
+    setLoading(false);
+  };
+
+  const giveFeedback = async (message, sentiment) => {
+    if (!conversationId) return;
+    const key = message.serverIndex ?? `live-${message.content?.slice(0, 24)}`;
+    setFeedbackByKey(current => ({ ...current, [key]: sentiment }));
+    try {
+      await agentService.sendMessageFeedback(conversationId, message.serverIndex, { sentiment });
+    } catch (_error) {
+      // non-fatal
+    }
+  };
+
+  // ---- v4: slash commands + @user / #template autocomplete ----
+  const slashCommands = [
+    { cmd: '/help', hint: 'Show keyboard shortcuts & tips', run: () => setShowShortcuts(true) },
+    { cmd: '/history', hint: 'Open conversation history', run: () => { setShowHistory(true); refreshConversations(); } },
+    { cmd: '/new', hint: 'Start a new chat', run: startNewChat },
+    { cmd: '/memory', hint: 'Edit agent memory / default instructions', run: () => setShowMemory(true) },
+    { cmd: '/export', hint: 'Export this conversation as Markdown', run: () => conversationId && exportConversation(conversationId) },
+    { cmd: '/theme', hint: 'Toggle assistant dark mode', run: () => setDarkMode(current => !current) },
+    { cmd: '/deep', hint: 'Toggle deep analysis mode', run: () => setDeepMode(current => !current) },
+  ];
+  const visibleSlashCommands = slashOpen ? slashCommands.filter(c => c.cmd.startsWith(input.trim().toLowerCase())) : [];
+
+  const runSlashCommand = (command) => {
+    setSlashOpen(false);
+    setInput('');
+    command.run();
+  };
+
+  const handleComposerChange = (next) => {
+    setInput(next);
+    setSlashOpen(next.startsWith('/') && next.length <= 20 && !next.includes(' '));
+    // @user / #template autocomplete: look up the token being typed.
+    const match = next.match(/(^|\s)([@#])([\w؀-ۿ .-]{1,40})$/);
+    if (match) {
+      const trigger = match[2];
+      const query = match[3].trim();
+      window.clearTimeout(mentionTimerRef.current);
+      mentionTimerRef.current = window.setTimeout(async () => {
+        try {
+          const result = await agentService.lookup(trigger === '@' ? 'users' : 'inspection_templates', query);
+          setMention({ trigger, query: match[3], items: (result.items || []).slice(0, 6) });
+        } catch (_error) {
+          setMention(null);
+        }
+      }, 220);
+    } else {
+      setMention(null);
+    }
+  };
+
+  const applyMention = (item) => {
+    // Replace the trailing @token / #token with the resolved display name (backend resolves names → ids).
+    setInput(current => current.replace(/(^|\s)([@#])([\w؀-ۿ .-]{1,40})$/, `$1${item.label} `));
+    setMention(null);
+    inputRef.current?.focus?.();
   };
 
   const closePanel = () => {
@@ -815,23 +1241,66 @@ const AgentWidget = () => {
     copyResetRef.current = window.setTimeout(() => setCopiedMessageKey(undefined), 1400);
   };
 
+  // record://recordType/id links (emitted by the agent for real records) render as clickable chips.
+  const recordPaths = { tasks: '/tasks', users: '/users', assets: '/assets', inspection_templates: '/inspection', questionnaires: '/questionnaire/edit' };
+  const MarkdownLink = ({ href, children }) => {
+    const match = /^record:\/\/([a-z_]+)\/([a-fA-F0-9]{24})$/.exec(href || '');
+    if (match && recordPaths[match[1]]) {
+      return (
+        <RecordChip type="button" title="Open record" onClick={() => { navigate(`${recordPaths[match[1]]}/${match[2]}`); }}>
+          🔗 {children}
+        </RecordChip>
+      );
+    }
+    return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+  };
+
   const renderMessageContent = (content) => (
     <MessageText>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[[rehypeSanitize, markdownSanitizeSchema]]}
+        components={{ a: MarkdownLink }}
+      >
         {String(content || '')}
       </ReactMarkdown>
     </MessageText>
   );
 
+  const formatDiffValue = (value) => {
+    if (value === undefined || value === null || value === '') return '—';
+    if (typeof value === 'object') return JSON.stringify(value).slice(0, 60);
+    return String(value).slice(0, 60);
+  };
+
   const renderPendingPreview = () => {
     const preview = pendingAction?.preview;
     if (!preview) return null;
     const fields = preview.fields || [];
+    // Field-level diff: current → proposed, from the preview's before/after snapshots.
+    const diffRows = fields
+      .filter(field => preview.before || preview.after)
+      .map(field => ({ field, from: formatDiffValue(preview.before?.[field]), to: formatDiffValue(preview.after?.[field]) }))
+      .filter(row => row.from !== row.to)
+      .slice(0, 8);
     return (
       <PendingMeta>
         <div>{preview.module} / {preview.action}</div>
         {preview.target && <div>Target: <code>{typeof preview.target === 'string' ? preview.target : preview.target?.title || preview.target?.name || preview.target?.email || preview.target?.id || 'record'}</code></div>}
-        {fields.length > 0 && <div>Fields: {fields.join(', ')}</div>}
+        {diffRows.length > 0 && (
+          <DiffTable aria-label="Proposed changes">
+            {diffRows.map(row => (
+              <div className="diff-row" key={row.field}>
+                <span className="field">{row.field}</span>
+                <span className="from">{row.from}</span>
+                <span className="arrow">→</span>
+                <span className="to">{row.to}</span>
+              </div>
+            ))}
+          </DiffTable>
+        )}
+        {diffRows.length === 0 && fields.length > 0 && <div>Fields: {fields.join(', ')}</div>}
+        {preview.blastRadius && <div className="blast">⚠ {preview.blastRadius}</div>}
       </PendingMeta>
     );
   };
@@ -885,6 +1354,12 @@ const AgentWidget = () => {
   const composerValue = voiceMode ? speechPreview : input;
   const composerPlaceholder = voiceMode ? t.liveTranscript : (capabilities.textEnabled ? t.placeholder : t.textUnavailable);
   const currentActivity = activeStep?.label || (loading ? t.thinking : '');
+  const suggestedPrompts = [
+    { label: '📋 Show overdue inspections', text: 'Show me all overdue inspections' },
+    { label: '📊 Portal overview report', text: 'Give me a portal overview report' },
+    { label: '🔢 How many assets & users?', text: 'How many assets and users do we have?' },
+    { label: '🧭 Explain this screen', text: 'Explain what this screen does and what I can do here.' },
+  ];
 
   return (
     <>
@@ -892,10 +1367,13 @@ const AgentWidget = () => {
       <MousePointer2 size={22} />
       {agentCursor.label && <span>{agentCursor.label}</span>}
     </AgentCursor>
-    <Panel $rtl={isRTL} aria-label={t.title}>
+    <Panel $rtl={isRTL} aria-label={t.title} data-agent-theme={darkMode ? 'dark' : 'light'}>
       <Header>
         <Bot size={22} />
         <HeaderText><strong>{t.title}</strong><span>{t.subtitle}</span></HeaderText>
+        <HeaderButton type="button" title={darkMode ? 'Light mode' : 'Dark mode'} aria-pressed={darkMode} aria-label="Toggle assistant dark mode" onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</HeaderButton>
+        <HeaderButton type="button" title="New chat" aria-label="New chat" onClick={startNewChat}><Plus size={18} /></HeaderButton>
+        <HeaderButton type="button" title="History" aria-label="Conversation history" aria-pressed={showHistory} onClick={() => { const next = !showHistory; setShowHistory(next); if (next) refreshConversations(); }}><History size={18} /></HeaderButton>
         {ttsSupported && (
           <HeaderButton type="button" title={speakReplies ? 'Mute spoken replies' : 'Speak replies aloud'} aria-pressed={speakReplies} onClick={() => setSpeakReplies(current => !current)}>
             {speakReplies ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -904,6 +1382,34 @@ const AgentWidget = () => {
         <HeaderButton type="button" title={t.memory} onClick={() => setShowMemory(current => !current)}><BrainCircuit size={18} /></HeaderButton>
         <HeaderButton type="button" title="Close" onClick={closePanel}><ChevronDown size={20} /></HeaderButton>
       </Header>
+      {showHistory && (
+        <HistoryDrawer $rtl={isRTL} role="dialog" aria-label="Conversation history">
+          <HistoryHead>
+            <strong>Conversations</strong>
+            <button type="button" title="New chat" aria-label="New chat" onClick={startNewChat}><Plus size={16} /></button>
+            <button type="button" title="Close" aria-label="Close history" onClick={() => setShowHistory(false)}><X size={16} /></button>
+          </HistoryHead>
+          <HistorySearch placeholder="Search conversations…" value={historySearch} onChange={e => setHistorySearch(e.target.value)} aria-label="Search conversations" />
+          <HistoryList>
+            {historyLoading && <div style={{ padding: '8px 10px', fontSize: 12, color: '#667085' }}>Loading…</div>}
+            {!historyLoading && conversations.length === 0 && <div style={{ padding: '8px 10px', fontSize: 12, color: '#667085' }}>No conversations yet.</div>}
+            {conversations
+              .filter(c => !historySearch || (c.title || '').toLowerCase().includes(historySearch.toLowerCase()))
+              .map(c => (
+                <HistoryItem key={c.id} onClick={() => openConversation(c.id)} title={c.title}>
+                  {c.pinned && <Pin size={12} className="pinned" />}
+                  <span className="title">{c.title}</span>
+                  <span className="acts">
+                    <button type="button" title={c.pinned ? 'Unpin' : 'Pin'} onClick={e => { e.stopPropagation(); togglePin(c.id, c.pinned); }}><Pin size={13} /></button>
+                    <button type="button" title="Rename" onClick={e => { e.stopPropagation(); renameConversation(c.id, c.title); }}><Pencil size={13} /></button>
+                    <button type="button" title="Export" onClick={e => { e.stopPropagation(); exportConversation(c.id); }}><Download size={13} /></button>
+                    <button type="button" title="Delete" onClick={e => { e.stopPropagation(); removeConversation(c.id); }}><Trash2 size={13} /></button>
+                  </span>
+                </HistoryItem>
+              ))}
+          </HistoryList>
+        </HistoryDrawer>
+      )}
       <Messages>
         {messages.map((message, index) => {
           const messageKey = `msg-${index}`;
@@ -913,15 +1419,36 @@ const AgentWidget = () => {
             <MessageGroup $user={message.role === 'user'}>
               <Bubble $user={message.role === 'user'}>{message.role === 'user' ? message.content : renderMessageContent(message.content)}</Bubble>
               <MessageTools className="message-tools" $user={message.role === 'user'}>
-                <button type="button" title={copied ? 'Copied' : t.copyMessage} onClick={() => copyMessage(message.content, messageKey)}>
+                <button type="button" title={copied ? 'Copied' : t.copyMessage} aria-label={t.copyMessage} onClick={() => copyMessage(message.content, messageKey)}>
                   {copied ? <Check size={13} /> : <Copy size={13} />}
                 </button>
+                {message.role === 'assistant' && !message.welcome && (
+                  <>
+                    <button type="button" title="Regenerate" aria-label="Regenerate response" onClick={regenerate}><RefreshCw size={13} /></button>
+                    <button type="button" title="Good response" aria-label="Good response" onClick={() => giveFeedback(message, 'up')}><ThumbsUp size={13} /></button>
+                    <button type="button" title="Needs work" aria-label="Bad response" onClick={() => giveFeedback(message, 'down')}><ThumbsDown size={13} /></button>
+                  </>
+                )}
               </MessageTools>
             </MessageGroup>
             {message.artifact && <ArtifactCard artifact={message.artifact} rtl={isRTL} />}
             {renderActions(message.actions)}
           </React.Fragment>
         );})}
+        {messages.length === 1 && !loading && (
+          <SuggestedPrompts>
+            {suggestedPrompts.map(prompt => (
+              <PromptChip key={prompt.label} type="button" onClick={() => sendText(prompt.text)}>{prompt.label}</PromptChip>
+            ))}
+          </SuggestedPrompts>
+        )}
+        {followUps.length > 0 && !loading && !pendingAction && (
+          <SuggestedPrompts aria-label="Suggested follow-ups">
+            {followUps.map(text => (
+              <PromptChip key={text} type="button" onClick={() => sendText(text)}>↪ {text}</PromptChip>
+            ))}
+          </SuggestedPrompts>
+        )}
         {pendingAction && (
           <Pending>
             <strong>{pendingAction.summary}</strong>
@@ -934,10 +1461,34 @@ const AgentWidget = () => {
         )}
         <div ref={endRef} />
       </Messages>
-      <ActivityStrip $visible={activityVisible || loading}>
+      <ActivityStrip $visible={activityVisible || loading || Boolean(undoable)}>
         {activeStep?.status === 'running' || loading ? <Loader size={14} className="spin" /> : <Check size={14} />}
         <span>{currentActivity}</span>
+        {loading && (
+          <button type="button" onClick={stopGeneration} title="Stop generating" aria-label="Stop generating" style={{ marginInlineStart: 'auto', border: 0, background: 'transparent', color: 'var(--color-navy)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
+            <Square size={12} /> Stop
+          </button>
+        )}
+        {!loading && undoable && (
+          <button type="button" onClick={undoLastAction} title="Undo last action" aria-label="Undo last action" style={{ marginInlineStart: 'auto', border: '1px solid var(--color-teal)', borderRadius: 8, background: '#fff', color: 'var(--color-navy)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '3px 8px' }}>
+            <RefreshCw size={12} /> Undo last action
+          </button>
+        )}
       </ActivityStrip>
+      {showShortcuts && (
+        <ShortcutsOverlay role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onMouseDown={event => { if (event.target === event.currentTarget) setShowShortcuts(false); }}>
+          <div>
+            <h4>Keyboard shortcuts & tips</h4>
+            <div className="row"><span>Open assistant</span><span><kbd>Ctrl</kbd>+<kbd>K</kbd></span></div>
+            <div className="row"><span>Send message</span><span><kbd>Enter</kbd></span></div>
+            <div className="row"><span>New line</span><span><kbd>Shift</kbd>+<kbd>Enter</kbd></span></div>
+            <div className="row"><span>Commands</span><span>Type <kbd>/</kbd> in the box</span></div>
+            <div className="row"><span>Mention a user / template</span><span><kbd>@</kbd> / <kbd>#</kbd></span></div>
+            <div className="row"><span>This cheat sheet</span><span><kbd>?</kbd></span></div>
+            <button type="button" onClick={() => setShowShortcuts(false)}>Close</button>
+          </div>
+        </ShortcutsOverlay>
+      )}
       <ComposerShell>
         {showMemory && (
           <MemoryPanel>
@@ -961,10 +1512,17 @@ const AgentWidget = () => {
               </ExtraButton>
             )}
             {attachments.map((attachment, index) => (
-              <AttachChip key={`${attachment.url}-${index}`}>
-                <span>{attachment.name || 'image'}</span>
-                <button type="button" onClick={() => setAttachments(current => current.filter((_, idx) => idx !== index))}><X size={11} /></button>
-              </AttachChip>
+              String(attachment.mimeType || '').startsWith('image/') ? (
+                <ImageThumb key={`${attachment.url}-${index}`} title={attachment.name || 'image'}>
+                  <img src={attachment.url} alt={attachment.name || 'attachment'} />
+                  <button type="button" aria-label={`Remove ${attachment.name || 'image'}`} title="Remove" onClick={() => setAttachments(current => current.filter((_, idx) => idx !== index))}><X size={12} /></button>
+                </ImageThumb>
+              ) : (
+                <AttachChip key={`${attachment.url}-${index}`}>
+                  <span>{attachment.name || 'file'}</span>
+                  <button type="button" aria-label={`Remove ${attachment.name || 'file'}`} title="Remove" onClick={() => setAttachments(current => current.filter((_, idx) => idx !== index))}><X size={11} /></button>
+                </AttachChip>
+              )
             ))}
           </ComposerExtras>
         )}
@@ -986,7 +1544,7 @@ const AgentWidget = () => {
           >
             {browserListening ? <MicOff size={17} /> : voiceMode ? <Activity size={17} /> : <Mic size={17} />}
           </IconButton>
-          <InputWrap>
+          <InputWrap onDragOver={event => { if (capabilities.visionEnabled) event.preventDefault(); }} onDrop={onComposerDrop}>
             <Input
               ref={inputRef}
               $voice={voiceMode}
@@ -994,20 +1552,44 @@ const AgentWidget = () => {
               aria-label={voiceMode ? t.liveTranscript : t.placeholder}
               disabled={!capabilities.textEnabled}
               value={composerValue}
+              onPaste={onComposerPaste}
               onChange={event => {
                 const next = event.target.value;
                 if (voiceMode) {
                   setSpeechPreview(next);
                   finalSpeechRef.current = next ? `${next} ` : '';
                 } else {
-                  setInput(next);
+                  handleComposerChange(next);
                 }
               }}
               placeholder={composerPlaceholder}
               onKeyDown={event => {
-                if (event.key === 'Enter' && !event.shiftKey) send(event);
+                if (event.key === 'Escape' && (slashOpen || mention)) { setSlashOpen(false); setMention(null); return; }
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  if (slashOpen && visibleSlashCommands.length) { event.preventDefault(); runSlashCommand(visibleSlashCommands[0]); return; }
+                  if (mention && mention.items.length) { event.preventDefault(); applyMention(mention.items[0]); return; }
+                  send(event);
+                }
               }}
             />
+            {slashOpen && visibleSlashCommands.length > 0 && (
+              <ComposerPopover role="listbox" aria-label="Commands">
+                {visibleSlashCommands.map(command => (
+                  <button key={command.cmd} type="button" onClick={() => runSlashCommand(command)}>
+                    <strong>{command.cmd}</strong><span>{command.hint}</span>
+                  </button>
+                ))}
+              </ComposerPopover>
+            )}
+            {mention && mention.items.length > 0 && (
+              <ComposerPopover role="listbox" aria-label="Suggestions">
+                {mention.items.map(item => (
+                  <button key={item.id} type="button" onClick={() => applyMention(item)}>
+                    <strong>{item.label}</strong><span>{item.sub}</span>
+                  </button>
+                ))}
+              </ComposerPopover>
+            )}
             <InputUtility type="button" title={inputExpanded ? t.collapseInput : t.expandInput} onClick={() => setInputExpanded(current => !current)}>
               {inputExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </InputUtility>

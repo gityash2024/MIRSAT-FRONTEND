@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   Mail,
@@ -250,6 +251,7 @@ const TabContent = styled.div`
 
 const UserProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
@@ -315,6 +317,12 @@ const UserProfile = () => {
                 <ManageButton type="button" $secondary onClick={() => setShowApiKeyModal(true)}>
                   <KeyRound size={16} />
                   {agentCapabilities?.multiProviderEnabled ? t('agent.manageProviderKeys', 'AI Provider Keys') : t('agent.manageApiKey', 'Gemini API Key')}
+                </ManageButton>
+              )}
+              {Boolean(agentCapabilities?.enabled) && (
+                <ManageButton type="button" $secondary onClick={() => navigate('/agent-admin')}>
+                  <Shield size={16} />
+                  {t('agent.agentAdmin', 'AI Agent Admin')}
                 </ManageButton>
               )}
             </HeaderActions>
