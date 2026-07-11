@@ -313,7 +313,7 @@ const UserProfile = () => {
                 <Plus size={16} />
                 {t('departments.manageDepartments')}
               </ManageButton>
-              {canManageApiKey && (
+              {/* {canManageApiKey && (
                 <ManageButton type="button" $secondary onClick={() => setShowApiKeyModal(true)}>
                   <KeyRound size={16} />
                   {agentCapabilities?.multiProviderEnabled ? t('agent.manageProviderKeys', 'AI Provider Keys') : t('agent.manageApiKey', 'Gemini API Key')}
@@ -324,7 +324,7 @@ const UserProfile = () => {
                   <Shield size={16} />
                   {t('agent.agentAdmin', 'AI Agent Admin')}
                 </ManageButton>
-              )}
+              )} */}
             </HeaderActions>
           )}
         </PageHeaderContent>

@@ -5,7 +5,7 @@ import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
 import { useLanguage } from '../../context/LanguageContext';
 
-const AgentWidget = lazy(() => import('../../components/assistant/AgentWidget'));
+// const AgentWidget = lazy(() => import('../../components/assistant/AgentWidget'));
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -134,9 +134,9 @@ const MainLayout = () => {
           <Outlet />
         </MainContent>
       </MainContentWrapper>
-      <Suspense fallback={null}>
+      {/* <Suspense fallback={null}>
         <AgentWidget />
-      </Suspense>
+      </Suspense> */}
     </LayoutContainer>
   );
 };

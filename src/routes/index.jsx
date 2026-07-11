@@ -45,7 +45,7 @@ import UserTasks from '../pages/UserTasks/index';
 import UserTaskDetail from '../pages/UserTasks/UserTaskDetail';
 import PreInspectionQuestionnaire from '../pages/UserTasks/PreInspectionQuestionnaire';
 import UserProfile from '../pages/profile';
-import AgentAdmin from '../pages/agentAdmin';
+// import AgentAdmin from '../pages/agentAdmin';
 import LogsList from '@/pages/logs/LogsList.jsx';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/permissions';
@@ -144,7 +144,7 @@ const AppRoutes = () => {
           <Route path="/reports/*" element={<Reports />} />
 
           {/* v4: AI agent governance (permissions matrix + usage); admin-only, additive route */}
-          <Route path="/agent-admin" element={<AgentAdmin />} />
+          {/* <Route path="/agent-admin" element={<AgentAdmin />} /> */}
         </Route>
       </Route>
 
