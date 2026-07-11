@@ -2496,6 +2496,9 @@ const QuestionItemComponent = ({
     } else if (['multiple', 'multiple_choice', 'select', 'checkbox'].includes(question.answerType)) {
       const optionScores = scoreValues.map(s => Number(s) || 0);
       maxScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
+    } else if (['text', 'number', 'date', 'signature', 'media', 'file'].includes(question.answerType)) {
+      // Non-scored types always contribute 0; also self-heals already-saved corrupt scoring.max on load
+      maxScore = 0;
     } else if (question.scoring?.enabled && scoreValues.length === 0) {
       maxScore = Number(question.scoring?.max) || 0;
     }
@@ -2602,16 +2605,14 @@ const QuestionItemComponent = ({
       // Checkbox doesn't have scoring (no scores)
       updatedQuestion.scores = {};
     } else {
-      // Reset options if changing to a type that doesn't need them (text, number, date, signature, media, file)
+      // Reset options AND scoring for non-scored types (text, number, date, signature, media, file)
       updatedQuestion.options = [];
       updatedQuestion.scores = {};
-      // Keep scoring if it exists, otherwise initialize it
-      if (!updatedQuestion.scoring) {
-        updatedQuestion.scoring = {
-          enabled: false,
-          max: 2 // Change default max score to 2
-        };
-      }
+      // Unconditionally clear scoring so a stale max (e.g. 2 from compliance) can never linger
+      updatedQuestion.scoring = {
+        enabled: false,
+        max: 0
+      };
     }
 
     // Clear question text if it contains type-specific text that doesn't match the new type

@@ -407,7 +407,16 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     if (!formData.role) newErrors.role = t('common.roleRequired');
     
     if (!(initialData._id || initialData.id)) {
+      // Create mode: password is required
       if (!formData.password) newErrors.password = t('common.passwordRequired');
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = t('common.passwordsDoNotMatch');
+      }
+    } else if (formData.password) {
+      // Edit mode: password is optional — validate only when a new one was typed
+      if (formData.password.length < 8) {
+        newErrors.password = t('common.passwordMinLength');
+      }
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = t('common.passwordsDoNotMatch');
       }
@@ -431,7 +440,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       
       delete submitData.confirmPassword;
       delete submitData.status;
-      
+
+      // Edit mode: never send an empty password (would otherwise be dropped by the backend)
+      if ((initialData._id || initialData.id) && !submitData.password) {
+        delete submitData.password;
+      }
+
       onSubmit(submitData);
     }
   };
@@ -645,10 +659,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         </FormGroup>
       </FormRow>
 
-      {!isEditMode && (
+      {(
         <FormRow>
           <FormGroup>
-            <Label>{t('common.password')}</Label>
+            <Label>{isEditMode ? t('common.newPassword') : t('common.password')}</Label>
             <PasswordWrapper>
               <PasswordInput
                 type={showPassword ? "text" : "password"}
@@ -656,7 +670,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
                 data-agent-field="users.form.password"
                 value={formData.password || ''}
                 onChange={handleChange}
-                placeholder={t('common.enterPassword')}
+                placeholder={isEditMode ? t('common.leaveBlankToKeepPassword') : t('common.enterPassword')}
               />
               <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -666,7 +680,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
           </FormGroup>
 
           <FormGroup>
-            <Label>{t('common.confirmPassword')}</Label>
+            <Label>{isEditMode ? t('common.confirmNewPassword') : t('common.confirmPassword')}</Label>
             <PasswordWrapper>
               <PasswordInput
                 type={showConfirmPassword ? "text" : "password"}
@@ -674,7 +688,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
                 data-agent-field="users.form.confirmPassword"
                 value={formData.confirmPassword || ''}
                 onChange={handleChange}
-                placeholder={t('common.confirmPasswordPlaceholder')}
+                placeholder={isEditMode ? t('common.leaveBlankToKeepPassword') : t('common.confirmPasswordPlaceholder')}
               />
               <PasswordToggle type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}

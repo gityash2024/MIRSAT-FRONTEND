@@ -1434,6 +1434,7 @@ const InspectionLayout = styled.div`
   @media (max-width: 1200px) {
     flex-direction: column;
     height: auto;
+    overflow: visible;
   }
 
   @media (max-width: 768px) {
@@ -1463,7 +1464,8 @@ const NavigationPanel = styled.div`
     width: 100%;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    max-height: 300px;
+    max-height: none;
+    overflow: visible;
   }
 
   @media (max-width: 480px) {
@@ -1481,6 +1483,11 @@ const NavigationHeader = styled.div`
   box-sizing: border-box;
   max-width: 100%;
   overflow: hidden;
+
+  @media (max-width: 1200px) {
+    flex-shrink: 0;
+    overflow: visible;
+  }
 
   @media (max-width: 480px) {
     padding: 12px 16px;
@@ -1559,6 +1566,11 @@ const SectionNavigationControls = styled.div`
   box-sizing: border-box;
   max-width: 100%;
   overflow: hidden;
+
+  @media (max-width: 1200px) {
+    flex-shrink: 0;
+    overflow: visible;
+  }
 
   @media (max-width: 480px) {
     flex-direction: column;
@@ -1690,6 +1702,12 @@ const SectionsNavigation = styled.div`
   box-sizing: border-box;
   max-width: 100%;
 
+  @media (max-width: 1200px) {
+    flex-shrink: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
   @media (max-width: 480px) {
     padding: 12px;
     width: 100%;
@@ -1793,6 +1811,12 @@ const ContentPanel = styled.div`
   width: 100%;
   box-sizing: border-box;
 
+  @media (max-width: 1200px) {
+    height: auto;
+    overflow: visible;
+    min-height: 50vh;
+  }
+
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
@@ -1858,6 +1882,12 @@ const QuestionsContent = styled.div`
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
+
+  @media (max-width: 1200px) {
+    height: auto;
+    overflow-y: visible;
+    min-height: 50vh;
+  }
 
   @media (max-width: 768px) {
     padding: 16px 20px;
