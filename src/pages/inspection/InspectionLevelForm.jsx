@@ -2615,22 +2615,6 @@ const QuestionItemComponent = ({
       };
     }
 
-    // Clear question text if it contains type-specific text that doesn't match the new type
-    if (updatedQuestion.text) {
-      const currentText = updatedQuestion.text.toLowerCase();
-      const newTypeLower = newType.toLowerCase();
-
-      // If current text contains old type references, clear it
-      if ((currentText.includes('yes/no') || currentText.includes('yes or no')) && newTypeLower !== 'yesno') {
-        updatedQuestion.text = '';
-      } else if (currentText.includes('compliance') && newTypeLower !== 'compliance') {
-        updatedQuestion.text = '';
-      } else if (currentText.includes('multiple choice') && !['multiple', 'multiple_choice', 'checkbox', 'radio', 'dropdown'].includes(newTypeLower)) {
-        updatedQuestion.text = '';
-      } else if (currentText.includes('date') && newTypeLower !== 'date') {
-        updatedQuestion.text = '';
-      }
-    }
 
     updateQuestion(updatedQuestion);
   };
