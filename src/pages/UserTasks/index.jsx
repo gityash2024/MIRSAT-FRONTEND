@@ -1433,15 +1433,23 @@ const UserTasks = () => {
             <TaskCard key={task.id} ref={el => cardRefs.current[index] = el}>
               <TaskHeader>
                 <TaskTitle>{task.title}</TaskTitle>
-                <StatusBadge status={task.status}>
-                  <StatusIcon status={task.status} size={14} />
-                  {task.status === 'archived' ? t('tasks.completed') : 
-                   task.status === 'in_progress' ? t('tasks.inProgress') :
-                   task.status === 'pending' ? t('tasks.pending') :
-                   task.status === 'completed' ? t('tasks.completed') :
-                   task.status === 'overdue' ? t('dashboard.overdue') :
-                   task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
-                </StatusBadge>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {task.isActive === false && (
+                    <StatusBadge status="inactive" style={{ backgroundColor: '#fee2e2', color: '#ef4444', borderColor: '#fca5a5' }}>
+                      <XCircle size={14} />
+                      {t('auth.inactive')}
+                    </StatusBadge>
+                  )}
+                  <StatusBadge status={task.status}>
+                    <StatusIcon status={task.status} size={14} />
+                    {task.status === 'archived' ? t('tasks.completed') : 
+                     task.status === 'in_progress' ? t('tasks.inProgress') :
+                     task.status === 'pending' ? t('tasks.pending') :
+                     task.status === 'completed' ? t('tasks.completed') :
+                     task.status === 'overdue' ? t('dashboard.overdue') :
+                     task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
+                  </StatusBadge>
+                </div>
               </TaskHeader>
               
               <TaskBody>
@@ -1518,8 +1526,8 @@ const UserTasks = () => {
                   <TaskButton 
                     primary
                     onClick={() => handleStartTask(task)}
-                    disabled={actionLoading || startLocked}
-                    title={startLocked ? t('tasks.lockedUntilStart', { date: formatDateTime(task.startDate) }) : undefined}
+                    disabled={actionLoading || startLocked || task.isActive === false}
+                    title={task.isActive === false ? t('auth.inactive') : startLocked ? t('tasks.lockedUntilStart', { date: formatDateTime(task.startDate) }) : undefined}
                   >
                     {actionLoading ? (
                       <Loader size={16} color="white" />
@@ -1536,6 +1544,8 @@ const UserTasks = () => {
                   <TaskButton 
                     primary
                     onClick={() => viewTaskDetails(task.id)}
+                    disabled={task.isActive === false}
+                    title={task.isActive === false ? t('auth.inactive') : undefined}
                   >
                     <PlayCircle size={16} />
                     {t('tasks.continue')}
