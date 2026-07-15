@@ -99,6 +99,22 @@ export const startTaskNow = createAsyncThunk(
   }
 );
 
+export const toggleTaskActive = createAsyncThunk(
+  'tasks/toggleTaskActive',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/tasks/${id}/toggle-active`);
+      const updatedTask = response.data?.data || response.data;
+      toast.success(`Inspection ${updatedTask.isActive !== false ? 'activated' : 'deactivated'} successfully`);
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to update inspection active status';
+      toast.error(errorMessage);
+      return rejectWithValue(error.response?.data || { message: errorMessage });
+    }
+  }
+);
+
 export const addTaskComment = createAsyncThunk(
   'tasks/addTaskComment',
   async ({ id, content }, { rejectWithValue }) => {
@@ -467,6 +483,22 @@ const taskSlice = createSlice({
       })
       .addCase(startTaskNow.fulfilled, (state, action) => {
         const updatedTask = action.payload?.data;
+        if (!updatedTask) return;
+
+        const updatedTaskId = updatedTask._id || updatedTask.id;
+        const index = state.tasks.findIndex(task => (task._id || task.id) === updatedTaskId);
+        const normalizedTask = { ...updatedTask, id: updatedTask.id || updatedTask._id };
+
+        if (index !== -1) {
+          state.tasks[index] = normalizedTask;
+        }
+
+        if (state.currentTask && (state.currentTask._id || state.currentTask.id) === updatedTaskId) {
+          state.currentTask = normalizedTask;
+        }
+      })
+      .addCase(toggleTaskActive.fulfilled, (state, action) => {
+        const updatedTask = action.payload?.data || action.payload;
         if (!updatedTask) return;
 
         const updatedTaskId = updatedTask._id || updatedTask.id;

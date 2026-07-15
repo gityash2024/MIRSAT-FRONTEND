@@ -27,6 +27,11 @@ export const taskService = {
     return response.data;
   },
 
+  async toggleTaskActive(id) {
+    const response = await api.patch(`/tasks/${id}/toggle-active`);
+    return response.data;
+  },
+
   async exportTaskReport(taskId, format = 'excel', fileName = null, taskData = null, language = 'en') {
     try {
       // For PDF, use frontend generation

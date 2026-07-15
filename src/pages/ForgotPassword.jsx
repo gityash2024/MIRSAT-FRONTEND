@@ -229,12 +229,12 @@ const ForgotPassword = () => {
     e.preventDefault();
     
     if (!email) {
-      setMessage({ type: 'error', text: 'Email is required' });
+      setMessage({ type: 'error', text: t('auth.emailRequired') });
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setMessage({ type: 'error', text: 'Please enter a valid email address' });
+      setMessage({ type: 'error', text: t('auth.invalidEmail') });
       return;
     }
 
@@ -246,12 +246,12 @@ const ForgotPassword = () => {
       setEmailSent(true);
       setMessage({ 
         type: 'success', 
-        text: 'Password reset email sent! Please check your inbox.' 
+        text: t('auth.resetEmailSent') 
       });
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: error.response?.data?.message || 'Failed to send reset email. Please try again.' 
+        text: error.response?.data?.message || t('auth.resetEmailFailed') 
       });
     } finally {
       setIsLoading(false);
@@ -273,7 +273,7 @@ const ForgotPassword = () => {
 
         <BackButton to="/login">
           <ArrowLeft size={16} />
-          Back to Login
+          {t('auth.backToLogin')}
         </BackButton>
 
         <ContentWrapper>
@@ -284,7 +284,7 @@ const ForgotPassword = () => {
           >
             <Title>{t('auth.resetPassword')}</Title>
             <Description>
-              Enter your email address and we'll send you a link to reset your password.
+              {t('auth.resetPasswordSubtitle')}
             </Description>
 
             {message.text && (
@@ -303,7 +303,7 @@ const ForgotPassword = () => {
                 <FormGroup>
                   <Input
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder={t('auth.emailPlaceholder') || "Enter your email address"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -315,13 +315,13 @@ const ForgotPassword = () => {
                   whileTap={{ scale: 0.98 }}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                  {isLoading ? t('auth.sending') : t('auth.sendResetLink')}
                 </SubmitButton>
               </form>
             )}
 
             <BackToLogin to="/login">
-              {emailSent ? 'Back to Login' : 'Remember your password? Sign in'}
+              {emailSent ? t('auth.backToLogin') : t('auth.rememberPassword')}
             </BackToLogin>
           </ForgotPasswordCard>
         </ContentWrapper>

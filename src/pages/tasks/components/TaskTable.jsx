@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle, PlayCircle } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle, PlayCircle, Power } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
@@ -10,7 +10,7 @@ import TaskPriority from './TaskPriority';
 import TaskAssignee from './TaskAssignee';
 import { PERMISSIONS } from '../../../utils/permissions';
 import usePermissions from '../../../hooks/usePermissions';
-import { deleteTask, startTaskNow } from '../../../store/slices/taskSlice';
+import { deleteTask, startTaskNow, toggleTaskActive } from '../../../store/slices/taskSlice';
 import Skeleton from '../../../components/ui/Skeleton';
 import { themeColors, getStatusColor } from '../../../utils/themeUtils';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -995,6 +995,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   const { hasPermission } = usePermissions();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [toggleConfirm, setToggleConfirm] = useState(null);
   const [startNowConfirm, setStartNowConfirm] = useState(null);
   const [sublevelsModal, setSublevelsModal] = useState(null);
   const [sortConfig, setSortConfig] = useState({
@@ -1111,6 +1112,24 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       setStartNowConfirm(null);
     } catch (error) {
       console.error('Error starting inspection now:', error);
+    }
+  };
+
+  const handleToggleClick = (task) => {
+    setToggleConfirm(task);
+    setActiveDropdown(null);
+  };
+
+  const handleConfirmToggle = async () => {
+    try {
+      const taskId = toggleConfirm._id || toggleConfirm.id;
+      await dispatch(toggleTaskActive(taskId)).unwrap();
+      setToggleConfirm(null);
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      if (!error.message) {
+        toast.error(t('auth.toggleFailed') || 'Failed to update status');
+      }
     }
   };
 
@@ -1317,7 +1336,24 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                   />
                 </td>
                 <td><TaskPriority priority={task.priority} /></td>
-                <td><TaskStatus status={task.status} /></td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <TaskStatus status={task.status} />
+                    {task.isActive === false && (
+                      <span style={{
+                        background: '#fee2e2',
+                        color: '#dc2626',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        {t('auth.inactive') || 'Inactive'}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td>{new Date(task.deadline).toLocaleDateString()}</td>
                 {/* <td>
             <ProgressBar>
@@ -1339,6 +1375,20 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                       <Tooltip content={t('common.edit')}>
                         <ActionButton onClick={() => handleEditTask(task.id)}>
                           <Edit size={16} />
+                        </ActionButton>
+                      </Tooltip>
+                    )}
+
+                    {hasPermission(PERMISSIONS.TASKS.EDIT_TASKS) && (
+                      <Tooltip content={task.isActive !== false ? (t('common.deactivate') || 'Deactivate') : (t('common.activate') || 'Activate')}>
+                        <ActionButton
+                          onClick={() => handleToggleClick(task)}
+                          style={{
+                            background: task.isActive !== false ? '#fee2e2' : '#dcfce7',
+                            color: task.isActive !== false ? '#dc2626' : '#16a34a'
+                          }}
+                        >
+                          <Power size={16} />
                         </ActionButton>
                       </Tooltip>
                     )}
@@ -1472,6 +1522,45 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               </DialogButton>
               <DialogButton variant="danger" onClick={handleConfirmDelete}>
                 {t('common.delete')}
+              </DialogButton>
+            </DialogActions>
+          </DialogContent>
+        </DeleteConfirmDialog>
+      )}
+
+      {toggleConfirm && (
+        <DeleteConfirmDialog>
+          <DialogContent>
+            <DialogTitle>
+              {toggleConfirm.isActive !== false
+                ? (t('auth.deactivateConfirmTitle') || 'Deactivate Inspection')
+                : (t('auth.activateConfirmTitle') || 'Activate Inspection')}
+            </DialogTitle>
+            <DialogMessage>
+              {toggleConfirm.isActive !== false
+                ? (t('auth.deactivateConfirmMsg') || `Are you sure you want to deactivate "${toggleConfirm.title}"? Inspectors will not be able to perform or submit this inspection while inactive.`)
+                : (t('auth.activateConfirmMsg') || `Are you sure you want to activate "${toggleConfirm.title}"? It will become available to inspectors.`)}
+            </DialogMessage>
+            <DialogActions>
+              <DialogButton onClick={() => setToggleConfirm(null)}>
+                {t('common.cancel')}
+              </DialogButton>
+              <DialogButton
+                variant={toggleConfirm.isActive !== false ? 'danger' : 'primary'}
+                onClick={handleConfirmToggle}
+                style={
+                  toggleConfirm.isActive !== false
+                    ? {}
+                    : {
+                        background: 'var(--color-green, #16a34a)',
+                        color: 'white',
+                        border: 'none'
+                      }
+                }
+              >
+                {toggleConfirm.isActive !== false
+                  ? (t('common.deactivate') || 'Deactivate')
+                  : (t('common.activate') || 'Activate')}
               </DialogButton>
             </DialogActions>
           </DialogContent>

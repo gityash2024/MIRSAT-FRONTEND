@@ -417,6 +417,14 @@ const ExportButton = styled.button`
   min-width: 200px;
   height: 56px;
   
+  @media (max-width: 480px) {
+    min-width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+    height: 48px;
+    justify-content: center;
+  }
+  
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(22, 163, 74, 0.6);
@@ -1565,7 +1573,7 @@ const SectionNavigationControls = styled.div`
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
 
   @media (max-width: 1200px) {
     flex-shrink: 0;
@@ -1588,6 +1596,8 @@ const SectionButtonsRow = styled.div`
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 
   @media (max-width: 480px) {
     display: flex;
@@ -1615,8 +1625,10 @@ const SectionNavigationButton = styled.button`
   box-sizing: border-box;
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   justify-content: center;
+  text-align: center;
   
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -1717,7 +1729,7 @@ const SectionsNavigation = styled.div`
 
 const SectionNavItem = styled.div`
   padding: 12px 16px;
-  margin: 6px;
+  margin: 6px 0;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1731,11 +1743,12 @@ const SectionNavItem = styled.div`
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
+  gap: 8px;
   
   ${props => props.active ? css`
     background: linear-gradient(135deg, #3788d8, #2c3e50);
     color: white;
-    transform: translateX(4px);
+    transform: translateY(-1px);
     box-shadow: 
       0 4px 15px rgba(55, 136, 216, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -1747,7 +1760,7 @@ const SectionNavItem = styled.div`
     
     &:hover {
       background: rgba(55, 136, 216, 0.1);
-      transform: translateX(2px);
+      transform: translateY(-1px);
       border-color: rgba(55, 136, 216, 0.3);
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
@@ -1755,15 +1768,15 @@ const SectionNavItem = styled.div`
 
   @media (max-width: 480px) {
     padding: 10px 12px;
-    margin: 4px;
+    margin: 4px 0;
     width: 100%;
     max-width: 100%;
     
     ${props => props.active ? css`
-      transform: translateX(2px);
+      transform: none;
     ` : css`
       &:hover {
-        transform: translateX(1px);
+        transform: none;
       }
     `}
   }
@@ -1777,15 +1790,12 @@ const SectionTitle2 = styled.div`
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
 
   @media (max-width: 480px) {
     font-size: 13px;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
   }
 `;
 
@@ -1797,6 +1807,8 @@ const SectionScore = styled.div`
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
   background: ${props => props.active ? 'rgba(255, 255, 255, 0.2)' : 'rgba(55, 136, 216, 0.2)'};
   border: 1px solid ${props => props.active ? 'rgba(255, 255, 255, 0.3)' : 'rgba(55, 136, 216, 0.3)'};
 `;
@@ -3909,6 +3921,7 @@ const UserTaskDetail = () => {
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState('draw');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showUnansweredModal, setShowUnansweredModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [signatureJustSaved, setSignatureJustSaved] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
@@ -3969,6 +3982,7 @@ const UserTaskDetail = () => {
   const sectionNavigationRef = useRef(null);
   const pageNavigationRef = useRef(null);
   const dropdownRef = useRef(null);
+  const questionsContentRef = useRef(null);
 
   // Derive currentPage from inspectionPages and selectedPage
   const currentPage = useMemo(() => {
@@ -3981,6 +3995,14 @@ const UserTaskDetail = () => {
     if (!currentPage || !selectedSection) return null;
     return currentPage.sections?.find(s => (s.id || s._id) === selectedSection);
   }, [currentPage, selectedSection]);
+
+  // Issue 3.2 Fix: Scroll to top when switching sections or pages
+  useEffect(() => {
+    if (questionsContentRef.current) {
+      questionsContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedPage, selectedSection]);
 
   // Log auto-update status
   useEffect(() => {
@@ -4802,6 +4824,11 @@ const UserTaskDetail = () => {
 
 
   const handleStartTask = async () => {
+    if (currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false) {
+      toast.error(t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.');
+      return;
+    }
+
     if (scheduledStartLocked) {
       toast.error(t('tasks.lockedUntilStart', { date: formatDateTime(currentTask.startDate) }));
       return;
@@ -5320,7 +5347,10 @@ const UserTaskDetail = () => {
   };
 
   const handleSaveInspectionResponse = async (questionId, value, options = {}) => {
-    if (!currentTask || currentTask.status === 'completed' || currentTask.status === 'archived') {
+    if (!currentTask || currentTask.status === 'completed' || currentTask.status === 'archived' || currentTask.isActive === false || currentTask.inspectionLevel?.isActive === false) {
+      if (currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false) {
+        toast.error(t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.');
+      }
       return false;
     }
 
@@ -5578,6 +5608,11 @@ const UserTaskDetail = () => {
 
   // New Save and Submit functionality for compliance completion
   const handleSaveAndSubmit = async () => {
+    if (currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false) {
+      toast.error(t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.');
+      return;
+    }
+
     if (!signatureImage) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSubmitting'));
       return;
@@ -5660,7 +5695,10 @@ const UserTaskDetail = () => {
 
     const unansweredQuestions = [];
 
-    inspectionPages.forEach(page => {
+    inspectionPages.forEach((page, pageIndex) => {
+      const pageId = page._id || page.id;
+      const pageName = page.title || page.name || `Page ${pageIndex + 1}`;
+
       if (page.sections) {
         page.sections.forEach(section => {
           if (section.questions) {
@@ -5693,8 +5731,12 @@ const UserTaskDetail = () => {
                 unansweredQuestions.push({
                   questionId,
                   questionText: question.text || question.question || 'Question',
-                  sectionId: section._id,
-                  sectionName: section.name || 'Section'
+                  pageId,
+                  pageName,
+                  sectionId: section._id || section.id,
+                  sectionName: section.name || 'Section',
+                  isRequired: true,
+                  isPreInspection: false
                 });
               }
             });
@@ -5720,8 +5762,12 @@ const UserTaskDetail = () => {
           unansweredQuestions.push({
             questionId,
             questionText: question.text || question.question || 'Question',
+            pageId: 'pre-inspection',
+            pageName: 'Pre-Inspection',
             sectionId: 'pre-inspection',
-            sectionName: 'Pre-Inspection'
+            sectionName: 'Pre-Inspection Questions',
+            isRequired: true,
+            isPreInspection: true
           });
         }
       });
@@ -5733,43 +5779,126 @@ const UserTaskDetail = () => {
     };
   }, [currentTask, inspectionPages]);
 
-  // Handle Complete & Archive functionality
-  const handleCompleteAndArchive = async () => {
-    // CRITICAL FIX: Validate all required questions first
-    const validation = validateRequiredQuestions();
-
-    if (!validation.isValid) {
-      // Set unanswered questions for highlighting
-      const unansweredIds = new Set(validation.unansweredQuestions.map(q => q.questionId));
-      setUnansweredRequiredQuestions(unansweredIds);
-
-      // Show error message
-      toast.error(
-        `Please fill the highlighted questions before completing the inspection. ${validation.unansweredQuestions.length} required question(s) are unanswered.`,
-        {
-          duration: 10000,
-          style: {
-            maxWidth: '500px',
-            whiteSpace: 'pre-line',
-            backgroundColor: '#fee2e2',
-            border: '2px solid #dc2626'
-          }
-        }
-      );
-
-      // Scroll to first unanswered question
-      if (validation.unansweredQuestions.length > 0) {
-        const firstUnanswered = validation.unansweredQuestions[0];
-        const questionElement = document.querySelector(`[data-question-id="${firstUnanswered.questionId}"]`);
-        if (questionElement) {
-          questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
-
-      return;
+  const getAllUnansweredQuestions = useCallback(() => {
+    if (!currentTask || !inspectionPages || inspectionPages.length === 0) {
+      return { required: [], optional: [] };
     }
 
-    // Clear any previous highlighting
+    const required = [];
+    const optional = [];
+
+    inspectionPages.forEach((page, pageIndex) => {
+      const pageId = page._id || page.id;
+      const pageName = page.title || page.name || `Page ${pageIndex + 1}`;
+
+      if (page.sections) {
+        page.sections.forEach(section => {
+          const sectionId = section._id || section.id;
+          const sectionName = section.name || 'Section';
+
+          if (section.questions) {
+            section.questions.forEach(question => {
+              const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+              const questionId = question._id || question.id;
+              let hasResponse = false;
+
+              if (currentTask.questionnaireResponses) {
+                if (currentTask.questionnaireResponses[questionId] !== undefined) {
+                  const response = currentTask.questionnaireResponses[questionId];
+                  hasResponse = response !== null && response !== undefined && response !== '';
+                } else {
+                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
+                    key.includes(questionId) || key.endsWith(questionId)
+                  );
+                  if (responseKey) {
+                    const response = currentTask.questionnaireResponses[responseKey];
+                    hasResponse = response !== null && response !== undefined && response !== '';
+                  }
+                }
+              }
+
+              if (!hasResponse) {
+                const item = {
+                  questionId,
+                  questionText: question.text || question.question || 'Question',
+                  pageId,
+                  pageName,
+                  sectionId,
+                  sectionName,
+                  isRequired,
+                  isPreInspection: false
+                };
+                if (isRequired) required.push(item);
+                else optional.push(item);
+              }
+            });
+          }
+        });
+      }
+    });
+
+    if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
+      currentTask.preInspectionQuestions.forEach(question => {
+        const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+        const questionId = question._id || question.id;
+        const hasResponse = currentTask.questionnaireResponses &&
+          currentTask.questionnaireResponses[questionId] !== undefined &&
+          currentTask.questionnaireResponses[questionId] !== null &&
+          currentTask.questionnaireResponses[questionId] !== '';
+
+        if (!hasResponse) {
+          const item = {
+            questionId,
+            questionText: question.text || question.question || 'Question',
+            pageId: 'pre-inspection',
+            pageName: 'Pre-Inspection',
+            sectionId: 'pre-inspection',
+            sectionName: 'Pre-Inspection Questions',
+            isRequired,
+            isPreInspection: true
+          };
+          if (isRequired) required.push(item);
+          else optional.push(item);
+        }
+      });
+    }
+
+    return { required, optional };
+  }, [currentTask, inspectionPages]);
+
+  const jumpToQuestion = (item) => {
+    setShowUnansweredModal(false);
+
+    if (item.isPreInspection) {
+      setActiveTab('pre-inspection');
+    } else {
+      if (item.pageId && item.pageId !== selectedPage) {
+        setSelectedPage(item.pageId);
+      }
+      if (item.sectionId && item.sectionId !== selectedSection) {
+        setSelectedSection(item.sectionId);
+      }
+      setActiveTab('inspection');
+    }
+
+    setTimeout(() => {
+      const questionElement = document.querySelector(`[data-question-id="${item.questionId}"]`);
+      if (questionElement) {
+        questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const originalBg = questionElement.style.backgroundColor;
+        questionElement.style.transition = 'all 0.3s ease';
+        questionElement.style.backgroundColor = '#fef3c7';
+        questionElement.style.boxShadow = '0 0 0 4px #f59e0b';
+        setTimeout(() => {
+          questionElement.style.backgroundColor = originalBg;
+          questionElement.style.boxShadow = 'none';
+        }, 2500);
+      }
+    }, 300);
+  };
+
+  const proceedToFinalSubmission = () => {
+    setShowUnansweredModal(false);
     setUnansweredRequiredQuestions(new Set());
 
     // Check task completion percentage first - use the same calculation as the UI
@@ -5802,6 +5931,28 @@ const UserTaskDetail = () => {
 
     // Show confirmation modal
     setShowArchiveModal(true);
+  };
+
+  // Handle Complete & Archive functionality
+  const handleCompleteAndArchive = async () => {
+    if (currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false) {
+      toast.error(t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.');
+      return;
+    }
+
+    const { required, optional } = getAllUnansweredQuestions();
+
+    // If there are ANY unanswered questions (required or optional), show the summary confirmation modal
+    if (required.length > 0 || optional.length > 0) {
+      if (required.length > 0) {
+        const unansweredIds = new Set(required.map(q => q.questionId));
+        setUnansweredRequiredQuestions(unansweredIds);
+      }
+      setShowUnansweredModal(true);
+      return;
+    }
+
+    proceedToFinalSubmission();
   };
 
   const handleConfirmArchive = async () => {
@@ -5864,7 +6015,7 @@ const UserTaskDetail = () => {
     const questionCaptureMetadata = getResponseMetadataForQuestion(task, questionId);
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
-    const isDisabled = task.status === 'completed' || task.status === 'archived' || Boolean(inputOptions.disabled);
+    const isDisabled = task.status === 'completed' || task.status === 'archived' || task.isActive === false || task.inspectionLevel?.isActive === false || Boolean(inputOptions.disabled);
 
     let questionType = question.type || question.answerType;
 
@@ -6959,7 +7110,7 @@ const UserTaskDetail = () => {
                   const nextPageId = nextPage.id || nextPage._id;
                   setSelectedPage(nextPageId);
                   if (nextPage.sections && nextPage.sections.length > 0) {
-                    const firstSectionId = nextPage.sections[0].id || nextPage.sections[0].id;
+                    const firstSectionId = nextPage.sections[0].id || nextPage.sections[0]._id;
                     setSelectedSection(firstSectionId);
                   }
                 }
@@ -7145,7 +7296,7 @@ const UserTaskDetail = () => {
               )}
             </ContentHeader>
 
-            <QuestionsContent>
+            <QuestionsContent ref={questionsContentRef}>
               {currentSection ? (
                 <>
                   {currentSection.questions && currentSection.questions.length > 0 ? (
@@ -7395,6 +7546,8 @@ const UserTaskDetail = () => {
     currentTask?.inspectionLevelName ||
     t('common.notApplicable');
 
+  const isTaskInactive = currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false;
+
   return (
     <PageContainer onClick={() => showPageDropdown && setShowPageDropdown(false)}>
       <MainContent>
@@ -7441,6 +7594,25 @@ const UserTaskDetail = () => {
           </QuickActions>
         </TopBar>
 
+        {isTaskInactive && (
+          <div style={{
+            background: '#fee2e2',
+            border: '1px solid #f87171',
+            color: '#991b1b',
+            padding: '14px 20px',
+            borderRadius: '12px',
+            margin: '0 0 20px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            fontWeight: '600',
+            fontSize: '15px'
+          }}>
+            <AlertCircle size={22} color="#dc2626" />
+            <span>{t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.'}</span>
+          </div>
+        )}
+
         <TaskHeader>
           {/* <TaskTitle>{taskDisplayName}</TaskTitle> */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
@@ -7475,6 +7647,24 @@ const UserTaskDetail = () => {
               {currentTask.status === 'completed' && t('tasks.completed')}
               {currentTask.status === 'archived' && t('tasks.archived')}
             </StatusBadge>
+
+            {isTaskInactive && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#fee2e2',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#dc2626',
+                fontWeight: '600',
+                border: '1px solid #f87171'
+              }}>
+                <AlertCircle size={14} />
+                {t('auth.inactive') || 'INACTIVE'}
+              </div>
+            )}
 
             {isArchivedTask && (
               <div style={{
@@ -7807,7 +7997,7 @@ const UserTaskDetail = () => {
 
                 {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
-                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading || scheduledStartLocked}>
+                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading || scheduledStartLocked || isTaskInactive}>
                       {scheduledStartLocked ? <Clock size={20} /> : <Play size={20} />}
                       {scheduledStartLocked ? t('tasks.scheduled') : t('tasks.startInspection')}
                     </StartTaskButton>
@@ -7816,7 +8006,7 @@ const UserTaskDetail = () => {
 
                 {currentTask.status === 'in_progress' && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
-                    <ContinueButton onClick={() => setActiveTab('inspection')} disabled={actionLoading}>
+                    <ContinueButton onClick={() => setActiveTab('inspection')} disabled={actionLoading || isTaskInactive}>
                       <Activity size={20} />
                       {t('tasks.continueInspection')}
                     </ContinueButton>
@@ -8372,7 +8562,7 @@ const UserTaskDetail = () => {
                     {currentTask?.status !== 'archived' && (() => {
                       const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
                       const isProgressComplete = actualProgress >= 100;
-                      const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete;
+                      const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete || isTaskInactive;
 
                       return (
                         <QuickActionButton
@@ -8837,6 +9027,214 @@ const UserTaskDetail = () => {
           </ModalContent>
         </ModalOverlay>
       )}
+
+      {/* Unanswered Questions Summary Modal */}
+      {showUnansweredModal && (() => {
+        const { required, optional } = getAllUnansweredQuestions();
+        const hasRequired = required.length > 0;
+
+        return (
+          <ModalOverlay>
+            <ModalContent style={{ maxWidth: '680px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+              <ModalHeader>
+                <ModalTitle style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Info size={22} color={hasRequired ? '#dc2626' : '#f59e0b'} />
+                  {t('tasks.unansweredQuestionsSummary') || 'Unanswered Questions Summary'}
+                </ModalTitle>
+                <CloseButton onClick={() => setShowUnansweredModal(false)}>
+                  <X size={20} />
+                </CloseButton>
+              </ModalHeader>
+
+              <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                {hasRequired ? (
+                  <div style={{
+                    padding: '14px 16px',
+                    background: '#fee2e2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    color: '#991b1b',
+                    fontSize: '14px',
+                    lineHeight: '1.5'
+                  }}>
+                    <strong>⚠️ {t('tasks.requiredQuestionsPending') || 'Required Questions Pending'}:</strong>
+                    <div style={{ marginTop: '4px' }}>
+                      {t('tasks.mustAnswerRequiredQuestions') || `You have ${required.length} required question(s) without a response. Please jump to each question below and provide an answer before completing the inspection.`}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '14px 16px',
+                    background: '#fef3c7',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    color: '#92400e',
+                    fontSize: '14px',
+                    lineHeight: '1.5'
+                  }}>
+                    <strong>ℹ️ {t('tasks.optionalQuestionsPending') || 'Optional / Recommended Questions Skipped'}:</strong>
+                    <div style={{ marginTop: '4px' }}>
+                      {t('tasks.canProceedOrJump') || `All required questions have been answered. However, ${optional.length} recommended or optional question(s) were skipped. You can review and answer them, or proceed with submission.`}
+                    </div>
+                  </div>
+                )}
+
+                {hasRequired && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertCircle size={16} />
+                      {t('tasks.requiredQuestions') || 'Required Questions'} ({required.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {required.map((item, idx) => (
+                        <div key={item.questionId || idx} style={{
+                          padding: '14px',
+                          background: '#fff',
+                          border: '1px solid #fecaca',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '12px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '600', fontSize: '14px', color: '#1f2937', marginBottom: '4px', wordBreak: 'break-word' }}>
+                              {item.questionText}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <span><strong>Page:</strong> {item.pageName}</span>
+                              <span>•</span>
+                              <span><strong>Section:</strong> {item.sectionName}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => jumpToQuestion(item)}
+                            style={{
+                              padding: '8px 14px',
+                              background: '#dc2626',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
+                              transition: 'background 0.2s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#b91c1c'}
+                            onMouseOut={(e) => e.currentTarget.style.background = '#dc2626'}
+                          >
+                            <Target size={14} />
+                            {t('tasks.jumpToQuestion') || 'Jump'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {optional.length > 0 && (
+                  <div>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#d97706', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Info size={16} />
+                      {t('tasks.recommendedOrOptionalQuestions') || 'Recommended / Optional Questions'} ({optional.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {optional.map((item, idx) => (
+                        <div key={item.questionId || idx} style={{
+                          padding: '14px',
+                          background: '#fff',
+                          border: '1px solid #fde68a',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '12px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '600', fontSize: '14px', color: '#1f2937', marginBottom: '4px', wordBreak: 'break-word' }}>
+                              {item.questionText}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <span><strong>Page:</strong> {item.pageName}</span>
+                              <span>•</span>
+                              <span><strong>Section:</strong> {item.sectionName}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => jumpToQuestion(item)}
+                            style={{
+                              padding: '8px 14px',
+                              background: '#d97706',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
+                              transition: 'background 0.2s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#b45309'}
+                            onMouseOut={(e) => e.currentTarget.style.background = '#d97706'}
+                          >
+                            <Target size={14} />
+                            {t('tasks.jumpToQuestion') || 'Jump'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end',
+                borderTop: '1px solid #e5e7eb',
+                padding: '16px 20px',
+                background: '#f8fafc',
+                borderBottomLeftRadius: '12px',
+                borderBottomRightRadius: '12px'
+              }}>
+                <QuickActionButton
+                  onClick={() => setShowUnansweredModal(false)}
+                  style={{ minWidth: '120px' }}
+                >
+                  {t('common.close') || 'Close'}
+                </QuickActionButton>
+
+                {!hasRequired && (
+                  <QuickActionButton
+                    primary
+                    onClick={proceedToFinalSubmission}
+                    style={{
+                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                      minWidth: '200px'
+                    }}
+                  >
+                    <CheckSquare size={16} />
+                    {t('tasks.proceedWithSubmission') || 'Proceed with Submission'}
+                  </QuickActionButton>
+                )}
+              </div>
+            </ModalContent>
+          </ModalOverlay>
+        );
+      })()}
 
       {/* Archive Confirmation Modal */}
       {showArchiveModal && (

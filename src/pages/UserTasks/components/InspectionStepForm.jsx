@@ -134,6 +134,7 @@ const NodeHeader = styled.div`
   cursor: pointer;
   transition: background-color 0.2s;
   background-color: ${props => props.isSelected ? 'rgba(26, 35, 126, 0.08)' : 'transparent'};
+  min-width: 0;
   
   &:hover {
     background-color: ${props => props.isSelected ? 'rgba(26, 35, 126, 0.12)' : 'rgba(226, 232, 240, 0.5)'};
@@ -147,6 +148,7 @@ const NodeIcon = styled.div`
   width: 20px;
   margin-right: 8px;
   color: ${props => props.isSelected ? 'var(--color-navy)' : '#64748b'};
+  flex-shrink: 0;
 `;
 
 const StatusIcon = styled.div`
@@ -156,6 +158,7 @@ const StatusIcon = styled.div`
   width: 18px;
   height: 18px;
   margin-right: 8px;
+  flex-shrink: 0;
   
   svg {
     color: ${props => {
@@ -187,6 +190,13 @@ const NodeLabel = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+  }
 `;
 
 const ChildNodes = styled.div`
@@ -1039,7 +1049,12 @@ const InspectionStepForm = ({
   // Refs for debouncing API calls to reduce server load
   const responseDebounceRef = useRef({});
   const pendingResponsesRef = useRef({});
-  
+
+  // Scroll to top when switching sections
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedSubLevel]);
+
   // Move getSections function inside the component
   const getSections = () => {
     // This would normally extract sections from the task data
@@ -1047,7 +1062,7 @@ const InspectionStepForm = ({
     const { subLevels } = getInspectionData();
     return subLevels || [];
   };
-  
+
   // Initialize from existing task data - Add loading of responses from progress
   useEffect(() => {
     if (task) {

@@ -50,6 +50,9 @@ const MetaItem = styled.div`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.7);
   transition: all 0.3s ease;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   
   &:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
@@ -64,6 +67,12 @@ const MetaItem = styled.div`
   
   strong {
     font-weight: 600;
+  }
+
+  span {
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 `;
 
