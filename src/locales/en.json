@@ -786,7 +786,12 @@
     "confirmDeactivate": "Are you sure you want to deactivate this inspection?",
     "activateSuccess": "Inspection activated successfully",
     "deactivateSuccess": "Inspection deactivated successfully",
-    "toggleFailed": "Failed to update inspection status"
+    "toggleFailed": "Failed to update inspection status",
+    "deactivateConfirmTitle": "Deactivate Inspection",
+    "activateConfirmTitle": "Activate Inspection",
+    "deactivateConfirmMsg": "Are you sure you want to deactivate this inspection? Inspectors will not be able to perform or submit this inspection while inactive.",
+    "activateConfirmMsg": "Are you sure you want to activate this inspection? It will become available to inspectors.",
+    "inactive": "Inactive"
   },
   "navigation": {
     "home": "Home",
