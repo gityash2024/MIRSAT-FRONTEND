@@ -755,6 +755,7 @@
     "filters": "Filters"
   },
   "auth": {
+    "setNewPassword": "Set New Password",
     "heading": "Marine services made easier and faster.",
     "subtitle": "Simplify your marine services with an easy-to-use digital application.",
     "signInTitle": "Sign in to your account",
