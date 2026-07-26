@@ -5359,8 +5359,27 @@ const UserTaskDetail = () => {
       return false;
     }
 
-    // CRITICAL FIX: Prevent duplicate saves (race condition protection)
+    // CRITICAL FIX: Check if value actually changed before saving
     const normalizedQuestionId = String(questionId);
+    const currentResponses = currentTask.questionnaireResponses || {};
+    
+    let existingValue = currentResponses[normalizedQuestionId];
+    if (existingValue === undefined) {
+      const responseKey = Object.keys(currentResponses).find(key => 
+        key.includes(normalizedQuestionId) || key.endsWith(normalizedQuestionId)
+      );
+      if (responseKey) {
+        existingValue = currentResponses[responseKey];
+      }
+    }
+
+    const isEquivalentEmpty = (existingValue === undefined || existingValue === null || existingValue === '') && (value === '' || value === null);
+    
+    if (existingValue === value || isEquivalentEmpty) {
+      return false; // Value hasn't changed, no need to save
+    }
+
+    // CRITICAL FIX: Prevent duplicate saves (race condition protection)
     if (pendingSavesRef.current.has(normalizedQuestionId)) {
       return false; // Already saving this question
     }
@@ -7351,7 +7370,7 @@ const UserTaskDetail = () => {
                       const isHighlighted = highlightUnansweredMode && currentSectionUnansweredQuestions.has(questionId);
 
                       return (
-                        <QuestionCard key={questionId || qIndex} $isHighlighted={isHighlighted}>
+                        <QuestionCard key={questionId || qIndex} $isHighlighted={isHighlighted} id={`question-${questionId}`}>
                           <QuestionHeader>
                             <QuestionNumber>{qIndex + 1}</QuestionNumber>
                             <QuestionText>
@@ -9475,8 +9494,30 @@ const UserTaskDetail = () => {
                             const pageIndex = item.pageIndex - 1;
                             if (inspectionPages[pageIndex]) {
                               setSelectedPage(inspectionPages[pageIndex]._id);
+                              
+                              // Select the section
+                              const sectionId = inspectionPages[pageIndex].sections[item.sectionIndex - 1]?._id || 
+                                               inspectionPages[pageIndex].sections[item.sectionIndex - 1]?.id;
+                              if (sectionId) {
+                                setSelectedSection(sectionId);
+                              }
+                              
                               setActiveTab('inspection');
                               setShowProgressDetails(false);
+                              
+                              // Scroll to the question
+                              setTimeout(() => {
+                                const el = document.getElementById(`question-${item.questionId}`);
+                                if (el) {
+                                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  el.style.transition = 'box-shadow 0.3s';
+                                  el.style.boxShadow = '0 0 0 2px #f39c12, 0 4px 12px rgba(243, 156, 18, 0.2)';
+                                  setTimeout(() => {
+                                    el.style.boxShadow = '';
+                                  }, 2000);
+                                }
+                              }, 300);
+                              
                               toast.info(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
                             }
                           }}

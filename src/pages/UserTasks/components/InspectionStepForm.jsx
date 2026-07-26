@@ -2377,6 +2377,14 @@ const InspectionStepForm = ({
   const handleQuestionResponse = (questionId, sectionId, value) => {
     const key = `${sectionId}_${questionId}`;
     
+    // Check if value actually changed
+    const currentValue = questionResponses[key];
+    const isEquivalentEmpty = (currentValue === undefined || currentValue === null || currentValue === '') && (value === '' || value === null);
+    
+    if (currentValue === value || isEquivalentEmpty) {
+      return; // Skip if no change to avoid unnecessary API calls
+    }
+    
     // Update local state first for instant UI feedback
     setQuestionResponses(prev => ({
       ...prev,
