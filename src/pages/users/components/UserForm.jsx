@@ -306,6 +306,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     emergencyContact: '',
     isActive: true,
     permissions: [],
+    moduleAccess: [],
     password: '',
     confirmPassword: '',
     ...initialData
@@ -325,6 +326,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         ...initialData,
         status: initialData.isActive ? 'active' : 'inactive',
         permissions: initialData.permissions || [],
+        moduleAccess: initialData.moduleAccess
+          || (initialData.permissions || []).filter((permission) => (
+            Object.values(MODULE_PERMISSIONS).includes(permission)
+          )),
         // Ensure all fields are properly set
         name: initialData.name || '',
         email: initialData.email || '',
@@ -338,7 +343,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   }, [initialData]);
 
   useEffect(() => {
-    if (formData.role && !initialData._id) {
+    if (formData.role && !(initialData._id || initialData.id)) {
       let newPermissions = [];
       
       if (formData.role === ROLES.ADMIN) {
@@ -352,7 +357,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       
       setFormData(prev => ({
         ...prev,
-        permissions: newPermissions
+        permissions: newPermissions,
+        moduleAccess: formData.role === ROLES.MANAGER
+          ? newPermissions.filter((permission) => (
+            Object.values(MODULE_PERMISSIONS).includes(permission)
+          ))
+          : []
       }));
     }
   }, [formData.role]);
@@ -488,6 +498,9 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const handlePermissionChange = (permission) => {
     setFormData(prev => ({
       ...prev,
+      moduleAccess: prev.moduleAccess.includes(permission)
+        ? prev.moduleAccess.filter(p => p !== permission)
+        : [...prev.moduleAccess, permission],
       permissions: prev.permissions.includes(permission)
         ? prev.permissions.filter(p => p !== permission)
         : [...prev.permissions, permission]
@@ -526,7 +539,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             <PermissionItem key={permission}>
               <input
                 type="checkbox"
-                checked={formData.permissions?.includes(permission)}
+                checked={formData.moduleAccess?.includes(permission)}
                 onChange={() => handlePermissionChange(permission)}
               />
               {translateModuleName(moduleName)}

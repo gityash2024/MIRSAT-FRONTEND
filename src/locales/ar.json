@@ -1459,7 +1459,12 @@
     "uniqueIdAsc": "المعرف الفريد (تصاعدي)",
     "uniqueIdDesc": "المعرف الفريد (تنازلي)",
     "filterByType": "تصفية حسب النوع",
-    "filterByCity": "تصفية حسب المدينة"
+    "filterByCity": "تصفية حسب المدينة",
+    "uniqueIdRequired": "المعرف الفريد مطلوب",
+    "uniqueIdAlphaNumeric": "استخدم الأحرف والأرقام والشرطات والشرطات السفلية فقط.",
+    "assetIdAlreadyExists": "يوجد أصل بهذا المعرف الفريد بالفعل.",
+    "failedToSaveAsset": "تعذر حفظ الأصل",
+    "checkRequiredFields": "يرجى التحقق من الحقول المطلوبة"
   },
   "questionnaires": {
     "title": "الاستبيانات",

@@ -62,18 +62,26 @@ import {
 import { toast } from 'react-hot-toast';
 import {
   fetchUserTaskDetails,
-  updateUserTaskProgress,
+  updateUserTaskMetrics,
   addUserTaskComment,
   exportTaskReport,
   updateTaskQuestionnaire,
   saveTaskSignature,
-  archiveTask
+  archiveTask,
+  clearCurrentTask
 } from '../../store/slices/userTasksSlice';
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
 import SignaturePad from 'react-signature-canvas';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import {
+  calculateInspectionProgress,
+  isQuestionAnswered,
+  isRequiredQuestion
+} from '../../utils/inspectionProgress';
+import { API_CONFIG } from '../../config/api';
+import { validateSignatureDataUrl } from '../../utils/signatureValidation';
 
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
@@ -3500,26 +3508,12 @@ const getUnansweredQuestionsInSection = (section, responses) => {
 
   section.questions.forEach(question => {
     // Only check required questions
-    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+    if (!isRequiredQuestion(question)) {
       return; // Skip non-required questions
     }
 
     const questionId = question._id || question.id;
-    let hasResponse = false;
-
-    // Check if question has a response
-    if (responses[questionId] !== undefined && responses[questionId] !== null && responses[questionId] !== '') {
-      hasResponse = true;
-    } else {
-      const responseKey = Object.keys(responses).find(key =>
-        key.includes(questionId) || key.endsWith(questionId)
-      );
-      if (responseKey && responses[responseKey] !== undefined && responses[responseKey] !== null && responses[responseKey] !== '') {
-        hasResponse = true;
-      }
-    }
-
-    if (!hasResponse) {
+    if (!isQuestionAnswered(responses, questionId)) {
       unanswered.push(questionId);
     }
   });
@@ -3907,8 +3901,6 @@ const UserTaskDetail = () => {
   const lastKnownLocationRef = useRef(null);
   
   // Refs for debouncing progress updates to reduce API calls
-  const progressUpdateTimeoutRef = useRef(null);
-  const lastProgressUpdateRef = useRef(0);
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -3917,6 +3909,8 @@ const UserTaskDetail = () => {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureImage, setSignatureImage] = useState(null);
+  const [hasSignatureInk, setHasSignatureInk] = useState(false);
+  const signatureHasInkRef = useRef(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState('draw');
@@ -4030,10 +4024,28 @@ const UserTaskDetail = () => {
 
   const {
     currentTask,
-    loading,
-    error,
+    taskDetailsLoading: loading,
+    detailsError: error,
     actionLoading
   } = useSelector((state) => state.userTasks);
+  const displayProgress = currentTask?.status === 'archived'
+    ? 100
+    : taskCompletionPercentage;
+  const questionAnswerSummary = useMemo(() => {
+    const pagesForProgress = currentTask?.inspectionLevel?.pages?.length > 0
+      ? currentTask.inspectionLevel.pages
+      : inspectionPages;
+
+    if (!currentTask || pagesForProgress.length === 0) {
+      return { answeredCount: 0, totalCount: 0 };
+    }
+
+    return calculateInspectionProgress({
+      inspectionLevel: { pages: pagesForProgress },
+      preInspectionQuestions: currentTask.preInspectionQuestions || [],
+      responses: currentTask.questionnaireResponses || {}
+    });
+  }, [currentTask, inspectionPages]);
 
   const scheduledStartLocked = Boolean(
     currentTask?.startDate && new Date(currentTask.startDate).getTime() > Date.now()
@@ -4056,70 +4068,21 @@ const UserTaskDetail = () => {
   const calculateTaskCompletionPercentage = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
 
-    if (!taskToUse || !inspectionPages || inspectionPages.length === 0) {
+    const pagesForProgress = taskToUse?.inspectionLevel?.pages?.length > 0
+      ? taskToUse.inspectionLevel.pages
+      : inspectionPages;
+
+    if (!taskToUse || pagesForProgress.length === 0) {
       if (!taskData) setTaskCompletionPercentage(0); // Only update state if using current task
       return 0;
     }
 
-    let totalQuestions = 0;
-    let answeredQuestions = 0;
-
-    inspectionPages.forEach(page => {
-      if (page.sections) {
-        page.sections.forEach(section => {
-          if (section.questions) {
-            section.questions.forEach(question => {
-              // CRITICAL FIX: Only count required questions in progress calculation
-              // Exclude recommended questions
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-                return; // Skip recommended/non-mandatory questions
-              }
-
-              totalQuestions++;
-
-              const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (taskToUse.questionnaireResponses) {
-                if (taskToUse.questionnaireResponses[questionId] !== undefined) {
-                  const response = taskToUse.questionnaireResponses[questionId];
-                  // Count as answered if response exists and is not empty
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = taskToUse.questionnaireResponses[responseKey];
-                    // Count as answered if response exists and is not empty
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (hasResponse) {
-                answeredQuestions++;
-              }
-            });
-          }
-        });
-      }
+    const summary = calculateInspectionProgress({
+      inspectionLevel: { pages: pagesForProgress },
+      preInspectionQuestions: taskToUse.preInspectionQuestions || [],
+      responses: taskToUse.questionnaireResponses || {}
     });
-
-    if (taskToUse.preInspectionQuestions && taskToUse.preInspectionQuestions.length > 0) {
-      taskToUse.preInspectionQuestions.forEach(question => {
-        totalQuestions++;
-        if (taskToUse.questionnaireResponses &&
-          taskToUse.questionnaireResponses[question._id] !== undefined) {
-          answeredQuestions++;
-        }
-      });
-    }
-
-    const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
-
-    console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}% (using ${taskData ? 'fresh data' : 'current state'})`);
+    const percentage = summary.completionRate;
 
     if (!taskData) {
       setTaskCompletionPercentage(percentage);
@@ -4143,30 +4106,12 @@ const UserTaskDetail = () => {
           if (section.questions) {
             section.questions.forEach((question, questionIndex) => {
               // Only check required questions
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+              if (!isRequiredQuestion(question)) {
                 return; // Skip recommended/non-mandatory questions
               }
 
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 unansweredDetails.push({
                   pageName: page.name || `Page ${pageIndex + 1}`,
                   pageIndex: pageIndex + 1,
@@ -4281,14 +4226,10 @@ const UserTaskDetail = () => {
         if (totalActiveTimeInSeconds > 0) {
           try {
             // Use synchronous dispatch or ensure it completes
-            await dispatch(updateUserTaskProgress({
+            await dispatch(updateUserTaskMetrics({
               taskId: task._id,
-              subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-              status: task.status,
-              taskMetrics: {
-                ...task.taskMetrics,
-                timeSpent: totalActiveTimeInSeconds // Save in seconds
-              }
+              timeSpent: totalActiveTimeInSeconds,
+              subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
             }));
           } catch (error) {
             console.error('Failed to save time to backend on pause:', error);
@@ -4308,14 +4249,10 @@ const UserTaskDetail = () => {
       const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime;
 
       // Update task metrics with final time in seconds (backend will handle conversion if needed)
-      dispatch(updateUserTaskProgress({
+      dispatch(updateUserTaskMetrics({
         taskId: task._id,
-        subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: task.status,
-        taskMetrics: {
-          ...task.taskMetrics,
-          timeSpent: totalActiveTimeInSeconds // Save in seconds
-        }
+        timeSpent: totalActiveTimeInSeconds,
+        subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
       }));
     }
   }, [pauseScreenTimer, dispatch]); // FIXED: Removed currentTask dependency
@@ -4383,12 +4320,16 @@ const UserTaskDetail = () => {
   }, [currentTask, inspectionPages]);
 
   useEffect(() => {
+    setSelectedPage(null);
+    setSelectedSection(null);
+    setInspectionPages([]);
+    dispatch(clearCurrentTask());
     dispatch(fetchUserTaskDetails(taskId));
 
     if (location.state?.questionnaireCompleted) {
       setActiveTab('inspection');
     }
-  }, [dispatch, taskId, location.state]);
+  }, [dispatch, taskId, location.state?.questionnaireCompleted]);
 
   // Add keyboard navigation for sections and pages
   useEffect(() => {
@@ -4544,25 +4485,19 @@ const UserTaskDetail = () => {
         const task = currentTaskRef.current;
         // Use sendBeacon or synchronous save for beforeunload
         if (task && task.status === 'in_progress' && totalActiveTimeInSeconds > 0) {
-          // Save synchronously using navigator.sendBeacon or sync fetch
-          const data = JSON.stringify({
-            taskId: task._id,
-            subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-            status: task.status,
-            taskMetrics: {
-              ...task.taskMetrics,
-              timeSpent: totalActiveTimeInSeconds
-            }
-          });
-          
-          // Try to save using sendBeacon (works even after page unload starts)
-          if (navigator.sendBeacon) {
-            const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-            navigator.sendBeacon(
-              `${apiBaseUrl}/api/v1/user-tasks/${task._id}/progress/${task.inspectionLevel?.subLevels?.[0]?._id || 'default'}`,
-              data
-            );
-          }
+          const token = localStorage.getItem('token');
+          fetch(`${API_CONFIG.BASE_URL}/user-tasks/${task._id}/metrics`, {
+            method: 'PATCH',
+            keepalive: true,
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              timeSpent: totalActiveTimeInSeconds,
+              subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
+            })
+          }).catch(() => undefined);
         }
       }
       pauseScreenTimer(false); // Don't save again, already saved above
@@ -4612,15 +4547,22 @@ const UserTaskDetail = () => {
 
       setInspectionPages(pagesToUse);
 
-      // Only set default page/section if not already set (prevents overriding during auto-updates)
-      if (pagesToUse.length > 0 && !selectedPage) {
-        const firstPageId = pagesToUse[0]._id || pagesToUse[0].id;
-        setSelectedPage(firstPageId);
+      if (pagesToUse.length > 0) {
+        const validSelectedPage = pagesToUse.find(
+          (page) => String(page.id || page._id) === String(selectedPage)
+        );
+        const pageToSelect = validSelectedPage || pagesToUse[0];
+        const pageId = pageToSelect.id || pageToSelect._id;
+        const validSelectedSection = pageToSelect.sections?.find(
+          (section) => String(section.id || section._id) === String(selectedSection)
+        );
+        const sectionToSelect = validSelectedSection || pageToSelect.sections?.[0];
 
-        if (pagesToUse[0].sections && pagesToUse[0].sections.length > 0 && !selectedSection) {
-          const firstSectionId = pagesToUse[0].sections[0]._id || pagesToUse[0].sections[0].id;
-          setSelectedSection(firstSectionId);
-        }
+        setSelectedPage(pageId);
+        setSelectedSection(sectionToSelect?.id || sectionToSelect?._id || null);
+      } else {
+        setSelectedPage(null);
+        setSelectedSection(null);
       }
 
       // Recalculate completion percentage when task data changes
@@ -4656,6 +4598,14 @@ const UserTaskDetail = () => {
       ctx.lineCap = 'round';
     }
   }, [showSignatureModal, signatureMethod]);
+
+  useEffect(() => {
+    if (showSignatureModal && !currentTask?.signature) {
+      signatureHasInkRef.current = false;
+      setHasSignatureInk(false);
+      setSignatureImage(null);
+    }
+  }, [showSignatureModal, currentTask?.signature]);
 
   // Lock body scroll when signature modal is open
   useEffect(() => {
@@ -4696,14 +4646,10 @@ const UserTaskDetail = () => {
 
     if (totalActiveTimeInSeconds > 0) {
       try {
-        await dispatch(updateUserTaskProgress({
+        await dispatch(updateUserTaskMetrics({
           taskId: task._id,
-          subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-          status: task.status,
-          taskMetrics: {
-            ...task.taskMetrics,
-            timeSpent: totalActiveTimeInSeconds // Save in seconds
-          }
+          timeSpent: totalActiveTimeInSeconds,
+          subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
         }));
       } catch (error) {
         console.error('Failed to save time to backend:', error);
@@ -4794,11 +4740,6 @@ const UserTaskDetail = () => {
         clearInterval(sessionTimerRef.current);
         sessionTimerRef.current = null;
       }
-      // Clear debounced progress update timeout
-      if (progressUpdateTimeoutRef.current) {
-        clearTimeout(progressUpdateTimeoutRef.current);
-        progressUpdateTimeoutRef.current = null;
-      }
       // Clear debounce timers for text inputs
       if (debounceTimersRef.current) {
         Object.values(debounceTimersRef.current).forEach(timer => clearTimeout(timer));
@@ -4814,8 +4755,7 @@ const UserTaskDetail = () => {
 
     const totalQuestions = currentTask.preInspectionQuestions.length;
     const answeredQuestions = currentTask.preInspectionQuestions.filter(question => {
-      const response = currentTask.questionnaireResponses?.[question._id];
-      return response !== undefined && response !== null && response !== '';
+      return isQuestionAnswered(currentTask.questionnaireResponses || {}, question);
     }).length;
 
     return answeredQuestions === totalQuestions;
@@ -4921,16 +4861,10 @@ const UserTaskDetail = () => {
     setRefreshLoading(true);
 
     try {
-      const completionPercentage = calculateTaskCompletionPercentage();
-
-      await dispatch(updateUserTaskProgress({
+      await dispatch(updateUserTaskMetrics({
         taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: currentTask.status,
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage
-        }
+        timeSpent: currentTask.taskMetrics?.timeSpent,
+        subLevelTimeSpent: currentTask.taskMetrics?.subLevelTimeSpent
       })).unwrap();
 
       toast.success(t('tasks.progressUpdatedSuccessfully'));
@@ -4946,7 +4880,7 @@ const UserTaskDetail = () => {
 
     if (!currentTask.signature) {
       setShowSignatureModal(true);
-      toast.info(t('tasks.pleaseProvideSignatureBeforeDownloading'));
+      toast(t('tasks.pleaseProvideSignatureBeforeDownloading'));
       return;
     }
 
@@ -4961,15 +4895,10 @@ const UserTaskDetail = () => {
     const completionPercentage = calculateTaskCompletionPercentage();
 
     if (currentTask.overallProgress !== completionPercentage) {
-      await dispatch(updateUserTaskProgress({
+      await dispatch(updateUserTaskMetrics({
         taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: currentTask.status,
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
-          subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
-        }
+        timeSpent: currentTask.taskMetrics?.timeSpent,
+        subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
       })).unwrap();
     }
   };
@@ -5064,7 +4993,7 @@ const UserTaskDetail = () => {
   const debounceTimersRef = useRef({});
   const pendingSavesRef = useRef(new Set());
 
-  // For text/number inputs - only update local state, API call happens on blur
+  // For typed inputs, update local state immediately and persist shortly after changes.
   const handleInputChange = (questionId, value) => {
     setLocalInputValues(prev => ({
       ...prev,
@@ -5072,8 +5001,28 @@ const UserTaskDetail = () => {
     }));
   };
 
+  const scheduleInputSave = useCallback((questionId, value, onSaveResponse) => {
+    if (debounceTimersRef.current[questionId]) {
+      clearTimeout(debounceTimersRef.current[questionId]);
+    }
+
+    debounceTimersRef.current[questionId] = setTimeout(() => {
+      delete debounceTimersRef.current[questionId];
+      onSaveResponse(questionId, value);
+    }, 450);
+  }, []);
+
   const getCaptureMetadataFromLocation = useCallback(async (captureType = 'file') => {
+    const allowSignatureWithoutCoordinates = captureType === 'question_signature';
+
     if (!navigator.geolocation) {
+      if (allowSignatureWithoutCoordinates) {
+        return {
+          capturedAt: new Date().toISOString(),
+          locationStatus: 'unavailable',
+          captureType
+        };
+      }
       throw new Error('Location services are not available on this device/browser.');
     }
 
@@ -5201,6 +5150,13 @@ const UserTaskDetail = () => {
 
     const permissionState = await readPermissionState();
     if (permissionState === 'denied') {
+      if (allowSignatureWithoutCoordinates) {
+        return {
+          capturedAt: new Date().toISOString(),
+          locationStatus: 'denied',
+          captureType
+        };
+      }
       showLocationSetupPopup({ permissionState, errorCode: 1 });
       throw new Error('Location permission is required to save image/signature captures.');
     }
@@ -5276,6 +5232,13 @@ const UserTaskDetail = () => {
           return {
             capturedAt: new Date().toISOString(),
             locationStatus: 'unavailable',
+            captureType
+          };
+        }
+        if (allowSignatureWithoutCoordinates) {
+          return {
+            capturedAt: new Date().toISOString(),
+            locationStatus: permissionState === 'denied' ? 'denied' : 'unavailable',
             captureType
           };
         }
@@ -5394,11 +5357,6 @@ const UserTaskDetail = () => {
       
       // CRITICAL FIX: Store task data for use in setTimeout to avoid stale closures
       const taskId = currentTask._id;
-      const subLevelId = currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default';
-      const taskStatus = currentTask.status;
-      const taskMetrics = currentTask.taskMetrics;
-      const currentOverallProgress = currentTask.overallProgress || 0;
-
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
@@ -5438,40 +5396,11 @@ const UserTaskDetail = () => {
       // Recalculate local scores without API call
       calculateScores();
 
-      // OPTIMIZED: Debounce progress updates to reduce API calls
-      // Only update progress if more than 5 seconds have passed since last update
-      const now = Date.now();
-      const completionPercentage = calculateTaskCompletionPercentage();
-      const progressDiff = Math.abs(completionPercentage - currentOverallProgress);
-
-      // Clear any pending progress update
-      if (progressUpdateTimeoutRef.current) {
-        clearTimeout(progressUpdateTimeoutRef.current);
-      }
-
-      // Only schedule progress update if there's a significant change (>5%)
-      // OR if enough time has passed (10 seconds) since last update
-      if (progressDiff > 5 || (now - lastProgressUpdateRef.current > 10000 && progressDiff > 0)) {
-        // Debounce progress update by 2 seconds to batch multiple rapid responses
-        // CRITICAL FIX: Use captured values instead of currentTask to avoid stale closures
-        progressUpdateTimeoutRef.current = setTimeout(async () => {
-          try {
-            await dispatch(updateUserTaskProgress({
-              taskId: taskId,
-              subLevelId: subLevelId,
-              status: taskStatus,
-              taskMetrics: {
-                ...taskMetrics,
-                completionPercentage: completionPercentage
-              }
-            })).unwrap();
-            lastProgressUpdateRef.current = Date.now();
-            console.log('Progress updated to:', completionPercentage);
-          } catch (error) {
-            console.error('Failed to update progress:', error);
-          }
-        }, 2000);
-      }
+      const liveCompletionPercentage = calculateTaskCompletionPercentage({
+        ...currentTask,
+        questionnaireResponses: updatedResponses
+      });
+      setTaskCompletionPercentage(liveCompletionPercentage);
 
       // REMOVED: Unnecessary fetchUserTaskDetails call
       // The questionnaire response is saved, no need to refetch entire task data
@@ -5523,12 +5452,21 @@ const UserTaskDetail = () => {
 
     ctx.lineTo(x, y);
     ctx.stroke();
+    if (!signatureHasInkRef.current) {
+      signatureHasInkRef.current = true;
+      setHasSignatureInk(true);
+    }
   };
 
   const handleStopDrawing = () => {
     if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
 
     setIsDrawing(false);
+
+    if (!signatureHasInkRef.current) {
+      setSignatureImage(null);
+      return;
+    }
 
     const canvas = signatureCanvasRef.current;
     const dataURL = canvas.toDataURL('image/png');
@@ -5542,6 +5480,8 @@ const UserTaskDetail = () => {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    signatureHasInkRef.current = false;
+    setHasSignatureInk(false);
     setSignatureImage(null);
   };
 
@@ -5557,8 +5497,21 @@ const UserTaskDetail = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setSignatureImage(event.target.result);
+    reader.onload = async (event) => {
+      const dataUrl = event.target.result;
+      const validation = await validateSignatureDataUrl(dataUrl);
+      if (!validation.valid) {
+        toast.error(validation.message);
+        setSignatureImage(null);
+        setHasSignatureInk(false);
+        signatureHasInkRef.current = false;
+        e.target.value = '';
+        return;
+      }
+
+      setSignatureImage(dataUrl);
+      setHasSignatureInk(true);
+      signatureHasInkRef.current = true;
     };
     reader.onerror = () => {
       toast.error(t('tasks.failedToReadFile'));
@@ -5573,8 +5526,14 @@ const UserTaskDetail = () => {
   };
 
   const handleSaveSignature = async () => {
-    if (!signatureImage) {
+    if (!signatureImage || !hasSignatureInk) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSaving'));
+      return;
+    }
+
+    const signatureValidation = await validateSignatureDataUrl(signatureImage);
+    if (!signatureValidation.valid) {
+      toast.error(signatureValidation.message);
       return;
     }
 
@@ -5594,7 +5553,7 @@ const UserTaskDetail = () => {
         signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
+          completionRate: completionPercentage,
           timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
@@ -5632,8 +5591,14 @@ const UserTaskDetail = () => {
       return;
     }
 
-    if (!signatureImage) {
+    if (!signatureImage || !hasSignatureInk) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSubmitting'));
+      return;
+    }
+
+    const signatureValidation = await validateSignatureDataUrl(signatureImage);
+    if (!signatureValidation.valid) {
+      toast.error(signatureValidation.message);
       return;
     }
 
@@ -5654,7 +5619,7 @@ const UserTaskDetail = () => {
         signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
+          completionRate: completionPercentage,
           timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
@@ -5662,22 +5627,6 @@ const UserTaskDetail = () => {
 
       // Log signature added
       await FrontendLogger.logSignatureAdded(currentTask._id, currentTask.title);
-
-      // Then update task status to completed
-      await dispatch(updateUserTaskProgress({
-        taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: 'completed',
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: 100,
-          timeSpent: totalActiveTimeInSeconds, // Save in seconds
-          completedAt: new Date().toISOString()
-        }
-      })).unwrap();
-
-      // Log task completion
-      await FrontendLogger.logTaskComplete(currentTask._id, currentTask.title);
 
       // Stop timer permanently
       stopTimerPermanently();
@@ -5723,30 +5672,12 @@ const UserTaskDetail = () => {
           if (section.questions) {
             section.questions.forEach(question => {
               // Only check required questions (exclude recommended)
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+              if (!isRequiredQuestion(question)) {
                 return; // Skip recommended/non-mandatory questions
               }
 
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 unansweredQuestions.push({
                   questionId,
                   questionText: question.text || question.question || 'Question',
@@ -5767,17 +5698,12 @@ const UserTaskDetail = () => {
     // Also check pre-inspection questions
     if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
       currentTask.preInspectionQuestions.forEach(question => {
-        if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+        if (!isRequiredQuestion(question)) {
           return; // Skip recommended
         }
 
         const questionId = question._id || question.id;
-        const hasResponse = currentTask.questionnaireResponses &&
-          currentTask.questionnaireResponses[questionId] !== undefined &&
-          currentTask.questionnaireResponses[questionId] !== null &&
-          currentTask.questionnaireResponses[questionId] !== '';
-
-        if (!hasResponse) {
+        if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
           unansweredQuestions.push({
             questionId,
             questionText: question.text || question.question || 'Question',
@@ -5817,26 +5743,9 @@ const UserTaskDetail = () => {
 
           if (section.questions) {
             section.questions.forEach(question => {
-              const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+              const isRequired = isRequiredQuestion(question);
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 const item = {
                   questionId,
                   questionText: question.text || question.question || 'Question',
@@ -5858,14 +5767,9 @@ const UserTaskDetail = () => {
 
     if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
       currentTask.preInspectionQuestions.forEach(question => {
-        const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+        const isRequired = isRequiredQuestion(question);
         const questionId = question._id || question.id;
-        const hasResponse = currentTask.questionnaireResponses &&
-          currentTask.questionnaireResponses[questionId] !== undefined &&
-          currentTask.questionnaireResponses[questionId] !== null &&
-          currentTask.questionnaireResponses[questionId] !== '';
-
-        if (!hasResponse) {
+        if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
           const item = {
             questionId,
             questionText: question.text || question.question || 'Question',
@@ -5920,24 +5824,7 @@ const UserTaskDetail = () => {
     setShowUnansweredModal(false);
     setUnansweredRequiredQuestions(new Set());
 
-    // Check task completion percentage first - use the same calculation as the UI
-    const dbProgress = currentTask?.overallProgress || 0;
-    const calculatedProgress = calculateTaskCompletionPercentage();
-    const actualProgress = Math.max(dbProgress, calculatedProgress);
-
-    if (actualProgress < 100) {
-      toast.error(
-        t('tasks.taskMustBeCompletedBeforeArchiving', { progress: actualProgress }),
-        {
-          duration: 8000,
-          style: {
-            maxWidth: '500px',
-            whiteSpace: 'pre-line'
-          }
-        }
-      );
-      return;
-    }
+    calculateTaskCompletionPercentage();
 
     // Check if task has signature - only show signature modal if no signature exists and signature wasn't just saved
     if (!currentTask?.signature && !signatureJustSaved) {
@@ -6764,7 +6651,8 @@ const UserTaskDetail = () => {
                 placeholder={t('tasks.enterYourResponse')}
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   // Clear highlighting when user starts typing
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
@@ -6772,6 +6660,9 @@ const UserTaskDetail = () => {
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -6802,13 +6693,17 @@ const UserTaskDetail = () => {
                 placeholder="Enter a number"
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
                       const newSet = new Set(prev);
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -6838,13 +6733,17 @@ const UserTaskDetail = () => {
                 type="date"
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
                       const newSet = new Set(prev);
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -7008,14 +6907,9 @@ const UserTaskDetail = () => {
     // Use the currentPage and currentSection defined with useMemo above
 
     const totalQuestions = currentSection?.questions?.length || 0;
-    const answeredQuestions = currentSection?.questions?.filter(q => {
-      const questionId = q._id || q.id;
-      return currentTask.questionnaireResponses &&
-        (currentTask.questionnaireResponses[questionId] !== undefined ||
-          Object.keys(currentTask.questionnaireResponses).some(key =>
-            key.includes(questionId) || key.endsWith(questionId)
-          ));
-    }).length || 0;
+    const answeredQuestions = currentSection?.questions?.filter((question) => (
+      isQuestionAnswered(currentTask.questionnaireResponses || {}, question)
+    )).length || 0;
 
     return (
       <InspectionContainer>
@@ -7156,7 +7050,7 @@ const UserTaskDetail = () => {
                   {currentPage?.sections?.length || 0} {t('tasks.sections')}
                 </span>
                 <span style={{ color: '#27ae60' }}>
-                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}% {t('tasks.complete')}
+                  {displayProgress}% {t('tasks.complete')}
                 </span>
               </ProgressSummary>
             </NavigationHeader>
@@ -7277,7 +7171,7 @@ const UserTaskDetail = () => {
                         if (unanswered.length > 0) {
                           setHighlightUnansweredMode(!highlightUnansweredMode);
                           setCurrentSectionUnansweredQuestions(new Set(unanswered));
-                          toast.info(
+                          toast(
                             highlightUnansweredMode 
                               ? 'Highlighting disabled' 
                               : `Highlighting ${unanswered.length} unanswered question(s)`,
@@ -7778,7 +7672,7 @@ const UserTaskDetail = () => {
               <MetaLabel>{t('tasks.progress')}</MetaLabel>
               <MetaValue>
                 <TrendingUp size={18} />
-                {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                {displayProgress}%
               </MetaValue>
             </MetaCard>
           </TaskMeta>
@@ -7974,7 +7868,7 @@ const UserTaskDetail = () => {
                       <MetricCard $color="blue" $bgColor="rgba(55, 136, 216, 0.1)">
                         <MetricLabel>{t('tasks.overallProgress')}</MetricLabel>
                         <MetricValue $color="#3788d8">
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                          {displayProgress}%
                         </MetricValue>
                         <MetricDescription>{t('tasks.taskCompletion')}</MetricDescription>
                       </MetricCard>
@@ -8078,7 +7972,12 @@ const UserTaskDetail = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ProgressValue>
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                          {displayProgress}%
+                          {questionAnswerSummary.totalCount > 0 && (
+                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontWeight: 700 }}>
+                              {questionAnswerSummary.answeredCount}/{questionAnswerSummary.totalCount}
+                            </div>
+                          )}
                           {/* Debug info in development */}
                           {process.env.NODE_ENV === 'development' && (
                             <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
@@ -8139,7 +8038,7 @@ const UserTaskDetail = () => {
                     </div>
                   </ProgressHeader>
 
-                  <ProgressBar progress={Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)} />
+                  <ProgressBar progress={displayProgress} />
                 </ProgressContainer>
 
                 {renderInspectionInterface()}
@@ -8177,7 +8076,7 @@ const UserTaskDetail = () => {
                       <ScoreItem>
                         <ScoreLabel>{t('tasks.completionRate')}</ScoreLabel>
                         <ScoreValue>
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                          {displayProgress}%
                         </ScoreValue>
                       </ScoreItem>
 
@@ -8231,7 +8130,9 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.completion')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
-                        {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                        {questionAnswerSummary.totalCount > 0
+                          ? `${questionAnswerSummary.answeredCount}/${questionAnswerSummary.totalCount}`
+                          : `${displayProgress}%`}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
                         {t('tasks.questionsAnswered')}
@@ -8579,7 +8480,7 @@ const UserTaskDetail = () => {
 
                     {/* Complete & Archive Button */}
                     {currentTask?.status !== 'archived' && (() => {
-                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const actualProgress = displayProgress;
                       const isProgressComplete = actualProgress >= 100;
                       const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete || isTaskInactive;
 
@@ -8727,7 +8628,7 @@ const UserTaskDetail = () => {
                         {t('tasks.inspectionCompletedAndArchived')}
                       </p>
                     ) : (() => {
-                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const actualProgress = displayProgress;
                       const isComplete = actualProgress >= 100;
 
                       return (
@@ -8789,7 +8690,7 @@ const UserTaskDetail = () => {
                 }}>
                   <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.progress')}</span>
                   <span style={{ fontWeight: '700', color: '#3788d8' }}>
-                    {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                    {displayProgress}%
                   </span>
                 </div>
 
@@ -9032,7 +8933,7 @@ const UserTaskDetail = () => {
 
               <SaveButton
                 onClick={handleSaveAndSubmit}
-                disabled={!signatureImage}
+                disabled={!signatureImage || !hasSignatureInk}
                 style={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   marginLeft: '8px',
@@ -9414,21 +9315,10 @@ const UserTaskDetail = () => {
                   fontWeight: '800', 
                   color: taskCompletionPercentage === 100 ? '#27ae60' : '#f39c12' 
                 }}>
-                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                  {displayProgress}%
                 </div>
                 <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
-                  {(() => {
-                    const unanswered = getUnansweredQuestionsDetails();
-                    const total = unanswered.length + (inspectionPages?.reduce((sum, page) => {
-                      return sum + (page.sections?.reduce((sectionSum, section) => {
-                        return sectionSum + (section.questions?.filter(q => 
-                          q.requirementType !== 'recommended' && q.mandatory !== false && q.required !== false
-                        )?.length || 0);
-                      }, 0) || 0);
-                    }, 0) || 0);
-                    const answered = total - unanswered.length;
-                    return `${answered} of ${total} required questions answered`;
-                  })()}
+                  {`${questionAnswerSummary.answeredCount} of ${questionAnswerSummary.totalCount} required questions answered`}
                 </div>
               </div>
 
@@ -9518,7 +9408,7 @@ const UserTaskDetail = () => {
                                 }
                               }, 300);
                               
-                              toast.info(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
+                              toast(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
                             }
                           }}
                           onMouseEnter={(e) => {
