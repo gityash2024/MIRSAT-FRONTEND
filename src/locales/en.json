@@ -1544,7 +1544,12 @@
     "uniqueIdAsc": "Unique ID (Ascending)",
     "uniqueIdDesc": "Unique ID (Descending)",
     "filterByType": "Filter by Type",
-    "filterByCity": "Filter by City"
+    "filterByCity": "Filter by City",
+    "uniqueIdRequired": "Unique ID is required",
+    "uniqueIdAlphaNumeric": "Use only letters, numbers, hyphens, and underscores.",
+    "assetIdAlreadyExists": "An asset with this Unique ID already exists.",
+    "failedToSaveAsset": "Failed to save asset",
+    "checkRequiredFields": "Please check the required fields"
   },
   "questionnaires": {
     "title": "Questionnaires",

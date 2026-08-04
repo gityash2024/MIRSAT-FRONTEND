@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { toast } from 'react-hot-toast';
 import { assetService } from '../../services/asset.service';
+import { normalizeApiError } from '../../utils/apiError';
 
 // Async thunks for API operations
 export const fetchAssets = createAsyncThunk(
@@ -44,9 +45,9 @@ export const createAsset = createAsyncThunk(
       toast.success('Asset created successfully');
       return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to create asset';
-      toast.error(errorMessage);
-      return rejectWithValue(errorMessage);
+      const normalizedError = normalizeApiError(error, 'Failed to create asset');
+      toast.error(normalizedError.message);
+      return rejectWithValue(normalizedError);
     }
   }
 );
@@ -59,9 +60,9 @@ export const updateAsset = createAsyncThunk(
       toast.success('Asset updated successfully');
       return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to update asset';
-      toast.error(errorMessage);
-      return rejectWithValue(errorMessage);
+      const normalizedError = normalizeApiError(error, 'Failed to update asset');
+      toast.error(normalizedError.message);
+      return rejectWithValue(normalizedError);
     }
   }
 );
