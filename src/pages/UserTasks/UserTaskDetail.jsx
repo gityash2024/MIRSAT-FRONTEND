@@ -1307,13 +1307,12 @@ const DropdownButton = styled.button`
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.95);
   font-size: 14px;
-  min-width: 200px;
+  min-width: 280px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
   white-space: nowrap;
   flex-shrink: 1;
-  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
@@ -1398,6 +1397,7 @@ const DropdownMenu = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   z-index: 10003 !important;
   max-height: 300px;
+  min-width: 280px;
   overflow-y: auto;
   display: block !important;
   visibility: visible !important;
@@ -7251,7 +7251,7 @@ const UserTaskDetail = () => {
                     aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
                   >
                     <ChevronLeft size={14} />
-                    {t('tasks.previousSection')}
+                    {t('common.previous')}
                   </SectionNavigationButton>
 
                   {/* Next Section Button */}
@@ -7271,7 +7271,7 @@ const UserTaskDetail = () => {
                     }}
                     aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
                   >
-                    {t('tasks.nextSection')}
+                    {t('common.next')}
                     <ChevronRight size={14} />
                   </SectionNavigationButton>
                 </SectionButtonsRow>

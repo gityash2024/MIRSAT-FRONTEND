@@ -231,7 +231,7 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const COLORS = ['var(--color-navy)', '#1565c0', '#1976d2', '#1e88e5', '#2196f3'];
+const COLORS = ['var(--color-navy)', 'var(--color-navy)', 'var(--color-navy)', '#1e88e5', '#2196f3'];
 
 const RegionalDistributionMap = ({ dateRange, filters }) => {
   const { t } = useTranslation();

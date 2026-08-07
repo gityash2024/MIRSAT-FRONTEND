@@ -38,7 +38,7 @@ const StatusBadge = styled.span`
       case 'pending':
         return `
           background: #e3f2fd;
-          color: #1976d2;
+          color: var(--color-navy);
         `;
       case 'incomplete':
         return `

@@ -180,7 +180,7 @@ const StatusIcon = ({ status, size = 18 }) => {
     case 'pending':
       return <Clock size={size} color="#f57c00" />;
     case 'in_progress':
-      return <Activity size={size} color="#0288d1" />;
+      return <Activity size={size} color="var(--color-navy)" />;
     case 'completed':
       return <CheckCircle size={size} color="#388e3c" />;
     case 'incomplete':

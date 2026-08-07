@@ -221,7 +221,7 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 
   &::placeholder {
@@ -247,7 +247,7 @@ const Select = styled.select`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -370,7 +370,7 @@ const LanguageOption = styled.label`
   padding: 12px;
   border: 1px solid ${props => props.$active ? 'var(--color-navy)' : '#e5e7eb'};
   border-radius: 8px;
-  background: ${props => props.$active ? 'rgba(26, 35, 126, 0.06)' : 'white'};
+  background: ${props => props.$active ? 'rgba(0, 0, 72, 0.06)' : 'white'};
   color: #374151;
   cursor: pointer;
   transition: all 0.2s;
@@ -380,7 +380,7 @@ const LanguageOption = styled.label`
 
   &:hover {
     border-color: var(--color-navy);
-    background: rgba(26, 35, 126, 0.04);
+    background: rgba(0, 0, 72, 0.04);
   }
 
   input {

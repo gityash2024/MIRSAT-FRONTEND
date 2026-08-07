@@ -216,8 +216,8 @@ const CommentBox = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #3f51b5;
-    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -239,7 +239,7 @@ const NoQuestionsMessage = styled.div`
   
   svg {
     margin-bottom: 16px;
-    color: #3f51b5;
+    color: var(--color-navy);
   }
 `;
 
@@ -248,18 +248,18 @@ const SaveButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--color-navy) 0%, #3f51b5 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy) 100%);
   color: white;
   font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 72, 0.2);
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(26, 35, 126, 0.3);
+    box-shadow: 0 6px 16px rgba(0, 0, 72, 0.3);
   }
   
   &:active {
@@ -388,7 +388,7 @@ const ScoringCriteria = styled.div`
 const CategoryBadge = styled.div`
   display: inline-block;
   background: rgba(25, 118, 210, 0.08);
-  color: #1976d2;
+  color: var(--color-navy);
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;

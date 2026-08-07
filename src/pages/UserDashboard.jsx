@@ -607,7 +607,7 @@ const UserDashboard = () => {
   const getStatusTextColor = (status) => {
     switch (status.toLowerCase()) {
       case 'in_progress':
-        return '#1976d2';
+        return 'var(--color-navy)';
       case 'completed':
       case 'archived':
         return '#2e7d32';
@@ -827,7 +827,7 @@ const UserDashboard = () => {
                 <PerformanceCard>
                   <div className="metric-title">{t('dashboard.averageCompletionTime')}</div>
                   <div className="metric-value">
-                    <Clock size={18} color="#1976d2" />
+                    <Clock size={18} color="var(--color-navy)" />
                     {performance.avgCompletionTime} {t('common.days')}
                   </div>
                 </PerformanceCard>

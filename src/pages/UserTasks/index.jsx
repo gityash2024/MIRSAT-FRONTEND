@@ -95,7 +95,7 @@ const Title = styled.h1`
   font-weight: 600;
   color: var(--color-navy);
   margin-bottom: 8px;
-  text-shadow: 0 1px 2px rgba(26, 35, 126, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 72, 0.1);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -195,8 +195,8 @@ const SearchInput = styled.div`
     
     &:focus {
       outline: none;
-      border-color: rgba(26, 35, 126, 0.5);
-      box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+      border-color: rgba(0, 0, 72, 0.5);
+      box-shadow: 0 0 0 3px rgba(0, 0, 72, 0.1);
       background: rgba(255, 255, 255, 0.8);
     }
   }
@@ -321,7 +321,7 @@ const TaskCard = styled.div`
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 72, 0.1);
 
     @media (max-width: 768px) {
       transform: translateY(-2px);
@@ -398,7 +398,7 @@ const StatusBadge = styled.span`
       case 'pending':
         return 'background-color: rgba(255, 248, 225, 0.8); color: #f57c00;';
       case 'in_progress':
-        return 'background-color: rgba(225, 245, 254, 0.8); color: #0288d1;';
+        return 'background-color: rgba(225, 245, 254, 0.8); color: var(--color-navy);';
       case 'completed':
         return 'background-color: rgba(232, 245, 233, 0.8); color: #388e3c;';
       case 'archived':
@@ -515,7 +515,7 @@ const TaskProgress = styled.div`
   
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, rgba(26, 35, 126, 0.8), rgba(63, 81, 181, 0.9));
+    background: linear-gradient(90deg, rgba(0, 0, 72, 0.8), rgba(0, 0, 72, 0.9));
     border-radius: 4px;
     width: ${props => props.progress}%;
     position: relative;
@@ -615,15 +615,15 @@ const TaskButton = styled.button`
   }
   
   ${props => props.primary ? `
-    background: rgba(26, 35, 126, 0.9);
+    background: rgba(0, 0, 72, 0.9);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(26, 35, 126, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 72, 0.2);
     
     &:hover {
-      background: rgba(21, 27, 79, 0.95);
+      background: rgba(0, 0, 48, 0.95);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(26, 35, 126, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 72, 0.3);
     }
     
     &:active {
@@ -750,10 +750,10 @@ const Pagination = styled.div`
     background: rgba(255, 255, 255, 0.3);
     
     &.active {
-      background: rgba(26, 35, 126, 0.9);
+      background: rgba(0, 0, 72, 0.9);
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 10px rgba(26, 35, 126, 0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 72, 0.2);
     }
     
     &:not(.active) {
@@ -785,7 +785,7 @@ const LoadingContainer = styled.div`
   
   svg {
     animation: spin 1.5s linear infinite;
-    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+    filter: drop-shadow(0 0 8px rgba(0, 0, 72, 0.2));
   }
   
   @keyframes spin {
@@ -833,7 +833,7 @@ const GlassMorphismBlur = styled.div`
   width: 300px;
   height: 300px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(26, 35, 126, 0.05) 0%, rgba(26, 35, 126, 0) 70%);
+  background: radial-gradient(circle, rgba(0, 0, 72, 0.05) 0%, rgba(0, 0, 72, 0) 70%);
   z-index: 0;
 `;
 
@@ -922,7 +922,7 @@ const StatusIcon = ({ status, size = 18 }) => {
     case 'pending':
       return <Clock size={size} color="#f57c00" />;
     case 'in_progress':
-      return <Activity size={size} color="#0288d1" />;
+      return <Activity size={size} color="var(--color-navy)" />;
     case 'completed':
       return <CheckCircle size={size} color="#388e3c" />;
     case 'archived':

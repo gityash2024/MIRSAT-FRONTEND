@@ -713,7 +713,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #1a237e;
+  color: var(--color-navy);
   display: flex;
   align-items: center;
   gap: 8px;
