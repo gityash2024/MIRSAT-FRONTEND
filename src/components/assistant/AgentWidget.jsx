@@ -95,8 +95,8 @@ const Launcher = styled.button`
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: linear-gradient(180deg, rgba(26, 58, 95, .98), rgba(44, 151, 153, .96));
-  box-shadow: 0 18px 38px rgba(26, 58, 95, 0.24);
+  background: linear-gradient(180deg, rgba(0, 0, 72, .98), rgba(44, 151, 153, .96));
+  box-shadow: 0 18px 38px rgba(0, 0, 72, 0.24);
   cursor: pointer;
   overflow: hidden;
   transition: box-shadow 180ms ease, filter 180ms ease;
@@ -116,7 +116,7 @@ const Launcher = styled.button`
   &::before { top: 12px; }
   &::after { bottom: 12px; }
   &:hover {
-    box-shadow: 0 20px 42px rgba(26, 58, 95, 0.32);
+    box-shadow: 0 20px 42px rgba(0, 0, 72, 0.32);
     filter: brightness(1.04);
   }
   svg { filter: drop-shadow(0 5px 10px rgba(0,0,0,.25)); }
@@ -446,7 +446,7 @@ const VoiceWave = styled.div`
     width: 3px;
     height: 34px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(26,58,95,.74), var(--color-teal));
+    background: linear-gradient(180deg, rgba(0,0,72,.74), var(--color-teal));
     transform: scaleY(var(--voice-level, .16));
     transform-origin: center;
     opacity: ${props => props.$listening ? '.95' : '.5'};
@@ -555,7 +555,7 @@ const AgentCursor = styled.div`
   transform: translate(-4px, -4px);
   transition: left 180ms ease, top 180ms ease, opacity 160ms ease;
   color: var(--color-navy);
-  filter: drop-shadow(0 8px 14px rgba(26, 58, 95, .24));
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 72, .24));
   span {
     max-width: 190px;
     padding: 5px 7px;

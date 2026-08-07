@@ -3,9 +3,9 @@ import { createTheme } from '@mui/material/styles';
 // Define the color palette based on client requirements
 const colors = {
   primary: {
-    main: '#1A3A5F', // Deep Navy Blue
+    main: '#000048', // Deep Navy Blue
     light: '#4B8C9E', // Soft Teal
-    dark: '#142f4c', // Darker Navy Blue for hovering
+    dark: '#000030', // Darker Navy Blue for hovering
   },
   secondary: {
     main: '#4B8C9E', // Soft Teal

@@ -21,8 +21,8 @@ const glob = require('glob');
 // Theme color palette
 const themeColors = {
   // Primary colors
-  navy: { hex: '#1A3A5F', var: 'var(--color-navy)' },
-  navyDark: { hex: '#142f4c', var: 'var(--color-navy-dark)' },
+  navy: { hex: '#000048', var: 'var(--color-navy)' },
+  navyDark: { hex: '#000030', var: 'var(--color-navy-dark)' },
   teal: { hex: '#4B8C9E', var: 'var(--color-teal)' },
   seafoam: { hex: '#A9CDCE', var: 'var(--color-seafoam)' },
   
@@ -51,9 +51,9 @@ const themeColors = {
 // Color mappings for common named colors and hex values
 const colorMappings = {
   // Primary colors (exact hex matches)
-  '#1A3A5F': themeColors.navy.var,
-  '#1a3a5f': themeColors.navy.var,
-  '#142f4c': themeColors.navyDark.var,
+  '#000048': themeColors.navy.var,
+  '#000048': themeColors.navy.var,
+  '#000030': themeColors.navyDark.var,
   '#4B8C9E': themeColors.teal.var,
   '#4b8c9e': themeColors.teal.var,
   '#A9CDCE': themeColors.seafoam.var,
