@@ -55,7 +55,7 @@ const StepCircle = styled.div`
   margin-bottom: 12px;
   position: relative;
   transition: all 0.3s ease;
-  background: ${props => props.active ? 'linear-gradient(135deg, var(--color-navy) 0%, #3f51b5 100%)' : props.completed ? '#4caf50' : 'white'};
+  background: ${props => props.active ? 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy) 100%)' : props.completed ? '#4caf50' : 'white'};
   color: ${props => (props.active || props.completed) ? 'white' : '#9ca3af'};
   box-shadow: ${props => (props.active || props.completed) ? '0 4px 12px rgba(0, 0, 0, 0.15)' : '0 2px 6px rgba(0, 0, 0, 0.05)'};
   border: 2px solid ${props => props.completed ? '#4caf50' : props.active ? 'var(--color-navy)' : '#e5e7eb'};

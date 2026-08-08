@@ -31,7 +31,7 @@ const StatusBadge = styled.span`
     props.type === 'yacht_chartering' ? '#e3f2fd' :
       props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
   color: ${props => props.type === 'marina_operator' ? '#2e7d32' :
-    props.type === 'yacht_chartering' ? '#1565c0' :
+    props.type === 'yacht_chartering' ? 'var(--color-navy)' :
       props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
   white-space: nowrap;
   overflow: hidden;
@@ -271,7 +271,7 @@ const SearchBox = styled.div`
     &:focus {
       outline: none;
       border-color: var(--color-navy);
-      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
     }
   }
 
@@ -807,7 +807,7 @@ const LoadingContainer = styled.div`
   
   svg {
     animation: spin 1.5s linear infinite;
-    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+    filter: drop-shadow(0 0 8px rgba(0, 0, 72, 0.2));
   }
   
   @keyframes spin {

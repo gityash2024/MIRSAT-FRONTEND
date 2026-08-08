@@ -207,7 +207,7 @@ const ApiKeyModal = ({ isOpen, onClose, multiProvider = false }) => {
             <Banner><AlertTriangle size={16} /> Secure key storage is not configured on the server yet. Contact your administrator.</Banner>
           )}
           {loading && !data ? (
-            <Banner style={{ background: '#eef4f6', color: '#1a3a5f', borderColor: '#bcd' }}><Loader size={16} className="spin" /> Loading…</Banner>
+            <Banner style={{ background: '#eef4f6', color: '#000048', borderColor: '#bcd' }}><Loader size={16} className="spin" /> Loading…</Banner>
           ) : (
             visibleProviders.map((provider) => (
               <ProviderCard

@@ -60,7 +60,7 @@ const NoSubLevelsMessage = styled.div`
   
   svg {
     margin-bottom: 16px;
-    color: #3f51b5;
+    color: var(--color-navy);
   }
 `;
 
@@ -104,8 +104,8 @@ const SearchBox = styled.div`
     
     &:focus {
       outline: none;
-      border-color: #3f51b5;
-      box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
+      border-color: var(--color-navy);
+      box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
     }
   }
   
@@ -133,11 +133,11 @@ const NodeHeader = styled.div`
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
-  background-color: ${props => props.isSelected ? 'rgba(26, 35, 126, 0.08)' : 'transparent'};
+  background-color: ${props => props.isSelected ? 'rgba(0, 0, 72, 0.08)' : 'transparent'};
   min-width: 0;
   
   &:hover {
-    background-color: ${props => props.isSelected ? 'rgba(26, 35, 126, 0.12)' : 'rgba(226, 232, 240, 0.5)'};
+    background-color: ${props => props.isSelected ? 'rgba(0, 0, 72, 0.12)' : 'rgba(226, 232, 240, 0.5)'};
   }
 `;
 
@@ -462,8 +462,8 @@ const CommentInput = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #3f51b5;
-    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
+    border-color: var(--color-navy);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -527,7 +527,7 @@ const SearchInput = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -765,7 +765,7 @@ const ProgressBar = styled.div`
   .fill {
     height: 100%;
     width: ${props => `${props.progress}%`};
-    background: linear-gradient(90deg, #3f51b5 0%, #1976d2 100%);
+    background: linear-gradient(90deg, var(--color-navy) 0%, var(--color-navy) 100%);
     border-radius: 4px;
     transition: width 0.5s ease;
   }
@@ -792,7 +792,7 @@ const ExportButton = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #3f51b5 0%, #1976d2 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -3254,7 +3254,7 @@ const TextInput = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
   
   &:disabled {

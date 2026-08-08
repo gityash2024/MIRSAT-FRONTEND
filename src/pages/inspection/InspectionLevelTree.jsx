@@ -21,7 +21,7 @@ const StatusBadge2 = styled.span`
     props.type === 'yacht_chartering' ? '#e3f2fd' : 
     props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
   color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
-    props.type === 'yacht_chartering' ? '#1565c0' : 
+    props.type === 'yacht_chartering' ? 'var(--color-navy)' : 
     props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
 `;
 const Header = styled.div`
@@ -68,7 +68,7 @@ const SearchBox = styled.div`
     &:focus {
       outline: none;
       border-color: var(--color-navy);
-      box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
     }
   }
 
@@ -258,7 +258,7 @@ const StatusBadge = styled.span`
     props.type === 'yacht_chartering' ? '#e3f2fd' : 
     props.type === 'tourism_agent' ? '#fff3e0' : '#f3e5f5'};
   color: ${props => props.type === 'marina_operator' ? '#2e7d32' : 
-    props.type === 'yacht_chartering' ? '#1565c0' : 
+    props.type === 'yacht_chartering' ? 'var(--color-navy)' : 
     props.type === 'tourism_agent' ? '#ed6c02' : '#9c27b0'};
 `;
 

@@ -637,9 +637,9 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         <title>${fileName} - ${L('inspectionReport')}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; direction: ${rtl ? 'rtl' : 'ltr'}; text-align: ${textAlign}; }
-          .header { background-color: #1a237e; color: white; padding: 18px 22px; text-align: center; margin-bottom: 22px; }
+          .header { background-color: var(--color-navy); color: white; padding: 18px 22px; text-align: center; margin-bottom: 22px; }
           .section { margin-bottom: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
-          .section-title { font-size: 17px; font-weight: bold; color: #1a237e; margin-bottom: 8px; }
+          .section-title { font-size: 17px; font-weight: bold; color: var(--color-navy); margin-bottom: 8px; }
           .section-content { margin-${rtl ? 'right' : 'left'}: 14px; }
           .overview { background-color: #f5f7fb; padding: 14px; border: 1px solid #d8dee9; margin-bottom: 18px; }
           .item { margin: 8px 0; padding: 8px; background: #fafbfc; border: 1px solid #edf0f5; }

@@ -166,22 +166,25 @@ const glow = keyframes`
 
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 6px;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(55, 136, 216, 0.18), transparent 28%),
+    radial-gradient(circle at 92% 2%, rgba(44, 62, 80, 0.14), transparent 24%),
+    linear-gradient(180deg, #f7fbff 0%, #eef5fb 48%, #f8fafc 100%);
+  padding: 20px;
   position: relative;
   overflow-x: hidden;
 
   @media (max-width: 768px) {
-    padding: 4px;
+    padding: 12px;
   }
 
   @media (max-width: 480px) {
-    padding: 2px;
+    padding: 8px;
   }
 `;
 
 const MainContent = styled.div`
-  max-width: 1600px;
+  max-width: 1720px;
   margin: 0 auto;
   animation: ${fadeIn} 0.6s ease-out;
   width: 100%;
@@ -204,16 +207,15 @@ const TopBar = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 6px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 16px 24px;
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
+  margin: 0 0 14px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 14px 16px;
+  border-radius: 24px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.78);
   animation: ${slideIn} 0.5s ease-out;
   flex-wrap: wrap;
   gap: 12px;
@@ -236,11 +238,11 @@ const BackButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -350,7 +352,7 @@ const QuickActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background: ${props => props.primary ? 'linear-gradient(135deg, #3788d8, #2c3e50)' : 'rgba(255, 255, 255, 0.9)'};
+  background: ${props => props.primary ? 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))' : 'rgba(255, 255, 255, 0.9)'};
   color: ${props => props.primary ? 'white' : '#333'};
   border: ${props => props.primary ? '1px solid rgba(55, 136, 216, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)'};
   padding: 10px 16px;
@@ -483,16 +485,16 @@ const ExportOption = styled.button`
 `;
 
 const TaskHeader = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 251, 255, 0.92) 100%);
+  border-radius: 28px;
   padding: 32px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 20px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(226, 232, 240, 0.88);
   animation: ${fadeIn} 0.6s ease-out 0.1s both;
   position: relative;
   overflow: hidden;
@@ -516,8 +518,8 @@ const TaskHeader = styled.div`
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #3788d8, #2c3e50, #3788d8, #2c3e50);
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-navy), var(--color-navy-dark), var(--color-navy), var(--color-navy));
     background-size: 300% 100%;
     animation: ${shimmer} 3s ease-in-out infinite;
   }
@@ -528,7 +530,7 @@ const TaskTitle = styled.h1`
   font-weight: 800;
   color: #1a202c;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy-dark), var(--color-navy));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -551,9 +553,13 @@ const TaskTitle = styled.h1`
 
 const TaskMeta = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 18px;
   margin-top: 24px;
+
+  @media (max-width: 1180px) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -569,16 +575,16 @@ const TaskMeta = styled.div`
 `;
 
 const MetaCard = styled.div`
-  background: rgba(255, 255, 255, 0.7);
-  padding: 20px;
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 22px;
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   transition: all 0.3s ease;
-  margin: 6px;
+  margin: 0;
   box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 12px 28px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
   min-width: 0;
   overflow: hidden;
 
@@ -683,7 +689,7 @@ const StatusBadge = styled.div`
         `;
       case 'in_progress':
         return css`
-          background: linear-gradient(135deg, #3788d8, #2980b9);
+          background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
           color: white;
           box-shadow: 0 4px 15px rgba(55, 136, 216, 0.4);
         `;
@@ -763,11 +769,68 @@ const PriorityBadge = styled.div`
   }}
 `;
 
+const StatsBarContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 24px;
+  
+  @media (max-width: 1024px) {
+    flex-wrap: wrap;
+  }
+`;
+
+const StatCard = styled.div`
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+`;
+
+const StatCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+`;
+
+const StatCardValue = styled.div`
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+`;
+
+const StatMiniProgress = styled.div`
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+`;
+
+const StatMiniProgressBar = styled.div`
+  height: 100%;
+  border-radius: 2px;
+  background: ${props => props.color || '#3b82f6'};
+  width: ${props => props.progress || 0}%;
+  transition: width 0.3s ease;
+`;
+
 const ContentContainer = styled.div`
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 12px;
-  margin: 6px;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 0;
   
   @media (max-width: 1400px) {
     grid-template-columns: 1fr;
@@ -791,24 +854,28 @@ const MainPanel = styled.div`
 const SidePanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
   animation: ${fadeIn} 0.6s ease-out 0.3s both;
+  position: sticky;
+  top: 16px;
+  align-self: start;
   
   @media (max-width: 1400px) {
+    position: static;
     order: -1;
   }
 `;
 
 const TabsContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 8px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  padding: 7px;
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 
@@ -849,7 +916,7 @@ const Tab = styled.button`
   gap: 8px;
   padding: 12px 20px;
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -873,7 +940,7 @@ const Tab = styled.button`
   }
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
     color: white;
     transform: translateY(-2px);
     box-shadow: 
@@ -890,7 +957,7 @@ const Tab = styled.button`
     
     &:hover {
       background: rgba(55, 136, 216, 0.1);
-      color: #3788d8;
+      color: var(--color-navy);
       border: 1px solid rgba(55, 136, 216, 0.2);
       border-radius: 16px;
     }
@@ -918,17 +985,16 @@ const Tab = styled.button`
 `;
 
 const Card = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 24px;
   padding: 24px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   transition: all 0.3s ease;
-  margin: 6px;
+  margin: 0;
   min-width: 0;
   overflow: hidden;
 
@@ -984,7 +1050,7 @@ const SectionTitle = styled.h3`
   }
   
   svg {
-    color: #3788d8;
+    color: var(--color-navy);
     flex-shrink: 0;
 
     @media (max-width: 480px) {
@@ -995,15 +1061,15 @@ const SectionTitle = styled.h3`
 `;
 
 const ProgressContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 24px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 24px;
+  padding: 24px 28px;
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   min-width: 0;
   overflow: hidden;
 
@@ -1028,18 +1094,18 @@ const ProgressHeader = styled.div`
 `;
 
 const ProgressTitle = styled.h4`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
   display: flex;
   align-items: center;
   gap: 8px;
 `;
 
 const ProgressValue = styled.div`
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1058,11 +1124,11 @@ const ProgressValue = styled.div`
 const ProgressBar = styled.div`
   width: 100%;
   height: 12px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  background: #e8eef5;
+  border-radius: 999px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   
   &::after {
     content: '';
@@ -1071,24 +1137,24 @@ const ProgressBar = styled.div`
     top: 0;
     height: 100%;
     width: ${props => props.progress}%;
-    background: linear-gradient(90deg, #3788d8, #2c3e50);
-    border-radius: 8px;
+    background: linear-gradient(90deg, var(--color-navy), var(--color-navy-dark));
+    border-radius: 999px;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(55, 136, 216, 0.4);
   }
 `;
 
 const InspectionContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  backdrop-filter: blur(26px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 22px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   overflow: visible;
   min-height: 80vh;
-  margin: 6px;
+  margin: 0;
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1114,9 +1180,10 @@ const InspectionContainer = styled.div`
 `;
 
 const InspectionHeader = styled.div`
-  padding: 24px 32px;
-  background: linear-gradient(135deg, rgba(55, 136, 216, 0.1), rgba(44, 62, 80, 0.1));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 26px 32px;
+  background:
+    linear-gradient(135deg, rgba(239, 247, 255, 0.96), rgba(248, 251, 255, 0.96));
+  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1128,7 +1195,6 @@ const InspectionHeader = styled.div`
   box-sizing: border-box;
   overflow: visible;
   position: relative;
-  z-index: 1;
   z-index: 1;
 
   > div:first-child {
@@ -1154,9 +1220,9 @@ const InspectionHeader = styled.div`
 `;
 
 const InspectionTitle = styled.h3`
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a202c;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -1236,18 +1302,17 @@ const DropdownButton = styled.button`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 18px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
   font-size: 14px;
-  min-width: 200px;
+  min-width: 280px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
   white-space: nowrap;
   flex-shrink: 1;
-  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
@@ -1298,14 +1363,14 @@ const DropdownButton = styled.button`
   }
   
   &:hover {
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     background: rgba(55, 136, 216, 0.05);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   }
   
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.1);
   }
 
@@ -1332,6 +1397,7 @@ const DropdownMenu = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   z-index: 10003 !important;
   max-height: 300px;
+  min-width: 280px;
   overflow-y: auto;
   display: block !important;
   visibility: visible !important;
@@ -1346,7 +1412,7 @@ const DropdownItem = styled.div`
   
   &:hover {
     background: rgba(55, 136, 216, 0.05);
-    border-left: 3px solid #3788d8;
+    border-left: 3px solid var(--color-navy);
   }
   
   &:last-child {
@@ -1358,10 +1424,10 @@ const NavigationButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border: 1px solid rgba(55, 136, 216, 0.3);
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -1439,8 +1505,9 @@ const NavigationButton = styled.button`
 `;
 
 const InspectionLayout = styled.div`
-  display: flex;
-  height: calc(80vh - 80px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  height: calc(82vh - 80px);
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1448,6 +1515,7 @@ const InspectionLayout = styled.div`
   overflow: hidden;
   
   @media (max-width: 1200px) {
+    display: flex;
     flex-direction: column;
     height: auto;
     overflow: visible;
@@ -1465,16 +1533,18 @@ const InspectionLayout = styled.div`
 `;
 
 const NavigationPanel = styled.div`
-  width: 320px;
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(248, 250, 252, 0.8);
+  width: ${props => props.$isOpen ? '300px' : '48px'};
+  min-width: ${props => props.$isOpen ? '300px' : '48px'};
+  border-right: 1px solid rgba(226, 232, 240, 0.78);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(241, 247, 253, 0.92));
   display: flex;
   flex-direction: column;
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.3);
   box-sizing: border-box;
-  min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  position: relative;
   
   @media (max-width: 1200px) {
     width: 100%;
@@ -1491,10 +1561,10 @@ const NavigationPanel = styled.div`
 `;
 
 const NavigationHeader = styled.div`
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.76);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
@@ -1513,9 +1583,9 @@ const NavigationHeader = styled.div`
 `;
 
 const NavigationTitle = styled.h4`
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0 0 12px 0;
   display: flex;
   align-items: center;
@@ -1541,7 +1611,7 @@ const KeyboardShortcutsBadge = styled.div`
   }
   
   svg {
-    color: #3788d8;
+    color: var(--color-navy);
   }
 `;
 
@@ -1550,8 +1620,8 @@ const ProgressSummary = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(55, 136, 216, 0.1);
-  border-radius: 8px;
+  background: rgba(239, 247, 255, 0.95);
+  border-radius: 14px;
   font-size: 12px;
   border: 1px solid rgba(55, 136, 216, 0.2);
   width: 100%;
@@ -1575,8 +1645,8 @@ const SectionNavigationControls = styled.div`
   flex-direction: column;
   align-items: stretch;
   padding: 12px 16px;
-  background: rgba(248, 250, 252, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.58);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
@@ -1620,8 +1690,8 @@ const SectionNavigationButton = styled.button`
   gap: 6px;
   padding: 8px 12px;
   border: 1px solid rgba(55, 136, 216, 0.3);
-  border-radius: 6px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -1692,12 +1762,12 @@ const SectionCounter = styled.div`
   text-align: center;
   font-size: 12px;
   font-weight: 600;
-  color: #1a202c;
-  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.92);
   padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
   box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
@@ -1736,16 +1806,16 @@ const SectionsNavigation = styled.div`
 `;
 
 const SectionNavItem = styled.div`
-  padding: 12px 16px;
-  margin: 6px 0;
-  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
@@ -1754,7 +1824,7 @@ const SectionNavItem = styled.div`
   gap: 8px;
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     transform: translateY(-1px);
     box-shadow: 
@@ -1762,7 +1832,7 @@ const SectionNavItem = styled.div`
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border-color: rgba(55, 136, 216, 0.3);
   ` : css`
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.82);
     color: #1a202c;
     border: 1px solid rgba(255, 255, 255, 0.3);
     
@@ -1849,15 +1919,15 @@ const ContentPanel = styled.div`
 `;
 
 const ContentHeader = styled.div`
-  padding: 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.8);
+  padding: 22px 32px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+  background: rgba(255, 255, 255, 0.86);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1875,9 +1945,9 @@ const ContentHeader = styled.div`
 `;
 
 const ContentTitle = styled.h4`
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0;
   display: flex;
   align-items: center;
@@ -1890,12 +1960,16 @@ const QuestionCounter = styled.div`
   gap: 8px;
   font-size: 14px;
   color: #64748b;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  padding: 8px 10px;
 `;
 
 const QuestionsContent = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 28px 32px;
   display: block;
   min-width: 0;
   max-width: 100%;
@@ -1923,14 +1997,14 @@ const QuestionsContent = styled.div`
 `;
 
 const QuestionCard = styled.div`
-  background: ${props => props.$isHighlighted ? 'rgba(255, 243, 205, 0.95)' : 'rgba(255, 255, 255, 0.9)'};
-  border-radius: 16px;
-  padding: 24px;
-  margin: 6px 0 20px 0;
-  border: 2px solid ${props => props.$isHighlighted ? '#f59e0b' : 'rgba(255, 255, 255, 0.4)'};
+  background: ${props => props.$isHighlighted ? 'rgba(255, 248, 225, 0.98)' : 'rgba(255, 255, 255, 0.96)'};
+  border-radius: 22px;
+  padding: 26px;
+  margin: 0 0 22px 0;
+  border: 1px solid ${props => props.$isHighlighted ? '#f59e0b' : 'rgba(226, 232, 240, 0.95)'};
   transition: all 0.3s ease;
   box-shadow: 
-    ${props => props.$isHighlighted ? '0 6px 20px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : '0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.3)'};
+    ${props => props.$isHighlighted ? '0 16px 32px rgba(245, 158, 11, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : '0 16px 34px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.82)'};
   position: relative;
   min-width: 0;
   max-width: 100%;
@@ -1961,11 +2035,11 @@ const QuestionCard = styled.div`
   }
   
   &:hover {
-    border-color: rgba(55, 136, 216, 0.4);
+    border-color: rgba(55, 136, 216, 0.35);
     transform: translateY(-2px);
     box-shadow: 
-      0 8px 25px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      0 18px 40px rgba(15, 23, 42, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
 
     @media (max-width: 768px) {
       transform: translateY(-1px);
@@ -1973,7 +2047,7 @@ const QuestionCard = styled.div`
   }
   
   &::after {
-    content: '';
+    content: none;
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -2009,9 +2083,9 @@ const QuestionHeader = styled.div`
 `;
 
 const QuestionText = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
   flex: 1;
   line-height: 1.5;
   min-width: 0;
@@ -2059,7 +2133,7 @@ const QuestionBadge = styled.div`
     color: white;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
   ` : css`
-    background: linear-gradient(135deg, #3788d8, #2980b9);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     box-shadow: 0 2px 8px rgba(55, 136, 216, 0.3);
   `}
@@ -2070,13 +2144,13 @@ const ScoreBadge = styled.div`
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: ${props => props.hasResponse ?
-    'linear-gradient(135deg, #27ae60, #2ecc71)' :
-    'linear-gradient(135deg, #f3f4f6, #e5e7eb)'};
+    'linear-gradient(135deg, #22c55e, #16a34a)' :
+    'linear-gradient(135deg, #f8fafc, #e8eef5)'};
   color: ${props => props.hasResponse ? 'white' : '#6b7280'};
   box-shadow: ${props => props.hasResponse ?
     '0 2px 8px rgba(39, 174, 96, 0.3)' :
@@ -2158,7 +2232,7 @@ const InputGroup = styled.div`
     
     &:focus {
       outline: none;
-      border-color: #3788d8;
+      border-color: var(--color-navy);
       box-shadow: 
         0 0 0 4px rgba(55, 136, 216, 0.1),
         0 4px 15px rgba(0, 0, 0, 0.1);
@@ -2211,7 +2285,7 @@ const OptionButton = styled.button`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   ${props => props.selected ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     border-color: transparent;
     transform: translateY(-2px);
@@ -2221,7 +2295,7 @@ const OptionButton = styled.button`
   ` : css`
     &:hover {
       background: rgba(55, 136, 216, 0.1);
-      border-color: #3788d8;
+      border-color: var(--color-navy);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
@@ -2259,7 +2333,7 @@ const CheckboxItem = styled.label`
   input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: #3788d8;
+    accent-color: var(--color-navy);
   }
 `;
 
@@ -2313,7 +2387,7 @@ const QuestionNumber = styled.div`
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-weight: 700;
   font-size: 14px;
@@ -2402,7 +2476,7 @@ const CommentInput = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 
       0 0 0 4px rgba(55, 136, 216, 0.1),
       0 4px 15px rgba(0, 0, 0, 0.1);
@@ -2417,7 +2491,7 @@ const SendButton = styled.button`
   height: 50px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -2457,7 +2531,7 @@ const RefreshButton = styled.button`
   
   &:hover {
     background: rgba(55, 136, 216, 0.1);
-    color: #3788d8;
+    color: var(--color-navy);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: rgba(55, 136, 216, 0.3);
@@ -2562,7 +2636,7 @@ const ScoreLabel = styled.div`
 const ScoreValue = styled.div`
   font-size: 24px;
   font-weight: 800;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2636,7 +2710,7 @@ const MetricLabel = styled.div`
 const MetricValue = styled.div`
   font-size: 28px;
   font-weight: 800;
-  color: ${props => props.$color || '#3788d8'};
+  color: ${props => props.$color || 'var(--color-navy)'};
   margin-bottom: 4px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -2912,7 +2986,7 @@ const CommentTextarea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.1);
   }
 
@@ -2929,7 +3003,7 @@ const CommentSubmitButton = styled.button`
   padding: 12px 20px;
   background: ${props => props.disabled
     ? '#9ca3af'
-    : 'linear-gradient(135deg, #3788d8, #2980b9)'};
+    : 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))'};
   color: white;
   border: none;
   border-radius: 8px;
@@ -3167,7 +3241,7 @@ const SignatureTab = styled.button`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     transform: translateY(-2px);
     box-shadow: 
@@ -3200,7 +3274,7 @@ const SignatureCanvas = styled.div`
   min-height: 0;
   
   &:hover {
-    border-color: ${props => props.clickable ? '#3788d8' : '#e5e7eb'};
+    border-color: ${props => props.clickable ? 'var(--color-navy)' : '#e5e7eb'};
     background: ${props => props.clickable ? 'rgba(55, 136, 216, 0.05)' : '#f9fafb'};
   }
   
@@ -3288,7 +3362,7 @@ const SaveButton = styled(SignatureButton)`
 `;
 
 const UploadButton = styled(SignatureButton)`
-  background: linear-gradient(135deg, #3788d8, #2980b9);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   border: none;
   
@@ -3303,7 +3377,7 @@ const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
   border: 4px solid rgba(55, 136, 216, 0.2);
-  border-top: 4px solid #3788d8;
+  border-top: 4px solid var(--color-navy);
   border-radius: 50%;
   animation: ${rotate} 1s linear infinite;
   margin: 20px auto;
@@ -3313,7 +3387,7 @@ const LoadingIndicator = styled.div`
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   padding: 12px 16px;
   border-radius: 12px;
@@ -3382,7 +3456,7 @@ const StartTaskButton = styled.button`
 `;
 
 const ContinueButton = styled(StartTaskButton)`
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   box-shadow: 
     0 4px 15px rgba(55, 136, 216, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -3519,6 +3593,29 @@ const getUnansweredQuestionsInSection = (section, responses) => {
   });
 
   return unanswered;
+};
+
+// Completion-rate helpers (answered questions / total questions in a section or page)
+const getSectionCompletionRate = (section, responses) => {
+  if (!section || !section.questions) return { answered: 0, total: 0, percentage: 0 };
+  const total = section.questions.length;
+  let answered = 0;
+  section.questions.forEach(q => {
+    const qId = q._id || q.id;
+    if (isQuestionAnswered(responses, qId)) answered++;
+  });
+  return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
+};
+
+const getPageCompletionRate = (page, responses) => {
+  if (!page || !page.sections) return { answered: 0, total: 0, percentage: 0 };
+  let answered = 0, total = 0;
+  page.sections.forEach(section => {
+    const sr = getSectionCompletionRate(section, responses);
+    answered += sr.answered;
+    total += sr.total;
+  });
+  return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
 };
 
 const calculateSectionScore = (section, responses) => {
@@ -3743,8 +3840,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
-                  border: '1px solid #3788d8',
-                  background: '#3788d8',
+                  border: '1px solid var(--color-navy)',
+                  background: 'var(--color-navy)',
                   color: 'white',
                   fontSize: '12px',
                   cursor: 'pointer',
@@ -3782,8 +3879,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
               style={{
                 padding: '12px 24px',
                 borderRadius: '8px',
-                border: '1px solid #3788d8',
-                background: '#3788d8',
+                border: '1px solid var(--color-navy)',
+                background: 'var(--color-navy)',
                 color: 'white',
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -3903,6 +4000,10 @@ const UserTaskDetail = () => {
   // Refs for debouncing progress updates to reduce API calls
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
+  const [isSectionsPanelOpen, setIsSectionsPanelOpen] = useState(true);
+  const [showSectionsTour, setShowSectionsTour] = useState(() => {
+    return !localStorage.getItem('mirsat_sections_tour_dismissed');
+  });
   const [timerRunning, setTimerRunning] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPage, setSelectedPage] = useState(null);
@@ -6388,7 +6489,7 @@ const UserTaskDetail = () => {
                           }}
                           style={{
                             padding: '8px 12px',
-                            background: '#0369a1',
+                            background: '#000048',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -6971,7 +7072,7 @@ const UserTaskDetail = () => {
                   {inspectionPages && inspectionPages.length > 0 ? (
                     inspectionPages.map((page, index) => {
                       const pageId = page.id || page._id;
-                      const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
+                      const pageCompletion = getPageCompletionRate(page, currentTask.questionnaireResponses || {});
 
                       return (
                         <DropdownItem
@@ -6991,15 +7092,27 @@ const UserTaskDetail = () => {
                             e.preventDefault();
                           }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                             <span>{`${index + 1}. ${page.name}`}</span>
-                            <span style={{
-                              fontSize: '12px',
-                              color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
-                              fontWeight: '600'
-                            }}>
-                              {pageScore.achieved}/{pageScore.total}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                color: pageCompletion.percentage <= 33 ? '#ef4444' : pageCompletion.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                                background: pageCompletion.percentage <= 33 ? '#fef2f2' : pageCompletion.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                              }}>
+                                {pageCompletion.percentage}%
+                              </span>
+                              <span style={{
+                                fontSize: '12px',
+                                color: pageCompletion.answered > 0 ? '#27ae60' : '#95a5a6',
+                                fontWeight: '600'
+                              }}>
+                                {pageCompletion.answered}/{pageCompletion.total}
+                              </span>
+                            </div>
                           </div>
                         </DropdownItem>
                       );
@@ -7036,17 +7149,77 @@ const UserTaskDetail = () => {
         </InspectionHeader>
 
         <InspectionLayout>
-          <NavigationPanel>
+          <NavigationPanel $isOpen={isSectionsPanelOpen} style={{ position: 'relative' }}>
+            {/* App Tour Tooltip - shows once on first visit */}
+            {showSectionsTour && isSectionsPanelOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                right: '-220px',
+                transform: 'translateY(-50%)',
+                zIndex: 10010,
+                background: 'var(--color-navy)',
+                color: 'white',
+                padding: '14px 18px',
+                borderRadius: '10px',
+                boxShadow: '0 8px 32px rgba(0,0,72,0.3)',
+                width: '200px',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                animation: 'fadeIn 0.5s ease-out',
+              }}>
+                <div style={{ position: 'absolute', left: '-8px', top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: '8px solid var(--color-navy)' }} />
+                <div style={{ fontWeight: '700', marginBottom: '6px', fontSize: '14px' }}>📋 Sections Panel</div>
+                <div style={{ opacity: 0.9 }}>Navigate between sections here. You can collapse this panel using the chevron icon.</div>
+                <button
+                  onClick={() => {
+                    setShowSectionsTour(false);
+                    localStorage.setItem('mirsat_sections_tour_dismissed', 'true');
+                  }}
+                  style={{
+                    marginTop: '10px',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '6px',
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                >
+                  Got it!
+                </button>
+              </div>
+            )}
+            {!isSectionsPanelOpen ? (
+              <div 
+                style={{ padding: '20px 0', display: 'flex', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                onClick={() => setIsSectionsPanelOpen(true)}
+              >
+                <ChevronRight size={20} />
+              </div>
+            ) : (
+              <>
             <NavigationHeader>
-              <NavigationTitle>
-                <Navigation size={16} />
-                {t('tasks.sections')}
-                <KeyboardShortcutsBadge title={t('tasks.keyboardShortcuts')}>
-                  <Info size={12} />
-                </KeyboardShortcutsBadge>
-              </NavigationTitle>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <NavigationTitle>
+                  <Navigation size={16} />
+                  {t('tasks.sections')}
+                  <KeyboardShortcutsBadge title={t('tasks.keyboardShortcuts')}>
+                    <Info size={12} />
+                  </KeyboardShortcutsBadge>
+                </NavigationTitle>
+                <button 
+                  onClick={() => setIsSectionsPanelOpen(false)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              </div>
               <ProgressSummary>
-                <span style={{ fontWeight: '600', color: '#3788d8' }}>
+                <span style={{ fontWeight: '600', color: 'var(--color-navy)' }}>
                   {currentPage?.sections?.length || 0} {t('tasks.sections')}
                 </span>
                 <span style={{ color: '#27ae60' }}>
@@ -7078,7 +7251,7 @@ const UserTaskDetail = () => {
                     aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
                   >
                     <ChevronLeft size={14} />
-                    {t('tasks.previousSection')}
+                    {t('common.previous')}
                   </SectionNavigationButton>
 
                   {/* Next Section Button */}
@@ -7098,7 +7271,7 @@ const UserTaskDetail = () => {
                     }}
                     aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
                   >
-                    {t('tasks.nextSection')}
+                    {t('common.next')}
                     <ChevronRight size={14} />
                   </SectionNavigationButton>
                 </SectionButtonsRow>
@@ -7115,7 +7288,7 @@ const UserTaskDetail = () => {
                 currentPage.sections.map((section, idx) => {
                   const sectionId = section.id || section._id;
                   const isActive = selectedSection === sectionId;
-                  const sectionScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
+                  const sectionCompletion = getSectionCompletionRate(section, currentTask.questionnaireResponses || {});
 
                   return (
                     <SectionNavItem
@@ -7128,10 +7301,22 @@ const UserTaskDetail = () => {
                       }}
                     >
                       <SectionTitle2>{`${idx + 1}. ${section.name}`}</SectionTitle2>
-                      <SectionScore active={isActive}>
-                        <Star size={12} />
-                        {sectionScore.achieved}/{sectionScore.total}
-                      </SectionScore>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          color: sectionCompletion.percentage <= 33 ? '#ef4444' : sectionCompletion.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                          background: sectionCompletion.percentage <= 33 ? '#fef2f2' : sectionCompletion.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                          padding: '1px 6px',
+                          borderRadius: '8px',
+                        }}>
+                          {sectionCompletion.percentage}%
+                        </span>
+                        <SectionScore active={isActive}>
+                          <Star size={12} />
+                          {sectionCompletion.answered}/{sectionCompletion.total}
+                        </SectionScore>
+                      </div>
                     </SectionNavItem>
                   );
                 })
@@ -7142,7 +7327,11 @@ const UserTaskDetail = () => {
                 </EmptyState>
               )}
             </SectionsNavigation>
+            </>
+            )}
           </NavigationPanel>
+
+
 
           <ContentPanel>
             <ContentHeader>
@@ -7182,7 +7371,7 @@ const UserTaskDetail = () => {
                         }
                       }}
                       style={{
-                        background: highlightUnansweredMode ? '#3788d8' : 'transparent',
+                        background: highlightUnansweredMode ? 'var(--color-navy)' : 'transparent',
                         color: highlightUnansweredMode ? 'white' : '#64748b',
                         border: highlightUnansweredMode ? 'none' : '1px solid #e2e8f0',
                         borderRadius: '50%',
@@ -7588,7 +7777,7 @@ const UserTaskDetail = () => {
                 background: 'rgba(55, 136, 216, 0.1)',
                 borderRadius: '8px',
                 fontSize: '12px',
-                color: '#3788d8',
+                color: 'var(--color-navy)',
                 fontWeight: '600',
                 border: '1px solid rgba(55, 136, 216, 0.2)'
               }}>
@@ -7677,6 +7866,94 @@ const UserTaskDetail = () => {
             </MetaCard>
           </TaskMeta>
         </TaskHeader>
+
+        <StatsBarContainer>
+          <StatCard>
+            <StatCardHeader>
+              <TrendingUp size={16} />
+              {t('tasks.progress')}
+            </StatCardHeader>
+            <StatCardValue>{displayProgress}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={displayProgress}
+                color={displayProgress <= 33 ? '#ef4444' : displayProgress <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <Award size={16} />
+              {t('tasks.complianceScore')}
+            </StatCardHeader>
+            <StatCardValue>{scores.percentage}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={scores.percentage}
+                color={scores.percentage <= 33 ? '#ef4444' : scores.percentage <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <Clock size={16} />
+              {t('tasks.timeSpent')}
+            </StatCardHeader>
+            <StatCardValue>
+              {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                ? formatTimeFromSeconds(displayTime)
+                : formatTimeSpent((currentTask?.taskMetrics?.timeSpent || 0) / 3600)}
+            </StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#3b82f6" />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <FileText size={16} />
+              {t('tasks.pages')}
+            </StatCardHeader>
+            <StatCardValue>{inspectionPages.length}</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#3b82f6" />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <CheckCircle size={16} />
+              {t('tasks.completionRate')}
+            </StatCardHeader>
+            <StatCardValue>{displayProgress}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={displayProgress}
+                color={displayProgress <= 33 ? '#ef4444' : displayProgress <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+
+          <StatCard>
+            <StatCardHeader>
+              <Activity size={16} />
+              {t('tasks.status')}
+            </StatCardHeader>
+            <StatCardValue style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <StatusIcon status={currentTask.status} />
+              {currentTask.status === 'pending' ? t('tasks.pending') :
+                currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                  currentTask.status === 'completed' ? t('tasks.completed') :
+                    currentTask.status === 'archived' ? t('tasks.archived') :
+                      currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+            </StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#8b5cf6" />
+            </StatMiniProgress>
+          </StatCard>
+        </StatsBarContainer>
 
         <TabsContainer>
           <TabsWrapper>
@@ -7867,7 +8144,7 @@ const UserTaskDetail = () => {
                     <MetricGrid>
                       <MetricCard $color="blue" $bgColor="rgba(55, 136, 216, 0.1)">
                         <MetricLabel>{t('tasks.overallProgress')}</MetricLabel>
-                        <MetricValue $color="#3788d8">
+                        <MetricValue $color="var(--color-navy)">
                           {displayProgress}%
                         </MetricValue>
                         <MetricDescription>{t('tasks.taskCompletion')}</MetricDescription>
@@ -7899,7 +8176,7 @@ const UserTaskDetail = () => {
 
                       <MetricCard $color="gray" $bgColor="rgba(44, 62, 80, 0.1)">
                         <MetricLabel>{t('tasks.inspectionPages')}</MetricLabel>
-                        <MetricValue $color="#2c3e50">
+                        <MetricValue $color="var(--color-navy-dark)">
                           {inspectionPages.length}
                         </MetricValue>
                         <MetricDescription>{t('tasks.totalSections')}</MetricDescription>
@@ -7938,7 +8215,7 @@ const UserTaskDetail = () => {
                     <div style={{
                       fontSize: '18px',
                       fontWeight: '600',
-                      color: '#3788d8',
+                      color: 'var(--color-navy)',
                       marginBottom: '8px',
                       display: 'flex',
                       alignItems: 'center',
@@ -7978,12 +8255,6 @@ const UserTaskDetail = () => {
                               {questionAnswerSummary.answeredCount}/{questionAnswerSummary.totalCount}
                             </div>
                           )}
-                          {/* Debug info in development */}
-                          {process.env.NODE_ENV === 'development' && (
-                            <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
-                              DB: {currentTask?.overallProgress || 0}% | Calc: {taskCompletionPercentage}%
-                            </div>
-                          )}
                         </ProgressValue>
                         <button
                           onClick={() => setShowProgressDetails(true)}
@@ -7998,11 +8269,11 @@ const UserTaskDetail = () => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            color: '#3788d8'
+                            color: 'var(--color-navy)'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = 'rgba(55, 136, 216, 0.2)';
-                            e.currentTarget.style.borderColor = '#3788d8';
+                            e.currentTarget.style.borderColor = 'var(--color-navy)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'rgba(55, 136, 216, 0.1)';
@@ -8042,58 +8313,6 @@ const UserTaskDetail = () => {
                 </ProgressContainer>
 
                 {renderInspectionInterface()}
-
-                {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
-                  <ScoreCard>
-                    <SectionTitle>
-                      <Award size={20} />
-                      {t('tasks.inspectionScoringSummary')}
-                    </SectionTitle>
-
-                    <ScoreGrid>
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.complianceScore')}</ScoreLabel>
-                        <ScoreValue>
-                          {scores.achieved} / {scores.total}
-                          <span style={{ fontSize: '14px', color: '#27ae60', marginLeft: '8px' }}>
-                            ({scores.percentage}%)
-                          </span>
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.pagesScored')}</ScoreLabel>
-                        <ScoreValue>
-                          {inspectionPages.length > 0 ?
-                            inspectionPages.reduce((sum, page) => {
-                              const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
-                              return sum + (pageScore.achieved > 0 ? 1 : 0);
-                            }, 0)
-                            : 0} / {inspectionPages.length}
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.completionRate')}</ScoreLabel>
-                        <ScoreValue>
-                          {displayProgress}%
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.status')}</ScoreLabel>
-                        <ScoreValue style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                          <StatusIcon status={currentTask.status} />
-                          {currentTask.status === 'pending' ? t('tasks.pending') :
-                            currentTask.status === 'in_progress' ? t('tasks.inProgress') :
-                              currentTask.status === 'completed' ? t('tasks.completed') :
-                                currentTask.status === 'archived' ? t('tasks.archived') :
-                                  currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
-                        </ScoreValue>
-                      </ScoreItem>
-                    </ScoreGrid>
-                  </ScoreCard>
-                )}
               </>
             )}
 
@@ -8118,8 +8337,8 @@ const UserTaskDetail = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                     <div style={{ background: 'rgba(55, 136, 216, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--color-navy)', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy)' }}>
                         {scores.percentage}%
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -8154,8 +8373,8 @@ const UserTaskDetail = () => {
                     </div>
 
                     <div style={{ background: 'rgba(44, 62, 80, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--color-navy-dark)', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy-dark)' }}>
                         {inspectionPages.length}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -8242,7 +8461,7 @@ const UserTaskDetail = () => {
                                 width: '24px',
                                 height: '24px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #3788d8, #2c3e50)',
+                                background: 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))',
                                 color: 'white',
                                 fontWeight: '700',
                                 fontSize: '12px',
@@ -8285,7 +8504,7 @@ const UserTaskDetail = () => {
                                         if (response.startsWith('data:image/')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 📎 {t('tasks.imageUploaded')}
                                               </div>
                                               <img
@@ -8310,7 +8529,7 @@ const UserTaskDetail = () => {
                                         } else if (response.startsWith('data:')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 📎 {t('tasks.fileUploaded')}
                                               </div>
                                               <button
@@ -8322,7 +8541,7 @@ const UserTaskDetail = () => {
                                                 }}
                                                 style={{
                                                   padding: '8px 12px',
-                                                  background: '#0369a1',
+                                                  background: '#000048',
                                                   color: 'white',
                                                   border: 'none',
                                                   borderRadius: '6px',
@@ -8358,7 +8577,7 @@ const UserTaskDetail = () => {
                                         if (response.startsWith('data:image/')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 ✍️ {t('tasks.signatureProvided')}
                                               </div>
                                               <img
@@ -8671,77 +8890,6 @@ const UserTaskDetail = () => {
               </>
             )}
           </MainPanel>
-
-          <SidePanel>
-            <Card>
-              <SectionTitle>
-                <BarChart2 size={20} />
-                {t('tasks.quickStats')}
-              </SectionTitle>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(55, 136, 216, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.progress')}</span>
-                  <span style={{ fontWeight: '700', color: '#3788d8' }}>
-                    {displayProgress}%
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(39, 174, 96, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.score')}</span>
-                  <span style={{ fontWeight: '700', color: '#27ae60' }}>
-                    {scores.percentage}%
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(243, 156, 18, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.time')}</span>
-                  <span style={{ fontWeight: '700', color: '#f39c12', fontFamily: 'monospace', fontSize: '14px' }}>
-                    {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
-                      ? formatTimeFromSeconds(displayTime)
-                      : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(44, 62, 80, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.pages')}</span>
-                  <span style={{ fontWeight: '700', color: '#2c3e50' }}>
-                    {inspectionPages.length}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-
-          </SidePanel>
         </ContentContainer>
       </MainContent>
 

@@ -86,7 +86,7 @@ export const exportArtifactPdf = (artifact) => {
   let y = 50;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.setTextColor(26, 58, 95);
+  doc.setTextColor(0, 0, 72);
   doc.text(String(artifact?.title || 'Report'), marginX, y);
   y += 20;
   doc.setFont('helvetica', 'normal');
@@ -105,7 +105,7 @@ export const exportArtifactPdf = (artifact) => {
       head: [['Metric', 'Value']],
       body: artifact.metrics.map((m) => [m.label, cellText(m.value)]),
       theme: 'grid',
-      headStyles: { fillColor: [26, 58, 95] },
+      headStyles: { fillColor: [0, 0, 72] },
       styles: { fontSize: 9 },
       margin: { left: marginX, right: marginX },
     });

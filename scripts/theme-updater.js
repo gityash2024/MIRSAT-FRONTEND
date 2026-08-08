@@ -19,9 +19,9 @@ const glob = require('glob');
 // Color mappings from hardcoded values to CSS variables
 const colorMappings = {
   // Primary colors
-  '#1A3A5F': 'var(--color-navy)',
-  '#1a3a5f': 'var(--color-navy)',
-  '#142f4c': 'var(--color-navy-dark)',
+  '#000048': 'var(--color-navy)',
+  '#000048': 'var(--color-navy)',
+  '#000030': 'var(--color-navy-dark)',
   '#4B8C9E': 'var(--color-teal)',
   '#4b8c9e': 'var(--color-teal)',
   '#A9CDCE': 'var(--color-seafoam)',

@@ -1689,7 +1689,7 @@ const LibrarySearchInput = styled.input`
     outline: none;
     border-color: var(--color-navy);
     background: white;
-    box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 0, 72, 0.1);
   }
   
   &::placeholder {
@@ -1743,7 +1743,7 @@ const LibraryQuestionItem = styled.div`
   
   &:hover {
     border-color: var(--color-navy);
-    box-shadow: 0 4px 12px rgba(26, 35, 126, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 72, 0.15);
     transform: translateY(-2px);
   }
   

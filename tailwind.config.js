@@ -9,9 +9,9 @@ export default {
         colors: {
           // Primary colors
           navy: {
-            DEFAULT: '#1A3A5F', // Deep Navy Blue
+            DEFAULT: '#000048', // Deep Navy Blue
             light: '#4B8C9E', // Soft Teal
-            dark: '#2D4654', // Dark Slate
+            dark: '#000030', // Dark Slate
           },
           teal: {
             DEFAULT: '#4B8C9E', // Soft Teal

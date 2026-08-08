@@ -72,7 +72,7 @@ const IconWrapper = styled.div`
   height: 40px;
   border-radius: 8px;
   background: ${props => props.background || '#e3f2fd'};
-  color: ${props => props.color || '#1565c0'};
+  color: ${props => props.color || 'var(--color-navy)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +125,7 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -376,7 +376,7 @@ const SecuritySettings = () => {
         <PolicyGrid>
           <PolicyCard>
             <PolicyInfo>
-              <IconWrapper background="#e3f2fd" color="#1565c0">
+              <IconWrapper background="#e3f2fd" color="var(--color-navy)">
                 <Lock size={20} />
               </IconWrapper>
               <PolicyContent>
@@ -547,7 +547,7 @@ const SecuritySettings = () => {
         <PolicyGrid>
           <PolicyCard>
             <PolicyInfo>
-              <IconWrapper background="#e3f2fd" color="#1565c0">
+              <IconWrapper background="#e3f2fd" color="var(--color-navy)">
                 <Clock size={20} />
               </IconWrapper>
               <PolicyContent>
