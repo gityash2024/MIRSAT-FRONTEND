@@ -21,7 +21,7 @@ const LoadingContainer = styled.div`
   
   svg {
     animation: spin 1.5s linear infinite;
-    filter: drop-shadow(0 0 8px rgba(26, 35, 126, 0.2));
+    filter: drop-shadow(0 0 8px rgba(0, 0, 72, 0.2));
   }
   
   @keyframes spin {

@@ -82,6 +82,21 @@ export const updateUserTaskProgress = createAsyncThunk(
   }
 );
 
+export const updateUserTaskMetrics = createAsyncThunk(
+  'userTasks/updateUserTaskMetrics',
+  async ({ taskId, timeSpent, subLevelTimeSpent }, { rejectWithValue }) => {
+    try {
+      const response = await userTaskService.updateTaskMetrics(taskId, {
+        timeSpent,
+        subLevelTimeSpent
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 export const updateTaskQuestionnaire = createAsyncThunk(
   'userTasks/updateTaskQuestionnaire',
   async ({ taskId, questionnaire }, { rejectWithValue }) => {
@@ -229,7 +244,11 @@ const userTasksSlice = createSlice({
     dashboardLoading: false,
     taskDetailsLoading: false,
     actionLoading: false,
-    error: null
+    error: null,
+    detailsError: null,
+    actionError: null,
+    currentTaskRequestId: null,
+    requestedTaskId: null
   },
   reducers: {
     setFilters: (state, action) => {
@@ -243,6 +262,9 @@ const userTasksSlice = createSlice({
     },
     clearCurrentTask: (state) => {
       state.currentTask = null;
+      state.detailsError = null;
+      state.currentTaskRequestId = null;
+      state.requestedTaskId = null;
     }
   },
   extraReducers: (builder) => {
@@ -308,18 +330,34 @@ const userTasksSlice = createSlice({
         toast.error(state.error);
       })
 
-      .addCase(fetchUserTaskDetails.pending, (state) => {
+      .addCase(fetchUserTaskDetails.pending, (state, action) => {
         state.taskDetailsLoading = true;
-        state.error = null;
+        state.detailsError = null;
+        state.currentTaskRequestId = action.meta.requestId;
+        state.requestedTaskId = action.meta.arg;
+        if (
+          state.currentTask
+          && String(state.currentTask._id) !== String(action.meta.arg)
+        ) {
+          state.currentTask = null;
+        }
       })
       .addCase(fetchUserTaskDetails.fulfilled, (state, action) => {
+        if (state.currentTaskRequestId !== action.meta.requestId) return;
         state.taskDetailsLoading = false;
-        state.currentTask = action.payload;
+        if (String(action.payload?._id) === String(state.requestedTaskId)) {
+          state.currentTask = action.payload;
+        }
+        state.currentTaskRequestId = null;
       })
       .addCase(fetchUserTaskDetails.rejected, (state, action) => {
+        if (state.currentTaskRequestId !== action.meta.requestId) return;
         state.taskDetailsLoading = false;
-        state.error = action.payload?.message || 'Failed to fetch task details';
-        toast.error(state.error);
+        state.detailsError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to fetch task details';
+        state.currentTaskRequestId = null;
+        toast.error(state.detailsError);
       })
 
       .addCase(startUserTask.pending, (state) => {
@@ -344,7 +382,7 @@ const userTasksSlice = createSlice({
 
       .addCase(updateUserTaskProgress.pending, (state) => {
         state.actionLoading = true;
-        state.error = null;
+        state.actionError = null;
       })
       .addCase(updateUserTaskProgress.fulfilled, (state, action) => {
         state.actionLoading = false;
@@ -352,7 +390,8 @@ const userTasksSlice = createSlice({
         
         // OPTIMIZED: Only update progress-related fields instead of entire task
         // to prevent unnecessary re-renders and cascade effects
-        if (state.currentTask && state.currentTask._id === updatedTask._id) {
+        const updatedTaskId = updatedTask?._id || updatedTask?.taskId;
+        if (state.currentTask && String(state.currentTask._id) === String(updatedTaskId)) {
           // Only update the specific fields that are relevant to progress
           if (updatedTask.overallProgress !== undefined) {
             state.currentTask.overallProgress = updatedTask.overallProgress;
@@ -369,7 +408,7 @@ const userTasksSlice = createSlice({
         }
         
         // Update in tasks list (minimal update)
-        const taskIndex = state.tasks.results.findIndex(task => task._id === updatedTask._id);
+        const taskIndex = state.tasks.results.findIndex(task => String(task._id) === String(updatedTaskId));
         if (taskIndex !== -1) {
           if (updatedTask.overallProgress !== undefined) {
             state.tasks.results[taskIndex].overallProgress = updatedTask.overallProgress;
@@ -383,13 +422,34 @@ const userTasksSlice = createSlice({
       })
       .addCase(updateUserTaskProgress.rejected, (state, action) => {
         state.actionLoading = false;
-        state.error = action.payload?.message || 'Failed to update progress';
-        toast.error(state.error);
+        state.actionError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to update progress';
+        toast.error(state.actionError);
+      })
+
+      .addCase(updateUserTaskMetrics.pending, (state) => {
+        state.actionError = null;
+      })
+      .addCase(updateUserTaskMetrics.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (
+          state.currentTask
+          && String(state.currentTask._id) === String(updated?.taskId)
+        ) {
+          state.currentTask.overallProgress = updated.overallProgress;
+          state.currentTask.taskMetrics = updated.taskMetrics;
+        }
+      })
+      .addCase(updateUserTaskMetrics.rejected, (state, action) => {
+        state.actionError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to update task metrics';
       })
       
       .addCase(updateTaskQuestionnaire.pending, (state) => {
         state.actionLoading = true;
-        state.error = null;
+        state.actionError = null;
       })
       .addCase(updateTaskQuestionnaire.fulfilled, (state, action) => {
         state.actionLoading = false;
@@ -451,8 +511,10 @@ const userTasksSlice = createSlice({
       })
       .addCase(updateTaskQuestionnaire.rejected, (state, action) => {
         state.actionLoading = false;
-        state.error = action.payload?.message || 'Failed to save questionnaire';
-        toast.error(state.error);
+        state.actionError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to save questionnaire';
+        toast.error(state.actionError);
       })
 
       .addCase(addUserTaskComment.pending, (state) => {
@@ -491,7 +553,7 @@ const userTasksSlice = createSlice({
 
       .addCase(saveTaskSignature.pending, (state) => {
         state.actionLoading = true;
-        state.error = null;
+        state.actionError = null;
       })
       .addCase(saveTaskSignature.fulfilled, (state, action) => {
         state.actionLoading = false;
@@ -506,8 +568,10 @@ const userTasksSlice = createSlice({
       })
       .addCase(saveTaskSignature.rejected, (state, action) => {
         state.actionLoading = false;
-        state.error = action.payload?.message || 'Failed to save task signature';
-        toast.error(state.error);
+        state.actionError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to save task signature';
+        toast.error(state.actionError);
       })
 
       .addCase(uploadTaskAttachment.pending, (state) => {
@@ -528,7 +592,7 @@ const userTasksSlice = createSlice({
 
       .addCase(archiveTask.pending, (state) => {
         state.actionLoading = true;
-        state.error = null;
+        state.actionError = null;
       })
       .addCase(archiveTask.fulfilled, (state, action) => {
         state.actionLoading = false;
@@ -547,8 +611,10 @@ const userTasksSlice = createSlice({
       })
       .addCase(archiveTask.rejected, (state, action) => {
         state.actionLoading = false;
-        state.error = action.payload?.message || 'Failed to archive task';
-        toast.error(state.error);
+        state.actionError = action.payload?.error?.message
+          || action.payload?.message
+          || 'Failed to archive task';
+        toast.error(state.actionError);
       });
   }
 });

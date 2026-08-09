@@ -700,7 +700,7 @@ const CalendarView = () => {
       case 'pending':
         return 'var(--color-navy)'; // Dark blue
       case 'in_progress':
-        return '#1976d2'; // Medium blue
+        return 'var(--color-navy)'; // Medium blue
       case 'completed':
         return '#10b981'; // Green
       case 'cancelled':

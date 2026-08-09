@@ -62,18 +62,26 @@ import {
 import { toast } from 'react-hot-toast';
 import {
   fetchUserTaskDetails,
-  updateUserTaskProgress,
+  updateUserTaskMetrics,
   addUserTaskComment,
   exportTaskReport,
   updateTaskQuestionnaire,
   saveTaskSignature,
-  archiveTask
+  archiveTask,
+  clearCurrentTask
 } from '../../store/slices/userTasksSlice';
 import { userTaskService } from '../../services/userTask.service';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
 import SignaturePad from 'react-signature-canvas';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
+import {
+  calculateInspectionProgress,
+  isQuestionAnswered,
+  isRequiredQuestion
+} from '../../utils/inspectionProgress';
+import { API_CONFIG } from '../../config/api';
+import { validateSignatureDataUrl } from '../../utils/signatureValidation';
 
 import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
@@ -158,22 +166,25 @@ const glow = keyframes`
 
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 6px;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(55, 136, 216, 0.18), transparent 28%),
+    radial-gradient(circle at 92% 2%, rgba(44, 62, 80, 0.14), transparent 24%),
+    linear-gradient(180deg, #f7fbff 0%, #eef5fb 48%, #f8fafc 100%);
+  padding: 20px;
   position: relative;
   overflow-x: hidden;
 
   @media (max-width: 768px) {
-    padding: 4px;
+    padding: 12px;
   }
 
   @media (max-width: 480px) {
-    padding: 2px;
+    padding: 8px;
   }
 `;
 
 const MainContent = styled.div`
-  max-width: 1600px;
+  max-width: 1720px;
   margin: 0 auto;
   animation: ${fadeIn} 0.6s ease-out;
   width: 100%;
@@ -196,16 +207,15 @@ const TopBar = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 6px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 16px 24px;
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
+  margin: 0 0 14px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 14px 16px;
+  border-radius: 24px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.78);
   animation: ${slideIn} 0.5s ease-out;
   flex-wrap: wrap;
   gap: 12px;
@@ -228,11 +238,11 @@ const BackButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -342,7 +352,7 @@ const QuickActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background: ${props => props.primary ? 'linear-gradient(135deg, #3788d8, #2c3e50)' : 'rgba(255, 255, 255, 0.9)'};
+  background: ${props => props.primary ? 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))' : 'rgba(255, 255, 255, 0.9)'};
   color: ${props => props.primary ? 'white' : '#333'};
   border: ${props => props.primary ? '1px solid rgba(55, 136, 216, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)'};
   padding: 10px 16px;
@@ -475,16 +485,16 @@ const ExportOption = styled.button`
 `;
 
 const TaskHeader = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 251, 255, 0.92) 100%);
+  border-radius: 28px;
   padding: 32px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 20px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(226, 232, 240, 0.88);
   animation: ${fadeIn} 0.6s ease-out 0.1s both;
   position: relative;
   overflow: hidden;
@@ -508,8 +518,8 @@ const TaskHeader = styled.div`
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #3788d8, #2c3e50, #3788d8, #2c3e50);
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-navy), var(--color-navy-dark), var(--color-navy), var(--color-navy));
     background-size: 300% 100%;
     animation: ${shimmer} 3s ease-in-out infinite;
   }
@@ -520,7 +530,7 @@ const TaskTitle = styled.h1`
   font-weight: 800;
   color: #1a202c;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy-dark), var(--color-navy));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -543,9 +553,13 @@ const TaskTitle = styled.h1`
 
 const TaskMeta = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 18px;
   margin-top: 24px;
+
+  @media (max-width: 1180px) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -561,16 +575,16 @@ const TaskMeta = styled.div`
 `;
 
 const MetaCard = styled.div`
-  background: rgba(255, 255, 255, 0.7);
-  padding: 20px;
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 22px;
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   transition: all 0.3s ease;
-  margin: 6px;
+  margin: 0;
   box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 12px 28px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
   min-width: 0;
   overflow: hidden;
 
@@ -675,7 +689,7 @@ const StatusBadge = styled.div`
         `;
       case 'in_progress':
         return css`
-          background: linear-gradient(135deg, #3788d8, #2980b9);
+          background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
           color: white;
           box-shadow: 0 4px 15px rgba(55, 136, 216, 0.4);
         `;
@@ -755,11 +769,68 @@ const PriorityBadge = styled.div`
   }}
 `;
 
+const StatsBarContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 24px;
+  
+  @media (max-width: 1024px) {
+    flex-wrap: wrap;
+  }
+`;
+
+const StatCard = styled.div`
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+`;
+
+const StatCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+`;
+
+const StatCardValue = styled.div`
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+`;
+
+const StatMiniProgress = styled.div`
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+`;
+
+const StatMiniProgressBar = styled.div`
+  height: 100%;
+  border-radius: 2px;
+  background: ${props => props.color || '#3b82f6'};
+  width: ${props => props.progress || 0}%;
+  transition: width 0.3s ease;
+`;
+
 const ContentContainer = styled.div`
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 12px;
-  margin: 6px;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 0;
   
   @media (max-width: 1400px) {
     grid-template-columns: 1fr;
@@ -783,24 +854,28 @@ const MainPanel = styled.div`
 const SidePanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
   animation: ${fadeIn} 0.6s ease-out 0.3s both;
+  position: sticky;
+  top: 16px;
+  align-self: start;
   
   @media (max-width: 1400px) {
+    position: static;
     order: -1;
   }
 `;
 
 const TabsContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 8px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  padding: 7px;
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 
@@ -841,7 +916,7 @@ const Tab = styled.button`
   gap: 8px;
   padding: 12px 20px;
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -865,7 +940,7 @@ const Tab = styled.button`
   }
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
     color: white;
     transform: translateY(-2px);
     box-shadow: 
@@ -882,7 +957,7 @@ const Tab = styled.button`
     
     &:hover {
       background: rgba(55, 136, 216, 0.1);
-      color: #3788d8;
+      color: var(--color-navy);
       border: 1px solid rgba(55, 136, 216, 0.2);
       border-radius: 16px;
     }
@@ -910,17 +985,16 @@ const Tab = styled.button`
 `;
 
 const Card = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 24px;
   padding: 24px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   transition: all 0.3s ease;
-  margin: 6px;
+  margin: 0;
   min-width: 0;
   overflow: hidden;
 
@@ -976,7 +1050,7 @@ const SectionTitle = styled.h3`
   }
   
   svg {
-    color: #3788d8;
+    color: var(--color-navy);
     flex-shrink: 0;
 
     @media (max-width: 480px) {
@@ -987,15 +1061,15 @@ const SectionTitle = styled.h3`
 `;
 
 const ProgressContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 24px;
-  margin: 6px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 24px;
+  padding: 24px 28px;
+  margin: 0 0 14px;
+  backdrop-filter: blur(24px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 18px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   min-width: 0;
   overflow: hidden;
 
@@ -1020,18 +1094,18 @@ const ProgressHeader = styled.div`
 `;
 
 const ProgressTitle = styled.h4`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
   display: flex;
   align-items: center;
   gap: 8px;
 `;
 
 const ProgressValue = styled.div`
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1050,11 +1124,11 @@ const ProgressValue = styled.div`
 const ProgressBar = styled.div`
   width: 100%;
   height: 12px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  background: #e8eef5;
+  border-radius: 999px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(226, 232, 240, 0.86);
   
   &::after {
     content: '';
@@ -1063,24 +1137,24 @@ const ProgressBar = styled.div`
     top: 0;
     height: 100%;
     width: ${props => props.progress}%;
-    background: linear-gradient(90deg, #3788d8, #2c3e50);
-    border-radius: 8px;
+    background: linear-gradient(90deg, var(--color-navy), var(--color-navy-dark));
+    border-radius: 999px;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(55, 136, 216, 0.4);
   }
 `;
 
 const InspectionContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  backdrop-filter: blur(26px);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    0 22px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   overflow: visible;
   min-height: 80vh;
-  margin: 6px;
+  margin: 0;
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1106,9 +1180,10 @@ const InspectionContainer = styled.div`
 `;
 
 const InspectionHeader = styled.div`
-  padding: 24px 32px;
-  background: linear-gradient(135deg, rgba(55, 136, 216, 0.1), rgba(44, 62, 80, 0.1));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 26px 32px;
+  background:
+    linear-gradient(135deg, rgba(239, 247, 255, 0.96), rgba(248, 251, 255, 0.96));
+  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1120,7 +1195,6 @@ const InspectionHeader = styled.div`
   box-sizing: border-box;
   overflow: visible;
   position: relative;
-  z-index: 1;
   z-index: 1;
 
   > div:first-child {
@@ -1146,9 +1220,9 @@ const InspectionHeader = styled.div`
 `;
 
 const InspectionTitle = styled.h3`
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a202c;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -1228,18 +1302,17 @@ const DropdownButton = styled.button`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 18px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
   font-size: 14px;
-  min-width: 200px;
+  min-width: 280px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
   white-space: nowrap;
   flex-shrink: 1;
-  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
@@ -1290,14 +1363,14 @@ const DropdownButton = styled.button`
   }
   
   &:hover {
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     background: rgba(55, 136, 216, 0.05);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   }
   
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.1);
   }
 
@@ -1324,6 +1397,7 @@ const DropdownMenu = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   z-index: 10003 !important;
   max-height: 300px;
+  min-width: 280px;
   overflow-y: auto;
   display: block !important;
   visibility: visible !important;
@@ -1338,7 +1412,7 @@ const DropdownItem = styled.div`
   
   &:hover {
     background: rgba(55, 136, 216, 0.05);
-    border-left: 3px solid #3788d8;
+    border-left: 3px solid var(--color-navy);
   }
   
   &:last-child {
@@ -1350,10 +1424,10 @@ const NavigationButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border: 1px solid rgba(55, 136, 216, 0.3);
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -1431,8 +1505,9 @@ const NavigationButton = styled.button`
 `;
 
 const InspectionLayout = styled.div`
-  display: flex;
-  height: calc(80vh - 80px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  height: calc(82vh - 80px);
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1440,6 +1515,7 @@ const InspectionLayout = styled.div`
   overflow: hidden;
   
   @media (max-width: 1200px) {
+    display: flex;
     flex-direction: column;
     height: auto;
     overflow: visible;
@@ -1457,16 +1533,18 @@ const InspectionLayout = styled.div`
 `;
 
 const NavigationPanel = styled.div`
-  width: 320px;
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(248, 250, 252, 0.8);
+  width: ${props => props.$isOpen ? '300px' : '48px'};
+  min-width: ${props => props.$isOpen ? '300px' : '48px'};
+  border-right: 1px solid rgba(226, 232, 240, 0.78);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(241, 247, 253, 0.92));
   display: flex;
   flex-direction: column;
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.3);
   box-sizing: border-box;
-  min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  position: relative;
   
   @media (max-width: 1200px) {
     width: 100%;
@@ -1483,10 +1561,10 @@ const NavigationPanel = styled.div`
 `;
 
 const NavigationHeader = styled.div`
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.76);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
@@ -1505,9 +1583,9 @@ const NavigationHeader = styled.div`
 `;
 
 const NavigationTitle = styled.h4`
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0 0 12px 0;
   display: flex;
   align-items: center;
@@ -1533,7 +1611,7 @@ const KeyboardShortcutsBadge = styled.div`
   }
   
   svg {
-    color: #3788d8;
+    color: var(--color-navy);
   }
 `;
 
@@ -1542,8 +1620,8 @@ const ProgressSummary = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(55, 136, 216, 0.1);
-  border-radius: 8px;
+  background: rgba(239, 247, 255, 0.95);
+  border-radius: 14px;
   font-size: 12px;
   border: 1px solid rgba(55, 136, 216, 0.2);
   width: 100%;
@@ -1567,8 +1645,8 @@ const SectionNavigationControls = styled.div`
   flex-direction: column;
   align-items: stretch;
   padding: 12px 16px;
-  background: rgba(248, 250, 252, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.58);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
@@ -1612,8 +1690,8 @@ const SectionNavigationButton = styled.button`
   gap: 6px;
   padding: 8px 12px;
   border: 1px solid rgba(55, 136, 216, 0.3);
-  border-radius: 6px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -1684,12 +1762,12 @@ const SectionCounter = styled.div`
   text-align: center;
   font-size: 12px;
   font-weight: 600;
-  color: #1a202c;
-  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.92);
   padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
   box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
@@ -1728,16 +1806,16 @@ const SectionsNavigation = styled.div`
 `;
 
 const SectionNavItem = styled.div`
-  padding: 12px 16px;
-  margin: 6px 0;
-  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
@@ -1746,7 +1824,7 @@ const SectionNavItem = styled.div`
   gap: 8px;
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     transform: translateY(-1px);
     box-shadow: 
@@ -1754,7 +1832,7 @@ const SectionNavItem = styled.div`
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border-color: rgba(55, 136, 216, 0.3);
   ` : css`
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.82);
     color: #1a202c;
     border: 1px solid rgba(255, 255, 255, 0.3);
     
@@ -1841,15 +1919,15 @@ const ContentPanel = styled.div`
 `;
 
 const ContentHeader = styled.div`
-  padding: 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.8);
+  padding: 22px 32px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+  background: rgba(255, 255, 255, 0.86);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1867,9 +1945,9 @@ const ContentHeader = styled.div`
 `;
 
 const ContentTitle = styled.h4`
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0;
   display: flex;
   align-items: center;
@@ -1882,12 +1960,16 @@ const QuestionCounter = styled.div`
   gap: 8px;
   font-size: 14px;
   color: #64748b;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  padding: 8px 10px;
 `;
 
 const QuestionsContent = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 28px 32px;
   display: block;
   min-width: 0;
   max-width: 100%;
@@ -1915,14 +1997,14 @@ const QuestionsContent = styled.div`
 `;
 
 const QuestionCard = styled.div`
-  background: ${props => props.$isHighlighted ? 'rgba(255, 243, 205, 0.95)' : 'rgba(255, 255, 255, 0.9)'};
-  border-radius: 16px;
-  padding: 24px;
-  margin: 6px 0 20px 0;
-  border: 2px solid ${props => props.$isHighlighted ? '#f59e0b' : 'rgba(255, 255, 255, 0.4)'};
+  background: ${props => props.$isHighlighted ? 'rgba(255, 248, 225, 0.98)' : 'rgba(255, 255, 255, 0.96)'};
+  border-radius: 22px;
+  padding: 26px;
+  margin: 0 0 22px 0;
+  border: 1px solid ${props => props.$isHighlighted ? '#f59e0b' : 'rgba(226, 232, 240, 0.95)'};
   transition: all 0.3s ease;
   box-shadow: 
-    ${props => props.$isHighlighted ? '0 6px 20px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : '0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.3)'};
+    ${props => props.$isHighlighted ? '0 16px 32px rgba(245, 158, 11, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : '0 16px 34px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.82)'};
   position: relative;
   min-width: 0;
   max-width: 100%;
@@ -1953,11 +2035,11 @@ const QuestionCard = styled.div`
   }
   
   &:hover {
-    border-color: rgba(55, 136, 216, 0.4);
+    border-color: rgba(55, 136, 216, 0.35);
     transform: translateY(-2px);
     box-shadow: 
-      0 8px 25px rgba(0, 0, 0, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      0 18px 40px rgba(15, 23, 42, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
 
     @media (max-width: 768px) {
       transform: translateY(-1px);
@@ -1965,7 +2047,7 @@ const QuestionCard = styled.div`
   }
   
   &::after {
-    content: '';
+    content: none;
     position: absolute;
     bottom: -10px;
     left: 50%;
@@ -2001,9 +2083,9 @@ const QuestionHeader = styled.div`
 `;
 
 const QuestionText = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
   flex: 1;
   line-height: 1.5;
   min-width: 0;
@@ -2051,7 +2133,7 @@ const QuestionBadge = styled.div`
     color: white;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
   ` : css`
-    background: linear-gradient(135deg, #3788d8, #2980b9);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     box-shadow: 0 2px 8px rgba(55, 136, 216, 0.3);
   `}
@@ -2062,13 +2144,13 @@ const ScoreBadge = styled.div`
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: ${props => props.hasResponse ?
-    'linear-gradient(135deg, #27ae60, #2ecc71)' :
-    'linear-gradient(135deg, #f3f4f6, #e5e7eb)'};
+    'linear-gradient(135deg, #22c55e, #16a34a)' :
+    'linear-gradient(135deg, #f8fafc, #e8eef5)'};
   color: ${props => props.hasResponse ? 'white' : '#6b7280'};
   box-shadow: ${props => props.hasResponse ?
     '0 2px 8px rgba(39, 174, 96, 0.3)' :
@@ -2150,7 +2232,7 @@ const InputGroup = styled.div`
     
     &:focus {
       outline: none;
-      border-color: #3788d8;
+      border-color: var(--color-navy);
       box-shadow: 
         0 0 0 4px rgba(55, 136, 216, 0.1),
         0 4px 15px rgba(0, 0, 0, 0.1);
@@ -2203,7 +2285,7 @@ const OptionButton = styled.button`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   ${props => props.selected ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     border-color: transparent;
     transform: translateY(-2px);
@@ -2213,7 +2295,7 @@ const OptionButton = styled.button`
   ` : css`
     &:hover {
       background: rgba(55, 136, 216, 0.1);
-      border-color: #3788d8;
+      border-color: var(--color-navy);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
@@ -2251,7 +2333,7 @@ const CheckboxItem = styled.label`
   input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: #3788d8;
+    accent-color: var(--color-navy);
   }
 `;
 
@@ -2305,7 +2387,7 @@ const QuestionNumber = styled.div`
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   font-weight: 700;
   font-size: 14px;
@@ -2394,7 +2476,7 @@ const CommentInput = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 
       0 0 0 4px rgba(55, 136, 216, 0.1),
       0 4px 15px rgba(0, 0, 0, 0.1);
@@ -2409,7 +2491,7 @@ const SendButton = styled.button`
   height: 50px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -2449,7 +2531,7 @@ const RefreshButton = styled.button`
   
   &:hover {
     background: rgba(55, 136, 216, 0.1);
-    color: #3788d8;
+    color: var(--color-navy);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: rgba(55, 136, 216, 0.3);
@@ -2554,7 +2636,7 @@ const ScoreLabel = styled.div`
 const ScoreValue = styled.div`
   font-size: 24px;
   font-weight: 800;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2628,7 +2710,7 @@ const MetricLabel = styled.div`
 const MetricValue = styled.div`
   font-size: 28px;
   font-weight: 800;
-  color: ${props => props.$color || '#3788d8'};
+  color: ${props => props.$color || 'var(--color-navy)'};
   margin-bottom: 4px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -2904,7 +2986,7 @@ const CommentTextarea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #3788d8;
+    border-color: var(--color-navy);
     box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.1);
   }
 
@@ -2921,7 +3003,7 @@ const CommentSubmitButton = styled.button`
   padding: 12px 20px;
   background: ${props => props.disabled
     ? '#9ca3af'
-    : 'linear-gradient(135deg, #3788d8, #2980b9)'};
+    : 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))'};
   color: white;
   border: none;
   border-radius: 8px;
@@ -3159,7 +3241,7 @@ const SignatureTab = styled.button`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   ${props => props.active ? css`
-    background: linear-gradient(135deg, #3788d8, #2c3e50);
+    background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
     color: white;
     transform: translateY(-2px);
     box-shadow: 
@@ -3192,7 +3274,7 @@ const SignatureCanvas = styled.div`
   min-height: 0;
   
   &:hover {
-    border-color: ${props => props.clickable ? '#3788d8' : '#e5e7eb'};
+    border-color: ${props => props.clickable ? 'var(--color-navy)' : '#e5e7eb'};
     background: ${props => props.clickable ? 'rgba(55, 136, 216, 0.05)' : '#f9fafb'};
   }
   
@@ -3280,7 +3362,7 @@ const SaveButton = styled(SignatureButton)`
 `;
 
 const UploadButton = styled(SignatureButton)`
-  background: linear-gradient(135deg, #3788d8, #2980b9);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   border: none;
   
@@ -3295,7 +3377,7 @@ const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
   border: 4px solid rgba(55, 136, 216, 0.2);
-  border-top: 4px solid #3788d8;
+  border-top: 4px solid var(--color-navy);
   border-radius: 50%;
   animation: ${rotate} 1s linear infinite;
   margin: 20px auto;
@@ -3305,7 +3387,7 @@ const LoadingIndicator = styled.div`
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   color: white;
   padding: 12px 16px;
   border-radius: 12px;
@@ -3374,7 +3456,7 @@ const StartTaskButton = styled.button`
 `;
 
 const ContinueButton = styled(StartTaskButton)`
-  background: linear-gradient(135deg, #3788d8, #2c3e50);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
   box-shadow: 
     0 4px 15px rgba(55, 136, 216, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -3409,32 +3491,24 @@ const CompletionBadge = styled.div`
 `;
 
 const formatTimeSpent = (timeInHours) => {
-  if (!timeInHours || timeInHours === 0) return '0:00';
-
-  const totalMinutes = Math.round(timeInHours * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}`;
-  } else {
-    return `0:${minutes.toString().padStart(2, '0')}`;
-  }
+  const totalSeconds = Math.floor(Math.max(0, Number(timeInHours) || 0) * 3600);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-// Format time from seconds with milliseconds
+// Format active inspection time as HH:MM:SS.
 const formatTimeFromSeconds = (timeInSeconds) => {
-  if (!timeInSeconds || timeInSeconds === 0) return '00:00:00.000';
+  if (!timeInSeconds || timeInSeconds === 0) return '00:00:00';
   
   const totalSeconds = Math.floor(timeInSeconds);
-  const milliseconds = Math.floor((timeInSeconds - totalSeconds) * 1000);
   
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   
-  // Show HH:MM:SS.mmm format
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 // Format time as HH:MM for display (simpler format)
@@ -3500,31 +3574,40 @@ const getUnansweredQuestionsInSection = (section, responses) => {
 
   section.questions.forEach(question => {
     // Only check required questions
-    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+    if (!isRequiredQuestion(question)) {
       return; // Skip non-required questions
     }
 
     const questionId = question._id || question.id;
-    let hasResponse = false;
-
-    // Check if question has a response
-    if (responses[questionId] !== undefined && responses[questionId] !== null && responses[questionId] !== '') {
-      hasResponse = true;
-    } else {
-      const responseKey = Object.keys(responses).find(key =>
-        key.includes(questionId) || key.endsWith(questionId)
-      );
-      if (responseKey && responses[responseKey] !== undefined && responses[responseKey] !== null && responses[responseKey] !== '') {
-        hasResponse = true;
-      }
-    }
-
-    if (!hasResponse) {
+    if (!isQuestionAnswered(responses, questionId)) {
       unanswered.push(questionId);
     }
   });
 
   return unanswered;
+};
+
+// Completion-rate helpers (answered questions / total questions in a section or page)
+const getSectionCompletionRate = (section, responses) => {
+  if (!section || !section.questions) return { answered: 0, total: 0, percentage: 0 };
+  const total = section.questions.length;
+  let answered = 0;
+  section.questions.forEach(q => {
+    const qId = q._id || q.id;
+    if (isQuestionAnswered(responses, qId)) answered++;
+  });
+  return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
+};
+
+const getPageCompletionRate = (page, responses) => {
+  if (!page || !page.sections) return { answered: 0, total: 0, percentage: 0 };
+  let answered = 0, total = 0;
+  page.sections.forEach(section => {
+    const sr = getSectionCompletionRate(section, responses);
+    answered += sr.answered;
+    total += sr.total;
+  });
+  return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
 };
 
 const calculateSectionScore = (section, responses) => {
@@ -3749,8 +3832,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
-                  border: '1px solid #3788d8',
-                  background: '#3788d8',
+                  border: '1px solid var(--color-navy)',
+                  background: 'var(--color-navy)',
                   color: 'white',
                   fontSize: '12px',
                   cursor: 'pointer',
@@ -3788,8 +3871,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
               style={{
                 padding: '12px 24px',
                 borderRadius: '8px',
-                border: '1px solid #3788d8',
-                background: '#3788d8',
+                border: '1px solid var(--color-navy)',
+                background: 'var(--color-navy)',
                 color: 'white',
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -3907,16 +3990,20 @@ const UserTaskDetail = () => {
   const lastKnownLocationRef = useRef(null);
   
   // Refs for debouncing progress updates to reduce API calls
-  const progressUpdateTimeoutRef = useRef(null);
-  const lastProgressUpdateRef = useRef(0);
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
+  const [isSectionsPanelOpen, setIsSectionsPanelOpen] = useState(true);
+  const [showSectionsTour, setShowSectionsTour] = useState(() => {
+    return !localStorage.getItem('mirsat_sections_tour_dismissed');
+  });
   const [timerRunning, setTimerRunning] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPage, setSelectedPage] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureImage, setSignatureImage] = useState(null);
+  const [hasSignatureInk, setHasSignatureInk] = useState(false);
+  const signatureHasInkRef = useRef(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState('draw');
@@ -4030,10 +4117,28 @@ const UserTaskDetail = () => {
 
   const {
     currentTask,
-    loading,
-    error,
+    taskDetailsLoading: loading,
+    detailsError: error,
     actionLoading
   } = useSelector((state) => state.userTasks);
+  const displayProgress = currentTask?.status === 'archived'
+    ? 100
+    : taskCompletionPercentage;
+  const questionAnswerSummary = useMemo(() => {
+    const pagesForProgress = currentTask?.inspectionLevel?.pages?.length > 0
+      ? currentTask.inspectionLevel.pages
+      : inspectionPages;
+
+    if (!currentTask || pagesForProgress.length === 0) {
+      return { answeredCount: 0, totalCount: 0 };
+    }
+
+    return calculateInspectionProgress({
+      inspectionLevel: { pages: pagesForProgress },
+      preInspectionQuestions: currentTask.preInspectionQuestions || [],
+      responses: currentTask.questionnaireResponses || {}
+    });
+  }, [currentTask, inspectionPages]);
 
   const scheduledStartLocked = Boolean(
     currentTask?.startDate && new Date(currentTask.startDate).getTime() > Date.now()
@@ -4056,70 +4161,21 @@ const UserTaskDetail = () => {
   const calculateTaskCompletionPercentage = useCallback((taskData = null) => {
     const taskToUse = taskData || currentTask;
 
-    if (!taskToUse || !inspectionPages || inspectionPages.length === 0) {
+    const pagesForProgress = taskToUse?.inspectionLevel?.pages?.length > 0
+      ? taskToUse.inspectionLevel.pages
+      : inspectionPages;
+
+    if (!taskToUse || pagesForProgress.length === 0) {
       if (!taskData) setTaskCompletionPercentage(0); // Only update state if using current task
       return 0;
     }
 
-    let totalQuestions = 0;
-    let answeredQuestions = 0;
-
-    inspectionPages.forEach(page => {
-      if (page.sections) {
-        page.sections.forEach(section => {
-          if (section.questions) {
-            section.questions.forEach(question => {
-              // CRITICAL FIX: Only count required questions in progress calculation
-              // Exclude recommended questions
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-                return; // Skip recommended/non-mandatory questions
-              }
-
-              totalQuestions++;
-
-              const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (taskToUse.questionnaireResponses) {
-                if (taskToUse.questionnaireResponses[questionId] !== undefined) {
-                  const response = taskToUse.questionnaireResponses[questionId];
-                  // Count as answered if response exists and is not empty
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(taskToUse.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = taskToUse.questionnaireResponses[responseKey];
-                    // Count as answered if response exists and is not empty
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (hasResponse) {
-                answeredQuestions++;
-              }
-            });
-          }
-        });
-      }
+    const summary = calculateInspectionProgress({
+      inspectionLevel: { pages: pagesForProgress },
+      preInspectionQuestions: taskToUse.preInspectionQuestions || [],
+      responses: taskToUse.questionnaireResponses || {}
     });
-
-    if (taskToUse.preInspectionQuestions && taskToUse.preInspectionQuestions.length > 0) {
-      taskToUse.preInspectionQuestions.forEach(question => {
-        totalQuestions++;
-        if (taskToUse.questionnaireResponses &&
-          taskToUse.questionnaireResponses[question._id] !== undefined) {
-          answeredQuestions++;
-        }
-      });
-    }
-
-    const percentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
-
-    console.log(`Task completion calculation: ${answeredQuestions}/${totalQuestions} = ${percentage}% (using ${taskData ? 'fresh data' : 'current state'})`);
+    const percentage = summary.completionRate;
 
     if (!taskData) {
       setTaskCompletionPercentage(percentage);
@@ -4143,30 +4199,12 @@ const UserTaskDetail = () => {
           if (section.questions) {
             section.questions.forEach((question, questionIndex) => {
               // Only check required questions
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+              if (!isRequiredQuestion(question)) {
                 return; // Skip recommended/non-mandatory questions
               }
 
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 unansweredDetails.push({
                   pageName: page.name || `Page ${pageIndex + 1}`,
                   pageIndex: pageIndex + 1,
@@ -4238,14 +4276,14 @@ const UserTaskDetail = () => {
         clearInterval(displayTimerRef.current);
       }
 
-      // Update display timer every 100ms for smooth milliseconds display
+      // Keep the display aligned with the persisted, whole-second timer.
       displayTimerRef.current = setInterval(() => {
         if (sessionStartTimeRef.current) {
           const elapsed = (Date.now() - sessionStartTimeRef.current) / 1000; // in seconds
           const totalTime = accumulatedTimeRef.current + elapsed;
           setDisplayTime(totalTime);
         }
-      }, 100);
+      }, 1000);
     }
   }, [isScreenActive]); // FIXED: Removed currentTask dependency
 
@@ -4281,14 +4319,10 @@ const UserTaskDetail = () => {
         if (totalActiveTimeInSeconds > 0) {
           try {
             // Use synchronous dispatch or ensure it completes
-            await dispatch(updateUserTaskProgress({
+            await dispatch(updateUserTaskMetrics({
               taskId: task._id,
-              subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-              status: task.status,
-              taskMetrics: {
-                ...task.taskMetrics,
-                timeSpent: totalActiveTimeInSeconds // Save in seconds
-              }
+              timeSpent: totalActiveTimeInSeconds,
+              subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
             }));
           } catch (error) {
             console.error('Failed to save time to backend on pause:', error);
@@ -4308,14 +4342,10 @@ const UserTaskDetail = () => {
       const totalActiveTimeInSeconds = accumulatedTimeRef.current + finalSessionTime;
 
       // Update task metrics with final time in seconds (backend will handle conversion if needed)
-      dispatch(updateUserTaskProgress({
+      dispatch(updateUserTaskMetrics({
         taskId: task._id,
-        subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: task.status,
-        taskMetrics: {
-          ...task.taskMetrics,
-          timeSpent: totalActiveTimeInSeconds // Save in seconds
-        }
+        timeSpent: totalActiveTimeInSeconds,
+        subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
       }));
     }
   }, [pauseScreenTimer, dispatch]); // FIXED: Removed currentTask dependency
@@ -4383,12 +4413,16 @@ const UserTaskDetail = () => {
   }, [currentTask, inspectionPages]);
 
   useEffect(() => {
+    setSelectedPage(null);
+    setSelectedSection(null);
+    setInspectionPages([]);
+    dispatch(clearCurrentTask());
     dispatch(fetchUserTaskDetails(taskId));
 
     if (location.state?.questionnaireCompleted) {
       setActiveTab('inspection');
     }
-  }, [dispatch, taskId, location.state]);
+  }, [dispatch, taskId, location.state?.questionnaireCompleted]);
 
   // Add keyboard navigation for sections and pages
   useEffect(() => {
@@ -4505,7 +4539,7 @@ const UserTaskDetail = () => {
   // CRITICAL FIX: Only depend on status and signature, not on callbacks (they use refs now)
   useEffect(() => {
     // Start timer for in-progress tasks
-    if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
+    if (activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
       if (!isScreenActive) {
         // Small delay to ensure state is set
         const timer = setTimeout(() => {
@@ -4521,7 +4555,7 @@ const UserTaskDetail = () => {
         pauseScreenTimer(false); // Don't save to backend here to avoid loops
       }
     }
-  }, [currentTask?.status, currentTask?.signature, isScreenActive]); // FIXED: Removed callback dependencies
+  }, [activeTab, currentTask?.status, currentTask?.signature, isScreenActive]); // FIXED: Removed callback dependencies
 
   // Handle page visibility changes
   // CRITICAL FIX: Use refs for task data to prevent infinite loops
@@ -4530,7 +4564,7 @@ const UserTaskDetail = () => {
       const task = currentTaskRef.current;
       if (document.hidden) {
         pauseScreenTimer(true); // Save to backend when page becomes hidden
-      } else if (task?.status === 'in_progress' && !task?.signature && task?.status !== 'completed' && task?.status !== 'archived') {
+      } else if (activeTab === 'inspection' && task?.status === 'in_progress' && !task?.signature && task?.status !== 'completed' && task?.status !== 'archived') {
         startScreenTimer();
       }
     };
@@ -4544,25 +4578,19 @@ const UserTaskDetail = () => {
         const task = currentTaskRef.current;
         // Use sendBeacon or synchronous save for beforeunload
         if (task && task.status === 'in_progress' && totalActiveTimeInSeconds > 0) {
-          // Save synchronously using navigator.sendBeacon or sync fetch
-          const data = JSON.stringify({
-            taskId: task._id,
-            subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-            status: task.status,
-            taskMetrics: {
-              ...task.taskMetrics,
-              timeSpent: totalActiveTimeInSeconds
-            }
-          });
-          
-          // Try to save using sendBeacon (works even after page unload starts)
-          if (navigator.sendBeacon) {
-            const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-            navigator.sendBeacon(
-              `${apiBaseUrl}/api/v1/user-tasks/${task._id}/progress/${task.inspectionLevel?.subLevels?.[0]?._id || 'default'}`,
-              data
-            );
-          }
+          const token = localStorage.getItem('token');
+          fetch(`${API_CONFIG.BASE_URL}/user-tasks/${task._id}/metrics`, {
+            method: 'PATCH',
+            keepalive: true,
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              timeSpent: totalActiveTimeInSeconds,
+              subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
+            })
+          }).catch(() => undefined);
         }
       }
       pauseScreenTimer(false); // Don't save again, already saved above
@@ -4582,7 +4610,7 @@ const UserTaskDetail = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isScreenActive]); // FIXED: Removed all callback and currentTask dependencies - they use refs now
+  }, [activeTab, isScreenActive]); // Task data is read through refs; the timer is active only on the inspection tab.
 
   useEffect(() => {
     if (currentTask) {
@@ -4612,15 +4640,22 @@ const UserTaskDetail = () => {
 
       setInspectionPages(pagesToUse);
 
-      // Only set default page/section if not already set (prevents overriding during auto-updates)
-      if (pagesToUse.length > 0 && !selectedPage) {
-        const firstPageId = pagesToUse[0]._id || pagesToUse[0].id;
-        setSelectedPage(firstPageId);
+      if (pagesToUse.length > 0) {
+        const validSelectedPage = pagesToUse.find(
+          (page) => String(page.id || page._id) === String(selectedPage)
+        );
+        const pageToSelect = validSelectedPage || pagesToUse[0];
+        const pageId = pageToSelect.id || pageToSelect._id;
+        const validSelectedSection = pageToSelect.sections?.find(
+          (section) => String(section.id || section._id) === String(selectedSection)
+        );
+        const sectionToSelect = validSelectedSection || pageToSelect.sections?.[0];
 
-        if (pagesToUse[0].sections && pagesToUse[0].sections.length > 0 && !selectedSection) {
-          const firstSectionId = pagesToUse[0].sections[0]._id || pagesToUse[0].sections[0].id;
-          setSelectedSection(firstSectionId);
-        }
+        setSelectedPage(pageId);
+        setSelectedSection(sectionToSelect?.id || sectionToSelect?._id || null);
+      } else {
+        setSelectedPage(null);
+        setSelectedSection(null);
       }
 
       // Recalculate completion percentage when task data changes
@@ -4656,6 +4691,14 @@ const UserTaskDetail = () => {
       ctx.lineCap = 'round';
     }
   }, [showSignatureModal, signatureMethod]);
+
+  useEffect(() => {
+    if (showSignatureModal && !currentTask?.signature) {
+      signatureHasInkRef.current = false;
+      setHasSignatureInk(false);
+      setSignatureImage(null);
+    }
+  }, [showSignatureModal, currentTask?.signature]);
 
   // Lock body scroll when signature modal is open
   useEffect(() => {
@@ -4696,14 +4739,10 @@ const UserTaskDetail = () => {
 
     if (totalActiveTimeInSeconds > 0) {
       try {
-        await dispatch(updateUserTaskProgress({
+        await dispatch(updateUserTaskMetrics({
           taskId: task._id,
-          subLevelId: task.inspectionLevel?.subLevels?.[0]?._id || 'default',
-          status: task.status,
-          taskMetrics: {
-            ...task.taskMetrics,
-            timeSpent: totalActiveTimeInSeconds // Save in seconds
-          }
+          timeSpent: totalActiveTimeInSeconds,
+          subLevelTimeSpent: task.taskMetrics?.subLevelTimeSpent
         }));
       } catch (error) {
         console.error('Failed to save time to backend:', error);
@@ -4794,11 +4833,6 @@ const UserTaskDetail = () => {
         clearInterval(sessionTimerRef.current);
         sessionTimerRef.current = null;
       }
-      // Clear debounced progress update timeout
-      if (progressUpdateTimeoutRef.current) {
-        clearTimeout(progressUpdateTimeoutRef.current);
-        progressUpdateTimeoutRef.current = null;
-      }
       // Clear debounce timers for text inputs
       if (debounceTimersRef.current) {
         Object.values(debounceTimersRef.current).forEach(timer => clearTimeout(timer));
@@ -4814,8 +4848,7 @@ const UserTaskDetail = () => {
 
     const totalQuestions = currentTask.preInspectionQuestions.length;
     const answeredQuestions = currentTask.preInspectionQuestions.filter(question => {
-      const response = currentTask.questionnaireResponses?.[question._id];
-      return response !== undefined && response !== null && response !== '';
+      return isQuestionAnswered(currentTask.questionnaireResponses || {}, question);
     }).length;
 
     return answeredQuestions === totalQuestions;
@@ -4921,16 +4954,10 @@ const UserTaskDetail = () => {
     setRefreshLoading(true);
 
     try {
-      const completionPercentage = calculateTaskCompletionPercentage();
-
-      await dispatch(updateUserTaskProgress({
+      await dispatch(updateUserTaskMetrics({
         taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: currentTask.status,
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage
-        }
+        timeSpent: currentTask.taskMetrics?.timeSpent,
+        subLevelTimeSpent: currentTask.taskMetrics?.subLevelTimeSpent
       })).unwrap();
 
       toast.success(t('tasks.progressUpdatedSuccessfully'));
@@ -4946,7 +4973,7 @@ const UserTaskDetail = () => {
 
     if (!currentTask.signature) {
       setShowSignatureModal(true);
-      toast.info(t('tasks.pleaseProvideSignatureBeforeDownloading'));
+      toast(t('tasks.pleaseProvideSignatureBeforeDownloading'));
       return;
     }
 
@@ -4961,15 +4988,10 @@ const UserTaskDetail = () => {
     const completionPercentage = calculateTaskCompletionPercentage();
 
     if (currentTask.overallProgress !== completionPercentage) {
-      await dispatch(updateUserTaskProgress({
+      await dispatch(updateUserTaskMetrics({
         taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: currentTask.status,
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
-          subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
-        }
+        timeSpent: currentTask.taskMetrics?.timeSpent,
+        subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
       })).unwrap();
     }
   };
@@ -5064,7 +5086,7 @@ const UserTaskDetail = () => {
   const debounceTimersRef = useRef({});
   const pendingSavesRef = useRef(new Set());
 
-  // For text/number inputs - only update local state, API call happens on blur
+  // For typed inputs, update local state immediately and persist shortly after changes.
   const handleInputChange = (questionId, value) => {
     setLocalInputValues(prev => ({
       ...prev,
@@ -5072,8 +5094,28 @@ const UserTaskDetail = () => {
     }));
   };
 
+  const scheduleInputSave = useCallback((questionId, value, onSaveResponse) => {
+    if (debounceTimersRef.current[questionId]) {
+      clearTimeout(debounceTimersRef.current[questionId]);
+    }
+
+    debounceTimersRef.current[questionId] = setTimeout(() => {
+      delete debounceTimersRef.current[questionId];
+      onSaveResponse(questionId, value);
+    }, 450);
+  }, []);
+
   const getCaptureMetadataFromLocation = useCallback(async (captureType = 'file') => {
+    const allowSignatureWithoutCoordinates = captureType === 'question_signature';
+
     if (!navigator.geolocation) {
+      if (allowSignatureWithoutCoordinates) {
+        return {
+          capturedAt: new Date().toISOString(),
+          locationStatus: 'unavailable',
+          captureType
+        };
+      }
       throw new Error('Location services are not available on this device/browser.');
     }
 
@@ -5201,6 +5243,13 @@ const UserTaskDetail = () => {
 
     const permissionState = await readPermissionState();
     if (permissionState === 'denied') {
+      if (allowSignatureWithoutCoordinates) {
+        return {
+          capturedAt: new Date().toISOString(),
+          locationStatus: 'denied',
+          captureType
+        };
+      }
       showLocationSetupPopup({ permissionState, errorCode: 1 });
       throw new Error('Location permission is required to save image/signature captures.');
     }
@@ -5276,6 +5325,13 @@ const UserTaskDetail = () => {
           return {
             capturedAt: new Date().toISOString(),
             locationStatus: 'unavailable',
+            captureType
+          };
+        }
+        if (allowSignatureWithoutCoordinates) {
+          return {
+            capturedAt: new Date().toISOString(),
+            locationStatus: permissionState === 'denied' ? 'denied' : 'unavailable',
             captureType
           };
         }
@@ -5394,11 +5450,6 @@ const UserTaskDetail = () => {
       
       // CRITICAL FIX: Store task data for use in setTimeout to avoid stale closures
       const taskId = currentTask._id;
-      const subLevelId = currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default';
-      const taskStatus = currentTask.status;
-      const taskMetrics = currentTask.taskMetrics;
-      const currentOverallProgress = currentTask.overallProgress || 0;
-
       const currentResponses = currentTask.questionnaireResponses || {};
       const updatedResponses = {
         ...currentResponses,
@@ -5438,40 +5489,11 @@ const UserTaskDetail = () => {
       // Recalculate local scores without API call
       calculateScores();
 
-      // OPTIMIZED: Debounce progress updates to reduce API calls
-      // Only update progress if more than 5 seconds have passed since last update
-      const now = Date.now();
-      const completionPercentage = calculateTaskCompletionPercentage();
-      const progressDiff = Math.abs(completionPercentage - currentOverallProgress);
-
-      // Clear any pending progress update
-      if (progressUpdateTimeoutRef.current) {
-        clearTimeout(progressUpdateTimeoutRef.current);
-      }
-
-      // Only schedule progress update if there's a significant change (>5%)
-      // OR if enough time has passed (10 seconds) since last update
-      if (progressDiff > 5 || (now - lastProgressUpdateRef.current > 10000 && progressDiff > 0)) {
-        // Debounce progress update by 2 seconds to batch multiple rapid responses
-        // CRITICAL FIX: Use captured values instead of currentTask to avoid stale closures
-        progressUpdateTimeoutRef.current = setTimeout(async () => {
-          try {
-            await dispatch(updateUserTaskProgress({
-              taskId: taskId,
-              subLevelId: subLevelId,
-              status: taskStatus,
-              taskMetrics: {
-                ...taskMetrics,
-                completionPercentage: completionPercentage
-              }
-            })).unwrap();
-            lastProgressUpdateRef.current = Date.now();
-            console.log('Progress updated to:', completionPercentage);
-          } catch (error) {
-            console.error('Failed to update progress:', error);
-          }
-        }, 2000);
-      }
+      const liveCompletionPercentage = calculateTaskCompletionPercentage({
+        ...currentTask,
+        questionnaireResponses: updatedResponses
+      });
+      setTaskCompletionPercentage(liveCompletionPercentage);
 
       // REMOVED: Unnecessary fetchUserTaskDetails call
       // The questionnaire response is saved, no need to refetch entire task data
@@ -5523,12 +5545,21 @@ const UserTaskDetail = () => {
 
     ctx.lineTo(x, y);
     ctx.stroke();
+    if (!signatureHasInkRef.current) {
+      signatureHasInkRef.current = true;
+      setHasSignatureInk(true);
+    }
   };
 
   const handleStopDrawing = () => {
     if (!signatureCanvasRef.current || signatureMethod !== 'draw') return;
 
     setIsDrawing(false);
+
+    if (!signatureHasInkRef.current) {
+      setSignatureImage(null);
+      return;
+    }
 
     const canvas = signatureCanvasRef.current;
     const dataURL = canvas.toDataURL('image/png');
@@ -5542,6 +5573,8 @@ const UserTaskDetail = () => {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    signatureHasInkRef.current = false;
+    setHasSignatureInk(false);
     setSignatureImage(null);
   };
 
@@ -5557,8 +5590,21 @@ const UserTaskDetail = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setSignatureImage(event.target.result);
+    reader.onload = async (event) => {
+      const dataUrl = event.target.result;
+      const validation = await validateSignatureDataUrl(dataUrl);
+      if (!validation.valid) {
+        toast.error(validation.message);
+        setSignatureImage(null);
+        setHasSignatureInk(false);
+        signatureHasInkRef.current = false;
+        e.target.value = '';
+        return;
+      }
+
+      setSignatureImage(dataUrl);
+      setHasSignatureInk(true);
+      signatureHasInkRef.current = true;
     };
     reader.onerror = () => {
       toast.error(t('tasks.failedToReadFile'));
@@ -5573,8 +5619,14 @@ const UserTaskDetail = () => {
   };
 
   const handleSaveSignature = async () => {
-    if (!signatureImage) {
+    if (!signatureImage || !hasSignatureInk) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSaving'));
+      return;
+    }
+
+    const signatureValidation = await validateSignatureDataUrl(signatureImage);
+    if (!signatureValidation.valid) {
+      toast.error(signatureValidation.message);
       return;
     }
 
@@ -5594,7 +5646,7 @@ const UserTaskDetail = () => {
         signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
+          completionRate: completionPercentage,
           timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
@@ -5632,8 +5684,14 @@ const UserTaskDetail = () => {
       return;
     }
 
-    if (!signatureImage) {
+    if (!signatureImage || !hasSignatureInk) {
       toast.error(t('tasks.pleaseProvideSignatureBeforeSubmitting'));
+      return;
+    }
+
+    const signatureValidation = await validateSignatureDataUrl(signatureImage);
+    if (!signatureValidation.valid) {
+      toast.error(signatureValidation.message);
       return;
     }
 
@@ -5654,7 +5712,7 @@ const UserTaskDetail = () => {
         signatureMetadata,
         taskMetrics: {
           ...currentTask.taskMetrics,
-          completionPercentage: completionPercentage,
+          completionRate: completionPercentage,
           timeSpent: totalActiveTimeInSeconds, // Save in seconds
           subLevelTimeSpent: { ...(currentTask.taskMetrics?.subLevelTimeSpent || {}) }
         }
@@ -5662,22 +5720,6 @@ const UserTaskDetail = () => {
 
       // Log signature added
       await FrontendLogger.logSignatureAdded(currentTask._id, currentTask.title);
-
-      // Then update task status to completed
-      await dispatch(updateUserTaskProgress({
-        taskId: currentTask._id,
-        subLevelId: currentTask.inspectionLevel?.subLevels?.[0]?._id || 'default',
-        status: 'completed',
-        taskMetrics: {
-          ...currentTask.taskMetrics,
-          completionPercentage: 100,
-          timeSpent: totalActiveTimeInSeconds, // Save in seconds
-          completedAt: new Date().toISOString()
-        }
-      })).unwrap();
-
-      // Log task completion
-      await FrontendLogger.logTaskComplete(currentTask._id, currentTask.title);
 
       // Stop timer permanently
       stopTimerPermanently();
@@ -5723,30 +5765,12 @@ const UserTaskDetail = () => {
           if (section.questions) {
             section.questions.forEach(question => {
               // Only check required questions (exclude recommended)
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+              if (!isRequiredQuestion(question)) {
                 return; // Skip recommended/non-mandatory questions
               }
 
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 unansweredQuestions.push({
                   questionId,
                   questionText: question.text || question.question || 'Question',
@@ -5767,17 +5791,12 @@ const UserTaskDetail = () => {
     // Also check pre-inspection questions
     if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
       currentTask.preInspectionQuestions.forEach(question => {
-        if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+        if (!isRequiredQuestion(question)) {
           return; // Skip recommended
         }
 
         const questionId = question._id || question.id;
-        const hasResponse = currentTask.questionnaireResponses &&
-          currentTask.questionnaireResponses[questionId] !== undefined &&
-          currentTask.questionnaireResponses[questionId] !== null &&
-          currentTask.questionnaireResponses[questionId] !== '';
-
-        if (!hasResponse) {
+        if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
           unansweredQuestions.push({
             questionId,
             questionText: question.text || question.question || 'Question',
@@ -5817,26 +5836,9 @@ const UserTaskDetail = () => {
 
           if (section.questions) {
             section.questions.forEach(question => {
-              const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+              const isRequired = isRequiredQuestion(question);
               const questionId = question._id || question.id;
-              let hasResponse = false;
-
-              if (currentTask.questionnaireResponses) {
-                if (currentTask.questionnaireResponses[questionId] !== undefined) {
-                  const response = currentTask.questionnaireResponses[questionId];
-                  hasResponse = response !== null && response !== undefined && response !== '';
-                } else {
-                  const responseKey = Object.keys(currentTask.questionnaireResponses).find(key =>
-                    key.includes(questionId) || key.endsWith(questionId)
-                  );
-                  if (responseKey) {
-                    const response = currentTask.questionnaireResponses[responseKey];
-                    hasResponse = response !== null && response !== undefined && response !== '';
-                  }
-                }
-              }
-
-              if (!hasResponse) {
+              if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
                 const item = {
                   questionId,
                   questionText: question.text || question.question || 'Question',
@@ -5858,14 +5860,9 @@ const UserTaskDetail = () => {
 
     if (currentTask.preInspectionQuestions && currentTask.preInspectionQuestions.length > 0) {
       currentTask.preInspectionQuestions.forEach(question => {
-        const isRequired = !(question.requirementType === 'recommended' || question.mandatory === false || question.required === false);
+        const isRequired = isRequiredQuestion(question);
         const questionId = question._id || question.id;
-        const hasResponse = currentTask.questionnaireResponses &&
-          currentTask.questionnaireResponses[questionId] !== undefined &&
-          currentTask.questionnaireResponses[questionId] !== null &&
-          currentTask.questionnaireResponses[questionId] !== '';
-
-        if (!hasResponse) {
+        if (!isQuestionAnswered(currentTask.questionnaireResponses || {}, questionId)) {
           const item = {
             questionId,
             questionText: question.text || question.question || 'Question',
@@ -5920,24 +5917,7 @@ const UserTaskDetail = () => {
     setShowUnansweredModal(false);
     setUnansweredRequiredQuestions(new Set());
 
-    // Check task completion percentage first - use the same calculation as the UI
-    const dbProgress = currentTask?.overallProgress || 0;
-    const calculatedProgress = calculateTaskCompletionPercentage();
-    const actualProgress = Math.max(dbProgress, calculatedProgress);
-
-    if (actualProgress < 100) {
-      toast.error(
-        t('tasks.taskMustBeCompletedBeforeArchiving', { progress: actualProgress }),
-        {
-          duration: 8000,
-          style: {
-            maxWidth: '500px',
-            whiteSpace: 'pre-line'
-          }
-        }
-      );
-      return;
-    }
+    calculateTaskCompletionPercentage();
 
     // Check if task has signature - only show signature modal if no signature exists and signature wasn't just saved
     if (!currentTask?.signature && !signatureJustSaved) {
@@ -6501,7 +6481,7 @@ const UserTaskDetail = () => {
                           }}
                           style={{
                             padding: '8px 12px',
-                            background: '#0369a1',
+                            background: '#000048',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -6764,7 +6744,8 @@ const UserTaskDetail = () => {
                 placeholder={t('tasks.enterYourResponse')}
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   // Clear highlighting when user starts typing
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
@@ -6772,6 +6753,9 @@ const UserTaskDetail = () => {
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -6802,13 +6786,17 @@ const UserTaskDetail = () => {
                 placeholder="Enter a number"
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
                       const newSet = new Set(prev);
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -6838,13 +6826,17 @@ const UserTaskDetail = () => {
                 type="date"
                 value={displayValue || ''}
                 onChange={(e) => {
-                  handleInputChange(questionId, e.target.value);
+                  const nextValue = e.target.value;
+                  handleInputChange(questionId, nextValue);
                   if (unansweredRequiredQuestions.has(questionId)) {
                     setUnansweredRequiredQuestions(prev => {
                       const newSet = new Set(prev);
                       newSet.delete(questionId);
                       return newSet;
                     });
+                  }
+                  if (!isDisabled) {
+                    scheduleInputSave(questionId, nextValue, onSaveResponse);
                   }
                 }}
                 onBlur={(e) => {
@@ -7008,14 +7000,9 @@ const UserTaskDetail = () => {
     // Use the currentPage and currentSection defined with useMemo above
 
     const totalQuestions = currentSection?.questions?.length || 0;
-    const answeredQuestions = currentSection?.questions?.filter(q => {
-      const questionId = q._id || q.id;
-      return currentTask.questionnaireResponses &&
-        (currentTask.questionnaireResponses[questionId] !== undefined ||
-          Object.keys(currentTask.questionnaireResponses).some(key =>
-            key.includes(questionId) || key.endsWith(questionId)
-          ));
-    }).length || 0;
+    const answeredQuestions = currentSection?.questions?.filter((question) => (
+      isQuestionAnswered(currentTask.questionnaireResponses || {}, question)
+    )).length || 0;
 
     return (
       <InspectionContainer>
@@ -7097,15 +7084,27 @@ const UserTaskDetail = () => {
                             e.preventDefault();
                           }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                             <span>{`${index + 1}. ${page.name}`}</span>
-                            <span style={{
-                              fontSize: '12px',
-                              color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
-                              fontWeight: '600'
-                            }}>
-                              {pageScore.achieved}/{pageScore.total}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                color: pageScore.percentage <= 33 ? '#ef4444' : pageScore.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                                background: pageScore.percentage <= 33 ? '#fef2f2' : pageScore.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                              }}>
+                                {pageScore.percentage}%
+                              </span>
+                              <span style={{
+                                fontSize: '12px',
+                                color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
+                                fontWeight: '600'
+                              }}>
+                                {pageScore.achieved}/{pageScore.total}
+                              </span>
+                            </div>
                           </div>
                         </DropdownItem>
                       );
@@ -7142,21 +7141,81 @@ const UserTaskDetail = () => {
         </InspectionHeader>
 
         <InspectionLayout>
-          <NavigationPanel>
+          <NavigationPanel $isOpen={isSectionsPanelOpen} style={{ position: 'relative' }}>
+            {/* App Tour Tooltip - shows once on first visit */}
+            {showSectionsTour && isSectionsPanelOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                right: '-220px',
+                transform: 'translateY(-50%)',
+                zIndex: 10010,
+                background: 'var(--color-navy)',
+                color: 'white',
+                padding: '14px 18px',
+                borderRadius: '10px',
+                boxShadow: '0 8px 32px rgba(0,0,72,0.3)',
+                width: '200px',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                animation: 'fadeIn 0.5s ease-out',
+              }}>
+                <div style={{ position: 'absolute', left: '-8px', top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: '8px solid var(--color-navy)' }} />
+                <div style={{ fontWeight: '700', marginBottom: '6px', fontSize: '14px' }}>📋 Sections Panel</div>
+                <div style={{ opacity: 0.9 }}>Navigate between sections here. You can collapse this panel using the chevron icon.</div>
+                <button
+                  onClick={() => {
+                    setShowSectionsTour(false);
+                    localStorage.setItem('mirsat_sections_tour_dismissed', 'true');
+                  }}
+                  style={{
+                    marginTop: '10px',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '6px',
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                >
+                  Got it!
+                </button>
+              </div>
+            )}
+            {!isSectionsPanelOpen ? (
+              <div 
+                style={{ padding: '20px 0', display: 'flex', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                onClick={() => setIsSectionsPanelOpen(true)}
+              >
+                <ChevronRight size={20} />
+              </div>
+            ) : (
+              <>
             <NavigationHeader>
-              <NavigationTitle>
-                <Navigation size={16} />
-                {t('tasks.sections')}
-                <KeyboardShortcutsBadge title={t('tasks.keyboardShortcuts')}>
-                  <Info size={12} />
-                </KeyboardShortcutsBadge>
-              </NavigationTitle>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <NavigationTitle>
+                  <Navigation size={16} />
+                  {t('tasks.sections')}
+                  <KeyboardShortcutsBadge title={t('tasks.keyboardShortcuts')}>
+                    <Info size={12} />
+                  </KeyboardShortcutsBadge>
+                </NavigationTitle>
+                <button 
+                  onClick={() => setIsSectionsPanelOpen(false)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              </div>
               <ProgressSummary>
-                <span style={{ fontWeight: '600', color: '#3788d8' }}>
+                <span style={{ fontWeight: '600', color: 'var(--color-navy)' }}>
                   {currentPage?.sections?.length || 0} {t('tasks.sections')}
                 </span>
                 <span style={{ color: '#27ae60' }}>
-                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}% {t('tasks.complete')}
+                  {displayProgress}% {t('tasks.complete')}
                 </span>
               </ProgressSummary>
             </NavigationHeader>
@@ -7184,7 +7243,7 @@ const UserTaskDetail = () => {
                     aria-label={`Go to previous section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) > 0 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) - 1]?.name : ''}`}
                   >
                     <ChevronLeft size={14} />
-                    {t('tasks.previousSection')}
+                    {t('common.previous')}
                   </SectionNavigationButton>
 
                   {/* Next Section Button */}
@@ -7204,7 +7263,7 @@ const UserTaskDetail = () => {
                     }}
                     aria-label={`Go to next section${currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) < currentPage.sections.length - 1 ? ': ' + currentPage.sections[currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) + 1]?.name : ''}`}
                   >
-                    {t('tasks.nextSection')}
+                    {t('common.next')}
                     <ChevronRight size={14} />
                   </SectionNavigationButton>
                 </SectionButtonsRow>
@@ -7234,10 +7293,22 @@ const UserTaskDetail = () => {
                       }}
                     >
                       <SectionTitle2>{`${idx + 1}. ${section.name}`}</SectionTitle2>
-                      <SectionScore active={isActive}>
-                        <Star size={12} />
-                        {sectionScore.achieved}/{sectionScore.total}
-                      </SectionScore>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          color: sectionScore.percentage <= 33 ? '#ef4444' : sectionScore.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                          background: sectionScore.percentage <= 33 ? '#fef2f2' : sectionScore.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                          padding: '1px 6px',
+                          borderRadius: '8px',
+                        }}>
+                          {sectionScore.percentage}%
+                        </span>
+                        <SectionScore active={isActive}>
+                          <Star size={12} />
+                          {sectionScore.achieved}/{sectionScore.total}
+                        </SectionScore>
+                      </div>
                     </SectionNavItem>
                   );
                 })
@@ -7248,7 +7319,11 @@ const UserTaskDetail = () => {
                 </EmptyState>
               )}
             </SectionsNavigation>
+            </>
+            )}
           </NavigationPanel>
+
+
 
           <ContentPanel>
             <ContentHeader>
@@ -7277,7 +7352,7 @@ const UserTaskDetail = () => {
                         if (unanswered.length > 0) {
                           setHighlightUnansweredMode(!highlightUnansweredMode);
                           setCurrentSectionUnansweredQuestions(new Set(unanswered));
-                          toast.info(
+                          toast(
                             highlightUnansweredMode 
                               ? 'Highlighting disabled' 
                               : `Highlighting ${unanswered.length} unanswered question(s)`,
@@ -7288,7 +7363,7 @@ const UserTaskDetail = () => {
                         }
                       }}
                       style={{
-                        background: highlightUnansweredMode ? '#3788d8' : 'transparent',
+                        background: highlightUnansweredMode ? 'var(--color-navy)' : 'transparent',
                         color: highlightUnansweredMode ? 'white' : '#64748b',
                         border: highlightUnansweredMode ? 'none' : '1px solid #e2e8f0',
                         borderRadius: '50%',
@@ -7694,7 +7769,7 @@ const UserTaskDetail = () => {
                 background: 'rgba(55, 136, 216, 0.1)',
                 borderRadius: '8px',
                 fontSize: '12px',
-                color: '#3788d8',
+                color: 'var(--color-navy)',
                 fontWeight: '600',
                 border: '1px solid rgba(55, 136, 216, 0.2)'
               }}>
@@ -7778,11 +7853,99 @@ const UserTaskDetail = () => {
               <MetaLabel>{t('tasks.progress')}</MetaLabel>
               <MetaValue>
                 <TrendingUp size={18} />
-                {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                {displayProgress}%
               </MetaValue>
             </MetaCard>
           </TaskMeta>
         </TaskHeader>
+
+        <StatsBarContainer>
+          <StatCard>
+            <StatCardHeader>
+              <TrendingUp size={16} />
+              {t('tasks.progress')}
+            </StatCardHeader>
+            <StatCardValue>{displayProgress}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={displayProgress}
+                color={displayProgress <= 33 ? '#ef4444' : displayProgress <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <Award size={16} />
+              {t('tasks.complianceScore')}
+            </StatCardHeader>
+            <StatCardValue>{scores.percentage}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={scores.percentage}
+                color={scores.percentage <= 33 ? '#ef4444' : scores.percentage <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <Clock size={16} />
+              {t('tasks.timeSpent')}
+            </StatCardHeader>
+            <StatCardValue>
+              {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
+                ? formatTimeFromSeconds(displayTime)
+                : formatTimeSpent((currentTask?.taskMetrics?.timeSpent || 0) / 3600)}
+            </StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#3b82f6" />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <FileText size={16} />
+              {t('tasks.pages')}
+            </StatCardHeader>
+            <StatCardValue>{inspectionPages.length}</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#3b82f6" />
+            </StatMiniProgress>
+          </StatCard>
+          
+          <StatCard>
+            <StatCardHeader>
+              <CheckCircle size={16} />
+              {t('tasks.completionRate')}
+            </StatCardHeader>
+            <StatCardValue>{displayProgress}%</StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar 
+                progress={displayProgress}
+                color={displayProgress <= 33 ? '#ef4444' : displayProgress <= 66 ? '#f59e0b' : '#22c55e'} 
+              />
+            </StatMiniProgress>
+          </StatCard>
+
+          <StatCard>
+            <StatCardHeader>
+              <Activity size={16} />
+              {t('tasks.status')}
+            </StatCardHeader>
+            <StatCardValue style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <StatusIcon status={currentTask.status} />
+              {currentTask.status === 'pending' ? t('tasks.pending') :
+                currentTask.status === 'in_progress' ? t('tasks.inProgress') :
+                  currentTask.status === 'completed' ? t('tasks.completed') :
+                    currentTask.status === 'archived' ? t('tasks.archived') :
+                      currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
+            </StatCardValue>
+            <StatMiniProgress>
+              <StatMiniProgressBar progress={100} color="#8b5cf6" />
+            </StatMiniProgress>
+          </StatCard>
+        </StatsBarContainer>
 
         <TabsContainer>
           <TabsWrapper>
@@ -7973,8 +8136,8 @@ const UserTaskDetail = () => {
                     <MetricGrid>
                       <MetricCard $color="blue" $bgColor="rgba(55, 136, 216, 0.1)">
                         <MetricLabel>{t('tasks.overallProgress')}</MetricLabel>
-                        <MetricValue $color="#3788d8">
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                        <MetricValue $color="var(--color-navy)">
+                          {displayProgress}%
                         </MetricValue>
                         <MetricDescription>{t('tasks.taskCompletion')}</MetricDescription>
                       </MetricCard>
@@ -7992,12 +8155,12 @@ const UserTaskDetail = () => {
                       <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
                         <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
                         <MetricValue $color="#f39c12" style={{ fontFamily: 'monospace', fontSize: '18px' }}>
-                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                             ? formatTimeFromSeconds(displayTime)
                             : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                         </MetricValue>
                         <MetricDescription>
-                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                             ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
                             : t('tasks.totalDuration')}
                         </MetricDescription>
@@ -8005,7 +8168,7 @@ const UserTaskDetail = () => {
 
                       <MetricCard $color="gray" $bgColor="rgba(44, 62, 80, 0.1)">
                         <MetricLabel>{t('tasks.inspectionPages')}</MetricLabel>
-                        <MetricValue $color="#2c3e50">
+                        <MetricValue $color="var(--color-navy-dark)">
                           {inspectionPages.length}
                         </MetricValue>
                         <MetricDescription>{t('tasks.totalSections')}</MetricDescription>
@@ -8044,7 +8207,7 @@ const UserTaskDetail = () => {
                     <div style={{
                       fontSize: '18px',
                       fontWeight: '600',
-                      color: '#3788d8',
+                      color: 'var(--color-navy)',
                       marginBottom: '8px',
                       display: 'flex',
                       alignItems: 'center',
@@ -8078,11 +8241,10 @@ const UserTaskDetail = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ProgressValue>
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
-                          {/* Debug info in development */}
-                          {process.env.NODE_ENV === 'development' && (
-                            <div style={{ fontSize: '8px', color: '#999', marginTop: '2px' }}>
-                              DB: {currentTask?.overallProgress || 0}% | Calc: {taskCompletionPercentage}%
+                          {displayProgress}%
+                          {questionAnswerSummary.totalCount > 0 && (
+                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontWeight: 700 }}>
+                              {questionAnswerSummary.answeredCount}/{questionAnswerSummary.totalCount}
                             </div>
                           )}
                         </ProgressValue>
@@ -8099,11 +8261,11 @@ const UserTaskDetail = () => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            color: '#3788d8'
+                            color: 'var(--color-navy)'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = 'rgba(55, 136, 216, 0.2)';
-                            e.currentTarget.style.borderColor = '#3788d8';
+                            e.currentTarget.style.borderColor = 'var(--color-navy)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'rgba(55, 136, 216, 0.1)';
@@ -8139,62 +8301,10 @@ const UserTaskDetail = () => {
                     </div>
                   </ProgressHeader>
 
-                  <ProgressBar progress={Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)} />
+                  <ProgressBar progress={displayProgress} />
                 </ProgressContainer>
 
                 {renderInspectionInterface()}
-
-                {(currentTask.status === 'in_progress' || currentTask.status === 'completed') && (
-                  <ScoreCard>
-                    <SectionTitle>
-                      <Award size={20} />
-                      {t('tasks.inspectionScoringSummary')}
-                    </SectionTitle>
-
-                    <ScoreGrid>
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.complianceScore')}</ScoreLabel>
-                        <ScoreValue>
-                          {scores.achieved} / {scores.total}
-                          <span style={{ fontSize: '14px', color: '#27ae60', marginLeft: '8px' }}>
-                            ({scores.percentage}%)
-                          </span>
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.pagesScored')}</ScoreLabel>
-                        <ScoreValue>
-                          {inspectionPages.length > 0 ?
-                            inspectionPages.reduce((sum, page) => {
-                              const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
-                              return sum + (pageScore.achieved > 0 ? 1 : 0);
-                            }, 0)
-                            : 0} / {inspectionPages.length}
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.completionRate')}</ScoreLabel>
-                        <ScoreValue>
-                          {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
-                        </ScoreValue>
-                      </ScoreItem>
-
-                      <ScoreItem>
-                        <ScoreLabel>{t('tasks.status')}</ScoreLabel>
-                        <ScoreValue style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                          <StatusIcon status={currentTask.status} />
-                          {currentTask.status === 'pending' ? t('tasks.pending') :
-                            currentTask.status === 'in_progress' ? t('tasks.inProgress') :
-                              currentTask.status === 'completed' ? t('tasks.completed') :
-                                currentTask.status === 'archived' ? t('tasks.archived') :
-                                  currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', ' ')}
-                        </ScoreValue>
-                      </ScoreItem>
-                    </ScoreGrid>
-                  </ScoreCard>
-                )}
               </>
             )}
 
@@ -8219,8 +8329,8 @@ const UserTaskDetail = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                     <div style={{ background: 'rgba(55, 136, 216, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#3788d8' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--color-navy)', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy)' }}>
                         {scores.percentage}%
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -8231,7 +8341,9 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.completion')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
-                        {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                        {questionAnswerSummary.totalCount > 0
+                          ? `${questionAnswerSummary.answeredCount}/${questionAnswerSummary.totalCount}`
+                          : `${displayProgress}%`}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
                         {t('tasks.questionsAnswered')}
@@ -8241,20 +8353,20 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
                       <div style={{ fontSize: '20px', fontWeight: '800', color: '#f39c12', fontFamily: 'monospace' }}>
-                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                        {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                           ? formatTimeFromSeconds(displayTime)
                           : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                        {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                           ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
                           : t('tasks.totalDuration')}
                       </div>
                     </div>
 
                     <div style={{ background: 'rgba(44, 62, 80, 0.1)', padding: '20px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#2c3e50' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--color-navy-dark)', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.pages')}</div>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy-dark)' }}>
                         {inspectionPages.length}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -8341,7 +8453,7 @@ const UserTaskDetail = () => {
                                 width: '24px',
                                 height: '24px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #3788d8, #2c3e50)',
+                                background: 'linear-gradient(135deg, var(--color-navy), var(--color-navy-dark))',
                                 color: 'white',
                                 fontWeight: '700',
                                 fontSize: '12px',
@@ -8384,7 +8496,7 @@ const UserTaskDetail = () => {
                                         if (response.startsWith('data:image/')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 📎 {t('tasks.imageUploaded')}
                                               </div>
                                               <img
@@ -8409,7 +8521,7 @@ const UserTaskDetail = () => {
                                         } else if (response.startsWith('data:')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 📎 {t('tasks.fileUploaded')}
                                               </div>
                                               <button
@@ -8421,7 +8533,7 @@ const UserTaskDetail = () => {
                                                 }}
                                                 style={{
                                                   padding: '8px 12px',
-                                                  background: '#0369a1',
+                                                  background: '#000048',
                                                   color: 'white',
                                                   border: 'none',
                                                   borderRadius: '6px',
@@ -8457,7 +8569,7 @@ const UserTaskDetail = () => {
                                         if (response.startsWith('data:image/')) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
+                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
                                                 ✍️ {t('tasks.signatureProvided')}
                                               </div>
                                               <img
@@ -8579,7 +8691,7 @@ const UserTaskDetail = () => {
 
                     {/* Complete & Archive Button */}
                     {currentTask?.status !== 'archived' && (() => {
-                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const actualProgress = displayProgress;
                       const isProgressComplete = actualProgress >= 100;
                       const isButtonDisabled = currentTask?.status === 'pending' || isArchiving || !isProgressComplete || isTaskInactive;
 
@@ -8727,7 +8839,7 @@ const UserTaskDetail = () => {
                         {t('tasks.inspectionCompletedAndArchived')}
                       </p>
                     ) : (() => {
-                      const actualProgress = Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage);
+                      const actualProgress = displayProgress;
                       const isComplete = actualProgress >= 100;
 
                       return (
@@ -8770,77 +8882,6 @@ const UserTaskDetail = () => {
               </>
             )}
           </MainPanel>
-
-          <SidePanel>
-            <Card>
-              <SectionTitle>
-                <BarChart2 size={20} />
-                {t('tasks.quickStats')}
-              </SectionTitle>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(55, 136, 216, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.progress')}</span>
-                  <span style={{ fontWeight: '700', color: '#3788d8' }}>
-                    {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(39, 174, 96, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.score')}</span>
-                  <span style={{ fontWeight: '700', color: '#27ae60' }}>
-                    {scores.percentage}%
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(243, 156, 18, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.time')}</span>
-                  <span style={{ fontWeight: '700', color: '#f39c12', fontFamily: 'monospace', fontSize: '14px' }}>
-                    {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
-                      ? formatTimeFromSeconds(displayTime)
-                      : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(44, 62, 80, 0.05)',
-                  borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>{t('tasks.pages')}</span>
-                  <span style={{ fontWeight: '700', color: '#2c3e50' }}>
-                    {inspectionPages.length}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-
-          </SidePanel>
         </ContentContainer>
       </MainContent>
 
@@ -9032,7 +9073,7 @@ const UserTaskDetail = () => {
 
               <SaveButton
                 onClick={handleSaveAndSubmit}
-                disabled={!signatureImage}
+                disabled={!signatureImage || !hasSignatureInk}
                 style={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   marginLeft: '8px',
@@ -9414,21 +9455,10 @@ const UserTaskDetail = () => {
                   fontWeight: '800', 
                   color: taskCompletionPercentage === 100 ? '#27ae60' : '#f39c12' 
                 }}>
-                  {Math.max(currentTask?.overallProgress || 0, taskCompletionPercentage)}%
+                  {displayProgress}%
                 </div>
                 <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
-                  {(() => {
-                    const unanswered = getUnansweredQuestionsDetails();
-                    const total = unanswered.length + (inspectionPages?.reduce((sum, page) => {
-                      return sum + (page.sections?.reduce((sectionSum, section) => {
-                        return sectionSum + (section.questions?.filter(q => 
-                          q.requirementType !== 'recommended' && q.mandatory !== false && q.required !== false
-                        )?.length || 0);
-                      }, 0) || 0);
-                    }, 0) || 0);
-                    const answered = total - unanswered.length;
-                    return `${answered} of ${total} required questions answered`;
-                  })()}
+                  {`${questionAnswerSummary.answeredCount} of ${questionAnswerSummary.totalCount} required questions answered`}
                 </div>
               </div>
 
@@ -9518,7 +9548,7 @@ const UserTaskDetail = () => {
                                 }
                               }, 300);
                               
-                              toast.info(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
+                              toast(`${t('tasks.navigatedTo') || 'Navigated to'}: ${item.pageName} - ${item.sectionName}`);
                             }
                           }}
                           onMouseEnter={(e) => {

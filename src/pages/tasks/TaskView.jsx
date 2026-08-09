@@ -1277,7 +1277,7 @@ const TaskView = () => {
               padding: '0 16px'
             }}>
               <div style={{
-                background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%)',
                 padding: '20px',
                 borderRadius: '12px',
                 color: 'white',
@@ -1422,8 +1422,8 @@ const TaskView = () => {
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#3788d8', marginBottom: '8px', fontWeight: '600' }}>TASK STATUS</div>
-                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#3788d8' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--color-navy)', marginBottom: '8px', fontWeight: '600' }}>TASK STATUS</div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-navy)' }}>
                       {getTaskDataOrDefault(taskData, 'status', 'pending').charAt(0).toUpperCase() +
                         getTaskDataOrDefault(taskData, 'status', 'pending').slice(1).replace('_', ' ')}
                     </div>
@@ -1460,8 +1460,8 @@ const TaskView = () => {
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#2c3e50', marginBottom: '8px', fontWeight: '600' }}>ASSIGNEES</div>
-                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#2c3e50' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--color-navy-dark)', marginBottom: '8px', fontWeight: '600' }}>ASSIGNEES</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--color-navy-dark)' }}>
                       {taskData.assignedTo && taskData.assignedTo.length > 0 ? taskData.assignedTo.length : 0} Users
                     </div>
                   </div>
@@ -1523,7 +1523,7 @@ const TaskView = () => {
                     }}>
                       {/* Page Header */}
                       <div style={{
-                        background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                        background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%)',
                         color: 'white',
                         padding: '24px',
                         display: 'flex',
@@ -1598,7 +1598,7 @@ const TaskView = () => {
                           fontSize: '18px',
                           fontWeight: '700'
                         }}>
-                          <span style={{ color: '#3788d8' }}>
+                          <span style={{ color: 'var(--color-navy)' }}>
                             {progressPercentage}%
                           </span>
                           <div style={{
@@ -1898,7 +1898,7 @@ const TaskView = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{
-                    background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                    background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%)',
                     padding: '20px',
                     borderRadius: '12px',
                     textAlign: 'center',
@@ -2319,7 +2319,7 @@ const TaskView = () => {
                             width: '32px',
                             height: '32px',
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #3788d8 0%, #2c5aa0 100%)',
+                            background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2395,7 +2395,7 @@ const TaskView = () => {
                                   onClick={() => window.open(attachment.url, '_blank')}
                                   style={{
                                     padding: '2px 6px',
-                                    background: '#3788d8',
+                                    background: 'var(--color-navy)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '4px',

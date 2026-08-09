@@ -182,7 +182,7 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -204,7 +204,7 @@ const Select = styled.select`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -249,7 +249,7 @@ const ColorInput = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -395,7 +395,9 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
   useEffect(() => {
     if (asset) {
       setFormData({
-        uniqueId: asset.uniqueId || '',
+        uniqueId: asset.uniqueId === null || asset.uniqueId === undefined
+          ? ''
+          : String(asset.uniqueId),
         type: asset.type || '',
         displayName: asset.displayName || '',
         city: asset.city || '',
@@ -419,10 +421,12 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.uniqueId) {
+    const cleanUniqueId = formData.uniqueId.trim();
+    if (!cleanUniqueId) {
       newErrors.uniqueId = t('assets.uniqueIdRequired');
-    } else if (isNaN(formData.uniqueId) || Number(formData.uniqueId) <= 0) {
-      newErrors.uniqueId = t('assets.uniqueIdMustBePositive');
+    } else if (!/^[A-Za-z0-9_-]{1,64}$/.test(cleanUniqueId)) {
+      newErrors.uniqueId = t('assets.uniqueIdAlphaNumeric')
+        || 'Use only letters, numbers, hyphens, and underscores.';
     }
     
     if (!formData.type) {
@@ -449,7 +453,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'uniqueId' ? value : value,
+      [name]: value,
     });
     
     // Clear error for this field when user starts typing
@@ -469,7 +473,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     try {
       // Prepare clean form data
       const cleanFormData = {
-        uniqueId: Number(formData.uniqueId),
+        uniqueId: formData.uniqueId.trim(),
         type: formData.type.trim(),
         displayName: formData.displayName.trim(),
         city: formData.city.trim(),
@@ -511,13 +515,16 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
       console.error('Error saving asset:', error);
       
       // Handle specific error cases
-      if (error.message && error.message.includes('duplicate') || 
-          error.message && error.message.includes('already exists')) {
+      if (
+        error?.code === 'ASSET_UNIQUE_ID_EXISTS'
+        || error?.field === 'uniqueId'
+        || error?.message?.toLowerCase().includes('already exists')
+      ) {
         setErrors({ uniqueId: t('assets.assetIdAlreadyExists') });
-      } else if (error.message && error.message.includes('validation')) {
+      } else if (error?.message?.toLowerCase().includes('validation')) {
         setErrors({ general: t('assets.checkRequiredFields') });
       } else {
-        setErrors({ general: t('assets.failedToSaveAsset') });
+        setErrors({ general: error?.message || t('assets.failedToSaveAsset') });
       }
     } finally {
       setIsSubmitting(false);
@@ -582,7 +589,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               <FormGroup>
                 <Label htmlFor="uniqueId">{t('common.uniqueId')} *</Label>
                 <Input
-                  type="number"
+                  type="text"
                   id="uniqueId"
                   name="uniqueId"
                   data-agent-field="assets.form.uniqueId"
@@ -590,7 +597,8 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                   onChange={handleChange}
                   placeholder={t('common.enterUniqueId')}
                   disabled={isSubmitting}
-                  min="1"
+                  maxLength={64}
+                  autoCapitalize="characters"
                 />
                 {errors.uniqueId && <ErrorText>{errors.uniqueId}</ErrorText>}
               </FormGroup>

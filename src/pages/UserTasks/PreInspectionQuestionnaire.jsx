@@ -294,13 +294,13 @@ const AssessmentTable = styled.table`
   }
   
   th {
-    background: rgba(26, 35, 126, 0.05);
+    background: rgba(0, 0, 72, 0.05);
     font-weight: 600;
     color: var(--color-navy);
   }
   
   tr:hover td {
-    background: rgba(26, 35, 126, 0.02);
+    background: rgba(0, 0, 72, 0.02);
   }
   
   tr:last-child td {
@@ -792,14 +792,14 @@ const OptionButton = styled.button`
   border-radius: 6px;
   font-size: 13px;
   border: 1px solid #e2e8f0;
-  background: ${props => props.selected ? 'rgba(63, 81, 181, 0.1)' : 'white'};
+  background: ${props => props.selected ? 'rgba(0, 0, 72, 0.1)' : 'white'};
   color: ${props => props.selected ? 'var(--color-navy)' : '#4b5563'};
   border-color: ${props => props.selected ? 'var(--color-navy)' : '#e2e8f0'};
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover:not(:disabled) {
-    background: rgba(63, 81, 181, 0.05);
+    background: rgba(0, 0, 72, 0.05);
     border-color: #cbd5e1;
   }
   

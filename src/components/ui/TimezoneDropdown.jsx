@@ -26,10 +26,10 @@ const CurrentTimeDisplay = styled.div`
   font-weight: 600;
   color: var(--color-navy);
   font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
-  background: rgba(26, 35, 126, 0.05);
+  background: rgba(0, 0, 72, 0.05);
   padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(26, 35, 126, 0.1);
+  border: 1px solid rgba(0, 0, 72, 0.1);
   min-width: 80px;
   text-align: center;
   white-space: nowrap;
@@ -86,7 +86,7 @@ const DropdownButton = styled.button`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 
   svg {

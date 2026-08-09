@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import useNotification from '../../hooks/useNotification';
 import { useSelector } from 'react-redux';
-import { ROLES } from '../../utils/permissions';
+import { resolveNotificationPath } from '../../utils/notificationTarget';
 
 // Mock data for fallback
 export const mockNotifications = [
@@ -210,25 +210,37 @@ const ViewAllButton = styled(Link)`
 export const NotificationDropdown = ({ isOpen }) => {
   const { t, i18n } = useTranslation();
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotification();
+  const [dropdownNotifications, setDropdownNotifications] = useState([]);
   const user = useSelector((state) => state.auth.user);
   const isRTL = i18n.language === 'ar';
-  const isInspector = user?.role === ROLES.INSPECTOR;
   
   useEffect(() => {
-    if (isOpen) {
-      fetchNotifications(1, 3); // Fetch only the latest 3 for the dropdown
-    }
+    if (!isOpen) return undefined;
+
+    const loadDropdownNotifications = () => {
+      fetchNotifications(1, 3)
+        .then((result) => {
+          if (result?.notifications) {
+            setDropdownNotifications(result.notifications);
+          }
+        })
+        .catch(() => undefined);
+    };
+
+    loadDropdownNotifications();
+    const interval = window.setInterval(loadDropdownNotifications, 10000);
+
+    return () => window.clearInterval(interval);
   }, [isOpen, fetchNotifications]);
 
-  const handleNotificationClick = (notificationId, e) => {
-    if (isInspector) {
-      e.preventDefault();
-      e.stopPropagation();
-      markAsRead(notificationId);
-    } else {
-      // For other roles, allow navigation but still mark as read
-      markAsRead(notificationId);
-    }
+  const visibleNotifications = dropdownNotifications.length > 0
+    ? dropdownNotifications
+    : notifications.slice(0, 3);
+
+  const getNotificationId = (notification) => notification?._id || notification?.id;
+
+  const handleNotificationClick = (notificationId) => {
+    markAsRead(notificationId).catch(() => undefined);
   };
 
   return (
@@ -239,12 +251,12 @@ export const NotificationDropdown = ({ isOpen }) => {
       </DropdownHeader>
 
       <NotificationList>
-        {notifications.slice(0, 3).map((notification) => (
+        {visibleNotifications.map((notification, index) => (
           <NotificationItem 
-            key={notification._id}
-            to={isInspector ? '/notifications' : (notification.data?.link || '/notifications')}
+            key={getNotificationId(notification) || `${notification.type}-${notification.createdAt}-${index}`}
+            to={resolveNotificationPath(notification, user?.role)}
             isUnread={!notification.read}
-            onClick={(e) => handleNotificationClick(notification._id, e)}
+            onClick={() => handleNotificationClick(getNotificationId(notification))}
           >
             <NotificationContent>
               <NotificationIcon 
@@ -672,7 +684,6 @@ const ActionButton = styled.button`
 const NotificationsPage = () => {
   const { t } = useTranslation();
   const user = useSelector((state) => state.auth.user);
-  const isInspector = user?.role === ROLES.INSPECTOR;
   const { 
     notifications, 
     loading, 
@@ -778,8 +789,10 @@ const NotificationsPage = () => {
       ) : filteredNotifications.length > 0 ? (
         <>
           <NotificationGrid>
-            {filteredNotifications.map((notification) => (
-              <NotificationCard key={notification._id}>
+            {filteredNotifications.map((notification, index) => {
+              const notificationId = notification._id || notification.id;
+              return (
+              <NotificationCard key={notificationId || `${notification.type}-${notification.createdAt}-${index}`}>
                 <NotificationCardContent>
                   <CardIconWrapper>
                     <NotificationIcon 
@@ -808,7 +821,7 @@ const NotificationsPage = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          handleMarkAsRead(notification._id, e);
+                          handleMarkAsRead(notificationId, e);
                         }}
                         title={t('notifications.markAsReadTitle')}
                         type="button"
@@ -821,7 +834,7 @@ const NotificationsPage = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteNotification(notification._id, e);
+                        handleDeleteNotification(notificationId, e);
                       }}
                       title={t('notifications.deleteNotificationTitle')}
                       type="button"
@@ -831,13 +844,17 @@ const NotificationsPage = () => {
                     </ActionIconButton>
                   </CardActions>
                 </NotificationCardContent>
-                {notification.data?.link && !isInspector && (
-                  <CardLink to={notification.data.link}>
+                {(notification.data?.target || notification.data?.taskId || notification.data?.link) && (
+                  <CardLink
+                    to={resolveNotificationPath(notification, user?.role)}
+                    onClick={() => markAsRead(notificationId).catch(() => undefined)}
+                  >
                     {t('notifications.viewDetails')} <ArrowRight size={14} />
                   </CardLink>
                 )}
               </NotificationCard>
-            ))}
+              );
+            })}
           </NotificationGrid>
 
           {totalPages > 1 && (

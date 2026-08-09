@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { restoreUser } from './store/slices/authSlice';
 import './App.css';
 import { LoadingProvider } from './context/LoadingContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { NotificationProvider } from './context/NotificationContext';
 import './i18n';
 
 function App() {
@@ -27,9 +28,10 @@ function App() {
       <LanguageProvider>
         <LoadingProvider>
           <ThemeProvider theme={theme}>
-            <BrowserRouter>
-              <AppRoutes />
-              <Toaster
+            <NotificationProvider>
+              <BrowserRouter>
+                <AppRoutes />
+                <Toaster
                 position="bottom-right"
                 limit={2}
                 toastOptions={{
@@ -61,8 +63,9 @@ function App() {
                   bottom: '20px',
                   right: '20px',
                 }}
-              />
-            </BrowserRouter>
+                />
+              </BrowserRouter>
+            </NotificationProvider>
           </ThemeProvider>
         </LoadingProvider>
       </LanguageProvider>
@@ -71,4 +74,3 @@ function App() {
 }
 
 export default App;
-

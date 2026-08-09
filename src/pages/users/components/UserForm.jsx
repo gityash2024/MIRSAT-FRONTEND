@@ -7,6 +7,11 @@ import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS } from '../
 import { useAuth } from '../../../hooks/useAuth';
 import { fetchDepartments } from '../../../store/slices/departmentSlice';
 
+const FIXED_MANAGER_MODULE_PERMISSIONS = new Set([
+  MODULE_PERMISSIONS.CALENDAR,
+  MODULE_PERMISSIONS.PROFILE
+]);
+
 const Form = styled.form`
   display: grid;
   gap: 24px;
@@ -81,7 +86,7 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -129,7 +134,7 @@ const Select = styled.select`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -306,6 +311,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     emergencyContact: '',
     isActive: true,
     permissions: [],
+    moduleAccess: [],
     password: '',
     confirmPassword: '',
     ...initialData
@@ -325,6 +331,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         ...initialData,
         status: initialData.isActive ? 'active' : 'inactive',
         permissions: initialData.permissions || [],
+        moduleAccess: initialData.moduleAccess
+          || (initialData.permissions || []).filter((permission) => (
+            Object.values(MODULE_PERMISSIONS).includes(permission)
+          )),
         // Ensure all fields are properly set
         name: initialData.name || '',
         email: initialData.email || '',
@@ -338,7 +348,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   }, [initialData]);
 
   useEffect(() => {
-    if (formData.role && !initialData._id) {
+    if (formData.role && !(initialData._id || initialData.id)) {
       let newPermissions = [];
       
       if (formData.role === ROLES.ADMIN) {
@@ -352,7 +362,12 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       
       setFormData(prev => ({
         ...prev,
-        permissions: newPermissions
+        permissions: newPermissions,
+        moduleAccess: formData.role === ROLES.MANAGER
+          ? newPermissions.filter((permission) => (
+            Object.values(MODULE_PERMISSIONS).includes(permission)
+          ))
+          : []
       }));
     }
   }, [formData.role]);
@@ -486,8 +501,15 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   };
 
   const handlePermissionChange = (permission) => {
+    if (formData.role === ROLES.MANAGER && FIXED_MANAGER_MODULE_PERMISSIONS.has(permission)) {
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
+      moduleAccess: prev.moduleAccess.includes(permission)
+        ? prev.moduleAccess.filter(p => p !== permission)
+        : [...prev.moduleAccess, permission],
       permissions: prev.permissions.includes(permission)
         ? prev.permissions.filter(p => p !== permission)
         : [...prev.permissions, permission]
@@ -522,15 +544,18 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       <PermissionGroup>
         <PermissionGroupTitle>{t('common.moduleAccess')}</PermissionGroupTitle>
         <PermissionList>
-          {Object.entries(MODULE_PERMISSIONS).map(([moduleName, permission]) => (
-            <PermissionItem key={permission}>
-              <input
-                type="checkbox"
-                checked={formData.permissions?.includes(permission)}
-                onChange={() => handlePermissionChange(permission)}
-              />
-              {translateModuleName(moduleName)}
-            </PermissionItem>
+          {Object.entries(MODULE_PERMISSIONS)
+            .map(([moduleName, permission]) => (
+              <PermissionItem key={permission}>
+                <input
+                  type="checkbox"
+                  checked={FIXED_MANAGER_MODULE_PERMISSIONS.has(permission) || formData.moduleAccess?.includes(permission)}
+                  onChange={() => handlePermissionChange(permission)}
+                  disabled={FIXED_MANAGER_MODULE_PERMISSIONS.has(permission)}
+                />
+                {translateModuleName(moduleName)}
+                {FIXED_MANAGER_MODULE_PERMISSIONS.has(permission) && ' (Always enabled)'}
+              </PermissionItem>
           ))}
         </PermissionList>
       </PermissionGroup>

@@ -62,7 +62,7 @@ const IconWrapper = styled.div`
   height: 40px;
   border-radius: 8px;
   background: ${props => props.background || '#e3f2fd'};
-  color: ${props => props.color || '#1565c0'};
+  color: ${props => props.color || 'var(--color-navy)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,7 +242,7 @@ const NotificationSettings = () => {
       description: 'Receive notifications via email for important updates',
       icon: Mail,
       background: '#e3f2fd',
-      color: '#1565c0'
+      color: 'var(--color-navy)'
     },
     {
       id: 'taskUpdates',
@@ -266,7 +266,7 @@ const NotificationSettings = () => {
       description: 'Receive a daily summary of all activities',
       icon: MessageSquare,
       background: '#e8eaf6',
-      color: '#3f51b5'
+      color: 'var(--color-navy)'
     }
   ];
 

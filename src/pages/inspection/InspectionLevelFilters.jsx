@@ -106,7 +106,7 @@ const CustomCheckbox = styled.div`
   flex-shrink: 0;
   
   ${props => props.$checked && `
-    box-shadow: 0 1px 3px rgba(26, 35, 126, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 72, 0.3);
   `}
 `;
 
@@ -240,7 +240,7 @@ const Button = styled.button`
 
     &:hover {
       background: #151b4f;
-      box-shadow: 0 4px 6px rgba(26, 35, 126, 0.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 72, 0.2);
     }
   ` : `
     background: white;
@@ -271,7 +271,7 @@ const CategoryBadge = styled.span`
     '#fff3e0'};
   color: ${props => 
     props.category === 'type' ? '#2e7d32' : 
-    props.category === 'status' ? '#1565c0' : 
+    props.category === 'status' ? 'var(--color-navy)' : 
     '#ed6c02'};
   border-radius: 4px;
   font-size: 10px;

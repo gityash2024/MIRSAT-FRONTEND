@@ -115,7 +115,7 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 
@@ -251,7 +251,7 @@ const EditInput = styled.input`
   &:focus {
     outline: none;
     border-color: var(--color-navy);
-    box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 0, 72, 0.1);
   }
 `;
 

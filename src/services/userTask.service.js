@@ -159,6 +159,16 @@ export const userTaskService = {
       throw error;
     }
   },
+
+  updateTaskMetrics: async (taskId, data) => {
+    const response = await api.patch(`/user-tasks/${taskId}/metrics`, {
+      ...(data.timeSpent !== undefined && { timeSpent: data.timeSpent }),
+      ...(data.subLevelTimeSpent !== undefined && {
+        subLevelTimeSpent: data.subLevelTimeSpent
+      })
+    });
+    return response.data;
+  },
   
   // Update task questionnaire responses
   updateTaskQuestionnaire: async (taskId, data) => {

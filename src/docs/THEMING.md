@@ -7,7 +7,7 @@ This guide explains how to implement consistent styling across the MIRSAT applic
 The application uses the following color palette, which is defined as CSS variables in `index.css` and applied consistently through our theming system:
 
 ### Primary Colors
-- **Deep Navy Blue** (`--color-navy`: #1A3A5F) - Use for headers and primary buttons
+- **Deep Navy Blue** (`--color-navy`: #000048) - Use for headers and primary buttons
 - **Soft Teal** (`--color-teal`: #4B8C9E) - Use for secondary elements and highlights
 - **Light Seafoam** (`--color-seafoam`: #A9CDCE) - Use for backgrounds and panels
 

@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import mirSatLogo from '../../assets/mirsat-logo-white-1.svg';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
@@ -240,7 +241,7 @@ const StyledLink = styled.div`
   
   &.active {
     color: white;
-    background: rgba(255, 255, 255, 0.15);
+    background: #0043CE80;
     
     &:before {
       content: '';
@@ -483,7 +484,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   return (
     <SidebarContainer $collapsed={effectiveCollapsed} $isRTL={isRTL}>
       <Logo $collapsed={effectiveCollapsed}>
-        {!effectiveCollapsed && <h1>MIRSAT</h1>}
+        {!effectiveCollapsed && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1>MIRSAT</h1>
+            <img src={mirSatLogo} alt="MIRSAT Logo" style={{ height: '28px', width: 'auto' }} />
+          </div>
+        )}
+        {effectiveCollapsed && (
+          <img src={mirSatLogo} alt="MIRSAT" style={{ height: '24px', width: 'auto' }} />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {!isMobile && (
             <CollapseButton onClick={handleToggle} title={effectiveCollapsed ? t('common.expand') : t('common.collapse')}>
