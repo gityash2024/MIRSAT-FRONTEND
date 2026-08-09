@@ -1,6 +1,6 @@
 /* This code snippet is a React component called `UserCreate` that represents a page for creating a new
 user in a system. Here's a breakdown of what the code is doing: */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -236,10 +236,15 @@ const UserCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
 
-  if (!hasPermission(PERMISSIONS.CREATE_USER)) {
-    navigate('/users');
-    return null;
-  }
+  const canCreateUsers = hasPermission(PERMISSIONS.USERS.CREATE_USERS);
+
+  useEffect(() => {
+    if (!canCreateUsers) {
+      navigate('/users', { replace: true });
+    }
+  }, [canCreateUsers, navigate]);
+
+  if (!canCreateUsers) return null;
 
   const handleSubmit = (formData) => {
     setConfirmData(formData);

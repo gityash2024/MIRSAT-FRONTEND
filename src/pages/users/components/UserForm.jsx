@@ -531,11 +531,18 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   };
 
   const renderModulePermissions = () => {
+    const fixedManagerPermissions = new Set([
+      MODULE_PERMISSIONS.CALENDAR,
+      MODULE_PERMISSIONS.PROFILE
+    ]);
+
     return (
       <PermissionGroup>
         <PermissionGroupTitle>{t('common.moduleAccess')}</PermissionGroupTitle>
         <PermissionList>
-          {Object.entries(MODULE_PERMISSIONS).map(([moduleName, permission]) => (
+          {Object.entries(MODULE_PERMISSIONS)
+            .filter(([, permission]) => !fixedManagerPermissions.has(permission))
+            .map(([moduleName, permission]) => (
             <PermissionItem key={permission}>
               <input
                 type="checkbox"

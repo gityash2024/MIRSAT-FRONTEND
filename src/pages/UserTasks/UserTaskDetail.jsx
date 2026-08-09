@@ -3491,32 +3491,24 @@ const CompletionBadge = styled.div`
 `;
 
 const formatTimeSpent = (timeInHours) => {
-  if (!timeInHours || timeInHours === 0) return '0:00';
-
-  const totalMinutes = Math.round(timeInHours * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}`;
-  } else {
-    return `0:${minutes.toString().padStart(2, '0')}`;
-  }
+  const totalSeconds = Math.floor(Math.max(0, Number(timeInHours) || 0) * 3600);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-// Format time from seconds with milliseconds
+// Format active inspection time as HH:MM:SS.
 const formatTimeFromSeconds = (timeInSeconds) => {
-  if (!timeInSeconds || timeInSeconds === 0) return '00:00:00.000';
+  if (!timeInSeconds || timeInSeconds === 0) return '00:00:00';
   
   const totalSeconds = Math.floor(timeInSeconds);
-  const milliseconds = Math.floor((timeInSeconds - totalSeconds) * 1000);
   
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   
-  // Show HH:MM:SS.mmm format
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 // Format time as HH:MM for display (simpler format)
@@ -4284,14 +4276,14 @@ const UserTaskDetail = () => {
         clearInterval(displayTimerRef.current);
       }
 
-      // Update display timer every 100ms for smooth milliseconds display
+      // Keep the display aligned with the persisted, whole-second timer.
       displayTimerRef.current = setInterval(() => {
         if (sessionStartTimeRef.current) {
           const elapsed = (Date.now() - sessionStartTimeRef.current) / 1000; // in seconds
           const totalTime = accumulatedTimeRef.current + elapsed;
           setDisplayTime(totalTime);
         }
-      }, 100);
+      }, 1000);
     }
   }, [isScreenActive]); // FIXED: Removed currentTask dependency
 
@@ -4547,7 +4539,7 @@ const UserTaskDetail = () => {
   // CRITICAL FIX: Only depend on status and signature, not on callbacks (they use refs now)
   useEffect(() => {
     // Start timer for in-progress tasks
-    if (currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
+    if (activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived') {
       if (!isScreenActive) {
         // Small delay to ensure state is set
         const timer = setTimeout(() => {
@@ -4563,7 +4555,7 @@ const UserTaskDetail = () => {
         pauseScreenTimer(false); // Don't save to backend here to avoid loops
       }
     }
-  }, [currentTask?.status, currentTask?.signature, isScreenActive]); // FIXED: Removed callback dependencies
+  }, [activeTab, currentTask?.status, currentTask?.signature, isScreenActive]); // FIXED: Removed callback dependencies
 
   // Handle page visibility changes
   // CRITICAL FIX: Use refs for task data to prevent infinite loops
@@ -4572,7 +4564,7 @@ const UserTaskDetail = () => {
       const task = currentTaskRef.current;
       if (document.hidden) {
         pauseScreenTimer(true); // Save to backend when page becomes hidden
-      } else if (task?.status === 'in_progress' && !task?.signature && task?.status !== 'completed' && task?.status !== 'archived') {
+      } else if (activeTab === 'inspection' && task?.status === 'in_progress' && !task?.signature && task?.status !== 'completed' && task?.status !== 'archived') {
         startScreenTimer();
       }
     };
@@ -4618,7 +4610,7 @@ const UserTaskDetail = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isScreenActive]); // FIXED: Removed all callback and currentTask dependencies - they use refs now
+  }, [activeTab, isScreenActive]); // Task data is read through refs; the timer is active only on the inspection tab.
 
   useEffect(() => {
     if (currentTask) {
@@ -7072,7 +7064,7 @@ const UserTaskDetail = () => {
                   {inspectionPages && inspectionPages.length > 0 ? (
                     inspectionPages.map((page, index) => {
                       const pageId = page.id || page._id;
-                      const pageCompletion = getPageCompletionRate(page, currentTask.questionnaireResponses || {});
+                      const pageScore = calculatePageScore(page, currentTask.questionnaireResponses || {});
 
                       return (
                         <DropdownItem
@@ -7098,19 +7090,19 @@ const UserTaskDetail = () => {
                               <span style={{
                                 fontSize: '11px',
                                 fontWeight: '700',
-                                color: pageCompletion.percentage <= 33 ? '#ef4444' : pageCompletion.percentage <= 66 ? '#f59e0b' : '#22c55e',
-                                background: pageCompletion.percentage <= 33 ? '#fef2f2' : pageCompletion.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                                color: pageScore.percentage <= 33 ? '#ef4444' : pageScore.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                                background: pageScore.percentage <= 33 ? '#fef2f2' : pageScore.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
                                 padding: '2px 8px',
                                 borderRadius: '10px',
                               }}>
-                                {pageCompletion.percentage}%
+                                {pageScore.percentage}%
                               </span>
                               <span style={{
                                 fontSize: '12px',
-                                color: pageCompletion.answered > 0 ? '#27ae60' : '#95a5a6',
+                                color: pageScore.achieved > 0 ? '#27ae60' : '#95a5a6',
                                 fontWeight: '600'
                               }}>
-                                {pageCompletion.answered}/{pageCompletion.total}
+                                {pageScore.achieved}/{pageScore.total}
                               </span>
                             </div>
                           </div>
@@ -7288,7 +7280,7 @@ const UserTaskDetail = () => {
                 currentPage.sections.map((section, idx) => {
                   const sectionId = section.id || section._id;
                   const isActive = selectedSection === sectionId;
-                  const sectionCompletion = getSectionCompletionRate(section, currentTask.questionnaireResponses || {});
+                  const sectionScore = calculateSectionScore(section, currentTask.questionnaireResponses || {});
 
                   return (
                     <SectionNavItem
@@ -7305,16 +7297,16 @@ const UserTaskDetail = () => {
                         <span style={{
                           fontSize: '10px',
                           fontWeight: '700',
-                          color: sectionCompletion.percentage <= 33 ? '#ef4444' : sectionCompletion.percentage <= 66 ? '#f59e0b' : '#22c55e',
-                          background: sectionCompletion.percentage <= 33 ? '#fef2f2' : sectionCompletion.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
+                          color: sectionScore.percentage <= 33 ? '#ef4444' : sectionScore.percentage <= 66 ? '#f59e0b' : '#22c55e',
+                          background: sectionScore.percentage <= 33 ? '#fef2f2' : sectionScore.percentage <= 66 ? '#fffbeb' : '#f0fdf4',
                           padding: '1px 6px',
                           borderRadius: '8px',
                         }}>
-                          {sectionCompletion.percentage}%
+                          {sectionScore.percentage}%
                         </span>
                         <SectionScore active={isActive}>
                           <Star size={12} />
-                          {sectionCompletion.answered}/{sectionCompletion.total}
+                          {sectionScore.achieved}/{sectionScore.total}
                         </SectionScore>
                       </div>
                     </SectionNavItem>
