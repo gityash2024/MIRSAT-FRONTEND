@@ -7894,7 +7894,7 @@ const UserTaskDetail = () => {
               {t('tasks.timeSpent')}
             </StatCardHeader>
             <StatCardValue>
-              {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+              {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                 ? formatTimeFromSeconds(displayTime)
                 : formatTimeSpent((currentTask?.taskMetrics?.timeSpent || 0) / 3600)}
             </StatCardValue>
@@ -8155,12 +8155,12 @@ const UserTaskDetail = () => {
                       <MetricCard $color="orange" $bgColor="rgba(243, 156, 18, 0.1)">
                         <MetricLabel>{t('tasks.timeSpent')}</MetricLabel>
                         <MetricValue $color="#f39c12" style={{ fontFamily: 'monospace', fontSize: '18px' }}>
-                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                             ? formatTimeFromSeconds(displayTime)
                             : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                         </MetricValue>
                         <MetricDescription>
-                          {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                          {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                             ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
                             : t('tasks.totalDuration')}
                         </MetricDescription>
@@ -8353,12 +8353,12 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(243, 156, 18, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#f39c12', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.timeSpent')}</div>
                       <div style={{ fontSize: '20px', fontWeight: '800', color: '#f39c12', fontFamily: 'monospace' }}>
-                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                        {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                           ? formatTimeFromSeconds(displayTime)
                           : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        {currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived' 
+                        {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                           ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
                           : t('tasks.totalDuration')}
                       </div>
