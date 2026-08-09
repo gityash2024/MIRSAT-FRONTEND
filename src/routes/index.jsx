@@ -49,6 +49,7 @@ import UserProfile from '../pages/profile';
 import LogsList from '@/pages/logs/LogsList.jsx';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../utils/permissions';
+import { canAccessDashboard, getDefaultRouteForUser } from '../utils/defaultRoute';
 
 // Wrapper component to ensure proper re-mounting on route changes
 const UserTaskDetailWrapper = () => {
@@ -57,6 +58,16 @@ const UserTaskDetailWrapper = () => {
   
   // Use both taskId and pathname to ensure component remounts on navigation
   return <UserTaskDetail key={`${taskId}-${location.pathname}`} />;
+};
+
+const DashboardRoute = () => {
+  const { user } = useAuth();
+
+  if (!canAccessDashboard(user)) {
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
+  }
+
+  return <Dashboard />;
 };
 
 const AppRoutes = () => {
@@ -68,11 +79,7 @@ const AppRoutes = () => {
         path="/"
         element={
           isAuthenticated ? (
-            user?.role === ROLES.INSPECTOR ? (
-              <Navigate to="/user-dashboard" replace />
-            ) : (
-              <Navigate to="/dashboard" replace />
-            )
+            <Navigate to={getDefaultRouteForUser(user)} replace />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -92,7 +99,7 @@ const AppRoutes = () => {
       {/* Admin, Manager, and Supervisor Routes - Shared Access */}
       <Route element={<PrivateRoute allowedRoles={[ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>
         <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/flagged-items" element={<FlaggedItems />} />
           
           <Route path="/tasks" element={<Tasks />}>

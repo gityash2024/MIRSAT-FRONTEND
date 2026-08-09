@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
+import { getDefaultRouteForUser } from '../utils/defaultRoute';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -547,12 +548,7 @@ const Login = () => {
     
       
    console.log(resultAction,'resultAction')
-   if(resultAction?.user?.role==='inspector'){
-    navigate('/user-dashboard');
-   }else{
-
-     navigate('/dashboard');
-   }
+   navigate(getDefaultRouteForUser(resultAction?.user));
     } catch (error) {
       // Handle login errors - check for deactivated account
       let errorMessage = error || t('auth.loginFailed');

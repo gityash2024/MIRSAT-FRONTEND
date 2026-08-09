@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { getDefaultRouteForUser } from '../utils/defaultRoute';
 
 const PrivateRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -21,11 +22,7 @@ const PrivateRoute = ({ allowedRoles = [] }) => {
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     console.log(`User with role ${user?.role} doesn't have access to route ${location.pathname}`);
     
-    if (user?.role === 'inspector') {
-      return <Navigate to="/user-dashboard" replace />;
-    } else {
-      return <Navigate to="/dashboard" replace />;
-    }
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
   return <Outlet />;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginAction, logout as logoutAction, restoreUser } from '../store/slices/authSlice';
 import FrontendLogger from '../services/frontendLogger.service';
+import { getDefaultRouteForUser } from '../utils/defaultRoute';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -17,7 +18,7 @@ export const useAuth = () => {
       // Log successful login
       await FrontendLogger.logLogin(email, true);
       
-      navigate('/dashboard');
+      navigate(getDefaultRouteForUser(result.user));
     } catch (error) {
       // Log failed login
       await FrontendLogger.logLogin(email, false);
