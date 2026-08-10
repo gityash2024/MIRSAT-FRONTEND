@@ -3,14 +3,9 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS } from '../../../utils/permissions';
+import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS, MANAGER_HIDDEN_MODULES } from '../../../utils/permissions';
 import { useAuth } from '../../../hooks/useAuth';
 import { fetchDepartments } from '../../../store/slices/departmentSlice';
-
-const FIXED_MANAGER_MODULE_PERMISSIONS = new Set([
-  MODULE_PERMISSIONS.CALENDAR,
-  MODULE_PERMISSIONS.PROFILE
-]);
 
 const Form = styled.form`
   display: grid;
@@ -334,7 +329,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         moduleAccess: initialData.moduleAccess
           || (initialData.permissions || []).filter((permission) => (
             Object.values(MODULE_PERMISSIONS).includes(permission)
-          )),
+          )).filter((permission) => !MANAGER_HIDDEN_MODULES.has(permission)),
         // Ensure all fields are properly set
         name: initialData.name || '',
         email: initialData.email || '',
@@ -366,7 +361,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         moduleAccess: formData.role === ROLES.MANAGER
           ? newPermissions.filter((permission) => (
             Object.values(MODULE_PERMISSIONS).includes(permission)
-          ))
+          )).filter((permission) => !MANAGER_HIDDEN_MODULES.has(permission))
           : []
       }));
     }
@@ -501,10 +496,6 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   };
 
   const handlePermissionChange = (permission) => {
-    if (formData.role === ROLES.MANAGER && FIXED_MANAGER_MODULE_PERMISSIONS.has(permission)) {
-      return;
-    }
-
     setFormData(prev => ({
       ...prev,
       moduleAccess: prev.moduleAccess.includes(permission)
@@ -545,16 +536,15 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
         <PermissionGroupTitle>{t('common.moduleAccess')}</PermissionGroupTitle>
         <PermissionList>
           {Object.entries(MODULE_PERMISSIONS)
+            .filter(([, permission]) => !MANAGER_HIDDEN_MODULES.has(permission))
             .map(([moduleName, permission]) => (
               <PermissionItem key={permission}>
                 <input
                   type="checkbox"
-                  checked={FIXED_MANAGER_MODULE_PERMISSIONS.has(permission) || formData.moduleAccess?.includes(permission)}
+                  checked={formData.moduleAccess?.includes(permission)}
                   onChange={() => handlePermissionChange(permission)}
-                  disabled={FIXED_MANAGER_MODULE_PERMISSIONS.has(permission)}
                 />
                 {translateModuleName(moduleName)}
-                {FIXED_MANAGER_MODULE_PERMISSIONS.has(permission) && ' (Always enabled)'}
               </PermissionItem>
           ))}
         </PermissionList>

@@ -53,6 +53,19 @@ export const MODULE_PERMISSIONS = {
   PROFILE: 'access_profile'
 };
 
+// Dashboard and Profile are fixed for every manager. Calendar follows the
+// manager's task/inspection access rather than being independently editable.
+export const MANAGER_FIXED_MODULES = new Set([
+  MODULE_PERMISSIONS.DASHBOARD,
+  MODULE_PERMISSIONS.PROFILE
+]);
+
+export const MANAGER_HIDDEN_MODULES = new Set([
+  MODULE_PERMISSIONS.DASHBOARD,
+  MODULE_PERMISSIONS.CALENDAR,
+  MODULE_PERMISSIONS.PROFILE
+]);
+
 export const ROLES = {
   SUPERADMIN: 'superadmin',
   ADMIN: 'admin',
@@ -78,15 +91,8 @@ export const ROLE_PERMISSIONS = {
     ...Object.values(PERMISSIONS.INSPECTIONS),
     ...Object.values(PERMISSIONS.CALENDAR),
     PERMISSIONS.SETTINGS.VIEW_SETTINGS,
-    // Add module permissions for sidebar tabs
-    MODULE_PERMISSIONS.DASHBOARD,
-    MODULE_PERMISSIONS.TASKS,
-    MODULE_PERMISSIONS.USERS,
-    MODULE_PERMISSIONS.TEMPLATE,
-    MODULE_PERMISSIONS.ASSETS,
-    MODULE_PERMISSIONS.QUESTIONNAIRES,
-    MODULE_PERMISSIONS.CALENDAR,
-    MODULE_PERMISSIONS.PROFILE
+    // Module access is selected by an administrator. Dashboard and Profile are
+    // derived fixed modules rather than persisted as editable permissions.
   ],
   [ROLES.SUPERVISOR]: [
     PERMISSIONS.DASHBOARD.VIEW_DASHBOARD,
@@ -128,7 +134,15 @@ export const hasPermission = (user, permission) => {
   if (user.role === ROLES.MANAGER || user.role === ROLES.SUPERVISOR) {
     // Check if it's a module permission
     if (Object.values(MODULE_PERMISSIONS).includes(permission)) {
-      return user.permissions && user.permissions.includes(permission);
+      return hasModuleAccess(user, Object.keys(MODULE_PERMISSIONS).find(
+        key => MODULE_PERMISSIONS[key] === permission
+      ));
+    }
+    if (user.role === ROLES.MANAGER && [
+      ...Object.values(PERMISSIONS.TASKS),
+      ...Object.values(PERMISSIONS.CALENDAR)
+    ].includes(permission)) {
+      return Boolean(user.permissions?.includes(MODULE_PERMISSIONS.TASKS));
     }
     // Fall back to granular permissions for existing functionality
     const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
@@ -165,6 +179,10 @@ export const hasModuleAccess = (user, module) => {
   
   // For managers, check module permissions
   if (user.role === ROLES.MANAGER) {
+    if (module === 'DASHBOARD' || module === 'PROFILE') return true;
+    if (module === 'CALENDAR') {
+      return Boolean(user.permissions?.includes(MODULE_PERMISSIONS.TASKS));
+    }
     const modulePermission = MODULE_PERMISSIONS[module];
     console.log('Manager check:', { 
       module, 

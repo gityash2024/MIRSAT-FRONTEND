@@ -429,6 +429,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         if (item.permission === null && item.modulePermission === null) {
           return true;
         }
+
+        if (item.path === '/dashboard') return true;
+        if (item.path === '/calendar') {
+          return user?.permissions?.includes('access_tasks');
+        }
         
         if (item.modulePermission) {
           return user?.permissions?.includes(item.modulePermission);

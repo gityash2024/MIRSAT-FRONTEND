@@ -1740,9 +1740,13 @@ const TaskForm = ({
     console.log('Initial assignedTo:', initialData.assignedTo);
 
     try {
-      // Extract user ID from initialData.assignedTo
-      if (Array.isArray(initialData.assignedTo) && initialData.assignedTo.length > 0) {
-        const assignedUser = initialData.assignedTo[0];
+      // Task editing supplies an array, while Calendar editing supplies the
+      // selected user ID directly. Normalize both shapes before selecting.
+      const assignedUser = Array.isArray(initialData.assignedTo)
+        ? initialData.assignedTo[0]
+        : initialData.assignedTo;
+
+      if (assignedUser) {
 
         if (typeof assignedUser === 'string') {
           setSelectedUserId(assignedUser);

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { canAccessDashboard, getDefaultRouteForUser } from './defaultRoute';
 
 describe('getDefaultRouteForUser', () => {
-  it('sends a manager to their first permitted module instead of Dashboard', () => {
+  it('always sends a manager to Dashboard because it is a fixed module', () => {
     expect(getDefaultRouteForUser({
       role: 'manager',
       permissions: ['access_users', 'access_template', 'access_calendar', 'access_profile'],
-    })).toBe('/users');
+    })).toBe('/dashboard');
   });
 
   it('keeps Dashboard as the first route when the manager has Dashboard access', () => {
@@ -16,8 +16,8 @@ describe('getDefaultRouteForUser', () => {
     })).toBe('/dashboard');
   });
 
-  it('blocks direct Dashboard access for a manager without the module permission', () => {
-    expect(canAccessDashboard({ role: 'manager', permissions: ['access_users'] })).toBe(false);
+  it('allows direct Dashboard access for a manager without a stored module permission', () => {
+    expect(canAccessDashboard({ role: 'manager', permissions: ['access_users'] })).toBe(true);
   });
 
   it('preserves the inspector dashboard route', () => {

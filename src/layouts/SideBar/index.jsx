@@ -275,7 +275,15 @@ const Sidebar = ({ isOpen, width }) => {
       
       const managerMenuItems = [];
       
-      // Always add Profile
+      // Dashboard and Profile are fixed Manager modules.
+      managerMenuItems.push({
+        icon: LayoutDashboard,
+        label: 'Dashboard',
+        path: '/dashboard',
+        module: 'DASHBOARD',
+        permissions: []
+      });
+
       managerMenuItems.push({
         icon: User, 
         label: 'Profile', 
@@ -283,20 +291,6 @@ const Sidebar = ({ isOpen, width }) => {
         module: 'PROFILE',
         permissions: []
       });
-      
-      // Add Dashboard if user has access_dashboard permission
-      if (user?.permissions?.includes('access_dashboard')) {
-        console.log('✅ ADDING DASHBOARD - user has access_dashboard');
-        managerMenuItems.push({
-          icon: LayoutDashboard, 
-          label: 'Dashboard', 
-          path: '/dashboard',
-          module: 'DASHBOARD',
-          permissions: []
-        });
-      } else {
-        console.log('❌ SKIPPING DASHBOARD - user does not have access_dashboard');
-      }
       
       // Add Tasks if user has access_tasks permission
       if (user?.permissions?.includes('access_tasks')) {
@@ -360,9 +354,9 @@ const Sidebar = ({ isOpen, width }) => {
         });
       }
       
-      // Add Calendar if user has access_calendar permission
-      if (user?.permissions?.includes('access_calendar')) {
-        console.log('✅ ADDING CALENDAR - user has access_calendar');
+      // Calendar follows Tasks/Inspections access for managers.
+      if (user?.permissions?.includes('access_tasks')) {
+        console.log('✅ ADDING CALENDAR - manager has access_tasks');
         managerMenuItems.push({
           icon: Calendar, 
           label: 'Calendar', 

@@ -3610,6 +3610,51 @@ const getPageCompletionRate = (page, responses) => {
   return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
 };
 
+const getScoreResponseValue = (response) => {
+  if (response && typeof response === 'object' && !Array.isArray(response)) {
+    return response.value ?? response.response ?? response.answer ?? response.status ?? response;
+  }
+  return response;
+};
+
+const getQuestionScore = (question, response) => {
+  const questionType = question?.type || question?.answerType;
+  const isScorable = ['yesno', 'compliance'].includes(questionType)
+    && question?.requirementType !== 'recommended'
+    && question?.mandatory !== false
+    && question?.required !== false;
+
+  if (!isScorable) return { total: 0, achieved: 0 };
+
+  const configuredScores = Object.values(question?.scores || {})
+    .map(Number)
+    .filter(Number.isFinite);
+  const maxScore = Number(question?.scoring?.max)
+    || Number(question?.scores?.max)
+    || Math.max(0, ...configuredScores)
+    || 2;
+  const weight = Number(question?.weight) || 1;
+  const value = getScoreResponseValue(response);
+
+  if (['na', 'not_applicable', 'N/A', 'Not applicable'].includes(String(value))) {
+    return { total: 0, achieved: 0 };
+  }
+
+  let achieved = 0;
+  if (value !== null && value !== undefined && value !== '') {
+    const configured = question?.scores?.[String(value)];
+    if (configured !== undefined && Number.isFinite(Number(configured))) {
+      achieved = Number(configured);
+    } else if (['full_compliance', 'yes', 'Yes', 'Full Compliance', 'Full compliance'].includes(String(value))) {
+      achieved = maxScore;
+    } else if (['partial_compliance', 'Partial Compliance', 'Partial compliance'].includes(String(value))) {
+      achieved = maxScore / 2;
+    }
+  }
+
+  return { total: maxScore * weight, achieved: achieved * weight };
+};
+
 const calculateSectionScore = (section, responses) => {
   if (!section || !section.questions || !responses) {
     return { total: 0, achieved: 0, percentage: 0 };
@@ -3619,19 +3664,6 @@ const calculateSectionScore = (section, responses) => {
   let totalAchieved = 0;
 
   section.questions.forEach(question => {
-    // CRITICAL FIX: Exclude recommended questions from scoring
-    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-      return; // Skip recommended/non-mandatory questions
-    }
-
-    // CRITICAL FIX: Only score Yes/No and Compliance question types
-    const questionType = question.type || question.answerType;
-    const scorableTypes = ['yesno', 'compliance'];
-    // Exclude non-scorable types: text, number, date, signature, file, media, checkbox, select, multiple_choice
-    if (!scorableTypes.includes(questionType)) {
-      return; // Skip text, signature, date, number, file, media, checkbox, select, multiple_choice and other non-scorable types
-    }
-
     const questionId = question._id || question.id;
     let responseKey = null;
 
@@ -3643,38 +3675,9 @@ const calculateSectionScore = (section, responses) => {
       );
     }
 
-    const maxScore = question.scores?.max || question.scoring?.max || 2;
-    const weight = question.weight || 1;
-
-    totalPossible += (maxScore * weight);
-
-    if (responseKey) {
-      const response = responses[responseKey];
-
-      if (response === 'na' || response === 'not_applicable' || response === 'N/A' || response === 'Not applicable') {
-        totalPossible -= (maxScore * weight);
-        return;
-      }
-
-      // Use template-defined scores if available
-      if (question.scores && typeof question.scores === 'object') {
-        // Get the score for this specific response from the template
-        const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
-        totalAchieved += responseScore * weight;
-      } else {
-        // Fallback to old logic if no template scores defined
-        // Only process compliance and yesno types (already filtered above)
-        if (questionType === 'compliance' || questionType === 'yesno') {
-          if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-            totalAchieved += (maxScore * weight);
-          } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-            totalAchieved += (maxScore / 2 * weight);
-          }
-        }
-        // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
-        // These should NEVER be scored
-      }
-    }
+    const score = getQuestionScore(question, responseKey ? responses[responseKey] : undefined);
+    totalPossible += score.total;
+    totalAchieved += score.achieved;
   });
 
   const percentage = totalPossible > 0 ? Math.round((totalAchieved / totalPossible) * 100) : 0;
@@ -4614,8 +4617,6 @@ const UserTaskDetail = () => {
 
   useEffect(() => {
     if (currentTask) {
-      calculateScores();
-
       let pagesToUse = [];
 
       if (currentTask.inspectionLevel && currentTask.inspectionLevel.pages) {
@@ -4665,6 +4666,15 @@ const UserTaskDetail = () => {
       }, 50);
     }
   }, [currentTask]); // Remove calculateTaskCompletionPercentage from dependencies to prevent infinite loop
+
+  // Scores depend on the normalized inspection pages. The previous order ran
+  // the calculation while this list was still empty, leaving the total at 0%
+  // even though the section badges had valid scores.
+  useEffect(() => {
+    if (currentTask && inspectionPages.length > 0) {
+      calculateScores();
+    }
+  }, [currentTask, inspectionPages, calculateScores]);
 
   useEffect(() => {
     if (currentTask && currentTask.signature) {
@@ -7416,30 +7426,7 @@ const UserTaskDetail = () => {
                         question.mandatory !== false &&
                         question.required !== false;
 
-                      const maxScore = isScorable ? (question.scoring?.max || 2) : 0;
-                      let achievedScore = 0;
-
-                      // CRITICAL FIX: Only calculate score for scorable questions
-                      if (isScorable && response !== undefined && response !== null) {
-                        // Use template-defined scores if available
-                        if (question.scores && typeof question.scores === 'object') {
-                          // Get the score for this specific response from the template
-                          const responseScore = question.scores[response] || question.scores[response.toString()] || 0;
-                          achievedScore = responseScore;
-                        } else {
-                          // Fallback to old logic if no template scores defined
-                          // Only process compliance and yesno types (already filtered above)
-                          if (questionType === 'compliance' || questionType === 'yesno') {
-                            if (response === 'full_compliance' || response === 'yes' || response === 'Yes' || response === 'Full compliance') {
-                              achievedScore = maxScore;
-                            } else if (response === 'partial_compliance' || response === 'Partial compliance') {
-                              achievedScore = maxScore / 2;
-                            }
-                          }
-                          // REMOVED: All other question types (text, signature, date, number, file, checkbox, multiple)
-                          // These should NEVER be scored
-                        }
-                      }
+                      const questionScore = getQuestionScore(question, response);
 
                       // Check if this question should be highlighted
                       const isHighlighted = highlightUnansweredMode && currentSectionUnansweredQuestions.has(questionId);
@@ -7461,9 +7448,9 @@ const UserTaskDetail = () => {
                               </QuestionBadge> */}
                               {/* CRITICAL FIX: Only show score badge for scorable questions */}
                               {isScorable && (
-                                <ScoreBadge hasResponse={achievedScore > 0}>
+                                <ScoreBadge hasResponse={questionScore.achieved > 0}>
                                   <Star size={14} />
-                                  {achievedScore}/{maxScore}
+                                  {questionScore.achieved}/{questionScore.total}
                                 </ScoreBadge>
                               )}
                             </QuestionBadges>
