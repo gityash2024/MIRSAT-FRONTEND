@@ -80,6 +80,11 @@ import {
   isQuestionAnswered,
   isRequiredQuestion
 } from '../../utils/inspectionProgress';
+import {
+  calculatePageScore,
+  calculateSectionScore,
+  getQuestionScore,
+} from '../../utils/inspectionScoring';
 import { API_CONFIG } from '../../config/api';
 import { validateSignatureDataUrl } from '../../utils/signatureValidation';
 
@@ -3608,108 +3613,6 @@ const getPageCompletionRate = (page, responses) => {
     total += sr.total;
   });
   return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
-};
-
-const getScoreResponseValue = (response) => {
-  if (response && typeof response === 'object' && !Array.isArray(response)) {
-    return response.value ?? response.response ?? response.answer ?? response.status ?? response;
-  }
-  return response;
-};
-
-const getQuestionScore = (question, response) => {
-  const questionType = question?.type || question?.answerType;
-  const isScorable = ['yesno', 'compliance'].includes(questionType)
-    && question?.requirementType !== 'recommended'
-    && question?.mandatory !== false
-    && question?.required !== false;
-
-  if (!isScorable) return { total: 0, achieved: 0 };
-
-  const configuredScores = Object.values(question?.scores || {})
-    .map(Number)
-    .filter(Number.isFinite);
-  const maxScore = Number(question?.scoring?.max)
-    || Number(question?.scores?.max)
-    || Math.max(0, ...configuredScores)
-    || 2;
-  const weight = Number(question?.weight) || 1;
-  const value = getScoreResponseValue(response);
-
-  if (['na', 'not_applicable', 'N/A', 'Not applicable'].includes(String(value))) {
-    return { total: 0, achieved: 0 };
-  }
-
-  let achieved = 0;
-  if (value !== null && value !== undefined && value !== '') {
-    const configured = question?.scores?.[String(value)];
-    if (configured !== undefined && Number.isFinite(Number(configured))) {
-      achieved = Number(configured);
-    } else if (['full_compliance', 'yes', 'Yes', 'Full Compliance', 'Full compliance'].includes(String(value))) {
-      achieved = maxScore;
-    } else if (['partial_compliance', 'Partial Compliance', 'Partial compliance'].includes(String(value))) {
-      achieved = maxScore / 2;
-    }
-  }
-
-  return { total: maxScore * weight, achieved: achieved * weight };
-};
-
-const calculateSectionScore = (section, responses) => {
-  if (!section || !section.questions || !responses) {
-    return { total: 0, achieved: 0, percentage: 0 };
-  }
-
-  let totalPossible = 0;
-  let totalAchieved = 0;
-
-  section.questions.forEach(question => {
-    const questionId = question._id || question.id;
-    let responseKey = null;
-
-    if (responses[questionId] !== undefined) {
-      responseKey = questionId;
-    } else {
-      responseKey = Object.keys(responses).find(key =>
-        key.includes(questionId) || key.endsWith(questionId)
-      );
-    }
-
-    const score = getQuestionScore(question, responseKey ? responses[responseKey] : undefined);
-    totalPossible += score.total;
-    totalAchieved += score.achieved;
-  });
-
-  const percentage = totalPossible > 0 ? Math.round((totalAchieved / totalPossible) * 100) : 0;
-
-  return {
-    total: totalPossible,
-    achieved: totalAchieved,
-    percentage: percentage
-  };
-};
-
-const calculatePageScore = (page, responses) => {
-  if (!page || !page.sections) {
-    return { total: 0, achieved: 0, percentage: 0 };
-  }
-
-  let pageTotal = 0;
-  let pageAchieved = 0;
-
-  page.sections.forEach(section => {
-    const sectionScore = calculateSectionScore(section, responses);
-    pageTotal += sectionScore.total;
-    pageAchieved += sectionScore.achieved;
-  });
-
-  const percentage = pageTotal > 0 ? Math.round((pageAchieved / pageTotal) * 100) : 0;
-
-  return {
-    total: pageTotal,
-    achieved: pageAchieved,
-    percentage: percentage
-  };
 };
 
 // Signature Canvas Component for individual questions - moved outside to prevent re-renders
