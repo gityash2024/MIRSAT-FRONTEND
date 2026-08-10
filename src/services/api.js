@@ -22,6 +22,14 @@ const api = axios.create({
   maxBodyLength: 50 * 1024 * 1024, // 50MB max body length for large uploads
 });
 
+// API errors have existed in both `{ message }` and `{ error: { message } }`
+// formats. Normalize them once so every existing screen can show the specific
+// server message without changing its own UI or request flow.
+const getApiErrorMessage = (error) => {
+  const message = error?.response?.data?.message || error?.response?.data?.error?.message;
+  return typeof message === 'string' && message.trim() ? message : null;
+};
+
 // Create a function to generate a unique key for each request
 const getRequestKey = (config) => {
   // Only consider GET requests for deduplication to avoid blocking mutations
@@ -196,6 +204,12 @@ api.interceptors.response.use(
     if (error.canceled) {
       return Promise.reject(error);
     }
+
+    const apiErrorMessage = getApiErrorMessage(error);
+    if (apiErrorMessage) {
+      error.message = apiErrorMessage;
+    }
+
     console.log(error,'error-----');
 
     if (error.config?._skipRetry) {
