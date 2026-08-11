@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { canAccessDashboard, getDefaultRouteForUser } from './defaultRoute';
 
 describe('getDefaultRouteForUser', () => {
-  it('always sends a manager to Dashboard because it is a fixed module', () => {
+  it('sends a manager without Dashboard access to their first permitted module', () => {
     expect(getDefaultRouteForUser({
       role: 'manager',
       permissions: ['access_users', 'access_template', 'access_calendar', 'access_profile'],
-    })).toBe('/dashboard');
+    })).toBe('/users');
   });
 
   it('keeps Dashboard as the first route when the manager has Dashboard access', () => {
@@ -16,8 +16,13 @@ describe('getDefaultRouteForUser', () => {
     })).toBe('/dashboard');
   });
 
-  it('allows direct Dashboard access for a manager without a stored module permission', () => {
-    expect(canAccessDashboard({ role: 'manager', permissions: ['access_users'] })).toBe(true);
+  it('uses Profile when a legacy manager has no selectable modules', () => {
+    expect(getDefaultRouteForUser({ role: 'manager', permissions: [] })).toBe('/profile');
+  });
+
+  it('allows direct Dashboard access only when a manager has the module permission', () => {
+    expect(canAccessDashboard({ role: 'manager', permissions: ['access_users'] })).toBe(false);
+    expect(canAccessDashboard({ role: 'manager', permissions: ['access_dashboard'] })).toBe(true);
   });
 
   it('allows administrators and supervisors to render Dashboard without a manager module flag', () => {

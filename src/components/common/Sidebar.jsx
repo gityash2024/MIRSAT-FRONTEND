@@ -430,7 +430,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           return true;
         }
 
-        if (item.path === '/dashboard') return true;
+        if (item.path === '/dashboard') {
+          return user?.permissions?.includes('access_dashboard');
+        }
         if (item.path === '/calendar') {
           return user?.permissions?.includes('access_tasks');
         }
