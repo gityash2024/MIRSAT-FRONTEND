@@ -14,6 +14,15 @@ export const getDefaultRouteForUser = (user) => {
   return '/dashboard';
 };
 
+// Dashboard is the landing page for all non-inspector roles in the shared
+// admin workspace. Managers have it as a fixed module; administrators and
+// supervisors must not be redirected back to this same route when their
+// persisted permissions omit the manager-only module flag.
 export const canAccessDashboard = (user) => (
-  Boolean(user) && (user.role === ROLES.MANAGER || user.permissions?.includes(MODULE_PERMISSIONS.DASHBOARD))
+  Boolean(user) && [
+    ROLES.SUPERADMIN,
+    ROLES.ADMIN,
+    ROLES.MANAGER,
+    ROLES.SUPERVISOR,
+  ].includes(user.role)
 );

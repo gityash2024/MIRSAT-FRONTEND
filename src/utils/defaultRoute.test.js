@@ -20,6 +20,12 @@ describe('getDefaultRouteForUser', () => {
     expect(canAccessDashboard({ role: 'manager', permissions: ['access_users'] })).toBe(true);
   });
 
+  it('allows administrators and supervisors to render Dashboard without a manager module flag', () => {
+    expect(canAccessDashboard({ role: 'admin', permissions: [] })).toBe(true);
+    expect(canAccessDashboard({ role: 'superadmin', permissions: [] })).toBe(true);
+    expect(canAccessDashboard({ role: 'supervisor', permissions: [] })).toBe(true);
+  });
+
   it('preserves the inspector dashboard route', () => {
     expect(getDefaultRouteForUser({ role: 'inspector', permissions: [] })).toBe('/user-dashboard');
   });
