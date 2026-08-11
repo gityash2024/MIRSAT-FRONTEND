@@ -7321,8 +7321,8 @@ const UserTaskDetail = () => {
                       }
 
                       // CRITICAL FIX: Determine if question is scorable
-                      const questionType = question.type || question.answerType;
-                      const scorableTypes = ['yesno', 'compliance'];
+                      const questionType = String(question.type || question.answerType || '').toLowerCase();
+                      const scorableTypes = ['yesno', 'yes_no', 'yes/no', 'boolean', 'compliance'];
                       // Exclude non-scorable types: text, number, date, signature, file, media, checkbox, select, multiple_choice
                       const isScorable = scorableTypes.includes(questionType) &&
                         question.requirementType !== 'recommended' &&

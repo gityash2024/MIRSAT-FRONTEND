@@ -22,6 +22,37 @@ describe('inspection scoring', () => {
     expect(score).toEqual({ total: 6, achieved: 6 });
   });
 
+  it('uses answer scores instead of a legacy positional scoring.max value', () => {
+    const score = getQuestionScore({
+      type: 'compliance',
+      scoring: { max: 4 },
+      scores: {
+        'Full compliance': 2,
+        'Partial compliance': 1,
+        'Non-compliant': 0,
+        'Not applicable': 0,
+      },
+    }, 'Full compliance');
+
+    expect(score).toEqual({ total: 2, achieved: 2 });
+  });
+
+  it('keeps section and overall totals aligned with the same answer-score rules', () => {
+    const page = {
+      sections: [{
+        questions: [
+          { _id: 'q1', type: 'compliance', scoring: { max: 3 }, scores: { 'Full compliance': 2, 'Partial compliance': 1, 'Non-compliant': 0 } },
+          { _id: 'q2', type: 'compliance', scoring: { max: 4 }, scores: { 'Full compliance': 2, 'Partial compliance': 1, 'Non-compliant': 0 } },
+        ],
+      }],
+    };
+
+    expect(calculatePageScore(page, {
+      q1: 'Full compliance',
+      q2: 'Partial compliance',
+    })).toEqual({ total: 4, achieved: 3, percentage: 75 });
+  });
+
   it('excludes N/A questions and non-scoring recommendations from the denominator', () => {
     const section = {
       questions: [

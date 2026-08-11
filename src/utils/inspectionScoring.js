@@ -48,6 +48,27 @@ const getConfiguredScore = (scores, value) => {
     : undefined;
 };
 
+// A score map describes the actual value for each answer.  Some older task
+// snapshots also contain a `scoring.max` value that was accidentally saved as
+// the question's position (3, 4, 5, …), rather than its maximum score.  When
+// answer scores are available they are therefore the source of truth for the
+// maximum as well as the achieved value.
+const getConfiguredScoreValues = (scores) => Object.entries(scores || {})
+  .filter(([key]) => normalizeValue(key) !== 'max')
+  .map(([, value]) => Number(value))
+  .filter(Number.isFinite);
+
+const getQuestionMaxScore = (question) => {
+  const configuredScores = getConfiguredScoreValues(question?.scores);
+  if (configuredScores.length > 0) {
+    return Math.max(0, ...configuredScores);
+  }
+
+  return Number(question?.scoring?.max)
+    || Number(question?.scores?.max)
+    || 2;
+};
+
 export const getQuestionScore = (question, response) => {
   const questionType = normalizeValue(question?.type || question?.answerType);
   const isScorable = SCOREABLE_QUESTION_TYPES.has(questionType)
@@ -57,13 +78,7 @@ export const getQuestionScore = (question, response) => {
 
   if (!isScorable) return { total: 0, achieved: 0 };
 
-  const configuredScores = Object.values(question?.scores || {})
-    .map(Number)
-    .filter(Number.isFinite);
-  const maxScore = Number(question?.scoring?.max)
-    || Number(question?.scores?.max)
-    || Math.max(0, ...configuredScores)
-    || 2;
+  const maxScore = getQuestionMaxScore(question);
   const weight = Number(question?.weight) || 1;
   const value = getScoreResponseValue(response);
   const normalizedValue = normalizeValue(value);
