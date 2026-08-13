@@ -1328,6 +1328,7 @@
     "thisActionCannotBeUndone": "لا يمكن التراجع عن هذا الإجراء. تأكد من إكمال جميع أعمال التفتيش.",
     "assetAutoSelectedFromTemplate": "تم اختيار الأصل تلقائياً بناءً على نوع القالب",
     "noMatchingAssetFound": "لم يتم العثور على أصل مطابق لنوع هذا القالب",
+    "templateAssetTypeRequired": "لا يحتوي هذا القالب على نوع أصل. حدد نوع الأصل في القالب قبل اختيار الأصل.",
     "selectedAsset": "الأصل المحدد",
     "selectTemplateFirstToEnableAsset": "يرجى اختيار قالب أولاً لتمكين اختيار الأصل",
     "assetDisabledSelectTemplateFirst": "اختر قالباً أولاً لتمكين اختيار الأصل",

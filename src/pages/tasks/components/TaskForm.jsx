@@ -19,6 +19,7 @@ import { fetchQuestionLibrary } from '../../../store/slices/questionLibrarySlice
 import { v4 as uuidv4 } from 'uuid';
 import FrontendLogger from '../../../services/frontendLogger.service';
 import { useLanguage } from '../../../context/LanguageContext';
+import { filterAssetsForTemplateType, getTemplateAssetType } from '../../../utils/taskAssetFiltering';
 
 const Form = styled.form`
   display: grid;
@@ -1728,6 +1729,7 @@ const TaskForm = ({
   const [selectedUserId, setSelectedUserId] = useState('');
   const [filteredAssets, setFilteredAssets] = useState(assets || []);
   const [selectedTemplateType, setSelectedTemplateType] = useState(null);
+  const hasTemplateAssetType = Boolean(selectedTemplateType);
 
   // Expose the React-controlled date/toggle fields so the agent can operate them on the visible form.
   useAgentField('tasks.form.dueDate', { setValue: (value) => setFormData(prev => ({ ...prev, dueDate: value ? new Date(value) : null })), getValue: () => formData.dueDate });
@@ -1765,23 +1767,28 @@ const TaskForm = ({
     }
   }, [initialData]);
 
-  // Filter assets based on selected template type
+  // A template without an Asset Type must never expose every platform asset.
+  // It has no valid compatibility rule, so keep the Asset control empty until
+  // the template is configured with a real type.
   useEffect(() => {
-    if (assets && assets.length > 0) {
-      if (formData.inspectionLevel && selectedTemplateType) {
-        // Filter assets that match the template's asset type
-        const filtered = assets.filter(asset => asset.type === selectedTemplateType);
-        setFilteredAssets(filtered);
-        console.log('Filtered assets for template type:', selectedTemplateType, 'Found:', filtered.length);
-      } else if (formData.inspectionLevel && !selectedTemplateType) {
-        // If we have a template but no type info, show all assets
-        setFilteredAssets(assets);
-      } else {
-        // No template selected, show all assets
-        setFilteredAssets(assets);
-      }
+    if (!formData.inspectionLevel || !hasTemplateAssetType) {
+      setFilteredAssets([]);
+      return;
     }
-  }, [formData.inspectionLevel, selectedTemplateType, assets]);
+
+    const filtered = filterAssetsForTemplateType(assets, selectedTemplateType);
+    setFilteredAssets(filtered);
+    console.log('Filtered assets for template type:', selectedTemplateType, 'Found:', filtered.length);
+  }, [formData.inspectionLevel, selectedTemplateType, hasTemplateAssetType, assets]);
+
+  // Resolve the type after asynchronous template data arrives as well as
+  // after a dropdown change. This keeps edit/create behavior identical.
+  useEffect(() => {
+    const selectedTemplate = inspectionLevels?.find((level) => (
+      (level._id || level.id) === formData.inspectionLevel
+    ));
+    setSelectedTemplateType(getTemplateAssetType(selectedTemplate));
+  }, [formData.inspectionLevel, inspectionLevels]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2015,20 +2022,15 @@ const TaskForm = ({
     if (name === 'inspectionLevel') {
       if (value) {
         const selectedTemplate = inspectionLevels?.find(level => level._id === value);
-        if (selectedTemplate && selectedTemplate.type) {
-          // Set the template type to filter assets
-          setSelectedTemplateType(selectedTemplate.type);
-
-          // Clear asset field when template changes
-          setFormData(prev => ({
-            ...prev,
-            [name]: value,
-            asset: ''
-          }));
-          return;
-        } else {
-          setSelectedTemplateType(null);
-        }
+        // Always clear a previous asset. A blank type is intentionally kept
+        // blank: it must not silently make every asset selectable.
+        setSelectedTemplateType(getTemplateAssetType(selectedTemplate));
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          asset: ''
+        }));
+        return;
       } else {
         // Template cleared, reset asset field and clear type filter
         setSelectedTemplateType(null);
@@ -2445,19 +2447,22 @@ const TaskForm = ({
             value={formData.asset}
             onChange={handleChange}
             required
-            disabled={!formData.inspectionLevel}
+            disabled={!formData.inspectionLevel || !hasTemplateAssetType}
             style={{
-              backgroundColor: formData.inspectionLevel ? '#fff' : '#f5f5f5',
-              cursor: formData.inspectionLevel ? 'default' : 'not-allowed',
-              opacity: formData.inspectionLevel ? 1 : 0.7
+              backgroundColor: formData.inspectionLevel && hasTemplateAssetType ? '#fff' : '#f5f5f5',
+              cursor: formData.inspectionLevel && hasTemplateAssetType ? 'default' : 'not-allowed',
+              opacity: formData.inspectionLevel && hasTemplateAssetType ? 1 : 0.7
             }}
           >
             <option value="">
-              {formData.inspectionLevel
-                ? filteredAssets.length > 0
+              {!formData.inspectionLevel
+                ? t('tasks.selectTemplateFirst')
+                : !hasTemplateAssetType
+                  ? t('tasks.templateAssetTypeRequired')
+                  : filteredAssets.length > 0
                   ? t('tasks.selectAsset')
                   : t('tasks.noMatchingAssetFound')
-                : t('tasks.selectTemplateFirst')}
+              }
             </option>
             {filteredAssets.map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
@@ -2475,7 +2480,17 @@ const TaskForm = ({
               {t('tasks.selectTemplateFirstToEnableAsset')}
             </div>
           )}
-          {formData.inspectionLevel && filteredAssets.length === 0 && (
+          {formData.inspectionLevel && !hasTemplateAssetType && (
+            <div style={{
+              fontSize: '12px',
+              color: '#f59e0b',
+              marginTop: '4px',
+              fontStyle: 'italic'
+            }}>
+              {t('tasks.templateAssetTypeRequired')}
+            </div>
+          )}
+          {formData.inspectionLevel && hasTemplateAssetType && filteredAssets.length === 0 && (
             <div style={{
               fontSize: '12px',
               color: '#f59e0b',
