@@ -775,6 +775,7 @@
     "upcomingScheduledInspections": "التفتيشات المجدولة القادمة",
     "noUpcomingInspections": "لا توجد تفتيشات قادمة",
     "count": "العدد",
+    "taskCount": "عدد المهام",
     "avgDurationMin": "متوسط ​​المدة (دقيقة)",
     "inspections": "التفتيشات",
     "late": "متأخر",

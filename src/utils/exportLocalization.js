@@ -16,14 +16,42 @@ export const containsArabic = (text) => {
   return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(text));
 };
 
+// Some legacy records were written as UTF-8 bytes decoded as Latin-1. Repair
+// those values before deciding which PDF font and shaping path to use.
+export const repairMojibake = (value) => {
+  if (value === null || value === undefined) return '';
+  let current = String(value);
+  for (let pass = 0; pass < 2; pass += 1) {
+    if (containsArabic(current)) break;
+    try {
+      const windows1252Bytes = {
+        '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86,
+        '‡': 0x87, 'ˆ': 0x88, '‰': 0x89, 'Š': 0x8a, '‹': 0x8b, 'Œ': 0x8c,
+        'Ž': 0x8e, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95,
+        '–': 0x96, '—': 0x97, '˜': 0x98, '™': 0x99, 'š': 0x9a, '›': 0x9b,
+        'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f
+      };
+      const bytes = Uint8Array.from(current, (character) => (
+        windows1252Bytes[character] ?? character.charCodeAt(0)
+      ));
+      const repaired = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      if (!repaired || repaired === current) break;
+      current = repaired;
+    } catch {
+      break;
+    }
+  }
+  return current;
+};
+
 export const formatPdfText = (value, language = EXPORT_LANGUAGES.EN) => {
   if (value === null || value === undefined) return '';
-  const text = String(value);
+  const text = repairMojibake(value);
   if (!isArabicExport(language) && !containsArabic(text)) return text;
 
   try {
     return ArabicReshaper.convertArabic(text);
-  } catch (error) {
+  } catch {
     return text;
   }
 };
@@ -49,7 +77,7 @@ export const loadPdfArabicFont = async (doc) => {
       doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', btoa(binary));
       doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
       return true;
-    } catch (error) {
+    } catch {
       // Try the next source.
     }
   }

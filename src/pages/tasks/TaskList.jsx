@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { Plus, Search, Download, RefreshCw, Loader, ChevronDown, X, User, AlertCircle } from 'lucide-react';
 import TaskTable from './components/TaskTable';
@@ -547,6 +547,7 @@ const TaskList = () => {
   const { allAssetsForDropdown } = useSelector((state) => state.assets || { allAssetsForDropdown: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
   const { assetTypes } = useSelector((state) => state.assetTypes || { assetTypes: [] });
+  const [searchParams] = useSearchParams();
 
   // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
@@ -577,6 +578,7 @@ const TaskList = () => {
     { value: 'pending', label: t('tasks.pending') },
     { value: 'in_progress', label: t('tasks.inProgress') },
     { value: 'archived', label: t('tasks.completed') },
+    { value: 'delayed', label: t('dashboard.delayedInspections', { defaultValue: 'Delayed Tasks' }) },
   ];
 
   const priorityOptions = [
@@ -584,6 +586,18 @@ const TaskList = () => {
     { value: 'medium', label: t('tasks.mediumPriority') },
     { value: 'high', label: t('tasks.highPriority') },
   ];
+
+  useEffect(() => {
+    const statusFromDashboard = searchParams.get('status');
+    const supportedStatuses = ['pending', 'in_progress', 'archived', 'delayed'];
+    if (statusFromDashboard && supportedStatuses.includes(statusFromDashboard)) {
+      const currentStatus = Array.isArray(filters?.status) ? filters.status : [];
+      if (currentStatus.length !== 1 || currentStatus[0] !== statusFromDashboard) {
+        dispatch(setFilters({ ...filters, status: [statusFromDashboard] }));
+        dispatch(setPagination({ page: 1 }));
+      }
+    }
+  }, [dispatch, filters, searchParams]);
 
   useEffect(() => {
     // Initialize filters if they don't exist

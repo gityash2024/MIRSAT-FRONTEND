@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import {
   Calendar,
@@ -8,7 +8,9 @@ import {
   Flag,
   Download,
   Loader,
-  Eye
+  Eye,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
@@ -64,12 +66,16 @@ const SectionTitle = styled.h2`
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
   margin-bottom: 32px;
 
-  @media (max-width: 992px) {
-    grid-template-columns: repeat(2, 1fr);
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @media (max-width: 576px) {
@@ -163,17 +169,6 @@ const ChartContainer = styled.div`
         background: #94a3b8;
       }
     }
-  }
-`;
-
-const SmallCardsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
-
-  @media (max-width: 576px) {
-    grid-template-columns: 1fr;
   }
 `;
 
@@ -275,6 +270,39 @@ const Dashboard = () => {
     upcomingInspections: []
   });
   const [loading, setLoading] = useState(true);
+  const [inspectorSort, setInspectorSort] = useState({ key: null, direction: 'asc' });
+  const [templateSort, setTemplateSort] = useState({ key: null, direction: 'asc' });
+  const [showAllInspectors, setShowAllInspectors] = useState(false);
+  const [showAllTemplates, setShowAllTemplates] = useState(false);
+
+  const sortedInspectors = useMemo(() => {
+    const rows = [...(data?.charts?.inspectorPerformance || [])];
+    if (!inspectorSort.key) return rows;
+    return rows.sort((a, b) => {
+      const left = Number(a[inspectorSort.key] || 0);
+      const right = Number(b[inspectorSort.key] || 0);
+      return inspectorSort.direction === 'asc' ? left - right : right - left;
+    });
+  }, [data?.charts?.inspectorPerformance, inspectorSort]);
+
+  const sortedTemplates = useMemo(() => {
+    const rows = [...(data?.charts?.templateUsage || [])];
+    if (!templateSort.key) return rows;
+    return rows.sort((a, b) => {
+      const left = Number(a[templateSort.key] || 0);
+      const right = Number(b[templateSort.key] || 0);
+      return templateSort.direction === 'asc' ? left - right : right - left;
+    });
+  }, [data?.charts?.templateUsage, templateSort]);
+
+  const toggleSort = (setter, current, key) => setter({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+  });
+
+  const SortIndicator = ({ active, direction }) => active ? (
+    direction === 'asc' ? <ChevronUp size={14} aria-label="ascending" /> : <ChevronDown size={14} aria-label="descending" />
+  ) : null;
 
   const fetchDashboardData = async (filters = {}) => {
     try {
@@ -503,8 +531,6 @@ const Dashboard = () => {
         </WelcomeText>
       </ScrollAnimation>
 
-      <DashboardFilters onFilterChange={handleFilterChange} />
-
       <ExportRow>
         <ExportButton onClick={() => setShowDocumentModal(true)} data-agent-action="dashboard.export.pdf">
           <Download size={20} />
@@ -521,6 +547,8 @@ const Dashboard = () => {
         defaultCriteria={['documentType', 'currentDate']}
       />
 
+      <DashboardFilters onFilterChange={handleFilterChange} />
+
       <ScrollAnimation animation="slideIn" delay={0.1}>
         <StatsGrid>
           <StatCard>
@@ -530,19 +558,42 @@ const Dashboard = () => {
             <div className="value">{data?.stats?.total || 0}</div>
             <div className="label">{t('dashboard.totalTasks')}</div>
           </StatCard>
-          <StatCard>
+          <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=archived')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
             <div className="icon-wrapper">
               <CheckSquare color="var(--color-success)" />
             </div>
             <div className="value">{data?.stats?.completed || 0}</div>
             <div className="label">{t('dashboard.completedTasks')}</div>
           </StatCard>
-          <StatCard>
+          <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=pending')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
             <div className="icon-wrapper">
               <Clock color="var(--color-warning)" />
             </div>
             <div className="value">{data?.stats?.pending || 0}</div>
             <div className="label">{t('dashboard.pendingTasks')}</div>
+          </StatCard>
+          <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=delayed')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
+            <div className="icon-wrapper" style={{ backgroundColor: '#fee2e2' }}>
+              <Clock color="#ef4444" />
+            </div>
+            <div className="value">{data?.stats?.delayed || 0}</div>
+            <div className="label">{t('dashboard.delayedInspections')}</div>
+          </StatCard>
+          <StatCard style={{ position: 'relative' }}>
+            <div className="icon-wrapper" style={{ backgroundColor: '#fef3c7' }}>
+              <Flag color="#f59e0b" />
+            </div>
+            <div className="value">{data?.stats?.flagged || 0}</div>
+            <div className="label">{t('dashboard.flaggedItems')}</div>
+            {data?.stats?.flagged > 0 && (
+              <button
+                onClick={() => navigate('/flagged-items')}
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '500' }}
+              >
+                <Eye size={14} />
+                {t('common.view')}
+              </button>
+            )}
           </StatCard>
         </StatsGrid>
       </ScrollAnimation>
@@ -607,62 +658,15 @@ const Dashboard = () => {
         </ScrollAnimation>
       </ChartsGrid>
 
-      <SmallCardsGrid>
-        <ScrollAnimation animation="slideIn" delay={0.4}>
-          <StatCard>
-            <div className="icon-wrapper" style={{ backgroundColor: '#fee2e2' }}>
-              <Clock color="#ef4444" />
-            </div>
-            <div className="value">{data?.stats?.delayed || 0}</div>
-            <div className="label">{t('dashboard.delayedInspections')}</div>
-          </StatCard>
-        </ScrollAnimation>
-        <ScrollAnimation animation="slideIn" delay={0.5}>
-          <StatCard style={{ position: 'relative' }}>
-            <div className="icon-wrapper" style={{ backgroundColor: '#fef3c7' }}>
-              <Flag color="#f59e0b" />
-            </div>
-            <div className="value">{data?.stats?.flagged || 0}</div>
-            <div className="label">{t('dashboard.flaggedItems')}</div>
-            {data?.stats?.flagged > 0 && (
-              <button
-                onClick={() => navigate('/flagged-items')}
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'var(--color-navy)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '6px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--color-navy-dark)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--color-navy)';
-                }}
-              >
-                <Eye size={14} />
-                {t('common.view')}
-              </button>
-            )}
-          </StatCard>
-        </ScrollAnimation>
-      </SmallCardsGrid>
-
       <ChartsGrid>
         <ScrollAnimation animation="slideIn" delay={0.6}>
           <ChartCard>
-            <SectionTitle>{t('dashboard.inspectorPerformanceAvgDuration')}</SectionTitle>
+            <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{t('dashboard.inspectorPerformanceAvgDuration')}</span>
+              <button type="button" onClick={() => setShowAllInspectors(value => !value)} style={{ border: 0, background: 'none', color: 'var(--color-info)', cursor: 'pointer', fontSize: 13 }}>
+                {showAllInspectors ? t('common.showLess', { defaultValue: 'Show less' }) : t('common.viewAll', { defaultValue: 'View all' })} →
+              </button>
+            </SectionTitle>
             <TableContainer>
               {(data?.charts?.inspectorPerformance || []).length > 0 ? (
                 <table>
@@ -675,18 +679,22 @@ const Dashboard = () => {
                         {t('dashboard.inspections')}
                       </th>
                       <th style={{ textAlign: 'center', width: '80px' }}>
-                        {t('dashboard.count')}
+                        <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {t('dashboard.taskCount', { defaultValue: 'Task Count' })} <SortIndicator active={inspectorSort.key === 'count'} direction={inspectorSort.direction} />
+                        </button>
                       </th>
                       <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '35%' }}>
                         {t('dashboard.avgDurationMin')}
                       </th>
                       <th style={{ textAlign: 'center', width: '80px' }}>
-                        {t('common.time')}
+                        <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'avgTime')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {t('common.time')} <SortIndicator active={inspectorSort.key === 'avgTime'} direction={inspectorSort.direction} />
+                        </button>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.charts?.inspectorPerformance || []).map((item, index) => {
+                    {(showAllInspectors ? sortedInspectors : sortedInspectors.slice(0, 4)).map((item, index) => {
                       const maxCount = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.count));
                       const maxTime = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.avgTime || 0));
                       const countPercentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
@@ -790,7 +798,12 @@ const Dashboard = () => {
 
         <ScrollAnimation animation="slideIn" delay={0.7}>
           <ChartCard>
-            <SectionTitle>{t('dashboard.inspectionsPerTemplate')}</SectionTitle>
+            <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{t('dashboard.inspectionsPerTemplate')}</span>
+              <button type="button" onClick={() => setShowAllTemplates(value => !value)} style={{ border: 0, background: 'none', color: 'var(--color-info)', cursor: 'pointer', fontSize: 13 }}>
+                {showAllTemplates ? t('common.showLess', { defaultValue: 'Show less' }) : t('common.viewAll', { defaultValue: 'View all' })} →
+              </button>
+            </SectionTitle>
             <TableContainer>
               {(data?.charts?.templateUsage || []).length > 0 ? (
                 <table>
@@ -803,12 +816,14 @@ const Dashboard = () => {
                         {t('dashboard.inspections')}
                       </th>
                       <th style={{ textAlign: 'center', width: '80px' }}>
-                        {t('dashboard.count')}
+                        <button type="button" onClick={() => toggleSort(setTemplateSort, templateSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {t('dashboard.count')} <SortIndicator active={templateSort.key === 'count'} direction={templateSort.direction} />
+                        </button>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.charts?.templateUsage || []).map((item, index) => {
+                    {(showAllTemplates ? sortedTemplates : sortedTemplates.slice(0, 4)).map((item, index) => {
                       const maxCount = Math.max(...(data?.charts?.templateUsage || []).map(t => t.count));
                       const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
 

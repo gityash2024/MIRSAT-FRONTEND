@@ -194,6 +194,7 @@ const Card = styled.div`
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 
   thead {
     background-color: var(--color-offwhite);
@@ -224,6 +225,27 @@ const Table = styled.table`
     &:hover {
       background-color: var(--color-offwhite);
     }
+  }
+
+  @media print {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 10px;
+
+    th, td {
+      padding: 6px 5px;
+      vertical-align: top;
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+
+    th:nth-child(1), td:nth-child(1) { width: 15%; }
+    th:nth-child(2), td:nth-child(2) { width: 20%; }
+    th:nth-child(3), td:nth-child(3) { width: 11%; }
+    th:nth-child(4), td:nth-child(4) { width: 21%; }
+    th:nth-child(5), td:nth-child(5) { width: 15%; }
+    th:nth-child(6), td:nth-child(6) { width: 9%; }
+    th:nth-child(7), td:nth-child(7) { width: 9%; white-space: nowrap; }
   }
 `;
 
@@ -475,7 +497,9 @@ const FlaggedItems = () => {
       const response = await api.get(`/dashboard/flagged-items?${params.toString()}`);
       const allItems = response.data?.data || [];
 
-      const doc = new jsPDF();
+      // Seven report columns need the wider A4 landscape canvas to remain
+      // readable without forcing IDs and dates into narrow vertical stacks.
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       
       // Load Arabic font
       const fontLoaded = await loadExportArabicFont(doc);
@@ -484,9 +508,11 @@ const FlaggedItems = () => {
       }
       
       doc.setFontSize(18);
-      doc.text(formatPdfText(L('flaggedItemsReport'), language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 22, { align: isArabicExport(language) ? 'right' : 'left' });
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 12;
+      doc.text(formatPdfText(L('flaggedItemsReport'), language), isArabicExport(language) ? pageWidth - margin : margin, 16, { align: isArabicExport(language) ? 'right' : 'left' });
       doc.setFontSize(12);
-      doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 32, { align: isArabicExport(language) ? 'right' : 'left' });
+      doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`, language), isArabicExport(language) ? pageWidth - margin : margin, 25, { align: isArabicExport(language) ? 'right' : 'left' });
 
       const tableData = allItems.map(item => [
         formatPdfText(item.taskTitle || L('na'), language),
@@ -497,22 +523,36 @@ const FlaggedItems = () => {
         formatPdfText(item.response || L('na'), language),
         formatExportDate(item.flaggedAt, language)
       ]);
+      const columnWidths = [34, 48, 27, 29, 62, 42, 31];
+      const orderedColumnWidths = isArabicExport(language) ? [...columnWidths].reverse() : columnWidths;
+      const columnStyles = Object.fromEntries(orderedColumnWidths.map((cellWidth, index) => [
+        index,
+        { cellWidth, ...(index === 6 ? { halign: 'center' } : {}) }
+      ]));
 
       autoTable(doc, {
-        startY: 40,
+        startY: 32,
         head: [orderForLanguage([L('task'), L('template'), L('asset'), L('inspector'), L('question'), L('response'), L('date')].map(label => formatPdfText(label, language)), language)],
         body: orderRowsForLanguage(tableData, language),
         didParseCell: function (data) {
           localizePdfTable(data, language, fontLoaded);
         },
-        styles: {
-          font: 'helvetica',
-          fontSize: 9,
-        },
         headStyles: {
           font: 'helvetica',
           fontStyle: 'bold',
           fontSize: 9,
+        },
+        margin: { left: margin, right: margin },
+        tableWidth: 'auto',
+        columnStyles,
+        styles: {
+          font: 'helvetica',
+          fontSize: 8.5,
+          cellPadding: 2.5,
+          overflow: 'linebreak',
+          valign: 'top',
+          lineColor: [226, 232, 240],
+          lineWidth: 0.1,
         },
       });
 

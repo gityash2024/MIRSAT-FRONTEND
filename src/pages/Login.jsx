@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
+import mirsatBrandLogo from '../assets/mirsat-logo-white.svg';
+import takamolBrandLogo from '../assets/tms-logo-white.svg';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { getDefaultRouteForUser } from '../utils/defaultRoute';
@@ -457,6 +459,14 @@ const Footer = styled.div`
       color: white;
     }
   }
+
+  .takamol-logo {
+    width: 190px;
+    height: auto;
+    max-height: 48px;
+    object-fit: contain;
+    margin-left: 0.75rem;
+  }
   
   @media (max-width: 768px) {
     position: relative;
@@ -580,8 +590,7 @@ const Login = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <img src="/logo.png" alt="Mirsat Logo" />
-        <span>مرســـاة MIRSAT</span>
+        <img src={mirsatBrandLogo} alt="MIRSAT" />
       </Logo>
 
       <ContentWrapper isRTL={isRTL}>
@@ -665,6 +674,7 @@ const Login = () => {
           >
             {t('common.arabic')}
           </LanguageToggle>
+          <img className="takamol-logo" src={takamolBrandLogo} alt="Takamol Mobility Services" />
         </Footer>
       </ContentWrapper>
     </LoginContainer>

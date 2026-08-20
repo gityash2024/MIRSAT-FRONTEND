@@ -20,6 +20,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import mirSatLogo from '../../assets/mirsat-logo-white-1.svg';
+import takamolLogo from '../../assets/tms-logo-white.svg';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
@@ -293,6 +294,24 @@ const EmptyState = styled.div`
   font-size: 0.9rem;
 `;
 
+const BrandFooter = styled.div`
+  flex-shrink: 0;
+  display: flex;
+  justify-content: ${props => props.$collapsed ? 'center' : 'flex-start'};
+  align-items: center;
+  padding: ${props => props.$collapsed ? '0.85rem 0.5rem' : '0.85rem 1.15rem'};
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  min-height: 58px;
+
+  img {
+    display: block;
+    width: ${props => props.$collapsed ? '34px' : '156px'};
+    height: auto;
+    max-height: 42px;
+    object-fit: contain;
+  }
+`;
+
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -559,6 +578,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </EmptyState>
         )}
       </Nav>
+      <BrandFooter $collapsed={effectiveCollapsed} aria-label="Takamol Mobility Services">
+        <img src={takamolLogo} alt="Takamol Mobility Services" />
+      </BrandFooter>
     </SidebarContainer>
   );
 };
