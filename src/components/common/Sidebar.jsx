@@ -19,7 +19,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
-import mirSatLogo from '../../assets/mirsat-logo-white-1.svg';
+import mirSatLogo from '../../assets/mirsat-logo-white.svg';
 import takamolLogo from '../../assets/tms-logo-white.svg';
 
 const SidebarContainer = styled.div`
