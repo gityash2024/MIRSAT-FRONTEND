@@ -123,7 +123,7 @@ const Logo = styled(motion.div)`
   z-index: 3;
 
   img {
-    height: 3rem;
+    height: 4.25rem;
   }
 
   span {
@@ -137,7 +137,7 @@ const Logo = styled(motion.div)`
     transform: translateX(50%);
     
     img {
-      height: 2.5rem;
+      height: 3.5rem;
     }
     
     span {
@@ -149,7 +149,7 @@ const Logo = styled(motion.div)`
     top: 1rem;
     
     img {
-      height: 2rem;
+      height: 2.75rem;
     }
     
     span {
@@ -461,9 +461,9 @@ const Footer = styled.div`
   }
 
   .takamol-logo {
-    width: 190px;
+    width: 300px;
     height: auto;
-    max-height: 48px;
+    max-height: 76px;
     object-fit: contain;
     margin-left: 0.75rem;
   }

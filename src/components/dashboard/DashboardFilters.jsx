@@ -15,22 +15,29 @@ const FiltersContainer = styled.div`
 `;
 
 const FiltersRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(128px, auto);
+  gap: 12px;
+  align-items: end;
   margin-bottom: 0;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(128px, auto);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
-  min-width: 150px;
+  min-width: 0;
   
   @media (max-width: 768px) {
-    min-width: 100%;
+    min-width: 0;
   }
 `;
 
@@ -56,17 +63,20 @@ const Select = styled.select`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  justify-content: flex-end;
+  min-width: 128px;
   
   @media (max-width: 768px) {
     width: 100%;
-    flex-wrap: wrap;
+    flex-direction: row;
   }
 `;
 
 const Button = styled.button`
-  padding: 10px 20px;
+  padding: 8px 14px;
   background-color: var(--color-navy);
   color: white;
   border: none;
@@ -76,7 +86,7 @@ const Button = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 42px;
+  height: 38px;
   white-space: nowrap;
   
   &:hover {
@@ -259,13 +269,13 @@ const DashboardFilters = ({ onFilterChange }) => {
                 </FilterGroup>
 
                 <ButtonGroup>
-                    <Button onClick={handleApply}>
-                        <Filter size={18} />
-                        {t('common.apply')}
-                    </Button>
                     <Button className="secondary" onClick={handleReset}>
                         <X size={18} />
-                        {t('common.reset')}
+                        {t('dashboard.resetFilters', { defaultValue: 'Reset Filters' })}
+                    </Button>
+                    <Button onClick={handleApply}>
+                        <Filter size={18} />
+                        {t('dashboard.applyFilter', { defaultValue: 'Apply Filter' })}
                     </Button>
                 </ButtonGroup>
             </FiltersRow>

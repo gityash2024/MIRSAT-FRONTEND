@@ -51,17 +51,21 @@ const DashboardContainer = styled.div`
 `;
 
 const WelcomeText = styled.h1`
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 600;
   color: var(--color-navy);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+
+  @media (max-width: 768px) {
+    font-size: 26px;
+  }
 `;
 
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: var(--color-navy);
-  margin-bottom: 16px;
+  margin: 0;
 `;
 
 const StatsGrid = styled.div`
@@ -86,10 +90,20 @@ const StatsGrid = styled.div`
 const StatCard = styled.div`
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e7edf5;
   display: flex;
   flex-direction: column;
+  min-height: 206px;
+  appearance: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:is(button):hover {
+    border-color: #cbd8ea;
+    box-shadow: 0 8px 18px rgba(15, 23, 70, 0.09);
+    transform: translateY(-1px);
+  }
   
   .icon-wrapper {
     width: 48px;
@@ -115,6 +129,54 @@ const StatCard = styled.div`
   }
 `;
 
+const StatInsight = styled.div`
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &.positive {
+    color: #059669;
+    background: #dff8ec;
+  }
+
+  &.warning {
+    color: #b45309;
+    background: #fff4d6;
+  }
+
+  &.danger {
+    color: #dc2626;
+    background: #fee8e7;
+  }
+`;
+
+const StatViewButton = styled.button`
+  width: 100%;
+  margin-top: auto;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #e0f2fe;
+  color: var(--color-navy);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover {
+    background: #bae6fd;
+  }
+`;
+
 const ChartsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -131,7 +193,7 @@ const ChartCard = styled.div`
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  min-height: 400px;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -144,7 +206,8 @@ const ChartCard = styled.div`
 
 const ChartContainer = styled.div`
   width: 100%;
-  min-height: 400px;
+  height: 320px;
+  min-height: 320px;
   position: relative;
   overflow: visible;
   
@@ -169,6 +232,52 @@ const ChartContainer = styled.div`
         background: #94a3b8;
       }
     }
+  }
+`;
+
+const DoughnutCenter = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding-bottom: 28px;
+
+  strong {
+    color: var(--color-navy);
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  span {
+    margin-top: 4px;
+    color: var(--color-gray-medium);
+    font-size: 12px;
+  }
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const SectionAction = styled.button`
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  color: var(--color-info);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+
+  &:hover {
+    color: var(--color-navy);
   }
 `;
 
@@ -303,6 +412,24 @@ const Dashboard = () => {
   const SortIndicator = ({ active, direction }) => active ? (
     direction === 'asc' ? <ChevronUp size={14} aria-label="ascending" /> : <ChevronDown size={14} aria-label="descending" />
   ) : null;
+
+  const totalTasks = Number(data?.stats?.total) || 0;
+  const percentOfTotal = (value) => totalTasks > 0 ? ((Number(value) || 0) / totalTasks) * 100 : 0;
+  const percentageLabel = (value) => percentOfTotal(value).toLocaleString(currentLanguage === 'ar' ? 'ar-SA' : 'en-US', {
+    maximumFractionDigits: 1
+  });
+  const formatTaskCount = (value) => {
+    const count = Number(value) || 0;
+    const key = count === 1 ? 'dashboard.taskCountSingular' : 'dashboard.taskCountPlural';
+    return t(key, { count, defaultValue: `${count} ${count === 1 ? 'task' : 'tasks'}` });
+  };
+  const formatDuration = (value) => {
+    const totalMinutes = Math.round(Number(value) || 0);
+    if (totalMinutes <= 0) return '—';
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  };
 
   const fetchDashboardData = async (filters = {}) => {
     try {
@@ -504,7 +631,7 @@ const Dashboard = () => {
               borderRadius: '2px'
             }} />
             <span style={{ fontSize: '14px', color: '#374151' }}>
-              {translateStatus(entry.value)}
+              {translateStatus(entry.value)} {entry.payload?.value ?? 0}
             </span>
           </div>
         ))}
@@ -547,8 +674,6 @@ const Dashboard = () => {
         defaultCriteria={['documentType', 'currentDate']}
       />
 
-      <DashboardFilters onFilterChange={handleFilterChange} />
-
       <ScrollAnimation animation="slideIn" delay={0.1}>
         <StatsGrid>
           <StatCard>
@@ -557,6 +682,9 @@ const Dashboard = () => {
             </div>
             <div className="value">{data?.stats?.total || 0}</div>
             <div className="label">{t('dashboard.totalTasks')}</div>
+            <StatInsight className="positive">
+              ↑ {percentageLabel(data?.stats?.completed)}% {t('dashboard.completionRate', { defaultValue: 'completion rate' })}
+            </StatInsight>
           </StatCard>
           <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=archived')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
             <div className="icon-wrapper">
@@ -564,6 +692,9 @@ const Dashboard = () => {
             </div>
             <div className="value">{data?.stats?.completed || 0}</div>
             <div className="label">{t('dashboard.completedTasks')}</div>
+            <StatInsight className="positive">
+              ↑ {percentageLabel(data?.stats?.completed)}% {t('dashboard.ofTotalTasks', { defaultValue: 'of total tasks' })}
+            </StatInsight>
           </StatCard>
           <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=pending')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
             <div className="icon-wrapper">
@@ -571,6 +702,9 @@ const Dashboard = () => {
             </div>
             <div className="value">{data?.stats?.pending || 0}</div>
             <div className="label">{t('dashboard.pendingTasks')}</div>
+            <StatInsight className="warning">
+              • {percentageLabel(data?.stats?.pending)}% {t('dashboard.activeTasks', { defaultValue: 'active tasks' })}
+            </StatInsight>
           </StatCard>
           <StatCard as="button" type="button" onClick={() => navigate('/tasks?status=delayed')} style={{ textAlign: 'left', border: 0, cursor: 'pointer' }}>
             <div className="icon-wrapper" style={{ backgroundColor: '#fee2e2' }}>
@@ -578,6 +712,9 @@ const Dashboard = () => {
             </div>
             <div className="value">{data?.stats?.delayed || 0}</div>
             <div className="label">{t('dashboard.delayedInspections')}</div>
+            <StatInsight className="danger">
+              ↓ {percentageLabel(data?.stats?.delayed)}% {t('dashboard.overdueTasksLabel', { defaultValue: 'overdue tasks' })}
+            </StatInsight>
           </StatCard>
           <StatCard style={{ position: 'relative' }}>
             <div className="icon-wrapper" style={{ backgroundColor: '#fef3c7' }}>
@@ -585,49 +722,59 @@ const Dashboard = () => {
             </div>
             <div className="value">{data?.stats?.flagged || 0}</div>
             <div className="label">{t('dashboard.flaggedItems')}</div>
-            {data?.stats?.flagged > 0 && (
-              <button
-                onClick={() => navigate('/flagged-items')}
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '500' }}
-              >
-                <Eye size={14} />
-                {t('common.view')}
-              </button>
-            )}
+            <StatViewButton onClick={() => navigate('/flagged-items')}>
+              <Eye size={14} />
+              {t('common.viewAll', { defaultValue: 'View All' })}
+            </StatViewButton>
           </StatCard>
         </StatsGrid>
       </ScrollAnimation>
 
+      <DashboardFilters onFilterChange={handleFilterChange} />
+
       <ChartsGrid>
         <ScrollAnimation animation="slideIn" delay={0.2}>
           <ChartCard>
-            <SectionTitle>{t('dashboard.inspectionStatus')}</SectionTitle>
-            <ResponsiveContainer width="100%" height={390}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getStatusColor(entry.name)} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend content={<CustomLegend />} />
-              </PieChart>
-            </ResponsiveContainer>
+            <SectionHeader>
+              <SectionTitle>{t('dashboard.inspectionStatus')}</SectionTitle>
+            </SectionHeader>
+            <ChartContainer>
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getStatusColor(entry.name)} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={<CustomLegend />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <DoughnutCenter>
+                <strong>{totalTasks}</strong>
+                <span>{t('common.total', { defaultValue: 'Total' })}</span>
+              </DoughnutCenter>
+            </ChartContainer>
           </ChartCard>
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.3}>
           <ChartCard>
-            <SectionTitle>{t('dashboard.upcomingScheduledInspections')}</SectionTitle>
+            <SectionHeader>
+              <SectionTitle>{t('dashboard.upcomingInspections')}</SectionTitle>
+              <SectionAction type="button" onClick={() => navigate('/tasks?status=pending')}>
+                {t('common.viewAll', { defaultValue: 'View All' })} →
+              </SectionAction>
+            </SectionHeader>
             <TableContainer>
               <table>
                 <thead>
@@ -635,6 +782,7 @@ const Dashboard = () => {
                     <th>{t('dashboard.inspectionName')}</th>
                     <th>{t('common.date')}</th>
                     <th>{t('dashboard.assetType')}</th>
+                    <th>{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -644,11 +792,12 @@ const Dashboard = () => {
                         <td>{item.name}</td>
                         <td>{new Date(item.date).toLocaleDateString()}</td>
                         <td>{item.assetType}</td>
+                        <td><span style={{ color: '#b45309', background: '#fff7e0', borderRadius: '999px', padding: '4px 8px', fontSize: 12 }}>{t('dashboard.scheduled', { defaultValue: 'Scheduled' })}</span></td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" style={{ textAlign: 'center' }}>{t('dashboard.noUpcomingInspections')}</td>
+                      <td colSpan="4" style={{ textAlign: 'center' }}>{t('dashboard.noUpcomingInspections')}</td>
                     </tr>
                   )}
                 </tbody>
@@ -661,12 +810,12 @@ const Dashboard = () => {
       <ChartsGrid>
         <ScrollAnimation animation="slideIn" delay={0.6}>
           <ChartCard>
-            <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{t('dashboard.inspectorPerformanceAvgDuration')}</span>
-              <button type="button" onClick={() => setShowAllInspectors(value => !value)} style={{ border: 0, background: 'none', color: 'var(--color-info)', cursor: 'pointer', fontSize: 13 }}>
+            <SectionHeader>
+              <SectionTitle>{t('dashboard.inspectorPerformance')}</SectionTitle>
+              <SectionAction type="button" onClick={() => setShowAllInspectors(value => !value)}>
                 {showAllInspectors ? t('common.showLess', { defaultValue: 'Show less' }) : t('common.viewAll', { defaultValue: 'View all' })} →
-              </button>
-            </SectionTitle>
+              </SectionAction>
+            </SectionHeader>
             <TableContainer>
               {(data?.charts?.inspectorPerformance || []).length > 0 ? (
                 <table>
@@ -675,18 +824,12 @@ const Dashboard = () => {
                       <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
                         {t('common.inspector')}
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '35%' }}>
-                        {t('dashboard.inspections')}
-                      </th>
-                      <th style={{ textAlign: 'center', width: '80px' }}>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
                         <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('dashboard.taskCount', { defaultValue: 'Task Count' })} <SortIndicator active={inspectorSort.key === 'count'} direction={inspectorSort.direction} />
                         </button>
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '35%' }}>
-                        {t('dashboard.avgDurationMin')}
-                      </th>
-                      <th style={{ textAlign: 'center', width: '80px' }}>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
                         <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'avgTime')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('common.time')} <SortIndicator active={inspectorSort.key === 'avgTime'} direction={inspectorSort.direction} />
                         </button>
@@ -695,11 +838,6 @@ const Dashboard = () => {
                   </thead>
                   <tbody>
                     {(showAllInspectors ? sortedInspectors : sortedInspectors.slice(0, 4)).map((item, index) => {
-                      const maxCount = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.count));
-                      const maxTime = Math.max(...(data?.charts?.inspectorPerformance || []).map(i => i.avgTime || 0));
-                      const countPercentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                      const timePercentage = maxTime > 0 ? ((item.avgTime || 0) / maxTime) * 100 : 0;
-
                       return (
                         <tr key={index}>
                           <td style={{
@@ -712,71 +850,15 @@ const Dashboard = () => {
                           }} title={item.name}>
                             {item.name}
                           </td>
-                          <td>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
-                            }}>
-                              <div style={{
-                                flex: 1,
-                                height: '24px',
-                                backgroundColor: '#f1f5f9',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                position: 'relative'
-                              }}>
-                                <div style={{
-                                  width: `${countPercentage}%`,
-                                  height: '100%',
-                                  backgroundColor: '#3b82f6',
-                                  borderRadius: '4px',
-                                  transition: 'width 0.3s ease',
-                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
-                                }} />
-                              </div>
-                            </div>
-                          </td>
                           <td style={{
-                            textAlign: 'center',
+                            textAlign: currentLanguage === 'ar' ? 'right' : 'left',
                             fontWeight: 600,
                             color: '#3b82f6'
                           }}>
-                            {item.count}
+                            {formatTaskCount(item.count)}
                           </td>
-                          <td>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
-                            }}>
-                              <div style={{
-                                flex: 1,
-                                height: '24px',
-                                backgroundColor: '#f1f5f9',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                position: 'relative'
-                              }}>
-                                <div style={{
-                                  width: `${timePercentage}%`,
-                                  height: '100%',
-                                  backgroundColor: '#10b981',
-                                  borderRadius: '4px',
-                                  transition: 'width 0.3s ease',
-                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
-                                }} />
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{
-                            textAlign: 'center',
-                            fontWeight: 600,
-                            color: '#10b981'
-                          }}>
-                            {item.avgTime || 0}
+                          <td style={{ color: '#475569' }}>
+                            {formatDuration(item.avgTime)}
                           </td>
                         </tr>
                       );
@@ -798,24 +880,21 @@ const Dashboard = () => {
 
         <ScrollAnimation animation="slideIn" delay={0.7}>
           <ChartCard>
-            <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{t('dashboard.inspectionsPerTemplate')}</span>
-              <button type="button" onClick={() => setShowAllTemplates(value => !value)} style={{ border: 0, background: 'none', color: 'var(--color-info)', cursor: 'pointer', fontSize: 13 }}>
+            <SectionHeader>
+              <SectionTitle>{t('dashboard.inspectionsPerTemplate')}</SectionTitle>
+              <SectionAction type="button" onClick={() => setShowAllTemplates(value => !value)}>
                 {showAllTemplates ? t('common.showLess', { defaultValue: 'Show less' }) : t('common.viewAll', { defaultValue: 'View all' })} →
-              </button>
-            </SectionTitle>
+              </SectionAction>
+            </SectionHeader>
             <TableContainer>
               {(data?.charts?.templateUsage || []).length > 0 ? (
                 <table>
                   <thead>
                     <tr>
                       <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
-                        {t('common.template')}
+                        {t('dashboard.templates', { defaultValue: 'Templates' })}
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left', width: '60%' }}>
-                        {t('dashboard.inspections')}
-                      </th>
-                      <th style={{ textAlign: 'center', width: '80px' }}>
+                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
                         <button type="button" onClick={() => toggleSort(setTemplateSort, templateSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('dashboard.count')} <SortIndicator active={templateSort.key === 'count'} direction={templateSort.direction} />
                         </button>
@@ -824,9 +903,6 @@ const Dashboard = () => {
                   </thead>
                   <tbody>
                     {(showAllTemplates ? sortedTemplates : sortedTemplates.slice(0, 4)).map((item, index) => {
-                      const maxCount = Math.max(...(data?.charts?.templateUsage || []).map(t => t.count));
-                      const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-
                       return (
                         <tr key={index}>
                           <td style={{
@@ -839,34 +915,8 @@ const Dashboard = () => {
                           }} title={item.name}>
                             {item.name}
                           </td>
-                          <td>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              direction: currentLanguage === 'ar' ? 'rtl' : 'ltr'
-                            }}>
-                              <div style={{
-                                flex: 1,
-                                height: '24px',
-                                backgroundColor: '#f1f5f9',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                position: 'relative'
-                              }}>
-                                <div style={{
-                                  width: `${percentage}%`,
-                                  height: '100%',
-                                  backgroundColor: '#8b5cf6',
-                                  borderRadius: '4px',
-                                  transition: 'width 0.3s ease',
-                                  [currentLanguage === 'ar' ? 'marginLeft' : 'marginRight']: 'auto'
-                                }} />
-                              </div>
-                            </div>
-                          </td>
                           <td style={{
-                            textAlign: 'center',
+                            textAlign: currentLanguage === 'ar' ? 'right' : 'left',
                             fontWeight: 600,
                             color: '#8b5cf6'
                           }}>

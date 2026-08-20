@@ -49,15 +49,15 @@ const SidebarContainer = styled.div`
 `;
 
 const Logo = styled.div`
-  padding: 1.5rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
+  padding: 1.35rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
   display: flex;
   align-items: center;
   justify-content: ${props => props.$collapsed ? 'center' : 'space-between'};
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 64px;
+  min-height: 82px;
 
   h1 {
-    font-size: ${props => props.$collapsed ? '0' : '1.5rem'};
+    font-size: ${props => props.$collapsed ? '0' : '1.9rem'};
     font-weight: 700;
     opacity: ${props => props.$collapsed ? '0' : '1'};
     width: ${props => props.$collapsed ? '0' : 'auto'};
@@ -66,7 +66,7 @@ const Logo = styled.div`
     margin: 0;
     
     @media (max-width: 768px) {
-      font-size: 1.5rem;
+      font-size: 1.9rem;
       opacity: 1;
       width: auto;
     }
@@ -299,15 +299,15 @@ const BrandFooter = styled.div`
   display: flex;
   justify-content: ${props => props.$collapsed ? 'center' : 'flex-start'};
   align-items: center;
-  padding: ${props => props.$collapsed ? '0.85rem 0.5rem' : '0.85rem 1.15rem'};
+  padding: ${props => props.$collapsed ? '1rem 0.5rem' : '1rem 1.35rem'};
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  min-height: 58px;
+  min-height: 84px;
 
   img {
     display: block;
-    width: ${props => props.$collapsed ? '34px' : '156px'};
-    height: auto;
-    max-height: 42px;
+    width: auto;
+    height: ${props => props.$collapsed ? '38px' : '64px'};
+    max-width: ${props => props.$collapsed ? '38px' : '205px'};
     object-fit: contain;
   }
 `;
@@ -513,11 +513,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         {!effectiveCollapsed && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h1>MIRSAT</h1>
-            <img src={mirSatLogo} alt="MIRSAT Logo" style={{ height: '28px', width: 'auto' }} />
+            <img src={mirSatLogo} alt="MIRSAT Logo" style={{ height: '38px', width: 'auto' }} />
           </div>
         )}
         {effectiveCollapsed && (
-          <img src={mirSatLogo} alt="MIRSAT" style={{ height: '24px', width: 'auto' }} />
+          <img src={mirSatLogo} alt="MIRSAT" style={{ height: '32px', width: 'auto' }} />
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {!isMobile && (
