@@ -768,6 +768,7 @@
     "emailRequired": "Email is required",
     "passwordRequired": "Password is required",
     "copyright": "©2025 Mirsat",
+    "poweredBy": "Powered by:",
     "loginFailed": "Login failed. Please try again.",
     "accountDeactivated": "Your account is deactivated or not verified, please contact your administrator",
     "invalidCredentials": "Invalid email or password",

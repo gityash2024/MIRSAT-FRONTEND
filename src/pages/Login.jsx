@@ -103,60 +103,56 @@ const ContentWrapper = styled.div`
     min-height: 100vh;
     padding: 1rem;
     gap: 2rem;
-    padding-top: 6rem; /* Account for logo */
+    padding-top: 1rem;
   }
   
   @media (max-width: 480px) {
     padding: 0.75rem;
     gap: 1.5rem;
-    padding-top: 5rem;
+    padding-top: 0.75rem;
   }
 `;
 
 const Logo = styled(motion.div)`
-  position: absolute;
-  top: 2.5rem;
-  ${props => props.isRTL ? 'left: 3.5rem;' : 'right: 3.5rem;'}
   display: flex;
   align-items: center;
-  gap: 1rem;
-  z-index: 3;
+  justify-content: center;
+  margin-bottom: 1.5rem;
 
   img {
-    height: 9rem;
+    height: 11rem;
     width: auto;
     filter: drop-shadow(0 5px 12px rgba(0, 24, 57, 0.2));
   }
-
-  span {
-    color: white;
-    font-size: 1.5rem;
-  }
   
   @media (max-width: 768px) {
-    top: 1.25rem;
-    ${props => props.isRTL ? 'left: 50%;' : 'right: 50%;'}
-    transform: translateX(50%);
+    margin-bottom: 1.25rem;
     
     img {
-      height: 5.75rem;
-    }
-    
-    span {
-      font-size: 1.25rem;
+      height: 8.5rem;
     }
   }
   
   @media (max-width: 480px) {
-    top: 1rem;
+    margin-bottom: 1rem;
     
     img {
-      height: 4.5rem;
+      height: 6.5rem;
     }
-    
-    span {
-      font-size: 1.1rem;
-    }
+  }
+`;
+
+const LoginPanel = styled.div`
+  width: 430px;
+  flex: 0 0 430px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 400px;
+    flex-basis: auto;
   }
 `;
 
@@ -265,7 +261,7 @@ const LoginCard = styled(motion.div)`
   padding: 2.5rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 16px 38px rgba(0, 24, 57, 0.22);
-  margin-top: 76px;
+  margin-top: 0;
   
   @media (max-width: 768px) {
     width: 100%;
@@ -450,50 +446,54 @@ const Footer = styled.div`
   z-index: 3;
   color: rgba(255, 255, 255, 0.7);
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: ${props => props.isRTL ? 'flex-end' : 'flex-start'};
+  gap: 0.45rem;
 
-  a {
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    margin: 0 0.5rem;
-    transition: color 0.3s ease;
-
-    &:hover {
-      color: white;
-    }
-  }
-
-  .takamol-logo {
-    width: 240px;
-    height: auto;
-    max-height: none;
-    object-fit: contain;
-    margin-inline-start: 0.75rem;
-  }
-  
   @media (max-width: 768px) {
     position: relative;
     bottom: auto;
     left: auto;
     right: auto;
+    align-items: center;
     text-align: center;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+    margin: 0 auto 1rem;
     font-size: 0.875rem;
-    justify-content: center;
-    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const FooterMeta = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.1rem;
+`;
+
+const PoweredBy = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: ${props => props.isRTL ? 'flex-end' : 'flex-start'};
+  gap: 0.25rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+
+  .takamol-logo {
+    width: 220px;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+  
+  @media (max-width: 768px) {
+    align-items: center;
 
     .takamol-logo {
       width: 190px;
-      margin-inline-start: 0;
     }
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-    margin-top: 1.5rem;
-    gap: 0.25rem;
   }
 `;
 
@@ -594,15 +594,6 @@ const Login = () => {
     <>
     <GlobalStyle isRTL={isRTL} />
     <LoginContainer isRTL={isRTL}>
-      <Logo
-        isRTL={isRTL}
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <img src={mirsatBrandLogo} alt="MIRSAT" />
-      </Logo>
-
       <ContentWrapper isRTL={isRTL}>
         <LeftContent
           isRTL={isRTL}
@@ -614,11 +605,19 @@ const Login = () => {
           <p>{t('auth.subtitle')}</p>
         </LeftContent>
 
-        <LoginCard
-          initial={{ x: 100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-        >
+        <LoginPanel>
+          <Logo
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <img src={mirsatBrandLogo} alt="MIRSAT" />
+          </Logo>
+          <LoginCard
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+          >
           <Title>{t('auth.signInTitle')}</Title>
           <form onSubmit={handleSubmit}>
             {apiError && (
@@ -667,24 +666,30 @@ const Login = () => {
               <Link to="/register">Sign Up</Link>
             </SignUpText> */}
           </form>
-        </LoginCard>
+          </LoginCard>
+        </LoginPanel>
         
         <Footer isRTL={isRTL}>
-          {t('auth.copyright')}
-          <LanguageToggle 
-            className={currentLanguage === 'en' ? 'active' : ''} 
-            onClick={() => toggleLanguage('en')}
-          >
-            {t('common.english')}
-          </LanguageToggle>
-          <LanguageSeparator>|</LanguageSeparator>
-          <LanguageToggle 
-            className={currentLanguage === 'ar' ? 'active' : ''} 
-            onClick={() => toggleLanguage('ar')}
-          >
-            {t('common.arabic')}
-          </LanguageToggle>
-          <img className="takamol-logo" src={takamolBrandLogo} alt="Takamol Mobility Services" />
+          <FooterMeta>
+            <span>{t('auth.copyright')}</span>
+            <LanguageToggle
+              className={currentLanguage === 'en' ? 'active' : ''}
+              onClick={() => toggleLanguage('en')}
+            >
+              {t('common.english')}
+            </LanguageToggle>
+            <LanguageSeparator>|</LanguageSeparator>
+            <LanguageToggle
+              className={currentLanguage === 'ar' ? 'active' : ''}
+              onClick={() => toggleLanguage('ar')}
+            >
+              {t('common.arabic')}
+            </LanguageToggle>
+          </FooterMeta>
+          <PoweredBy isRTL={isRTL}>
+            <span>{t('auth.poweredBy')}</span>
+            <img className="takamol-logo" src={takamolBrandLogo} alt="Takamol Mobility Services" />
+          </PoweredBy>
         </Footer>
       </ContentWrapper>
     </LoginContainer>
