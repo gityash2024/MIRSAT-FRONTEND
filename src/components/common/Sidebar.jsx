@@ -50,31 +50,15 @@ const SidebarContainer = styled.div`
 
 const Logo = styled.div`
   position: relative;
-  padding: 1.25rem ${props => props.$collapsed ? '0.75rem' : '3.5rem'};
+  padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '0.75rem 3.5rem'};
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: ${props => props.$collapsed ? '86px' : '98px'};
-
-  h1 {
-    font-size: ${props => props.$collapsed ? '0' : '1.9rem'};
-    font-weight: 700;
-    opacity: ${props => props.$collapsed ? '0' : '1'};
-    width: ${props => props.$collapsed ? '0' : 'auto'};
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 0;
-    
-    @media (max-width: 768px) {
-      font-size: 1.9rem;
-      opacity: 1;
-      width: auto;
-    }
-  }
+  min-height: ${props => props.$collapsed ? '86px' : '116px'};
   
   @media (max-width: 768px) {
-    min-height: 98px;
+    min-height: 112px;
   }
 `;
 
@@ -82,19 +66,18 @@ const BrandLockup = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   min-width: 0;
 
   img {
     display: block;
-    height: 46px;
+    height: 78px;
     width: auto;
     flex-shrink: 0;
   }
 
   @media (max-width: 768px) {
     img {
-      height: 44px;
+      height: 72px;
     }
   }
 `;
@@ -567,7 +550,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <Logo $collapsed={effectiveCollapsed} $isRTL={isRTL}>
         {!effectiveCollapsed && (
           <BrandLockup>
-            <h1>MIRSAT</h1>
             <img src={mirSatLogo} alt="MIRSAT Logo" />
           </BrandLockup>
         )}
