@@ -115,15 +115,17 @@ const ContentWrapper = styled.div`
 
 const Logo = styled(motion.div)`
   position: absolute;
-  top: 2rem;
-  ${props => props.isRTL ? 'left: 2rem;' : 'right: 2rem;'}
+  top: 2.5rem;
+  ${props => props.isRTL ? 'left: 3.5rem;' : 'right: 3.5rem;'}
   display: flex;
   align-items: center;
   gap: 1rem;
   z-index: 3;
 
   img {
-    height: 4.25rem;
+    height: 9rem;
+    width: auto;
+    filter: drop-shadow(0 5px 12px rgba(0, 24, 57, 0.2));
   }
 
   span {
@@ -132,12 +134,12 @@ const Logo = styled(motion.div)`
   }
   
   @media (max-width: 768px) {
-    top: 1.5rem;
+    top: 1.25rem;
     ${props => props.isRTL ? 'left: 50%;' : 'right: 50%;'}
     transform: translateX(50%);
     
     img {
-      height: 3.5rem;
+      height: 5.75rem;
     }
     
     span {
@@ -149,7 +151,7 @@ const Logo = styled(motion.div)`
     top: 1rem;
     
     img {
-      height: 2.75rem;
+      height: 4.5rem;
     }
     
     span {
@@ -256,13 +258,14 @@ const LanguageToggle = styled.button`
 `;
 
 const LoginCard = styled(motion.div)`
-  width: 400px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
+  width: 430px;
+  background: rgba(234, 243, 248, 0.88);
+  backdrop-filter: blur(12px);
+  border-radius: 1.5rem;
   padding: 2.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 16px 38px rgba(0, 24, 57, 0.22);
+  margin-top: 76px;
   
   @media (max-width: 768px) {
     width: 100%;
@@ -279,7 +282,7 @@ const LoginCard = styled(motion.div)`
 `;
 
 const Title = styled.h2`
-  color: white;
+  color: #003b66;
   font-size: 1.75rem;
   font-weight: bold;
   margin-bottom: 2rem;
@@ -299,23 +302,23 @@ const Title = styled.h2`
 const Input = styled.input`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(202, 224, 236, 0.9);
+  border: 1px solid rgba(159, 196, 215, 0.7);
   border-radius: 0.5rem;
-  color: white;
+  color: #003b66;
   font-size: 1rem;
   transition: all 0.3s ease;
   min-height: 44px; /* Ensure minimum touch target size */
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 59, 102, 0.72);
   }
 
   &:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    border-color: #2a75a5;
+    background: #e2f0f7;
+    box-shadow: 0 0 0 3px rgba(42, 117, 165, 0.16);
   }
   
   @media (max-width: 480px) {
@@ -344,7 +347,7 @@ const ErrorMessage = styled.span`
 const ForgotPassword = styled(Link)`
   display: block;
   text-align: right;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 59, 102, 0.78);
   font-size: 0.875rem;
   text-decoration: none;
   margin-bottom: 1.5rem;
@@ -353,7 +356,7 @@ const ForgotPassword = styled(Link)`
   min-height: 32px; /* Minimum touch target */
 
   &:hover {
-    color: white;
+    color: #003b66;
   }
   
   @media (max-width: 768px) {
@@ -371,7 +374,7 @@ const ForgotPassword = styled(Link)`
 const SubmitButton = styled(motion.button)`
   width: 100%;
   padding: 0.875rem;
-  background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+  background: #003b66;
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -383,6 +386,7 @@ const SubmitButton = styled(motion.button)`
 
   &:hover {
     transform: translateY(-2px);
+    background: #002d4d;
   }
   
   &:disabled {
@@ -441,8 +445,8 @@ const LanguageSeparator = styled.span`
 
 const Footer = styled.div`
   position: absolute;
-  bottom: 2rem;
-  left: 2rem;
+  bottom: 2.5rem;
+  ${props => props.isRTL ? 'right: 3.5rem; left: auto;' : 'left: 3.5rem; right: auto;'}
   z-index: 3;
   color: rgba(255, 255, 255, 0.7);
   display: flex;
@@ -461,23 +465,29 @@ const Footer = styled.div`
   }
 
   .takamol-logo {
-    width: 300px;
+    width: 240px;
     height: auto;
-    max-height: 76px;
+    max-height: none;
     object-fit: contain;
-    margin-left: 0.75rem;
+    margin-inline-start: 0.75rem;
   }
   
   @media (max-width: 768px) {
     position: relative;
     bottom: auto;
     left: auto;
+    right: auto;
     text-align: center;
     margin-top: 2rem;
     margin-bottom: 1rem;
     font-size: 0.875rem;
     justify-content: center;
     flex-wrap: wrap;
+
+    .takamol-logo {
+      width: 190px;
+      margin-inline-start: 0;
+    }
   }
   
   @media (max-width: 480px) {
@@ -659,7 +669,7 @@ const Login = () => {
           </form>
         </LoginCard>
         
-        <Footer>
+        <Footer isRTL={isRTL}>
           {t('auth.copyright')}
           <LanguageToggle 
             className={currentLanguage === 'en' ? 'active' : ''} 

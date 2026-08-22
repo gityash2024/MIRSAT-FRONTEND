@@ -20,7 +20,7 @@ import DashboardFilters from '../components/dashboard/DashboardFilters';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -243,6 +243,7 @@ const DoughnutCenter = styled.div`
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
   padding-bottom: 28px;
 
   strong {
@@ -255,6 +256,45 @@ const DoughnutCenter = styled.div`
     margin-top: 4px;
     color: var(--color-gray-medium);
     font-size: 12px;
+  }
+`;
+
+const StatusHoverCard = styled.div`
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: calc(50% + 116px);
+  width: max-content;
+  min-width: 132px;
+  transform: translateY(-50%);
+  padding: 10px 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 20px rgba(15, 23, 70, 0.14);
+  color: #374151;
+  pointer-events: none;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  span {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  @media (max-width: 560px) {
+    top: 222px;
+    left: 50%;
+    transform: translateX(-50%);
   }
 `;
 
@@ -383,6 +423,7 @@ const Dashboard = () => {
   const [templateSort, setTemplateSort] = useState({ key: null, direction: 'asc' });
   const [showAllInspectors, setShowAllInspectors] = useState(false);
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [hoveredStatus, setHoveredStatus] = useState(null);
 
   const sortedInspectors = useMemo(() => {
     const rows = [...(data?.charts?.inspectorPerformance || [])];
@@ -582,29 +623,6 @@ const Dashboard = () => {
 
   const getStatusColor = (statusName) => STATUS_COLORS[statusName] || '#94a3b8';
 
-  // Custom Tooltip component
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '8px 12px',
-          border: '1px solid #e2e8f0',
-          borderRadius: '6px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <p style={{ margin: 0, fontWeight: 600, color: '#374151' }}>
-            {translateStatus(payload[0].name)}
-          </p>
-          <p style={{ margin: '4px 0 0', color: '#64748b' }}>
-            {t('dashboard.count')}: {payload[0].value}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   // Custom Legend component
   const CustomLegend = ({ payload }) => {
     if (!payload || payload.length === 0) return null;
@@ -750,12 +768,13 @@ const Dashboard = () => {
                     fill="#8884d8"
                     paddingAngle={5}
                     dataKey="value"
+                    onMouseEnter={(entry) => setHoveredStatus(entry)}
+                    onMouseLeave={() => setHoveredStatus(null)}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getStatusColor(entry.name)} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
                   <Legend content={<CustomLegend />} />
                 </PieChart>
               </ResponsiveContainer>
@@ -763,6 +782,12 @@ const Dashboard = () => {
                 <strong>{totalTasks}</strong>
                 <span>{t('common.total', { defaultValue: 'Total' })}</span>
               </DoughnutCenter>
+              {hoveredStatus && (
+                <StatusHoverCard role="status" aria-live="polite">
+                  <strong>{translateStatus(hoveredStatus.name)}</strong>
+                  <span>{t('dashboard.count')}: {hoveredStatus.value}</span>
+                </StatusHoverCard>
+              )}
             </ChartContainer>
           </ChartCard>
         </ScrollAnimation>

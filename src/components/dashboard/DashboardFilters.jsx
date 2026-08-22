@@ -4,14 +4,23 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import api from '../../services/api';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../context/LanguageContext';
 import { Filter, X } from 'lucide-react';
 
 const FiltersContainer = styled.div`
   background: white;
   padding: 20px;
+  padding-bottom: ${props => props.$calendarOpen ? '332px' : '20px'};
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   margin-bottom: 24px;
+  position: relative;
+  z-index: ${props => props.$calendarOpen ? 4 : 1};
+  transition: padding-bottom 0.18s ease;
+
+  @media (max-width: 768px) {
+    padding-bottom: ${props => props.$calendarOpen ? '348px' : '20px'};
+  }
 `;
 
 const FiltersRow = styled.div`
@@ -112,6 +121,7 @@ const Button = styled.button`
 
 const DatePickerWrapper = styled.div`
   width: 100%;
+  position: relative;
   .react-datepicker-wrapper {
     width: 100%;
   }
@@ -123,10 +133,20 @@ const DatePickerWrapper = styled.div`
     font-size: 14px;
     color: var(--color-navy);
   }
+
+  .dashboard-date-popper {
+    z-index: 30;
+  }
+
+  .dashboard-date-popper .react-datepicker {
+    border-color: #cbd5e1;
+    box-shadow: 0 12px 28px rgba(15, 23, 70, 0.14);
+  }
 `;
 
 const DashboardFilters = ({ onFilterChange }) => {
     const { t } = useTranslation();
+    const { isRTL } = useLanguage();
     const [templates, setTemplates] = useState([]);
     const [assets, setAssets] = useState([]);
     const [inspectors, setInspectors] = useState([]);
@@ -138,6 +158,7 @@ const DashboardFilters = ({ onFilterChange }) => {
         startDate: null,
         endDate: null
     });
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     useEffect(() => {
         const fetchOptions = async () => {
@@ -206,11 +227,12 @@ const DashboardFilters = ({ onFilterChange }) => {
             endDate: null
         };
         setFilters(resetFilters);
+        setIsCalendarOpen(false);
         onFilterChange(resetFilters);
     };
 
     return (
-        <FiltersContainer>
+        <FiltersContainer $calendarOpen={isCalendarOpen}>
             <FiltersRow>
                 <FilterGroup>
                     <Label>{t('dashboard.template')}</Label>
@@ -255,6 +277,7 @@ const DashboardFilters = ({ onFilterChange }) => {
                     <Label>{t('common.dateRange')}</Label>
                     <DatePickerWrapper>
                         <DatePicker
+                            open={isCalendarOpen}
                             selectsRange={true}
                             startDate={filters.startDate}
                             endDate={filters.endDate}
@@ -264,6 +287,11 @@ const DashboardFilters = ({ onFilterChange }) => {
                             }}
                             placeholderText={t('common.selectDateRange')}
                             isClearable={true}
+                            popperPlacement={isRTL ? 'bottom-start' : 'bottom-end'}
+                            popperClassName="dashboard-date-popper"
+                            onInputClick={() => setIsCalendarOpen(true)}
+                            onClickOutside={() => setIsCalendarOpen(false)}
+                            onCalendarClose={() => setIsCalendarOpen(false)}
                         />
                     </DatePickerWrapper>
                 </FilterGroup>

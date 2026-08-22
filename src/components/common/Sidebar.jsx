@@ -49,12 +49,13 @@ const SidebarContainer = styled.div`
 `;
 
 const Logo = styled.div`
-  padding: 1.35rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
+  position: relative;
+  padding: 1.25rem ${props => props.$collapsed ? '0.75rem' : '3.5rem'};
   display: flex;
   align-items: center;
-  justify-content: ${props => props.$collapsed ? 'center' : 'space-between'};
+  justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 82px;
+  min-height: ${props => props.$collapsed ? '86px' : '98px'};
 
   h1 {
     font-size: ${props => props.$collapsed ? '0' : '1.9rem'};
@@ -73,8 +74,38 @@ const Logo = styled.div`
   }
   
   @media (max-width: 768px) {
-    justify-content: space-between;
+    min-height: 98px;
   }
+`;
+
+const BrandLockup = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+
+  img {
+    display: block;
+    height: 46px;
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    img {
+      height: 44px;
+    }
+  }
+`;
+
+const SidebarHeaderActions = styled.div`
+  position: absolute;
+  top: 50%;
+  ${props => props.$isRTL ? 'left: 0.75rem;' : 'right: 0.75rem;'}
+  display: flex;
+  align-items: center;
+  transform: translateY(-50%);
 `;
 
 const CollapseButton = styled.button`
@@ -299,15 +330,15 @@ const BrandFooter = styled.div`
   display: flex;
   justify-content: ${props => props.$collapsed ? 'center' : 'flex-start'};
   align-items: center;
-  padding: ${props => props.$collapsed ? '1rem 0.5rem' : '1rem 1.35rem'};
+  padding: ${props => props.$collapsed ? '1rem 0.5rem' : '0.9rem 1.35rem'};
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  min-height: 84px;
+  min-height: ${props => props.$collapsed ? '84px' : '112px'};
 
   img {
     display: block;
-    width: auto;
-    height: ${props => props.$collapsed ? '38px' : '64px'};
-    max-width: ${props => props.$collapsed ? '38px' : '205px'};
+    width: ${props => props.$collapsed ? '42px' : '224px'};
+    height: auto;
+    max-width: ${props => props.$collapsed ? '42px' : '100%'};
     object-fit: contain;
   }
 `;
@@ -509,17 +540,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <SidebarContainer $collapsed={effectiveCollapsed} $isRTL={isRTL}>
-      <Logo $collapsed={effectiveCollapsed}>
+      <Logo $collapsed={effectiveCollapsed} $isRTL={isRTL}>
         {!effectiveCollapsed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <BrandLockup>
             <h1>MIRSAT</h1>
-            <img src={mirSatLogo} alt="MIRSAT Logo" style={{ height: '38px', width: 'auto' }} />
-          </div>
+            <img src={mirSatLogo} alt="MIRSAT Logo" />
+          </BrandLockup>
         )}
         {effectiveCollapsed && (
-          <img src={mirSatLogo} alt="MIRSAT" style={{ height: '32px', width: 'auto' }} />
+          <img src={mirSatLogo} alt="MIRSAT" style={{ height: '42px', width: 'auto' }} />
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <SidebarHeaderActions $isRTL={isRTL}>
           {!isMobile && (
             <CollapseButton onClick={handleToggle} title={effectiveCollapsed ? t('common.expand') : t('common.collapse')}>
               {isRTL ? (
@@ -532,7 +563,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <ToggleButton onClick={handleToggle}>
             {effectiveCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </ToggleButton>
-        </div>
+        </SidebarHeaderActions>
       </Logo>
       
       <SearchContainer $collapsed={effectiveCollapsed}>
