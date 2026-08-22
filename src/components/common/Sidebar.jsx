@@ -102,25 +102,31 @@ const BrandLockup = styled.div`
 const SidebarHeaderActions = styled.div`
   position: absolute;
   top: 50%;
-  ${props => props.$isRTL ? 'left: 0.75rem;' : 'right: 0.75rem;'}
+  ${props => props.$collapsed
+    ? (props.$isRTL ? 'left: -1.75rem;' : 'right: -1.75rem;')
+    : (props.$isRTL ? 'left: 0.75rem;' : 'right: 0.75rem;')}
   display: flex;
   align-items: center;
   transform: translateY(-50%);
+  z-index: 1;
 `;
 
 const CollapseButton = styled.button`
-  background: none;
+  background: ${props => props.$collapsed ? 'var(--color-navy)' : 'none'};
   border: none;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: ${props => props.$collapsed ? '0.625rem' : '0.5rem'};
+  border-radius: ${props => props.$collapsed ? '0 8px 8px 0' : '8px'};
   transition: all 0.2s ease;
-  min-width: 32px;
-  height: 32px;
+  min-width: ${props => props.$collapsed ? '40px' : '32px'};
+  height: ${props => props.$collapsed ? '40px' : '32px'};
+  box-shadow: ${props => props.$collapsed ? '0 2px 5px rgba(0, 0, 0, 0.2)' : 'none'};
+
+  ${props => props.$collapsed && props.$isRTL ? 'border-radius: 8px 0 0 8px;' : ''}
 
   &:hover {
     background: rgba(255, 255, 255, 0.15);
@@ -334,12 +340,30 @@ const BrandFooter = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   min-height: ${props => props.$collapsed ? '84px' : '112px'};
 
-  img {
+  .brand-wordmark {
     display: block;
-    width: ${props => props.$collapsed ? '42px' : '224px'};
+    width: 224px;
     height: auto;
-    max-width: ${props => props.$collapsed ? '42px' : '100%'};
+    max-width: 100%;
     object-fit: contain;
+  }
+`;
+
+const CollapsedTakamolMark = styled.div`
+  width: 50px;
+  height: 50px;
+  overflow: hidden;
+  position: relative;
+
+  img {
+    position: absolute;
+    top: 50%;
+    right: -13px;
+    display: block;
+    width: auto;
+    max-width: none;
+    height: 79px;
+    transform: translateY(-50%);
   }
 `;
 
@@ -550,9 +574,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         {effectiveCollapsed && (
           <img src={mirSatLogo} alt="MIRSAT" style={{ height: '42px', width: 'auto' }} />
         )}
-        <SidebarHeaderActions $isRTL={isRTL}>
+        <SidebarHeaderActions $collapsed={effectiveCollapsed} $isRTL={isRTL}>
           {!isMobile && (
-            <CollapseButton onClick={handleToggle} title={effectiveCollapsed ? t('common.expand') : t('common.collapse')}>
+            <CollapseButton
+              $collapsed={effectiveCollapsed}
+              $isRTL={isRTL}
+              onClick={handleToggle}
+              aria-label={effectiveCollapsed ? t('common.expand') : t('common.collapse')}
+            >
               {isRTL ? (
                 effectiveCollapsed ? <ChevronLeft size={20} /> : <ChevronRight size={20} />
               ) : (
@@ -610,7 +639,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         )}
       </Nav>
       <BrandFooter $collapsed={effectiveCollapsed} aria-label="Takamol Mobility Services">
-        <img src={takamolLogo} alt="Takamol Mobility Services" />
+        {effectiveCollapsed ? (
+          <CollapsedTakamolMark aria-hidden="true">
+            <img src={takamolLogo} alt="" />
+          </CollapsedTakamolMark>
+        ) : (
+          <img className="brand-wordmark" src={takamolLogo} alt="Takamol Mobility Services" />
+        )}
       </BrandFooter>
     </SidebarContainer>
   );
