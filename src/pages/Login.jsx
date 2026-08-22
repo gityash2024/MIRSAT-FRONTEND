@@ -114,20 +114,29 @@ const ContentWrapper = styled.div`
 `;
 
 const Logo = styled(motion.div)`
+  position: absolute;
+  top: -12rem;
+  left: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  /* Motion owns transform during its entrance animation. */
+  translate: -50% 0;
+  z-index: 1;
 
   img {
-    height: 11rem;
+    height: 14rem;
     width: auto;
     filter: drop-shadow(0 5px 12px rgba(0, 24, 57, 0.2));
   }
   
   @media (max-width: 768px) {
+    position: relative;
+    top: auto;
+    left: auto;
+    translate: none;
     margin-bottom: 1.25rem;
-    
+
     img {
       height: 8.5rem;
     }
@@ -143,16 +152,19 @@ const Logo = styled(motion.div)`
 `;
 
 const LoginPanel = styled.div`
+  position: relative;
   width: 430px;
   flex: 0 0 430px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  transform: translateY(6rem);
 
   @media (max-width: 768px) {
     width: 100%;
     max-width: 400px;
     flex-basis: auto;
+    transform: none;
   }
 `;
 
@@ -261,7 +273,7 @@ const LoginCard = styled(motion.div)`
   padding: 2.5rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 16px 38px rgba(0, 24, 57, 0.22);
-  margin-top: 0;
+  margin-top: 76px;
   
   @media (max-width: 768px) {
     width: 100%;
@@ -477,22 +489,37 @@ const PoweredBy = styled.div`
   display: flex;
   flex-direction: column;
   align-items: ${props => props.isRTL ? 'flex-end' : 'flex-start'};
-  gap: 0.25rem;
+  gap: 0;
   color: rgba(255, 255, 255, 0.82);
   font-size: 0.8rem;
 
+  .takamol-logo-frame {
+    width: 260px;
+    height: 52px;
+    overflow: hidden;
+    position: relative;
+  }
+
   .takamol-logo {
-    width: 220px;
+    width: 260px;
     height: auto;
     display: block;
-    object-fit: contain;
+    position: absolute;
+    top: -30px;
+    left: 0;
   }
   
   @media (max-width: 768px) {
     align-items: center;
 
+    .takamol-logo-frame {
+      width: 220px;
+      height: 44px;
+    }
+
     .takamol-logo {
-      width: 190px;
+      width: 220px;
+      top: -26px;
     }
   }
 `;
@@ -688,7 +715,9 @@ const Login = () => {
           </FooterMeta>
           <PoweredBy isRTL={isRTL}>
             <span>{t('auth.poweredBy')}</span>
-            <img className="takamol-logo" src={takamolBrandLogo} alt="Takamol Mobility Services" />
+            <div className="takamol-logo-frame">
+              <img className="takamol-logo" src={takamolBrandLogo} alt="Takamol Mobility Services" />
+            </div>
           </PoweredBy>
         </Footer>
       </ContentWrapper>
