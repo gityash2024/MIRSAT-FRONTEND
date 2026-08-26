@@ -10,6 +10,7 @@ import { PERMISSIONS } from '../../utils/permissions';
 import { usePermissions } from '../../hooks/usePermissions';
 import { userService } from '../../services/user.service';
 import Skeleton from '../../components/ui/Skeleton';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -731,7 +732,7 @@ const UserView = () => {
             <DetailsList>
               <DetailItem>
                 <Calendar size={16} className="icon" />
-                {t('common.joined')}: {new Date(user.createdAt).toLocaleDateString()}
+                {t('common.joined')}: <bdi dir="ltr">{formatPlatformDate(user.createdAt, '—')}</bdi>
               </DetailItem>
               <DetailItem>
                 <Clock size={16} className="icon" />
@@ -775,11 +776,7 @@ const formatTimestamp = (timestamp) => {
     return `${hours}h ago`;
   }
   
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  return formatPlatformDate(date);
 };
 
 export default UserView;

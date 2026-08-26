@@ -8,6 +8,7 @@ import { fetchTasks } from '../../../store/slices/taskSlice';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api'; // Fixed import path for api
 import { toast } from 'react-hot-toast'; // Added toast import
+import { formatPlatformDate } from '../../../utils/platformDate';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -388,7 +389,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
                       
                       <TaskDetail>
                         <Calendar size={16} />
-                        <div>{t('common.deadline')}: {task.deadline ? new Date(task.deadline).toLocaleDateString() : t('tasks.noDeadline')}</div>
+                        <div>{t('common.deadline')}: {task.deadline ? <bdi dir="ltr">{formatPlatformDate(task.deadline)}</bdi> : t('tasks.noDeadline')}</div>
                       </TaskDetail>
                       
                       <TaskDetail>
@@ -441,4 +442,4 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
   );
 };
 
-export default AssetTasksModal; 
+export default AssetTasksModal;

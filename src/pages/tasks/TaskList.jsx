@@ -14,7 +14,7 @@ import { PERMISSIONS } from '../../utils/permissions';
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { format } from 'date-fns';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
 import { taskService } from '../../services/task.service';
@@ -859,12 +859,7 @@ const loadTasks = async () => {
 
   // Format date for PDF export
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      return format(new Date(dateString), 'MMM d, yyyy');
-    } catch (error) {
-      return 'Invalid Date';
-    }
+    return formatPlatformDate(dateString, 'N/A');
   };
 
   // Export tasks to PDF
@@ -924,7 +919,7 @@ const loadTasks = async () => {
       // Add subtitle with date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(formatPdfText(`${L('generatedOn')} ${isArabicExport(language) ? formatExportDate(new Date(), language, { includeTime: true }) : format(new Date(), 'MMM d, yyyy, h:mm a')}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 30, { align: isArabicExport(language) ? 'right' : 'left' });
+      doc.text(formatPdfText(`${L('generatedOn')} ${isArabicExport(language) ? formatExportDate(new Date(), language, { includeTime: true }) : formatPlatformDateTime(new Date())}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 30, { align: isArabicExport(language) ? 'right' : 'left' });
 
       // Define table columns
       const columns = orderForLanguage([

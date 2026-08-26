@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled, { css } from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 import {
   Plus,
   Trash2,
@@ -7679,13 +7680,13 @@ const InspectionLevelForm = () => {
       title: formData.name || t('common.draftInspectionTemplate'),
       score: 0, // No real score in template preview
       maxScore: maxScore,
-      completedAt: new Date().toLocaleString(),
+      completedAt: formatPlatformDateTime(new Date()),
       sections,
       flaggedItems: [],
       metadata: {
         documentNumber: id ? `Template ID: ${id}` : t('common.newTemplate'),
         inspectionLocation: t('common.notSpecified'),
-        inspectionDate: new Date().toLocaleDateString(),
+        inspectionDate: formatPlatformDate(new Date()),
         inspectorName: t('common.notAssigned'),
         operatorName: t('common.previewMode')
       }
@@ -7698,13 +7699,13 @@ const InspectionLevelForm = () => {
       title: 'Inspection Template',
       score: 0,
       maxScore: 0,
-      completedAt: new Date().toLocaleString(),
+      completedAt: formatPlatformDateTime(new Date()),
       sections: [],
       flaggedItems: [],
       metadata: {
         documentNumber: 'Template ID: Draft',
         inspectionLocation: 'Not specified',
-        inspectionDate: new Date().toLocaleDateString(),
+        inspectionDate: formatPlatformDate(new Date()),
         inspectorName: 'Not assigned',
         operatorName: 'Draft Template'
       }

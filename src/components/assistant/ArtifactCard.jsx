@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FileBarChart, Eye } from 'lucide-react';
 import ArtifactModal from './ArtifactModal';
+import { formatPlatformDateTime } from '../../utils/platformDate';
 
 const Card = styled.div`
   margin: -4px 0 12px;
@@ -64,7 +65,7 @@ const ArtifactCard = ({ artifact, rtl = false }) => {
   if (!artifact) return null;
   const metrics = Array.isArray(artifact.metrics) ? artifact.metrics.slice(0, 4) : [];
   const rowCount = Array.isArray(artifact.rows) ? artifact.rows.length : 0;
-  const asOf = artifact.generatedAt ? new Date(artifact.generatedAt).toLocaleString() : null;
+  const asOf = artifact.generatedAt ? formatPlatformDateTime(artifact.generatedAt) : null;
   return (
     <Card>
       <Head><FileBarChart size={16} />{artifact.title || 'Report'}</Head>

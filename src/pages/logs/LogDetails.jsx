@@ -28,6 +28,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { API_CONFIG } from '../../config/api';
+import { formatPlatformDateTime } from '../../utils/platformDate';
 
 const LogDetailsContainer = styled.div`
   padding: 24px;
@@ -419,7 +420,7 @@ const LogDetails = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return formatPlatformDateTime(dateString, '—');
   };
 
   const formatAction = (action) => {

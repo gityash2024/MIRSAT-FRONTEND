@@ -114,11 +114,23 @@ export const calculateInspectionProgress = ({
   );
   const unansweredRequiredQuestionIds = [];
   let answeredCount = 0;
+  let requiredAnsweredCount = 0;
+  let requiredTotalCount = 0;
 
   questions.forEach((question) => {
-    if (isQuestionAnswered(responses, question)) {
+    const required = isRequiredQuestion(question);
+    const answered = isQuestionAnswered(responses, question);
+
+    if (answered) {
       answeredCount += 1;
-    } else if (isRequiredQuestion(question)) {
+    }
+
+    if (!required) return;
+
+    requiredTotalCount += 1;
+    if (answered) {
+      requiredAnsweredCount += 1;
+    } else {
       unansweredRequiredQuestionIds.push(getQuestionId(question));
     }
   });
@@ -127,11 +139,12 @@ export const calculateInspectionProgress = ({
   return {
     answeredCount,
     totalCount,
+    requiredAnsweredCount,
+    requiredTotalCount,
     requiredUnansweredCount: unansweredRequiredQuestionIds.length,
     unansweredRequiredQuestionIds,
-    completionRate: totalCount > 0
-      ? Math.round((answeredCount / totalCount) * 100)
+    completionRate: requiredTotalCount > 0
+      ? Math.round((requiredAnsweredCount / requiredTotalCount) * 100)
       : 0
   };
 };
-

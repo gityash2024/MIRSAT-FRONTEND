@@ -18,6 +18,7 @@ import {
 } from '../../store/slices/userTasksSlice';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/ui/Skeleton';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 
 const TasksContainer = styled.div`
   padding: 24px;
@@ -935,24 +936,11 @@ const StatusIcon = ({ status, size = 18 }) => {
 };
 
 const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  return formatPlatformDate(dateString, 'N/A');
 };
 
 const formatDateTime = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  return formatPlatformDateTime(dateString, 'N/A');
 };
 
 const isStartLocked = (task) => {

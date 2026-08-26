@@ -40,9 +40,41 @@ describe('inspection progress', () => {
       }
     });
 
-    expect(full).toMatchObject({ answeredCount: 4, totalCount: 4, completionRate: 100 });
-    expect(cleared).toMatchObject({ answeredCount: 3, totalCount: 4, completionRate: 75 });
+    expect(full).toMatchObject({
+      answeredCount: 4,
+      totalCount: 4,
+      requiredAnsweredCount: 3,
+      requiredTotalCount: 3,
+      completionRate: 100
+    });
+    expect(cleared).toMatchObject({
+      answeredCount: 3,
+      totalCount: 4,
+      requiredAnsweredCount: 2,
+      requiredTotalCount: 3,
+      completionRate: 67
+    });
     expect(cleared.unansweredRequiredQuestionIds).toEqual(['q-required']);
+  });
+
+  it('does not reduce completion when optional questions are unanswered', () => {
+    const progress = calculateInspectionProgress({
+      inspectionLevel: inspection,
+      responses: {
+        'q-required': 'yes',
+        'q-false': false,
+        'q-zero': 0,
+      }
+    });
+
+    expect(progress).toMatchObject({
+      answeredCount: 3,
+      totalCount: 4,
+      requiredAnsweredCount: 3,
+      requiredTotalCount: 3,
+      requiredUnansweredCount: 0,
+      completionRate: 100
+    });
   });
 
   it('treats false and zero as answers but rejects blank values and empty uploads', () => {

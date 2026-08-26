@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
+import { formatPlatformDate } from '../../utils/platformDate';
 import 'jspdf-autotable';
 import { 
   UserPlus, 
@@ -1982,11 +1983,7 @@ const formatTimestamp = (timestamp) => {
     return `${hours}h ago`;
   }
   
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  return formatPlatformDate(date);
 };
 
 export default UserList;

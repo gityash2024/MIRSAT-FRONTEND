@@ -6,6 +6,7 @@ import styled, { keyframes, css } from 'styled-components';
 import { format, differenceInSeconds } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 import {
   Info,
   Activity,
@@ -1511,7 +1512,8 @@ const NavigationButton = styled.button`
 
 const InspectionLayout = styled.div`
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   height: calc(82vh - 80px);
   min-width: 0;
   max-width: 100%;
@@ -1538,9 +1540,9 @@ const InspectionLayout = styled.div`
 `;
 
 const NavigationPanel = styled.div`
-  width: ${props => props.$isOpen ? '300px' : '48px'};
-  min-width: ${props => props.$isOpen ? '300px' : '48px'};
-  border-right: 1px solid rgba(226, 232, 240, 0.78);
+  width: 100%;
+  min-width: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.78);
   background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(241, 247, 253, 0.92));
   display: flex;
   flex-direction: column;
@@ -1548,7 +1550,7 @@ const NavigationPanel = styled.div`
   box-sizing: border-box;
   max-width: 100%;
   overflow: hidden;
-  transition: width 0.3s ease, min-width 0.3s ease;
+  transition: none;
   position: relative;
   
   @media (max-width: 1200px) {
@@ -1790,17 +1792,19 @@ const SectionCounter = styled.div`
 `;
 
 const SectionsNavigation = styled.div`
-  padding: 16px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: 12px 16px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  scrollbar-width: thin;
 
   @media (max-width: 1200px) {
     flex-shrink: 0;
-    max-height: 40vh;
-    overflow-y: auto;
   }
 
   @media (max-width: 480px) {
@@ -1811,9 +1815,9 @@ const SectionsNavigation = styled.div`
 `;
 
 const SectionNavItem = styled.div`
-  padding: 14px 16px;
-  margin: 8px 0;
-  border-radius: 16px;
+  padding: 10px 14px;
+  margin: 0;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
@@ -1821,10 +1825,11 @@ const SectionNavItem = styled.div`
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
-  width: 100%;
+  width: auto;
   box-sizing: border-box;
   max-width: 100%;
-  min-width: 0;
+  min-width: 190px;
+  flex: 0 0 auto;
   overflow: hidden;
   gap: 8px;
   
@@ -1851,9 +1856,8 @@ const SectionNavItem = styled.div`
 
   @media (max-width: 480px) {
     padding: 10px 12px;
-    margin: 4px 0;
-    width: 100%;
-    max-width: 100%;
+    margin: 0;
+    min-width: 170px;
     
     ${props => props.active ? css`
       transform: none;
@@ -1873,9 +1877,9 @@ const SectionTitle2 = styled.div`
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  white-space: nowrap;
+  word-wrap: normal;
+  overflow-wrap: normal;
 
   @media (max-width: 480px) {
     font-size: 13px;
@@ -3528,25 +3532,11 @@ const formatTimeAsHHMM = (timeInSeconds) => {
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  return formatPlatformDate(dateString, 'N/A');
 };
 
 const formatDateTime = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  return formatPlatformDateTime(dateString, 'N/A');
 };
 
 const StatusIcon = ({ status, size = 18 }) => {
@@ -3899,9 +3889,7 @@ const UserTaskDetail = () => {
   const [commentText, setCommentText] = useState('');
   const [timer, setTimer] = useState(0);
   const [isSectionsPanelOpen, setIsSectionsPanelOpen] = useState(true);
-  const [showSectionsTour, setShowSectionsTour] = useState(() => {
-    return !localStorage.getItem('mirsat_sections_tour_dismissed');
-  });
+  const [showSectionsTour, setShowSectionsTour] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPage, setSelectedPage] = useState(null);
@@ -4036,7 +4024,12 @@ const UserTaskDetail = () => {
       : inspectionPages;
 
     if (!currentTask || pagesForProgress.length === 0) {
-      return { answeredCount: 0, totalCount: 0 };
+      return {
+        answeredCount: 0,
+        totalCount: 0,
+        requiredAnsweredCount: 0,
+        requiredTotalCount: 0
+      };
     }
 
     return calculateInspectionProgress({
@@ -5295,7 +5288,7 @@ const UserTaskDetail = () => {
   const formatCaptureMetadata = useCallback((metadata) => {
     if (!metadata || typeof metadata !== 'object') return '';
 
-    const capturedAt = metadata.capturedAt ? new Date(metadata.capturedAt).toLocaleString() : 'N/A';
+    const capturedAt = metadata.capturedAt ? formatPlatformDateTime(metadata.capturedAt, 'N/A') : 'N/A';
     const lat = metadata.location?.latitude;
     const lng = metadata.location?.longitude;
     const coordinates = (lat !== undefined && lng !== undefined)
@@ -5852,14 +5845,11 @@ const UserTaskDetail = () => {
       return;
     }
 
-    const { required, optional } = getAllUnansweredQuestions();
+    const { required } = getAllUnansweredQuestions();
 
-    // If there are ANY unanswered questions (required or optional), show the summary confirmation modal
-    if (required.length > 0 || optional.length > 0) {
-      if (required.length > 0) {
-        const unansweredIds = new Set(required.map(q => q.questionId));
-        setUnansweredRequiredQuestions(unansweredIds);
-      }
+    if (required.length > 0) {
+      const unansweredIds = new Set(required.map(q => q.questionId));
+      setUnansweredRequiredQuestions(unansweredIds);
       setShowUnansweredModal(true);
       return;
     }
@@ -7118,7 +7108,7 @@ const UserTaskDetail = () => {
                 </NavigationTitle>
                 <button 
                   onClick={() => setIsSectionsPanelOpen(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', display: 'none' }}
                 >
                   <ChevronLeft size={20} />
                 </button>
@@ -8132,9 +8122,9 @@ const UserTaskDetail = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ProgressValue>
                           {displayProgress}%
-                          {questionAnswerSummary.totalCount > 0 && (
+                          {questionAnswerSummary.requiredTotalCount > 0 && (
                             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontWeight: 700 }}>
-                              {questionAnswerSummary.answeredCount}/{questionAnswerSummary.totalCount}
+                              {questionAnswerSummary.requiredAnsweredCount}/{questionAnswerSummary.requiredTotalCount}
                             </div>
                           )}
                         </ProgressValue>
@@ -8231,8 +8221,8 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: '#27ae60', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.completion')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: '#27ae60' }}>
-                        {questionAnswerSummary.totalCount > 0
-                          ? `${questionAnswerSummary.answeredCount}/${questionAnswerSummary.totalCount}`
+                        {questionAnswerSummary.requiredTotalCount > 0
+                          ? `${questionAnswerSummary.requiredAnsweredCount}/${questionAnswerSummary.requiredTotalCount}`
                           : `${displayProgress}%`}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -8295,7 +8285,7 @@ const UserTaskDetail = () => {
                           />
                         )}
                         <div style={{ color: '#374151', fontSize: '13px', lineHeight: '1.7' }}>
-                          <div>Signed at: {currentTask?.signedAt ? new Date(currentTask.signedAt).toLocaleString() : 'N/A'}</div>
+                          <div>Signed at: {currentTask?.signedAt ? formatPlatformDateTime(currentTask.signedAt, 'N/A') : 'N/A'}</div>
                           {currentTask?.signatureMetadata && (
                             <div>Captured: {formatCaptureMetadata(currentTask.signatureMetadata)}</div>
                           )}
@@ -9348,7 +9338,7 @@ const UserTaskDetail = () => {
                   {displayProgress}%
                 </div>
                 <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
-                  {`${questionAnswerSummary.answeredCount} of ${questionAnswerSummary.totalCount} required questions answered`}
+                  {`${questionAnswerSummary.requiredAnsweredCount} of ${questionAnswerSummary.requiredTotalCount} required questions answered`}
                 </div>
               </div>
 

@@ -25,6 +25,7 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../../../utils/exportLocalization';
+import { formatPlatformDate } from '../../../utils/platformDate';
 
 const Header = styled.div`
   display: flex;
@@ -561,12 +562,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
 
   // Helper function to format dates
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch (error) {
-      return '';
-    }
+    return formatPlatformDate(dateString);
   };
 
   return (

@@ -17,6 +17,7 @@ import { inspectionService } from '../../services/inspection.service';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -1737,7 +1738,7 @@ const InspectionLevelList = ({
                           <StatItem>
                             <Calendar size={18} />
                             <div>
-                              <strong>{new Date(level.createdAt).toLocaleDateString()}</strong>
+                              <strong><bdi dir="ltr">{formatPlatformDate(level.createdAt, '—')}</bdi></strong>
                               <span>{t('common.created')}</span>
                             </div>
                           </StatItem>

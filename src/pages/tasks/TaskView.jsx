@@ -21,6 +21,7 @@ import { getTaskById, addTaskComment, updateTaskStatus, uploadTaskAttachment, de
 import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import Skeleton from '../../components/ui/Skeleton';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -874,14 +875,7 @@ const TaskView = () => {
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatPlatformDateTime(dateString, 'N/A');
   };
 
   useEffect(() => {
@@ -2066,7 +2060,7 @@ const TaskView = () => {
                           <strong>Answered by:</strong> {response.completedBy.name || response.completedBy.email || 'Unknown'}
                           {response.completedAt && (
                             <span style={{ marginLeft: '16px' }}>
-                              <strong>on:</strong> {new Date(response.completedAt).toLocaleString()}
+                              <strong>on:</strong> {formatPlatformDateTime(response.completedAt, '—')}
                             </span>
                           )}
                         </div>
@@ -2350,7 +2344,7 @@ const TaskView = () => {
                           color: '#64748b',
                           textAlign: 'right'
                         }}>
-                          <div>{new Date(comment.createdAt || comment.timestamp).toLocaleDateString()}</div>
+                          <div><bdi dir="ltr">{formatPlatformDate(comment.createdAt || comment.timestamp, '—')}</bdi></div>
                           <div>{new Date(comment.createdAt || comment.timestamp).toLocaleTimeString()}</div>
                         </div>
                       </div>

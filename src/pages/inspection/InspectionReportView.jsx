@@ -20,6 +20,7 @@ import {
   loadPdfArabicFont,
   setPdfFontForLanguage
 } from '../../utils/exportLocalization';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 
 const PageContainer = styled.div`
   display: flex;
@@ -365,13 +366,13 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         title: 'Inspection Template',
         score: 0,
         maxScore: 0,
-        completedAt: new Date().toLocaleString(),
+        completedAt: formatPlatformDateTime(new Date()),
         sections: [],
         flaggedItems: [],
         metadata: {
           documentNumber: 'Template ID: Unknown',
           inspectionLocation: 'Not specified',
-          inspectionDate: new Date().toLocaleDateString(),
+          inspectionDate: formatPlatformDate(new Date()),
           inspectorName: 'Not assigned',
           operatorName: 'Draft Template'
         }
@@ -447,13 +448,13 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       title: templateData.name || t('inspections.inspectionTemplate'),
       score: totalScore,
       maxScore: maxScore,
-      completedAt: new Date().toLocaleString(),
+      completedAt: formatPlatformDateTime(new Date()),
       sections,
       flaggedItems: [], // These would be items that failed compliance
       metadata: {
         documentNumber: t('inspections.templateId') + ': ' + (id || t('common.unknown')),
         inspectionLocation: t('common.notSpecified'),
-        inspectionDate: new Date().toLocaleDateString(),
+        inspectionDate: formatPlatformDate(new Date()),
         inspectorName: t('common.notAssigned'),
         operatorName: t('inspections.draftTemplate')
       }
@@ -752,7 +753,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       onSave={() => { }}
       onPublish={!isCreating ? handlePublish : null}
       baseUrl={baseUrl}
-      lastPublished={template?.updatedAt ? new Date(template.updatedAt).toLocaleString() : null}
+      lastPublished={template?.updatedAt ? formatPlatformDateTime(template.updatedAt) : null}
     >
       <PageContainer>
         {!isCreating && (

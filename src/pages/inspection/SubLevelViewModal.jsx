@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { X, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatPlatformDateTime } from '../../utils/platformDate';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -183,7 +184,7 @@ const SubLevelViewModal = ({ subLevel, onClose }) => {
             <DetailItem>
               <DetailLabel>{t('common.completedAt')}</DetailLabel>
               <DetailValue>
-                {new Date(subLevel.completedAt).toLocaleString()}
+                {formatPlatformDateTime(subLevel.completedAt, '—')}
               </DetailValue>
             </DetailItem>
           )}

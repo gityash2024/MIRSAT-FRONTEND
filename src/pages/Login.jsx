@@ -590,7 +590,12 @@ const Login = () => {
 
     try {
       // Dispatch login thunk
-      const resultAction = await dispatch(login(formData)).unwrap();
+      const resultAction = await dispatch(login({
+        ...formData,
+        // Email addresses are case-insensitive. Keep the password exactly as
+        // entered, including any intentional whitespace.
+        email: formData.email.trim().toLowerCase(),
+      })).unwrap();
 
     
       

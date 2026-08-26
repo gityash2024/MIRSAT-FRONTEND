@@ -11,6 +11,7 @@ import { fetchQuestionLibrary, addQuestionToLibrary, deleteQuestionFromLibrary }
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import AlertModal from '../../components/ui/AlertModal';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 // Styled Components
 const PageContainer = styled.div`
@@ -966,12 +967,7 @@ const QuestionnaireList = () => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    return formatPlatformDate(dateString, '—');
   };
 
   const handleRowClick = (id) => {

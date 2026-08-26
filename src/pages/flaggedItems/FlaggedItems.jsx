@@ -28,6 +28,14 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../../utils/exportLocalization';
+import {
+  decorateReportPages,
+  drawLegacyReportNote,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from '../../utils/pdfReportBranding';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -506,13 +514,9 @@ const FlaggedItems = () => {
       if (isArabicExport(language) && fontLoaded) {
         doc.setFont('NotoNaskhArabic', 'normal');
       }
-      
-      doc.setFontSize(18);
-      const pageWidth = doc.internal.pageSize.width;
+      const branding = await loadReportBranding();
       const margin = 12;
-      doc.text(formatPdfText(L('flaggedItemsReport'), language), isArabicExport(language) ? pageWidth - margin : margin, 16, { align: isArabicExport(language) ? 'right' : 'left' });
-      doc.setFontSize(12);
-      doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`, language), isArabicExport(language) ? pageWidth - margin : margin, 25, { align: isArabicExport(language) ? 'right' : 'left' });
+      drawReportHeader(doc, { title: L('flaggedItemsReport'), language, fontLoaded, branding });
 
       const tableData = allItems.map(item => [
         formatPdfText(item.taskTitle || L('na'), language),
@@ -531,31 +535,33 @@ const FlaggedItems = () => {
       ]));
 
       autoTable(doc, {
-        startY: 32,
+        ...reportTableTheme(fontLoaded, language),
+        startY: 43,
         head: [orderForLanguage([L('task'), L('template'), L('asset'), L('inspector'), L('question'), L('response'), L('date')].map(label => formatPdfText(label, language)), language)],
         body: orderRowsForLanguage(tableData, language),
         didParseCell: function (data) {
           localizePdfTable(data, language, fontLoaded);
         },
-        headStyles: {
-          font: 'helvetica',
-          fontStyle: 'bold',
-          fontSize: 9,
-        },
-        margin: { left: margin, right: margin },
+        margin: { ...reportTableTheme(fontLoaded, language).margin, left: margin, right: margin },
         tableWidth: 'auto',
         columnStyles,
-        styles: {
-          font: 'helvetica',
-          fontSize: 8.5,
-          cellPadding: 2.5,
-          overflow: 'linebreak',
-          valign: 'top',
-          lineColor: [226, 232, 240],
-          lineWidth: 0.1,
-        },
+        styles: { ...reportTableTheme(fontLoaded, language).styles, overflow: 'linebreak', valign: 'top' },
       });
 
+      if (allItems.some((item) => item.isLegacyFallback)) {
+        drawLegacyReportNote(doc, {
+          note: L('legacyFlaggedItemsNote'),
+          language,
+          fontLoaded,
+        });
+      }
+
+      decorateReportPages(doc, {
+        language,
+        fontLoaded,
+        branding,
+        generatedOn: `${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`
+      });
       doc.save(`${fileName}.pdf`);
       setShowDocumentModal(false);
     } catch (error) {
@@ -564,8 +570,7 @@ const FlaggedItems = () => {
   };
 
   const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString();
+    return formatPlatformDate(date, 'N/A');
   };
 
   const getStatusBadge = (status) => {

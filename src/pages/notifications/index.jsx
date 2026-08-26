@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import useNotification from '../../hooks/useNotification';
 import { useSelector } from 'react-redux';
 import { resolveNotificationPath } from '../../utils/notificationTarget';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 // Mock data for fallback
 export const mockNotifications = [
@@ -553,11 +554,7 @@ const formatTimestamp = (timestamp, t) => {
   } else if (diffDays < 7) {
     return `${diffDays} ${t('notifications.daysAgo')}`;
   } else {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
+    return formatPlatformDate(date);
   }
 };
 

@@ -35,6 +35,14 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../utils/exportLocalization';
+import {
+  decorateReportPages,
+  drawLegacyReportNote,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from '../utils/pdfReportBranding';
+import { formatPlatformDate } from '../utils/platformDate';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -511,11 +519,8 @@ const Dashboard = () => {
     if (isArabicExport(language) && fontLoaded) {
       doc.setFont('NotoNaskhArabic', 'normal');
     }
-    
-    doc.setFontSize(18);
-    doc.text(formatPdfText(L('dashboardReport'), language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 22, { align: isArabicExport(language) ? 'right' : 'left' });
-    doc.setFontSize(12);
-    doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 32, { align: isArabicExport(language) ? 'right' : 'left' });
+    const branding = await loadReportBranding();
+    drawReportHeader(doc, { title: L('dashboardReport'), language, fontLoaded, branding });
 
     // Stats
     const statsData = [
@@ -527,7 +532,8 @@ const Dashboard = () => {
     ];
 
     autoTable(doc, {
-      startY: 40,
+      ...reportTableTheme(fontLoaded, language),
+      startY: 43,
       head: [orderForLanguage([L('metric'), L('value')].map(label => formatPdfText(label, language)), language)],
       body: orderRowsForLanguage(statsData.map(row => row.map(cell => formatPdfText(cell, language))), language),
       didParseCell: (cellData) => localizePdfTable(cellData, language, fontLoaded)
@@ -544,20 +550,12 @@ const Dashboard = () => {
 
     // Configure autoTable to handle Arabic text
     autoTable(doc, {
+      ...reportTableTheme(fontLoaded, language),
       startY: doc.lastAutoTable.finalY + 20,
       head: [orderForLanguage([L('inspectionName'), L('date'), L('assetType')].map(label => formatPdfText(label, language)), language)],
       body: orderRowsForLanguage(upcomingData, language),
       didParseCell: function (data) {
         localizePdfTable(data, language, fontLoaded);
-      },
-      styles: {
-        font: 'helvetica',
-        fontSize: 10,
-      },
-      headStyles: {
-        font: 'helvetica',
-        fontStyle: 'bold',
-        fontSize: 10,
       },
     });
 
@@ -580,28 +578,34 @@ const Dashboard = () => {
           ]);
 
           autoTable(doc, {
+            ...reportTableTheme(fontLoaded, language),
             startY: doc.lastAutoTable.finalY + 25,
             head: [orderForLanguage([L('task'), L('template'), L('question'), L('response'), L('date')].map(label => formatPdfText(label, language)), language)],
             body: orderRowsForLanguage(flaggedData, language),
             didParseCell: function (data) {
               localizePdfTable(data, language, fontLoaded);
             },
-            styles: {
-              font: 'helvetica',
-              fontSize: 9,
-            },
-            headStyles: {
-              font: 'helvetica',
-              fontStyle: 'bold',
-              fontSize: 9,
-            },
           });
+
+          if (flaggedItems.some((item) => item.isLegacyFallback)) {
+            drawLegacyReportNote(doc, {
+              note: L('legacyFlaggedItemsNote'),
+              language,
+              fontLoaded,
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching flagged items for PDF:', error);
       }
     }
 
+    decorateReportPages(doc, {
+      language,
+      fontLoaded,
+      branding,
+      generatedOn: `${L('generatedOnColon')} ${formatExportDate(new Date(), language)}`
+    });
     doc.save(`${fileName}.pdf`);
     setShowDocumentModal(false);
   };
@@ -815,7 +819,7 @@ const Dashboard = () => {
                     (data?.upcomingInspections || []).map((item, index) => (
                       <tr key={index}>
                         <td>{item.name}</td>
-                        <td>{new Date(item.date).toLocaleDateString()}</td>
+                        <td><bdi dir="ltr">{formatPlatformDate(item.date, '—')}</bdi></td>
                         <td>{item.assetType}</td>
                         <td><span style={{ color: '#b45309', background: '#fff7e0', borderRadius: '999px', padding: '4px 8px', fontSize: 12 }}>{t('dashboard.scheduled', { defaultValue: 'Scheduled' })}</span></td>
                       </tr>

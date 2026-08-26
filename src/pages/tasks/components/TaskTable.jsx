@@ -14,6 +14,7 @@ import { deleteTask, startTaskNow, toggleTaskActive } from '../../../store/slice
 import Skeleton from '../../../components/ui/Skeleton';
 import { themeColors, getStatusColor } from '../../../utils/themeUtils';
 import { useLanguage } from '../../../context/LanguageContext';
+import { formatPlatformDate } from '../../../utils/platformDate';
 
 // Tooltip Component
 const TooltipWrapper = styled.div`
@@ -1354,7 +1355,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                     )}
                   </div>
                 </td>
-                <td>{new Date(task.deadline).toLocaleDateString()}</td>
+                <td><bdi dir="ltr">{formatPlatformDate(task.deadline, '—')}</bdi></td>
                 {/* <td>
             <ProgressBar>
               <ProgressFill value={task.overallProgress || 0} />

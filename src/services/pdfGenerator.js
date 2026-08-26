@@ -11,6 +11,7 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../utils/exportLocalization';
+import { formatPlatformDateTime } from '../utils/platformDate';
 
 const HEADER_HEIGHT = 28;
 const TOP_MARGIN = 14;
@@ -69,7 +70,7 @@ const formatDateTime = (value) => {
   if (!value) return 'N/A';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return safeText(value);
-  return date.toLocaleString();
+  return formatPlatformDateTime(date, safeText(value));
 };
 
 const formatDuration = (secondsValue, language = 'en') => {
@@ -429,20 +430,22 @@ const drawPageDecorations = ({
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
 
-  const logoW = 22;
-  const logoH = 14;
+  const mirsatLogoW = 18;
+  const mirsatLogoH = 18;
+  const srsaLogoW = 43;
+  const srsaLogoH = 15;
   const logoY = TOP_MARGIN - 10;
 
   if (leftLogo) {
-    doc.addImage(leftLogo, 'PNG', SIDE_MARGIN, logoY, logoW, logoH);
+    doc.addImage(leftLogo, 'PNG', SIDE_MARGIN, logoY, mirsatLogoW, mirsatLogoH);
   }
 
   if (rightLogo) {
-    doc.addImage(rightLogo, 'PNG', pageWidth - SIDE_MARGIN - logoW, logoY, logoW, logoH);
+    doc.addImage(rightLogo, 'PNG', pageWidth - SIDE_MARGIN - srsaLogoW, logoY + 1, srsaLogoW, srsaLogoH);
   }
 
   doc.setDrawColor(colors.border);
-  doc.line(SIDE_MARGIN, TOP_MARGIN + 6, pageWidth - SIDE_MARGIN, TOP_MARGIN + 6);
+  doc.line(SIDE_MARGIN, TOP_MARGIN + 12, pageWidth - SIDE_MARGIN, TOP_MARGIN + 12);
 
   if (isArabicExport(language) && fontLoaded) {
     doc.setFont('NotoNaskhArabic', 'normal');
@@ -857,8 +860,8 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     }
   }
 
-  const leftLogo = await toDataUrl(`${window.location.origin}/logo.png`);
-  const rightLogo = await toDataUrl(`${window.location.origin}/logo.png`);
+  const leftLogo = await toDataUrl(`${window.location.origin}/report-assets/mirsat.png`);
+  const rightLogo = await toDataUrl(`${window.location.origin}/report-assets/srsa-logo.png`);
   const generatedAt = formatExportDate(new Date(), exportLanguage, { includeTime: true });
 
   const totalPages = doc.getNumberOfPages();

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
+import { formatPlatformDateTime } from '../../../utils/platformDate';
 
 const TimelineContainer = styled(motion.div)`
   background: white;
@@ -324,7 +325,7 @@ const TimelineChart = ({ dateRange, filters }) => {
                   <TimelineTitle>{item.title}</TimelineTitle>
                   <TimelineTime>
                     <Clock size={12} />
-                    {new Date(item.timestamp).toLocaleString()}
+                    {formatPlatformDateTime(item.timestamp, '—')}
                   </TimelineTime>
                 </TimelineHeader>
                 <TimelineDescription>{translateActivityStatus(item.description)}</TimelineDescription>

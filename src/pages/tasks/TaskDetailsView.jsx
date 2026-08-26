@@ -30,6 +30,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import Skeleton from '../../components/ui/Skeleton';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { toast } from 'react-hot-toast';
+import { formatPlatformDate } from '../../utils/platformDate';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -1429,7 +1430,7 @@ const TaskDetailsView = () => {
                 <InfoContent>
                   <InfoLabel>{t('calendar.deadline')}</InfoLabel>
                   <InfoValue>
-                    {currentTask.deadline ? new Date(currentTask.deadline).toLocaleDateString() : 'No due date'}
+                    {currentTask.deadline ? <bdi dir="ltr">{formatPlatformDate(currentTask.deadline)}</bdi> : 'No due date'}
                   </InfoValue>
                 </InfoContent>
               </InfoItem>
@@ -1466,7 +1467,7 @@ const TaskDetailsView = () => {
                 <InfoContent>
                   <InfoLabel>{t('common.createdAt')}</InfoLabel>
                   <InfoValue>
-                    {currentTask.createdAt ? new Date(currentTask.createdAt).toLocaleDateString() : 'N/A'}
+                    {currentTask.createdAt ? <bdi dir="ltr">{formatPlatformDate(currentTask.createdAt)}</bdi> : 'N/A'}
                   </InfoValue>
                 </InfoContent>
               </InfoItem>
@@ -1478,7 +1479,7 @@ const TaskDetailsView = () => {
                 <InfoContent>
                   <InfoLabel>{t('common.updatedAt')}</InfoLabel>
                   <InfoValue>
-                    {currentTask.updatedAt ? new Date(currentTask.updatedAt).toLocaleDateString() : 'N/A'}
+                    {currentTask.updatedAt ? <bdi dir="ltr">{formatPlatformDate(currentTask.updatedAt)}</bdi> : 'N/A'}
                   </InfoValue>
                 </InfoContent>
               </InfoItem>
@@ -1633,7 +1634,7 @@ const TaskDetailsView = () => {
                                       </span>
                                     )}
                                     {question.type === 'text' && response}
-                                    {question.type === 'date' && response && new Date(response).toLocaleDateString()}
+                                    {question.type === 'date' && response && <bdi dir="ltr">{formatPlatformDate(response)}</bdi>}
                                     {question.type === 'file' && response && (
                                       <div style={{ marginTop: '8px' }}>
                                         {response.startsWith('data:image/') ? (

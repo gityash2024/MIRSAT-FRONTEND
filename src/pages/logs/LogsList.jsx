@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatPlatformDate } from '../../utils/platformDate';
 import { 
   Search, 
   Filter, 
@@ -1613,9 +1614,9 @@ const LogsList = () => {
     if (diffInHours < 24) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffInHours < 168) {
-      return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+      return `${formatPlatformDate(date)}, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `${formatPlatformDate(date)}, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
   };
 

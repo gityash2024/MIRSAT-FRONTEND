@@ -1,4 +1,5 @@
 import ArabicReshaper from 'arabic-reshaper';
+import { formatPlatformDate, formatPlatformDateTime } from './platformDate';
 
 export const EXPORT_LANGUAGES = {
   EN: 'en',
@@ -182,6 +183,7 @@ const TEXT = {
     section: 'Section',
     preInspectionQuestionnaire: 'Pre-inspection questionnaire',
     noFlaggedItems: 'No flagged items for this inspection',
+    legacyFlaggedItemsNote: 'Some historical records reference retired templates; their original question text is unavailable.',
     taskReport: 'MIRSAT - Task Report',
     title: 'Title',
     assignee: 'Assignee',
@@ -286,6 +288,7 @@ const TEXT = {
     section: 'قسم',
     preInspectionQuestionnaire: 'استبيان ما قبل التفتيش',
     noFlaggedItems: 'لا توجد عناصر معلّمة لهذا التفتيش',
+    legacyFlaggedItemsNote: 'تشير بعض السجلات التاريخية إلى قوالب متوقفة، ولذلك لا يتوفر النص الأصلي للسؤال.',
     taskReport: 'مرصد - تقرير المهام',
     title: 'العنوان',
     assignee: 'المكلف',
@@ -337,16 +340,9 @@ export const formatExportDate = (value, language = EXPORT_LANGUAGES.EN, options 
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
-  if (!isArabicExport(language)) {
-    return options.includeTime ? date.toLocaleString() : date.toLocaleDateString();
-  }
-
-  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    ...(options.includeTime ? { hour: '2-digit', minute: '2-digit' } : {})
-  }).format(date);
+  return options.includeTime
+    ? formatPlatformDateTime(date, String(value))
+    : formatPlatformDate(date, String(value));
 };
 
 export const formatStatusForExport = (status, language = EXPORT_LANGUAGES.EN) => {

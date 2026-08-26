@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
+import { formatPlatformDateTime } from '../../utils/platformDate';
 import { 
   X, 
   Calendar, 
@@ -1326,7 +1327,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return formatPlatformDateTime(dateString, '—');
   };
 
   const formatAction = (action) => {

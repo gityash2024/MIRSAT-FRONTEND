@@ -6,6 +6,7 @@ import {
   XCircle, Database, MapPin, User, Briefcase, Award, Info, 
   BarChart2, Clipboard, AlertCircle, HelpCircle, CheckSquare
 } from 'lucide-react';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 
 const Container = styled.div`
   padding: 16px;
@@ -328,21 +329,11 @@ const StatusIcon = ({ status, size = 18 }) => {
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatPlatformDate(dateString, 'N/A');
 };
 
 const formatDateTime = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+  return formatPlatformDateTime(dateString, 'N/A');
 };
 
 const PreInspectionStepForm = ({ task }) => {

@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatPlatformDateTime } from './platformDate';
 
 /**
  * Client-side, on-the-fly export of an agent "report" artifact to PDF / Excel / CSV / Word,
@@ -97,7 +98,7 @@ export const exportArtifactPdf = (artifact) => {
     doc.text(wrapped, marginX, y);
     y += wrapped.length * 13 + 4;
   }
-  doc.text(`Generated: ${new Date(artifact?.generatedAt || Date.now()).toLocaleString()}`, marginX, y);
+  doc.text(`Generated: ${formatPlatformDateTime(artifact?.generatedAt || Date.now())}`, marginX, y);
   y += 6;
   if (artifact?.metrics?.length) {
     autoTable(doc, {
@@ -136,7 +137,7 @@ export const exportArtifactDocx = async (artifact) => {
     new Paragraph({ text: String(artifact?.title || 'Report'), heading: HeadingLevel.HEADING_1 }),
   ];
   if (artifact?.summary) children.push(new Paragraph({ children: [new TextRun({ text: String(artifact.summary), italics: true })] }));
-  children.push(new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date(artifact?.generatedAt || Date.now()).toLocaleString()}`, size: 18, color: '667085' })] }));
+  children.push(new Paragraph({ children: [new TextRun({ text: `Generated: ${formatPlatformDateTime(artifact?.generatedAt || Date.now())}`, size: 18, color: '667085' })] }));
 
   (artifact?.metrics || []).forEach((m) => {
     children.push(new Paragraph({ children: [new TextRun({ text: `${m.label}: `, bold: true }), new TextRun({ text: cellText(m.value) })] }));

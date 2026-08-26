@@ -24,6 +24,7 @@ import {
 import { inspectionService } from '../../services/inspection.service';
 import InspectionLayout from '../../components/common/InspectionLayout';
 import CollapsibleSection from '../../components/ui/CollapsibleSection';
+import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
 
 const PageContainer = styled.div`
   display: flex;
@@ -1493,7 +1494,7 @@ const InspectionLevelView = () => {
       onBack={() => navigate('/inspection')}
       onPublish={handlePublish}
       baseUrl={`/inspection/${id}`}
-      lastPublished={level.updatedAt ? new Date(level.updatedAt).toLocaleString() : null}
+      lastPublished={level.updatedAt ? formatPlatformDateTime(level.updatedAt) : null}
       showBuildTabOnly={true}
     >
       <PageContainer>
@@ -1538,7 +1539,7 @@ const InspectionLevelView = () => {
               {levelCount} Levels
             </SummaryValue>
             <SummaryDescription>
-              Created on {new Date(level.createdAt).toLocaleDateString()}
+              Created on <bdi dir="ltr">{formatPlatformDate(level.createdAt, '—')}</bdi>
             </SummaryDescription>
           </SummaryCard>
           
