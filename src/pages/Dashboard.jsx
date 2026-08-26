@@ -69,6 +69,16 @@ const WelcomeText = styled.h1`
   }
 `;
 
+// Value colors mirror the dashboard status palette while keeping the report
+// table structure unchanged.
+const DASHBOARD_REPORT_VALUE_COLORS = [
+  '#1f3a70', // Total tasks
+  '#16a085', // Completed tasks
+  '#e89a00', // Pending tasks
+  '#e74c3c', // Delayed inspections
+  '#2d7bbf', // Flagged items
+];
+
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
@@ -536,7 +546,15 @@ const Dashboard = () => {
       startY: 43,
       head: [orderForLanguage([L('metric'), L('value')].map(label => formatPdfText(label, language)), language)],
       body: orderRowsForLanguage(statsData.map(row => row.map(cell => formatPdfText(cell, language))), language),
-      didParseCell: (cellData) => localizePdfTable(cellData, language, fontLoaded)
+      didParseCell: (cellData) => {
+        localizePdfTable(cellData, language, fontLoaded);
+
+        const valueColumnIndex = isArabicExport(language) ? 0 : 1;
+        if (cellData.section === 'body' && cellData.column.index === valueColumnIndex) {
+          cellData.cell.styles.textColor = DASHBOARD_REPORT_VALUE_COLORS[cellData.row.index];
+          cellData.cell.styles.fontStyle = 'bold';
+        }
+      }
     });
 
     // Upcoming Inspections
