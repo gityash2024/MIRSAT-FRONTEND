@@ -100,11 +100,13 @@ const isScorableQuestion = (question) => {
 };
 
 const getMaxScore = (question) => {
-  const fromScoring = Number(question?.scoring?.max || 0);
-  if (Number.isFinite(fromScoring) && fromScoring > 0) return fromScoring;
-
   if (question?.scores && typeof question.scores === 'object') {
-    const values = Object.values(question.scores)
+    // Template answer scores are the source of truth. Some legacy snapshots
+    // stored the question's position in `scoring.max`, which must never be
+    // used when an answer-score map is available.
+    const values = Object.entries(question.scores)
+      .filter(([key]) => String(key).trim().toLowerCase() !== 'max')
+      .map(([, value]) => value)
       .map((value) => Number(value))
       .filter((value) => Number.isFinite(value));
     if (values.length > 0) {
@@ -113,7 +115,42 @@ const getMaxScore = (question) => {
     }
   }
 
+  const fromScoring = Number(question?.scoring?.max || question?.scores?.max || 0);
+  if (Number.isFinite(fromScoring) && fromScoring > 0) return fromScoring;
+
   return 2;
+};
+
+const getResponseValue = (response) => {
+  if (response && typeof response === 'object' && !Array.isArray(response)) {
+    return response.value ?? response.response ?? response.answer ?? response.status ?? response;
+  }
+  return response;
+};
+
+const normalizeScoreValue = (value) => String(value ?? '')
+  .trim()
+  .toLowerCase()
+  .replace(/[_-]+/g, ' ')
+  .replace(/\s+/g, ' ');
+
+const getConfiguredScore = (scores, response) => {
+  if (!scores || typeof scores !== 'object' || response === null || response === undefined || response === '') {
+    return undefined;
+  }
+
+  const directKey = String(response);
+  if (Object.prototype.hasOwnProperty.call(scores, directKey)) {
+    const directValue = Number(scores[directKey]);
+    return Number.isFinite(directValue) ? directValue : undefined;
+  }
+
+  const normalizedResponse = normalizeScoreValue(response);
+  const matchingKey = Object.keys(scores).find((key) => normalizeScoreValue(key) === normalizedResponse);
+  if (matchingKey === undefined) return undefined;
+
+  const matchedValue = Number(scores[matchingKey]);
+  return Number.isFinite(matchedValue) ? matchedValue : undefined;
 };
 
 const findResponseEntry = (responses, questionId) => {
@@ -229,30 +266,32 @@ const extractPreInspectionQuestions = (taskData) => {
   return Array.isArray(inspectionLevelPre) ? inspectionLevelPre : [];
 };
 
-const calculateScoreSummary = (questionRows, responses) => {
+export const calculateReportScoreSummary = (questionRows, responses) => {
   let achieved = 0;
   let total = 0;
 
   questionRows.forEach(({ id, question }) => {
     if (!isScorableQuestion(question)) return;
 
-    const { value } = findResponseEntry(responses, id);
-    if (value === null || value === undefined || value === '') return;
-
-    const normalized = String(value).toLowerCase();
+    const { value: savedResponse } = findResponseEntry(responses, id);
+    const value = getResponseValue(savedResponse);
+    const normalized = normalizeScoreValue(value);
     if (['na', 'n/a', 'not_applicable', 'not applicable'].includes(normalized)) {
       return;
     }
 
-    const weight = Number(question?.weight || 1);
+    const weight = Number(question?.weight) || 1;
+    if (weight <= 0) return;
     const max = getMaxScore(question);
     const weightedMax = max * weight;
 
     total += weightedMax;
 
-    if (question?.scores && typeof question.scores === 'object') {
-      const configured = Number(question.scores[value] ?? question.scores[String(value)] ?? 0);
-      if (Number.isFinite(configured)) achieved += configured * weight;
+    if (value === null || value === undefined || value === '') return;
+
+    const configured = getConfiguredScore(question?.scores, value);
+    if (configured !== undefined) {
+      achieved += configured * weight;
       return;
     }
 
@@ -269,9 +308,10 @@ const calculateScoreSummary = (questionRows, responses) => {
 
 const getQuestionScoreLabel = (question, response) => {
   if (!isScorableQuestion(question)) return 'N/A';
-  if (response === null || response === undefined || response === '') return 'N/A';
+  const value = getResponseValue(response);
+  if (value === null || value === undefined || value === '') return 'N/A';
 
-  const normalized = String(response).toLowerCase();
+  const normalized = normalizeScoreValue(value);
   if (['na', 'n/a', 'not_applicable', 'not applicable'].includes(normalized)) {
     return 'N/A';
   }
@@ -281,9 +321,9 @@ const getQuestionScoreLabel = (question, response) => {
   const weightedMax = max * weight;
 
   let earned = 0;
-  if (question?.scores && typeof question.scores === 'object') {
-    const configured = Number(question.scores[response] ?? question.scores[String(response)] ?? 0);
-    if (Number.isFinite(configured)) earned = configured * weight;
+  const configured = getConfiguredScore(question?.scores, value);
+  if (configured !== undefined) {
+    earned = configured * weight;
   } else if (['full_compliance', 'full compliance', 'yes'].includes(normalized)) {
     earned = weightedMax;
   } else if (['partial_compliance', 'partial compliance'].includes(normalized)) {
@@ -501,7 +541,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   const responseMetadata = normalizedTaskData?.responseMetadata || {};
   const questionRows = extractQuestionRows(normalizedTaskData);
   const preInspectionQuestions = extractPreInspectionQuestions(normalizedTaskData);
-  const scoreSummary = calculateScoreSummary(questionRows, responses);
+  const scoreSummary = calculateReportScoreSummary(questionRows, responses);
   const flaggedItems = deriveFlaggedItems(normalizedTaskData, questionRows, responses);
 
   const inspector = Array.isArray(normalizedTaskData?.assignedTo) && normalizedTaskData.assignedTo.length > 0

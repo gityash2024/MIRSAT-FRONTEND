@@ -4007,6 +4007,7 @@ const UserTaskDetail = () => {
 
   // Refs for focus management
   const sectionNavigationRef = useRef(null);
+  const sectionsNavigationRef = useRef(null);
   const activeSectionItemRef = useRef(null);
   const pageNavigationRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -4024,25 +4025,24 @@ const UserTaskDetail = () => {
     return currentPage.sections?.find(s => (s.id || s._id) === selectedSection);
   }, [currentPage, selectedSection]);
 
-  // Issue 3.2 Fix: Scroll to top when switching sections or pages
+  // Keep the selected section visible inside its own horizontal navigator.
+  // Do not use Element.scrollIntoView here: it can also move the page viewport
+  // and makes page/section navigation look like a refresh on small screens.
   useEffect(() => {
-    if (questionsContentRef.current) {
-      questionsContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedPage, selectedSection]);
-
-  // Keep the selected section visible in the horizontal navigator without
-  // changing its focus or the inspector's existing navigation flow.
-  useEffect(() => {
-    if (!activeSectionItemRef.current) return;
+    const sectionStrip = sectionsNavigationRef.current;
+    const activeItem = activeSectionItemRef.current;
+    if (!sectionStrip || !activeItem) return;
 
     const animationFrame = window.requestAnimationFrame(() => {
-      activeSectionItemRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest'
-      });
+      const itemLeft = activeItem.offsetLeft;
+      const itemRight = itemLeft + activeItem.offsetWidth;
+      const visibleLeft = sectionStrip.scrollLeft;
+      const visibleRight = visibleLeft + sectionStrip.clientWidth;
+
+      if (itemLeft < visibleLeft || itemRight > visibleRight) {
+        const targetLeft = Math.max(0, itemLeft - ((sectionStrip.clientWidth - activeItem.offsetWidth) / 2));
+        sectionStrip.scrollTo({ left: targetLeft, behavior: 'smooth' });
+      }
     });
 
     return () => window.cancelAnimationFrame(animationFrame);
@@ -6984,6 +6984,7 @@ const UserTaskDetail = () => {
             {/* Previous Button */}
             <NavigationButton
               $slot="previous"
+              type="button"
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
@@ -7088,6 +7089,7 @@ const UserTaskDetail = () => {
             {/* Next Button */}
             <NavigationButton
               $slot="next"
+              type="button"
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
@@ -7195,6 +7197,7 @@ const UserTaskDetail = () => {
                 <SectionButtonsRow>
                   {/* Previous Section Button */}
                   <SectionNavigationButton
+                    type="button"
                     disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === 0}
                     onClick={() => {
                       const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
@@ -7216,6 +7219,7 @@ const UserTaskDetail = () => {
 
                   {/* Next Section Button */}
                   <SectionNavigationButton
+                    type="button"
                     disabled={currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection) === currentPage.sections.length - 1}
                     onClick={() => {
                       const currentIndex = currentPage.sections.findIndex(s => (s.id || s._id) === selectedSection);
@@ -7243,7 +7247,7 @@ const UserTaskDetail = () => {
               </SectionNavigationControls>
             )}
 
-            <SectionsNavigation aria-label={t('tasks.sections')}>
+            <SectionsNavigation ref={sectionsNavigationRef} aria-label={t('tasks.sections')}>
               {currentPage && currentPage.sections && currentPage.sections.length > 0 ? (
                 currentPage.sections.map((section, idx) => {
                   const sectionId = section.id || section._id;
