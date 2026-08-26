@@ -1215,6 +1215,15 @@ const InspectionHeader = styled.div`
     max-width: 100%;
   }
 
+  @media (max-width: 1200px) {
+    padding: 20px 24px;
+    align-items: stretch;
+
+    > div:first-child {
+      flex: 1 1 100%;
+    }
+  }
+
   @media (max-width: 480px) {
     padding: 12px;
     gap: 8px;
@@ -1263,6 +1272,23 @@ const InspectionControls = styled.div`
     max-width: 100%;
   }
 
+  @media (max-width: 1200px) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 2fr) minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    > :nth-child(2) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+  }
+
   @media (max-width: 480px) {
     gap: 6px;
     width: 100%;
@@ -1295,6 +1321,10 @@ const DropdownContainer = styled.div`
   box-sizing: border-box;
   overflow: visible;
 
+  @media (max-width: 1200px) {
+    width: 100%;
+  }
+
   @media (max-width: 480px) {
     flex: 1 1 100%;
     order: 2;
@@ -1322,6 +1352,11 @@ const DropdownButton = styled.button`
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
+
+  @media (max-width: 1200px) {
+    min-width: 0;
+    width: 100%;
+  }
 
   @media (max-width: 768px) {
     min-width: 0;
@@ -1408,6 +1443,12 @@ const DropdownMenu = styled.div`
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+
+  @media (max-width: 1200px) {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const DropdownItem = styled.div`
@@ -1445,6 +1486,12 @@ const NavigationButton = styled.button`
   white-space: nowrap;
   flex-shrink: 0;
   min-width: 0;
+
+  @media (max-width: 1200px) {
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+  }
 
   @media (max-width: 768px) {
     padding: 8px 12px;
@@ -1802,6 +1849,9 @@ const SectionsNavigation = styled.div`
   align-items: stretch;
   gap: 10px;
   scrollbar-width: thin;
+  scroll-snap-type: inline proximity;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
 
   @media (max-width: 1200px) {
     flex-shrink: 0;
@@ -1828,10 +1878,18 @@ const SectionNavItem = styled.div`
   width: auto;
   box-sizing: border-box;
   max-width: 100%;
-  min-width: 190px;
+  min-width: clamp(170px, 24vw, 240px);
   flex: 0 0 auto;
   overflow: hidden;
   gap: 8px;
+  scroll-snap-align: start;
+  font: inherit;
+  text-align: inherit;
+
+  &:focus-visible {
+    outline: 3px solid rgba(55, 136, 216, 0.45);
+    outline-offset: 2px;
+  }
   
   ${props => props.active ? css`
     background: linear-gradient(135deg, var(--color-navy), var(--color-navy-dark));
@@ -1857,7 +1915,7 @@ const SectionNavItem = styled.div`
   @media (max-width: 480px) {
     padding: 10px 12px;
     margin: 0;
-    min-width: 170px;
+    min-width: min(80vw, 220px);
     
     ${props => props.active ? css`
       transform: none;
@@ -3961,6 +4019,7 @@ const UserTaskDetail = () => {
 
   // Refs for focus management
   const sectionNavigationRef = useRef(null);
+  const activeSectionItemRef = useRef(null);
   const pageNavigationRef = useRef(null);
   const dropdownRef = useRef(null);
   const questionsContentRef = useRef(null);
@@ -3983,6 +4042,22 @@ const UserTaskDetail = () => {
       questionsContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedPage, selectedSection]);
+
+  // Keep the selected section visible in the horizontal navigator without
+  // changing its focus or the inspector's existing navigation flow.
+  useEffect(() => {
+    if (!activeSectionItemRef.current) return;
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      activeSectionItemRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      });
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
   }, [selectedPage, selectedSection]);
 
   // Log auto-update status
@@ -7178,7 +7253,7 @@ const UserTaskDetail = () => {
               </SectionNavigationControls>
             )}
 
-            <SectionsNavigation>
+            <SectionsNavigation aria-label={t('tasks.sections')}>
               {currentPage && currentPage.sections && currentPage.sections.length > 0 ? (
                 currentPage.sections.map((section, idx) => {
                   const sectionId = section.id || section._id;
@@ -7187,8 +7262,12 @@ const UserTaskDetail = () => {
 
                   return (
                     <SectionNavItem
+                      as="button"
+                      type="button"
                       key={sectionId}
+                      ref={isActive ? activeSectionItemRef : null}
                       active={isActive}
+                      aria-pressed={isActive}
                       onClick={() => setSelectedSection(sectionId)}
                       style={{
                         cursor: 'pointer',

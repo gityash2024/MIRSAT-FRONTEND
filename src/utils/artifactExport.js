@@ -3,6 +3,12 @@ import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatPlatformDateTime } from './platformDate';
+import {
+  decorateReportPages,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from './pdfReportBranding';
 
 /**
  * Client-side, on-the-fly export of an agent "report" artifact to PDF / Excel / CSV / Word,
@@ -21,6 +27,13 @@ const fileBase = (artifact) => `${safeName(artifact?.title)}-${new Date().toISOS
 const columnsOf = (artifact) => (Array.isArray(artifact?.columns) ? artifact.columns : []);
 const rowsOf = (artifact) => (Array.isArray(artifact?.rows) ? artifact.rows : []);
 const cellText = (value) => (value === undefined || value === null ? '' : String(value));
+const dataUrlToBytes = (dataUrl) => {
+  if (!dataUrl || typeof dataUrl !== 'string') return null;
+  const base64 = dataUrl.split(',')[1];
+  if (!base64) return null;
+  const binary = window.atob(base64);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
 
 export const artifactToMarkdown = (artifact) => {
   if (artifact?.markdown) return artifact.markdown;
@@ -81,15 +94,12 @@ export const exportArtifactExcel = (artifact) => {
   saveAs(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${fileBase(artifact)}.xlsx`);
 };
 
-export const exportArtifactPdf = (artifact) => {
+export const exportArtifactPdf = async (artifact) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
   const marginX = 40;
-  let y = 50;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(0, 0, 72);
-  doc.text(String(artifact?.title || 'Report'), marginX, y);
-  y += 20;
+  const branding = await loadReportBranding();
+  let y = 145;
+  drawReportHeader(doc, { title: String(artifact?.title || 'Report'), branding });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(90, 100, 110);
@@ -102,36 +112,62 @@ export const exportArtifactPdf = (artifact) => {
   y += 6;
   if (artifact?.metrics?.length) {
     autoTable(doc, {
+      ...reportTableTheme(false, 'en', doc),
       startY: y + 10,
       head: [['Metric', 'Value']],
       body: artifact.metrics.map((m) => [m.label, cellText(m.value)]),
-      theme: 'grid',
-      headStyles: { fillColor: [0, 0, 72] },
-      styles: { fontSize: 9 },
-      margin: { left: marginX, right: marginX },
+      headStyles: { ...reportTableTheme(false, 'en', doc).headStyles },
+      styles: { ...reportTableTheme(false, 'en', doc).styles, fontSize: 9 },
+      margin: { ...reportTableTheme(false, 'en', doc).margin, left: marginX, right: marginX },
     });
     y = doc.lastAutoTable.finalY;
   }
   const cols = columnsOf(artifact);
   if (cols.length && rowsOf(artifact).length) {
     autoTable(doc, {
+      ...reportTableTheme(false, 'en', doc),
       startY: y + 16,
       head: [cols.map((c) => c.label)],
       body: rowsOf(artifact).map((r) => cols.map((c) => cellText(r[c.key]))),
-      theme: 'striped',
-      headStyles: { fillColor: [44, 151, 153] },
-      styles: { fontSize: 9 },
-      margin: { left: marginX, right: marginX },
+      headStyles: { ...reportTableTheme(false, 'en', doc).headStyles },
+      styles: { ...reportTableTheme(false, 'en', doc).styles, fontSize: 9 },
+      margin: { ...reportTableTheme(false, 'en', doc).margin, left: marginX, right: marginX },
     });
   }
+  decorateReportPages(doc, {
+    branding,
+    generatedOn: `Generated: ${formatPlatformDateTime(artifact?.generatedAt || Date.now())}`
+  });
   doc.save(`${fileBase(artifact)}.pdf`);
 };
 
 export const exportArtifactDocx = async (artifact) => {
   const docx = await import('docx');
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, Header, ImageRun } = docx;
   const cols = columnsOf(artifact);
   const rows = rowsOf(artifact);
+  const branding = await loadReportBranding();
+  const logoRun = (dataUrl, width, height) => {
+    const data = dataUrlToBytes(dataUrl);
+    return data
+      ? new ImageRun({ type: 'png', data, transformation: { width, height } })
+      : new TextRun('');
+  };
+  const brandedHeader = new Header({
+    children: [
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        columnWidths: [1700, 3300],
+        rows: [new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [logoRun(branding.mirsat, 44, 44)] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [logoRun(branding.srsa, 124, 43)] })] })
+          ]
+        })]
+      }),
+      new Paragraph({ border: { bottom: { color: 'D8DEE9', space: 1, style: 'single', size: 6 } }, children: [] })
+    ]
+  });
 
   const children = [
     new Paragraph({ text: String(artifact?.title || 'Report'), heading: HeadingLevel.HEADING_1 }),
@@ -154,7 +190,7 @@ export const exportArtifactDocx = async (artifact) => {
     children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...bodyRows] }));
   }
 
-  const doc = new Document({ sections: [{ children }] });
+  const doc = new Document({ sections: [{ headers: { default: brandedHeader }, children }] });
   const blob = await Packer.toBlob(doc);
   saveAs(blob, `${fileBase(artifact)}.docx`);
 };

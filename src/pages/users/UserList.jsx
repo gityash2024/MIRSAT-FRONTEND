@@ -56,6 +56,12 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../../utils/exportLocalization';
+import {
+  decorateReportPages,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from '../../utils/pdfReportBranding';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -1400,7 +1406,7 @@ const UserList = () => {
     const doc = new jsPDF();
     const fontLoaded = await loadPdfArabicFont(doc);
     const L = (key) => exportText(language, key);
-    const pageWidth = doc.internal.pageSize.width;
+    const branding = await loadReportBranding();
     
     // Set document properties for better identification
     doc.setProperties({
@@ -1409,26 +1415,15 @@ const UserList = () => {
       creator: 'MIRSAT System'
     });
     
-    // Add proper header with background
-    doc.setFillColor(26, 35, 126); // var(--color-navy)
-    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
-    
-    // Add title with proper positioning
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255); // White color
-    if (isArabicExport(language) && fontLoaded) doc.setFont('NotoNaskhArabic', 'normal');
-    doc.text(formatPdfText(L('userManagementReport'), language), pageWidth / 2, 25, { align: 'center' });
-    
-    // Add subtitle and date with proper spacing
-    doc.setFontSize(10);
-    doc.setTextColor(200, 200, 200); // Light gray for subtitle in header
-    doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`, language), pageWidth / 2, 35, { align: 'center' });
-    
-    // Add organization logo or name if available
-    // doc.addImage('path-to-logo', 'PNG', 15, 10, 20, 20);
+    drawReportHeader(doc, {
+      title: L('userManagementReport'),
+      language,
+      fontLoaded,
+      branding
+    });
 
-    // Space after header
-    const contentStartY = 55;
+    // Space after the shared white report header.
+    const contentStartY = 46;
     
     // Add summary section
     doc.setFontSize(14);
@@ -1462,16 +1457,19 @@ const UserList = () => {
     
     // Add table with improved styling
     doc.autoTable({
+      ...reportTableTheme(fontLoaded, language, doc),
       head: [tableColumn],
       body: orderRowsForLanguage(tableRows, language),
       startY: contentStartY + 45,
       styles: { 
+        ...reportTableTheme(fontLoaded, language, doc).styles,
         fontSize: 9,
         cellPadding: 3,
         overflow: 'linebreak', // Handle text overflow with line breaks
         lineWidth: 0.1
       },
       headStyles: {
+        ...reportTableTheme(fontLoaded, language, doc).headStyles,
         fillColor: [26, 35, 126],
         textColor: [255, 255, 255],
         fontSize: 10,
@@ -1516,20 +1514,12 @@ const UserList = () => {
       }
     });
     
-    // Add footer with page numbers
-    const pageCount = doc.internal.getNumberOfPages();
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    
-    for(let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.text(
-        formatPdfText(`${L('page')} ${i} ${L('of')} ${pageCount} | ${L('userManagementFooter')}`, language), 
-        doc.internal.pageSize.width / 2, 
-        doc.internal.pageSize.height - 10,
-        { align: 'center' }
-      );
-    }
+    decorateReportPages(doc, {
+      language,
+      fontLoaded,
+      branding,
+      generatedOn: `${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`
+    });
     
     return doc;
   };

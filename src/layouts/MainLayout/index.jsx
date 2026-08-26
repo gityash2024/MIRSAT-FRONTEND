@@ -4,13 +4,14 @@ import styled from 'styled-components';
 import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
 import { useLanguage } from '../../context/LanguageContext';
+import { isCompactViewport } from '../../utils/layout';
 
 // const AgentWidget = lazy(() => import('../../components/assistant/AgentWidget'));
 
 const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
-  overflow: hidden;
+  min-width: 0;
   background-color: #f5f7fb;
 `;
 
@@ -27,7 +28,7 @@ const Overlay = styled.div`
   visibility: ${props => props.isVisible ? 'visible' : 'hidden'};
   transition: opacity 0.3s, visibility 0.3s;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     display: block;
   }
 `;
@@ -41,7 +42,7 @@ const MainContentWrapper = styled.div`
   }
   transition: ${props => props.$isRTL ? 'margin-right' : 'margin-left'} 0.3s ease;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     margin-left: 0;
     margin-right: 0;
   }
@@ -50,10 +51,15 @@ const MainContentWrapper = styled.div`
 const MainContent = styled.div`
   padding: 80px 24px 24px;
   min-height: calc(100vh - 64px);
+  min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+
+  > * {
+    min-width: 0;
+    max-width: 100%;
+  }
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     padding: 80px 16px 16px;
   }
   
@@ -77,7 +83,7 @@ const MainLayout = () => {
 
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth <= 768;
+      const mobile = isCompactViewport(window.innerWidth);
       setIsMobile(mobile);
       if (mobile && isSidebarOpen) {
         setIsSidebarOpen(false);

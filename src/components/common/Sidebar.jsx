@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import { isCompactViewport } from '../../utils/layout';
 import mirSatLogo from '../../assets/mirsat-logo-white.svg';
 import takamolLogo from '../../assets/tms-logo-white.svg';
 
@@ -36,7 +37,7 @@ const SidebarContainer = styled.div`
   z-index: 100;
   box-shadow: ${props => props.$collapsed ? 'none' : '2px 0 8px rgba(0, 0, 0, 0.15)'};
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     width: 280px;
     transform: translateX(${props => {
       if (props.$collapsed) {
@@ -57,7 +58,7 @@ const Logo = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   min-height: ${props => props.$collapsed ? '86px' : '116px'};
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     min-height: 112px;
   }
 `;
@@ -75,7 +76,7 @@ const BrandLockup = styled.div`
     flex-shrink: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     img {
       height: 72px;
     }
@@ -115,7 +116,7 @@ const CollapseButton = styled.button`
     background: rgba(255, 255, 255, 0.15);
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     display: none;
   }
 `;
@@ -136,7 +137,7 @@ const ToggleButton = styled.button`
     background: rgba(255, 255, 255, 0.1);
   }
   
-  @media (min-width: 769px) {
+  @media (min-width: 1101px) {
     display: none;
   }
 `;
@@ -149,7 +150,7 @@ const SearchContainer = styled.div`
   height: ${props => props.$collapsed ? '0' : 'auto'};
   overflow: hidden;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     opacity: 1;
     height: auto;
     padding: 1rem;
@@ -276,7 +277,7 @@ const StyledLink = styled.div`
     }
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     padding: 0.875rem 1.5rem;
   }
 `;
@@ -301,7 +302,7 @@ const NavText = styled.span`
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     opacity: 1;
     width: auto;
   }
@@ -359,7 +360,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const { t, i18n } = useTranslation();
   const { isRTL } = useLanguage();
   
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = isCompactViewport(window.innerWidth);
   // Sync with parent state on desktop, use local state for collapse toggle
   const effectiveCollapsed = isMobile 
     ? (typeof isOpen !== 'undefined' ? !isOpen : false) 

@@ -9,6 +9,7 @@ import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
 import LanguageToggle from '../../components/ui/LanguageToggle';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
+import { isCompactViewport } from '../../utils/layout';
 
 const TopbarContainer = styled.div`
   position: fixed;
@@ -34,7 +35,7 @@ const TopbarContainer = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 50;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     left: 0;
     right: 0;
     padding: 0 12px;
@@ -49,7 +50,7 @@ const TopbarContainer = styled.div`
 const LeftSection = styled.div`
   display: none;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     display: flex;
     align-items: center;
   }
@@ -79,7 +80,7 @@ const RightSection = styled.div`
   position: relative;
   overflow: visible;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     gap: 8px;
   }
 
@@ -92,7 +93,7 @@ const NotificationContainer = styled.div`
   position: relative;
   overflow: visible;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     display: none;
   }
 `;
@@ -145,7 +146,7 @@ const UserMenuTrigger = styled.button`
   transition: background 0.3s;
   flex-shrink: 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     gap: 6px;
     padding: 4px 8px;
   }
@@ -172,7 +173,7 @@ const UserMenuTrigger = styled.button`
       color: #666;
     }
     
-    @media (max-width: 768px) {
+    @media (max-width: 1100px) {
       display: none;
     }
   }
@@ -180,7 +181,7 @@ const UserMenuTrigger = styled.button`
   svg {
     flex-shrink: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 1100px) {
       width: 18px;
       height: 18px;
     }
@@ -211,7 +212,7 @@ const UserMenuDropdown = styled.div`
   min-width: 200px;
   max-width: 300px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     right: 0;
     min-width: 180px;
     max-width: 280px;
@@ -286,7 +287,7 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { unreadCount, fetchNotifications } = useNotification();
   const { t, i18n } = useTranslation();
   const { isRTL } = useLanguage();
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = isCompactViewport(window.innerWidth);
   const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 280 : 70);
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);

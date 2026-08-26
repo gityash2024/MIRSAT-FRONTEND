@@ -21,6 +21,11 @@ import {
   setPdfFontForLanguage
 } from '../../utils/exportLocalization';
 import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
+import {
+  decorateReportPages,
+  drawReportHeader,
+  loadReportBranding
+} from '../../utils/pdfReportBranding';
 
 const PageContainer = styled.div`
   display: flex;
@@ -500,6 +505,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
       const doc = new jsPDF();
       const fontLoaded = await loadPdfArabicFont(doc);
       const L = (key) => exportText(language, key);
+      const branding = await loadReportBranding();
       const writeText = (value, x, y, options = {}) => {
         setPdfFontForLanguage(doc, language, fontLoaded, options.fontStyle || 'normal');
         doc.text(formatPdfText(value, language), x, y, {
@@ -515,20 +521,15 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         creator: 'MIRSAT System'
       });
 
-      // Header
-      doc.setFillColor(26, 35, 126);
-      doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
-
-      doc.setFontSize(20);
-      doc.setTextColor(255, 255, 255);
-      writeText(fileName || L('inspectionReport'), doc.internal.pageSize.width / 2, 22, { align: 'center' });
-
-      doc.setFontSize(10);
-      doc.setTextColor(200, 200, 200);
-      writeText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`, doc.internal.pageSize.width / 2, 32, { align: 'center' });
+      drawReportHeader(doc, {
+        title: L('inspectionReport'),
+        language,
+        fontLoaded,
+        branding
+      });
 
       // Content
-      let yPosition = 60;
+      let yPosition = 46;
 
       // Overview section
       if (data) {
@@ -554,7 +555,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
           data.sections.forEach((section, index) => {
             if (yPosition > 250) {
               doc.addPage();
-              yPosition = 20;
+              yPosition = 46;
             }
 
             doc.setFontSize(12);
@@ -575,19 +576,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         }
       }
 
-      // Footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(
-          formatPdfText(`${L('page')} ${i} ${L('of')} ${pageCount} | ${L('inspectionReport')}`, language),
-          doc.internal.pageSize.width / 2,
-          doc.internal.pageSize.height - 10,
-          { align: 'center' }
-        );
-      }
+      decorateReportPages(doc, {
+        language,
+        fontLoaded,
+        branding,
+        generatedOn: `${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`
+      });
 
       doc.save(`${fileName}.pdf`);
       toast.success('PDF downloaded successfully');
@@ -600,7 +594,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
   const generateDOCXReport = async (data, fileName, language = 'en') => {
     try {
       // For DOCX generation, we'll create a structured HTML that can be exported
-      const htmlContent = generateReportHTML(data, fileName, language);
+      const htmlContent = await generateReportHTML(data, fileName, language);
 
       // Create a blob with the HTML content
       const blob = new Blob([htmlContent], {
@@ -624,11 +618,12 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     }
   };
 
-  const generateReportHTML = (data, fileName, language = 'en') => {
+  const generateReportHTML = async (data, fileName, language = 'en') => {
     const L = (key) => exportText(language, key);
     const rtl = isArabicExport(language);
     const textAlign = rtl ? 'right' : 'left';
     const generatedAt = formatExportDate(new Date(), language, { includeTime: true });
+    const branding = await loadReportBranding();
 
     return `
       <!DOCTYPE html>
@@ -638,7 +633,10 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         <title>${fileName} - ${L('inspectionReport')}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; direction: ${rtl ? 'rtl' : 'ltr'}; text-align: ${textAlign}; }
-          .header { background-color: var(--color-navy); color: white; padding: 18px 22px; text-align: center; margin-bottom: 22px; }
+          .brand-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d8dee9; padding-bottom: 10px; margin-bottom: 18px; direction: ltr; }
+          .brand-header img:first-child { width: 44px; height: 44px; object-fit: contain; }
+          .brand-header img:last-child { width: 124px; height: 43px; object-fit: contain; }
+          .header { color: #000048; padding: 0 0 14px; text-align: ${textAlign}; margin-bottom: 18px; }
           .section { margin-bottom: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
           .section-title { font-size: 17px; font-weight: bold; color: var(--color-navy); margin-bottom: 8px; }
           .section-content { margin-${rtl ? 'right' : 'left'}: 14px; }
@@ -648,6 +646,10 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
         </style>
       </head>
       <body>
+        <div class="brand-header">
+          <img src="${branding.mirsat || ''}" alt="MIRSAT" />
+          <img src="${branding.srsa || ''}" alt="Saudi Red Sea Authority" />
+        </div>
         <div class="header">
           <h1>${fileName || L('inspectionReport')}</h1>
           <p>${L('generatedOnColon')} ${generatedAt}</p>

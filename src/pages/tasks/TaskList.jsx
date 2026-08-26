@@ -31,6 +31,12 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../../utils/exportLocalization';
+import {
+  decorateReportPages,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from '../../utils/pdfReportBranding';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -907,19 +913,22 @@ const loadTasks = async () => {
       // Create PDF document
       const doc = new jsPDF('landscape');
       const fontLoaded = await loadPdfArabicFont(doc);
+      const branding = await loadReportBranding();
       if (isArabicExport(language) && fontLoaded) {
         doc.setFont('NotoNaskhArabic', 'normal');
       }
 
-      // Add title
-      doc.setFontSize(20);
-      doc.setTextColor(26, 35, 126); // Navy color
-      doc.text(formatPdfText(L('taskReport'), language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 22, { align: isArabicExport(language) ? 'right' : 'left' });
+      drawReportHeader(doc, {
+        title: L('taskReport'),
+        language,
+        fontLoaded,
+        branding
+      });
 
       // Add subtitle with date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(formatPdfText(`${L('generatedOn')} ${isArabicExport(language) ? formatExportDate(new Date(), language, { includeTime: true }) : formatPlatformDateTime(new Date())}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 30, { align: isArabicExport(language) ? 'right' : 'left' });
+      doc.text(formatPdfText(`${L('generatedOn')} ${isArabicExport(language) ? formatExportDate(new Date(), language, { includeTime: true }) : formatPlatformDateTime(new Date())}`, language), isArabicExport(language) ? doc.internal.pageSize.width - 14 : 14, 45, { align: isArabicExport(language) ? 'right' : 'left' });
 
       // Define table columns
       const columns = orderForLanguage([
@@ -952,10 +961,12 @@ const loadTasks = async () => {
 
       // Generate the table with Arabic font support
       doc.autoTable({
+        ...reportTableTheme(fontLoaded, language, doc),
         columns: columns,
         body: tableData,
-        startY: 35,
+        startY: 51,
         styles: {
+          ...reportTableTheme(fontLoaded, language, doc).styles,
           fontSize: 8,
           cellPadding: 3,
           halign: 'center',
@@ -963,6 +974,7 @@ const loadTasks = async () => {
           font: 'helvetica' // Default font for all cells (English and mixed content)
         },
         headStyles: {
+          ...reportTableTheme(fontLoaded, language, doc).headStyles,
           fillColor: [26, 35, 126],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
@@ -973,10 +985,17 @@ const loadTasks = async () => {
           fillColor: [245, 247, 250]
         },
         tableWidth: 'auto',
-        margin: { left: 14, right: 14 },
+        margin: { ...reportTableTheme(fontLoaded, language, doc).margin },
         didParseCell: function (data) {
           localizePdfTable(data, language, fontLoaded);
         }
+      });
+
+      decorateReportPages(doc, {
+        language,
+        fontLoaded,
+        branding,
+        generatedOn: `${L('generatedOn')} ${formatExportDate(new Date(), language, { includeTime: true })}`
       });
 
       // Save the PDF

@@ -26,6 +26,12 @@ import {
   orderRowsForLanguage
 } from '../../../utils/exportLocalization';
 import { formatPlatformDate } from '../../../utils/platformDate';
+import {
+  decorateReportPages,
+  drawReportHeader,
+  loadReportBranding,
+  reportTableTheme
+} from '../../../utils/pdfReportBranding';
 
 const Header = styled.div`
   display: flex;
@@ -423,7 +429,7 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
     const doc = new jsPDF();
     const fontLoaded = await loadPdfArabicFont(doc);
     const L = (key) => exportText(language, key);
-    const pageWidth = doc.internal.pageSize.width;
+    const branding = await loadReportBranding();
     
     // Set document properties
     doc.setProperties({
@@ -432,23 +438,15 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
       creator: 'MIRSAT System'
     });
     
-    // Create a professional header
-    doc.setFillColor(26, 35, 126); // Navy blue header background
-    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
-    
-    // Add title with proper positioning
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255); // White text
-    if (isArabicExport(language) && fontLoaded) doc.setFont('NotoNaskhArabic', 'normal');
-    doc.text(formatPdfText(fileName || L('calendarEventsReport'), language), pageWidth / 2, 22, { align: 'center' });
-    
-    // Add date subtitle
-    doc.setFontSize(10);
-    doc.setTextColor(200, 200, 200); // Light gray for subtitle
-    doc.text(formatPdfText(`${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`, language), pageWidth / 2, 32, { align: 'center' });
-    
-    // Content starting position
-    const contentStartY = 50;
+    drawReportHeader(doc, {
+      title: L('calendarEventsReport'),
+      language,
+      fontLoaded,
+      branding
+    });
+
+    // Content begins below the shared white report header.
+    const contentStartY = 46;
     
     // Add summary section
     doc.setFontSize(14);
@@ -491,13 +489,16 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
       head: [tableColumn],
       body: orderRowsForLanguage(tableRows, language),
       startY: contentStartY + 60,
+      ...reportTableTheme(fontLoaded, language, doc),
       styles: {
+        ...reportTableTheme(fontLoaded, language, doc).styles,
         fontSize: 8,
         cellPadding: 3,
         overflow: 'linebreak',
         halign: isArabicExport(language) ? 'right' : 'left'
       },
       headStyles: {
+        ...reportTableTheme(fontLoaded, language, doc).headStyles,
         fillColor: [26, 35, 126],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
@@ -515,25 +516,18 @@ const CalendarHeader = ({ onAddEvent, onToggleFilters, onExport }) => {
         4: { cellWidth: 50 }, // Description
         5: { cellWidth: 25 }  // Deadline
       },
-      margin: { top: 10, left: 14, right: 14 },
+      margin: { ...reportTableTheme(fontLoaded, language, doc).margin },
       tableLineColor: [200, 200, 200],
       tableLineWidth: 0.1,
       didParseCell: (data) => localizePdfTable(data, language, fontLoaded)
     });
     
-    // Add footer to all pages
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text(
-        formatPdfText(`${L('page')} ${i} ${L('of')} ${pageCount} | ${L('calendarEventsReport')}`, language), 
-        doc.internal.pageSize.width / 2, 
-        doc.internal.pageSize.height - 10, 
-        { align: 'center' }
-      );
-    }
+    decorateReportPages(doc, {
+      language,
+      fontLoaded,
+      branding,
+      generatedOn: `${L('generatedOnColon')} ${formatExportDate(new Date(), language, { includeTime: true })}`
+    });
     
     // Save the PDF
     doc.save(`${fileName}.pdf`);
