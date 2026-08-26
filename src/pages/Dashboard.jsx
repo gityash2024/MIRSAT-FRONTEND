@@ -113,7 +113,13 @@ const StatCard = styled.div`
   border: 1px solid #e7edf5;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   min-height: 206px;
+  box-sizing: border-box;
+  font: inherit;
+  line-height: normal;
+  color: inherit;
+  text-align: inherit;
   appearance: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
@@ -138,12 +144,17 @@ const StatCard = styled.div`
     font-size: 28px;
     font-weight: 700;
     color: var(--color-navy);
-    margin-bottom: 4px;
+    min-height: 34px;
+    margin: 0;
+    line-height: 34px;
   }
 
   .label {
     font-size: 14px;
     color: var(--color-gray-medium);
+    min-height: 20px;
+    margin-top: 4px;
+    line-height: 20px;
   }
 `;
 
