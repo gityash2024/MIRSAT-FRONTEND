@@ -4101,6 +4101,25 @@ const UserTaskDetail = () => {
       responses: currentTask.questionnaireResponses || {}
     });
   }, [currentTask, inspectionPages]);
+  const completedInspectionScoreSummaries = useMemo(() => {
+    const pages = currentTask?.inspectionLevel?.pages?.length > 0
+      ? currentTask.inspectionLevel.pages
+      : inspectionPages;
+    const responses = currentTask?.questionnaireResponses || {};
+
+    return pages.map((page, pageIndex) => ({
+      number: pageIndex + 1,
+      name: page?.name || `${t('tasks.page')} ${pageIndex + 1}`,
+      ...calculatePageScore(page, responses),
+      sections: (page?.sections || []).map((section, sectionIndex) => ({
+        number: `${pageIndex + 1}.${sectionIndex + 1}`,
+        name: section?.name || `${t('tasks.section')} ${sectionIndex + 1}`,
+        ...calculateSectionScore(section, responses)
+      }))
+    }));
+  }, [currentTask, inspectionPages, t]);
+  const showCompletedInspectionScores = ['completed', 'archived'].includes(currentTask?.status)
+    && completedInspectionScoreSummaries.length > 0;
 
   const scheduledStartLocked = Boolean(
     currentTask?.startDate && new Date(currentTask.startDate).getTime() > Date.now()
@@ -8327,6 +8346,65 @@ const UserTaskDetail = () => {
                       </div>
                     </div>
                   </div>
+
+                  {showCompletedInspectionScores && (
+                    <div style={{
+                      marginBottom: '24px',
+                      padding: '20px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(226, 232, 240, 0.9)',
+                      background: '#fff'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '16px',
+                        fontWeight: '700',
+                        color: 'var(--color-navy)',
+                        marginBottom: '14px'
+                      }}>
+                        <Award size={18} />
+                        {t('tasks.inspectionScoringSummary')}
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', minWidth: '620px', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr style={{ background: 'var(--color-navy)', color: '#fff', textAlign: 'left' }}>
+                              <th style={{ padding: '10px', fontWeight: '600' }}>{t('tasks.page')}</th>
+                              <th style={{ padding: '10px', fontWeight: '600' }}>{t('tasks.pageTitle')}</th>
+                              <th style={{ padding: '10px', fontWeight: '600', textAlign: 'center' }}>{t('tasks.totalPercentage')}</th>
+                              <th style={{ padding: '10px', fontWeight: '600', textAlign: 'center' }}>{t('tasks.achievedScore')} / {t('tasks.totalScore')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {completedInspectionScoreSummaries.map((page) => (
+                              <React.Fragment key={`page-score-${page.number}`}>
+                                <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                                  <td style={{ padding: '10px', fontWeight: '700' }}>{page.number}</td>
+                                  <td style={{ padding: '10px', fontWeight: '700' }}>{page.name}</td>
+                                  <td style={{ padding: '10px', textAlign: 'center', color: page.total > 0 ? '#16a34a' : '#64748b', fontWeight: '700' }}>
+                                    {page.total > 0 ? `${page.percentage}%` : 'N/A'}
+                                  </td>
+                                  <td style={{ padding: '10px', textAlign: 'center', fontWeight: '600' }}>{page.achieved}/{page.total}</td>
+                                </tr>
+                                {page.sections.map((section) => (
+                                  <tr key={`section-score-${section.number}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '10px 10px 10px 24px', color: '#64748b' }}>{section.number}</td>
+                                    <td style={{ padding: '10px', color: '#475569' }}>{section.name}</td>
+                                    <td style={{ padding: '10px', textAlign: 'center', color: section.total > 0 ? '#16a34a' : '#64748b' }}>
+                                      {section.total > 0 ? `${section.percentage}%` : 'N/A'}
+                                    </td>
+                                    <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{section.achieved}/{section.total}</td>
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   {currentTask?.signature && (
                     <div style={{

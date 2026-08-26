@@ -221,7 +221,11 @@ const TEXT = {
     completion: 'Completion',
     notCompleted: 'Not completed',
     inspectionSections: 'Inspection Sections',
-    unnamedSection: 'Unnamed Section'
+    unnamedSection: 'Unnamed Section',
+    scoringSummary: 'Scoring Summary',
+    pageTitle: 'Page Title',
+    totalPercentage: 'Total Percentage',
+    achievedScore: 'Achieved Score'
   },
   ar: {
     na: 'غير متوفر',
@@ -326,7 +330,11 @@ const TEXT = {
     completion: 'الإكمال',
     notCompleted: 'غير مكتمل',
     inspectionSections: 'أقسام التفتيش',
-    unnamedSection: 'قسم غير مسمى'
+    unnamedSection: 'قسم غير مسمى',
+    scoringSummary: 'ملخص الدرجات',
+    pageTitle: 'عنوان الصفحة',
+    totalPercentage: 'النسبة الإجمالية',
+    achievedScore: 'الدرجة المحققة'
   }
 };
 

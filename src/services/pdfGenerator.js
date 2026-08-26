@@ -306,6 +306,83 @@ export const calculateReportScoreSummary = (questionRows, responses) => {
   return { achieved, total, percentage };
 };
 
+const createReportScoreRow = (number, name, rows, responses) => ({
+  number: String(number),
+  name: name || 'N/A',
+  ...calculateReportScoreSummary(rows, responses)
+});
+
+// Keep the page/section hierarchy from the inspection snapshot.  In
+// particular, pages without scored questions (for example a cover page) must
+// still appear in the report as N/A rather than being silently dropped.
+export const buildReportScoreSummaries = (taskData, providedResponses) => {
+  const normalizedTaskData = normalizeTaskDataInput(taskData);
+  const responses = providedResponses || normalizedTaskData?.questionnaireResponses || {};
+  const questionRows = extractQuestionRows(normalizedTaskData);
+  const rowsByPageAndSection = new Map();
+
+  questionRows.forEach((row) => {
+    const pageKey = String(row.pageNo);
+    if (!rowsByPageAndSection.has(pageKey)) rowsByPageAndSection.set(pageKey, new Map());
+    const sections = rowsByPageAndSection.get(pageKey);
+    if (!sections.has(String(row.sectionNo))) sections.set(String(row.sectionNo), []);
+    sections.get(String(row.sectionNo)).push(row);
+  });
+
+  const sourcePages = Array.isArray(normalizedTaskData?.inspectionLevel?.pages)
+    ? normalizedTaskData.inspectionLevel.pages
+    : [];
+
+  const pages = sourcePages.length > 0
+    ? sourcePages.map((page, pageIndex) => {
+      const pageNo = String(pageIndex + 1);
+      const sections = Array.isArray(page?.sections) ? page.sections : [];
+      const sectionSummaries = sections.map((section, sectionIndex) => {
+        const sectionNo = `${pageNo}.${sectionIndex + 1}`;
+        return createReportScoreRow(
+          sectionNo,
+          section?.name || `Section ${sectionNo}`,
+          rowsByPageAndSection.get(pageNo)?.get(sectionNo) || [],
+          responses
+        );
+      });
+
+      return {
+        ...createReportScoreRow(
+          pageNo,
+          page?.name || `Page ${pageNo}`,
+          Array.from(rowsByPageAndSection.get(pageNo)?.values() || []).flat(),
+          responses
+        ),
+        sections: sectionSummaries
+      };
+    })
+    : Array.from(rowsByPageAndSection.entries()).map(([pageNo, sections]) => {
+      const rows = Array.from(sections.values()).flat();
+      const firstRow = rows[0];
+      return {
+        ...createReportScoreRow(pageNo, firstRow?.pageName || `Page ${pageNo}`, rows, responses),
+        sections: Array.from(sections.entries()).map(([sectionNo, sectionRows]) => (
+          createReportScoreRow(
+            sectionNo,
+            sectionRows[0]?.sectionName || `Section ${sectionNo}`,
+            sectionRows,
+            responses
+          )
+        ))
+      };
+    });
+
+  const achieved = pages.reduce((sum, page) => sum + page.achieved, 0);
+  const total = pages.reduce((sum, page) => sum + page.total, 0);
+  return {
+    pages,
+    achieved,
+    total,
+    percentage: total > 0 ? Math.round((achieved / total) * 100) : 0
+  };
+};
+
 const getQuestionScoreLabel = (question, response) => {
   if (!isScorableQuestion(question)) return 'N/A';
   const value = getResponseValue(response);
@@ -542,6 +619,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   const questionRows = extractQuestionRows(normalizedTaskData);
   const preInspectionQuestions = extractPreInspectionQuestions(normalizedTaskData);
   const scoreSummary = calculateReportScoreSummary(questionRows, responses);
+  const reportScoreSummaries = buildReportScoreSummaries(normalizedTaskData, responses);
   const flaggedItems = deriveFlaggedItems(normalizedTaskData, questionRows, responses);
 
   const inspector = Array.isArray(normalizedTaskData?.assignedTo) && normalizedTaskData.assignedTo.length > 0
@@ -595,6 +673,83 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
 
     doc.text(content, x, yPos, { align: isArabicExport(exportLanguage) && align === 'left' ? 'right' : align });
     return size * 0.45;
+  };
+
+  const formatScore = (value) => {
+    const numericValue = Number(value || 0);
+    return Number.isInteger(numericValue) ? String(numericValue) : String(Number(numericValue.toFixed(2)));
+  };
+
+  const formatScorePercentage = (summary) => (
+    summary.total > 0 ? `${summary.percentage}%` : L('na')
+  );
+
+  const drawScoreSummaryTable = (rows, footerSummary, firstColumnLabel) => {
+    ensureSpace(24);
+    text(L('scoringSummary'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, {
+      size: 11,
+      style: 'bold',
+      color: colors.navy
+    });
+    y += 4;
+
+    const header = [
+      firstColumnLabel,
+      L('pageTitle'),
+      L('totalPercentage'),
+      L('achievedScore'),
+      L('totalScore')
+    ].map((cell) => pdfText(cell));
+    const body = rows.map((row) => [
+      row.number,
+      blank(row.name),
+      formatScorePercentage(row),
+      formatScore(row.achieved),
+      formatScore(row.total)
+    ].map((cell) => pdfText(cell)));
+    const footer = [
+      L('total'),
+      '',
+      formatScorePercentage(footerSummary),
+      formatScore(footerSummary.achieved),
+      formatScore(footerSummary.total)
+    ].map((cell) => pdfText(cell));
+
+    doc.autoTable({
+      startY: y,
+      head: [orderForLanguage(header, exportLanguage)],
+      body: orderRowsForLanguage(body, exportLanguage),
+      foot: [orderForLanguage(footer, exportLanguage)],
+      theme: 'grid',
+      margin: { left: SIDE_MARGIN, right: SIDE_MARGIN, top: CONTENT_START_Y, bottom: BOTTOM_MARGIN },
+      headStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8, textColor: colors.text },
+      footStyles: { fillColor: colors.navy, textColor: '#ffffff', fontStyle: 'bold', fontSize: 8.2 },
+      styles: { lineColor: colors.border, lineWidth: 0.2, cellPadding: 2 },
+      columnStyles: rtl
+        ? {
+          0: { cellWidth: 31, halign: 'center' },
+          1: { cellWidth: 31, halign: 'center' },
+          2: { cellWidth: 30, halign: 'center' },
+          3: { cellWidth: 70, halign: 'right' },
+          4: { cellWidth: 20, halign: 'center' }
+        }
+        : {
+          0: { cellWidth: 20, halign: 'center' },
+          1: { cellWidth: 70 },
+          2: { cellWidth: 30, halign: 'center' },
+          3: { cellWidth: 31, halign: 'center' },
+          4: { cellWidth: 31, halign: 'center' }
+        },
+      didParseCell: (data) => {
+        applyArabicCellFont(data, fontLoaded);
+        if (data.section === 'foot' && data.column.index === 2) {
+          data.cell.styles.textColor = colors.success;
+        }
+      }
+    });
+
+    y = (doc.lastAutoTable?.finalY || y) + 6;
   };
 
   // Title and labels
@@ -667,6 +822,10 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   });
 
   y += cardH + 8;
+
+  // Overall page results mirror the score model used for the PDF questions,
+  // including template score maps, weighting and N/A exclusions.
+  drawScoreSummaryTable(reportScoreSummaries.pages, reportScoreSummaries, L('page'));
 
   // Pre-inspection questionnaire
   if (preInspectionQuestions.length > 0) {
@@ -797,6 +956,11 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
       ensureSpace(14);
       text(`${L('pageLabel')} ${pageNo}: ${blank(pageData.pageName)}`, rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y, { size: 11, style: 'bold', color: colors.navy });
       y += 5;
+
+      const pageSummary = reportScoreSummaries.pages.find((page) => page.number === String(pageNo));
+      if (pageSummary?.sections?.length > 0) {
+        drawScoreSummaryTable(pageSummary.sections, pageSummary, L('section'));
+      }
 
       for (const [sectionNo, sectionData] of pageData.sections.entries()) {
         ensureSpace(12);

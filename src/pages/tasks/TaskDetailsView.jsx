@@ -31,6 +31,7 @@ import Skeleton from '../../components/ui/Skeleton';
 import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { toast } from 'react-hot-toast';
 import { formatPlatformDate } from '../../utils/platformDate';
+import { calculatePageScore, calculateSectionScore } from '../../utils/inspectionScoring';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -1341,6 +1342,21 @@ const TaskDetailsView = () => {
   // Use the actual progress from the task data or calculate it
   const progressPercentage = currentTask.overallProgress ||
     (finalTotalQuestions > 0 ? Math.round((completedQuestions / finalTotalQuestions) * 100) : 0);
+  const showCompletedInspectionScores = ['completed', 'archived'].includes(currentTask.status)
+    && Array.isArray(inspectionLevel?.pages)
+    && inspectionLevel.pages.length > 0;
+  const completedInspectionScoreSummaries = showCompletedInspectionScores
+    ? inspectionLevel.pages.map((page, pageIndex) => ({
+      number: pageIndex + 1,
+      name: page?.name || `${t('tasks.page')} ${pageIndex + 1}`,
+      ...calculatePageScore(page, responses),
+      sections: (page?.sections || []).map((section, sectionIndex) => ({
+        number: `${pageIndex + 1}.${sectionIndex + 1}`,
+        name: section?.name || `${t('tasks.section')} ${sectionIndex + 1}`,
+        ...calculateSectionScore(section, responses)
+      }))
+    }))
+    : [];
 
   return (
     <PageContainer>
@@ -1534,6 +1550,55 @@ const TaskDetailsView = () => {
             </ProgressSection>
           </CardContent>
         </TaskCard>
+
+        {showCompletedInspectionScores && (
+          <TaskCard>
+            <CardHeader>
+              <CardTitle>
+                <Award size={20} />
+                {t('tasks.inspectionScoringSummary')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '620px', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: '#102a63', color: '#fff', textAlign: 'left' }}>
+                      <th style={{ padding: '10px' }}>{t('tasks.page')}</th>
+                      <th style={{ padding: '10px' }}>{t('tasks.pageTitle')}</th>
+                      <th style={{ padding: '10px', textAlign: 'center' }}>{t('tasks.totalPercentage')}</th>
+                      <th style={{ padding: '10px', textAlign: 'center' }}>{t('tasks.achievedScore')} / {t('tasks.totalScore')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedInspectionScoreSummaries.map((page) => (
+                      <React.Fragment key={`completed-page-score-${page.number}`}>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '10px', fontWeight: '700' }}>{page.number}</td>
+                          <td style={{ padding: '10px', fontWeight: '700' }}>{page.name}</td>
+                          <td style={{ padding: '10px', textAlign: 'center', color: page.total > 0 ? '#16a34a' : '#64748b', fontWeight: '700' }}>
+                            {page.total > 0 ? `${page.percentage}%` : 'N/A'}
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'center', fontWeight: '600' }}>{page.achieved}/{page.total}</td>
+                        </tr>
+                        {page.sections.map((section) => (
+                          <tr key={`completed-section-score-${section.number}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '10px 10px 10px 24px', color: '#64748b' }}>{section.number}</td>
+                            <td style={{ padding: '10px', color: '#475569' }}>{section.name}</td>
+                            <td style={{ padding: '10px', textAlign: 'center', color: section.total > 0 ? '#16a34a' : '#64748b' }}>
+                              {section.total > 0 ? `${section.percentage}%` : 'N/A'}
+                            </td>
+                            <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{section.achieved}/{section.total}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </TaskCard>
+        )}
 
         {/* Questions Section */}
         {(inspectionLevel?.subLevels || inspectionLevel?.pages) && (
