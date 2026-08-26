@@ -55,15 +55,16 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
+  min-width: 0;
 
   @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
   }
 
   @media (max-width: 480px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin-bottom: 20px;
   }
@@ -82,7 +83,7 @@ const StatCard = styled.div`
   }
 
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: 14px;
   }
 
   .icon-wrapper {
@@ -96,9 +97,14 @@ const StatCard = styled.div`
     flex-shrink: 0;
 
     @media (max-width: 480px) {
-      width: 40px;
-      height: 40px;
-      margin-bottom: 12px;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 10px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 
@@ -110,7 +116,8 @@ const StatCard = styled.div`
     word-wrap: break-word;
 
     @media (max-width: 480px) {
-      font-size: 24px;
+      font-size: 21px;
+      margin: 6px 0;
     }
   }
 
@@ -121,7 +128,8 @@ const StatCard = styled.div`
     overflow-wrap: break-word;
 
     @media (max-width: 480px) {
-      font-size: 13px;
+      font-size: 12px;
+      line-height: 1.35;
     }
   }
 `;

@@ -834,12 +834,16 @@ const StatMiniProgressBar = styled.div`
 
 const ContentContainer = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   margin: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   
   @media (max-width: 1400px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   @media (max-width: 768px) {
@@ -855,6 +859,9 @@ const ContentContainer = styled.div`
 
 const MainPanel = styled.div`
   animation: ${fadeIn} 0.6s ease-out 0.2s both;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 `;
 
 const SidePanel = styled.div`
@@ -865,6 +872,9 @@ const SidePanel = styled.div`
   position: sticky;
   top: 16px;
   align-self: start;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   
   @media (max-width: 1400px) {
     position: static;
@@ -1181,7 +1191,7 @@ const InspectionContainer = styled.div`
     min-height: 60vh;
     width: calc(100% - 4px);
     max-width: calc(100% - 4px);
-    overflow-x: hidden;
+    overflow: visible;
   }
 `;
 
@@ -1275,6 +1285,9 @@ const InspectionControls = styled.div`
   @media (max-width: 1200px) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(220px, 2fr) minmax(0, 1fr);
+    grid-template-areas: 'previous page next';
+    align-items: stretch;
+    gap: 8px;
     width: 100%;
     max-width: 100%;
     flex: 1 1 100%;
@@ -1282,11 +1295,10 @@ const InspectionControls = styled.div`
 
   @media (max-width: 600px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-
-    > :nth-child(2) {
-      grid-column: 1 / -1;
-      grid-row: 1;
-    }
+    grid-template-areas:
+      'page page'
+      'previous next';
+    gap: 6px;
   }
 
   @media (max-width: 480px) {
@@ -1294,19 +1306,11 @@ const InspectionControls = styled.div`
     width: 100%;
     max-width: 100%;
     justify-content: stretch;
-    flex-wrap: wrap;
   }
 
   > * {
     min-width: 0;
-    flex-shrink: 1;
     max-width: 100%;
-
-    @media (max-width: 480px) {
-      flex: 1;
-      min-width: 0;
-      max-width: 100%;
-    }
   }
 `;
 
@@ -1322,12 +1326,12 @@ const DropdownContainer = styled.div`
   overflow: visible;
 
   @media (max-width: 1200px) {
+    grid-area: page;
     width: 100%;
   }
 
   @media (max-width: 480px) {
-    flex: 1 1 100%;
-    order: 2;
+    flex: none;
     width: 100%;
     max-width: 100%;
   }
@@ -1352,6 +1356,7 @@ const DropdownButton = styled.button`
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
+  color: #0f172a;
 
   @media (max-width: 1200px) {
     min-width: 0;
@@ -1375,24 +1380,7 @@ const DropdownButton = styled.button`
     gap: 4px;
     max-width: 100%;
     width: 100%;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-      min-width: 0;
-      max-width: 100%;
-    }
-    
-    svg {
-      flex-shrink: 0;
-      width: 14px;
-      height: 14px;
-    }
+    min-height: 40px;
   }
 
   span {
@@ -1488,9 +1476,11 @@ const NavigationButton = styled.button`
   min-width: 0;
 
   @media (max-width: 1200px) {
+    grid-area: ${({ $slot }) => $slot};
     justify-content: center;
     width: 100%;
     min-width: 0;
+    min-height: 40px;
   }
 
   @media (max-width: 768px) {
@@ -1503,7 +1493,7 @@ const NavigationButton = styled.button`
     padding: 6px 10px;
     font-size: 12px;
     gap: 4px;
-    flex: 1;
+    flex: none;
     min-width: 0;
     max-width: 100%;
   }
@@ -1723,19 +1713,15 @@ const SectionNavigationControls = styled.div`
 `;
 
 const SectionButtonsRow = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
 
-  @media (max-width: 480px) {
-    display: flex;
-    width: 100%;
-    gap: 6px;
-  }
+  @media (max-width: 480px) { gap: 6px; }
 `;
 
 const SectionNavigationButton = styled.button`
@@ -1801,7 +1787,9 @@ const SectionNavigationButton = styled.button`
     padding: 6px 8px;
     font-size: 11px;
     gap: 4px;
-    flex: 1 1 auto;
+    width: 100%;
+    min-height: 40px;
+    flex: none;
     min-width: 0;
     
     svg {
@@ -6995,6 +6983,7 @@ const UserTaskDetail = () => {
           <InspectionControls>
             {/* Previous Button */}
             <NavigationButton
+              $slot="previous"
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === 0}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
@@ -7098,6 +7087,7 @@ const UserTaskDetail = () => {
 
             {/* Next Button */}
             <NavigationButton
+              $slot="next"
               disabled={inspectionPages.findIndex(p => (p.id || p._id) === selectedPage) === inspectionPages.length - 1}
               onClick={() => {
                 const currentIndex = inspectionPages.findIndex(p => (p.id || p._id) === selectedPage);
