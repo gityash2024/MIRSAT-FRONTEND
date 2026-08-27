@@ -12,6 +12,7 @@ import {
   orderRowsForLanguage
 } from '../utils/exportLocalization';
 import { formatPlatformDateTime } from '../utils/platformDate';
+import { calculateScorePercentage, formatScorePercentage } from '../utils/inspectionScoring';
 
 const HEADER_HEIGHT = 28;
 const TOP_MARGIN = 14;
@@ -302,7 +303,7 @@ export const calculateReportScoreSummary = (questionRows, responses) => {
     }
   });
 
-  const percentage = total > 0 ? Math.round((achieved / total) * 100) : 0;
+  const percentage = calculateScorePercentage(achieved, total);
   return { achieved, total, percentage };
 };
 
@@ -379,7 +380,7 @@ export const buildReportScoreSummaries = (taskData, providedResponses) => {
     pages,
     achieved,
     total,
-    percentage: total > 0 ? Math.round((achieved / total) * 100) : 0
+    percentage: calculateScorePercentage(achieved, total)
   };
 };
 
@@ -680,8 +681,8 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     return Number.isInteger(numericValue) ? String(numericValue) : String(Number(numericValue.toFixed(2)));
   };
 
-  const formatScorePercentage = (summary) => (
-    summary.total > 0 ? `${summary.percentage}%` : L('na')
+  const formatReportScorePercentage = (summary) => (
+    summary.total > 0 ? `${formatScorePercentage(summary.percentage)}%` : L('na')
   );
 
   const drawScoreSummaryTable = (rows, footerSummary, firstColumnLabel) => {
@@ -703,14 +704,14 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     const body = rows.map((row) => [
       row.number,
       blank(row.name),
-      formatScorePercentage(row),
+      formatReportScorePercentage(row),
       formatScore(row.achieved),
       formatScore(row.total)
     ].map((cell) => pdfText(cell)));
     const footer = [
       L('total'),
       '',
-      formatScorePercentage(footerSummary),
+      formatReportScorePercentage(footerSummary),
       formatScore(footerSummary.achieved),
       formatScore(footerSummary.total)
     ].map((cell) => pdfText(cell));
@@ -805,7 +806,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   const durationText = formatDuration(normalizedTaskData?.taskMetrics?.timeSpent, exportLanguage);
 
   const cards = [
-    { title: L('score'), value: `${scoreSummary.percentage}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
+    { title: L('score'), value: `${formatScorePercentage(scoreSummary.percentage)}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
     { title: L('flaggedItems'), value: String(flaggedItems.length), subtitle: L('task'), color: colors.danger },
     { title: L('duration'), value: durationText, subtitle: L('total'), color: colors.warning }
   ];

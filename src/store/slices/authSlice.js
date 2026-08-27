@@ -1,6 +1,30 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/auth.service';
 
+export const classifyLoginError = (error) => {
+  const status = error?.response?.status;
+  const serverMessage = error?.response?.data?.message || error?.response?.data?.error?.message;
+
+  if (error?.code === 'ECONNABORTED' || /timeout/i.test(String(error?.message || ''))) {
+    return { code: 'timeout' };
+  }
+
+  if ([502, 503, 504, 522].includes(status)) {
+    return { code: 'service_unavailable' };
+  }
+
+  if (!error?.response && error?.request) {
+    return { code: 'network_unavailable' };
+  }
+
+  return {
+    code: 'server',
+    message: typeof serverMessage === 'string' && serverMessage.trim()
+      ? serverMessage
+      : 'Login failed. Please try again.'
+  };
+};
+
 const getInitialState = () => {
   const token = localStorage.getItem('token');
   let user = null;
@@ -28,7 +52,7 @@ export const login = createAsyncThunk(
     try {
       return await authService.login(email, password);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Your account is deactivated or not verified, please contact your administrator');
+      return rejectWithValue(classifyLoginError(error));
     }
   }
 );

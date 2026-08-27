@@ -33,6 +33,26 @@ export const getScoreResponseValue = (response) => {
 
 const normalizeValue = (value) => String(value ?? '').trim().toLowerCase();
 
+// Scores are displayed to two decimal places without rounding up. Keeping this
+// separate from inspection-progress calculations ensures completion remains a
+// whole-number required-question percentage.
+export const truncateScorePercentage = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return 0;
+  return Math.floor((numericValue + Number.EPSILON) * 100) / 100;
+};
+
+export const calculateScorePercentage = (achieved, total) => {
+  const numericAchieved = Number(achieved);
+  const numericTotal = Number(total);
+  if (!Number.isFinite(numericAchieved) || !Number.isFinite(numericTotal) || numericTotal <= 0) {
+    return 0;
+  }
+  return truncateScorePercentage((numericAchieved / numericTotal) * 100);
+};
+
+export const formatScorePercentage = (value) => truncateScorePercentage(value).toFixed(2);
+
 const getConfiguredScore = (scores, value) => {
   if (!scores || value === null || value === undefined || value === '') return undefined;
 
@@ -126,7 +146,7 @@ export const calculateSectionScore = (section, responses) => {
   return {
     total,
     achieved,
-    percentage: total > 0 ? Math.round((achieved / total) * 100) : 0,
+    percentage: calculateScorePercentage(achieved, total),
   };
 };
 
@@ -144,6 +164,6 @@ export const calculatePageScore = (page, responses) => {
   return {
     total,
     achieved,
-    percentage: total > 0 ? Math.round((achieved / total) * 100) : 0,
+    percentage: calculateScorePercentage(achieved, total),
   };
 };

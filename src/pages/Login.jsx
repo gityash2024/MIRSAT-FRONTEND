@@ -602,13 +602,22 @@ const Login = () => {
    console.log(resultAction,'resultAction')
    navigate(getDefaultRouteForUser(resultAction?.user));
     } catch (error) {
-      // Handle login errors - check for deactivated account
-      let errorMessage = error || t('auth.loginFailed');
+      const errorCode = typeof error === 'object' ? error?.code : 'server';
+      const serverMessage = typeof error === 'object' ? error?.message : error;
+      let errorMessage = serverMessage || t('auth.loginFailed');
+
+      if (errorCode === 'timeout') {
+        errorMessage = t('auth.requestTimedOut');
+      } else if (errorCode === 'service_unavailable') {
+        errorMessage = t('auth.serviceUnavailable');
+      } else if (errorCode === 'network_unavailable') {
+        errorMessage = t('auth.networkUnavailable');
+      }
       
       // Check if the error is specifically about deactivated account
-      if (typeof error === 'string' && 
-          (error.toLowerCase().includes('deactivated') || 
-           error.toLowerCase().includes('your account has been deactivated'))) {
+      if (errorCode === 'server' && typeof serverMessage === 'string' &&
+          (serverMessage.toLowerCase().includes('deactivated') ||
+           serverMessage.toLowerCase().includes('your account has been deactivated'))) {
         errorMessage = t('auth.accountDeactivated');
         toast.error(errorMessage); // Show toast for deactivated account
         // Don't set apiError to avoid duplicate display

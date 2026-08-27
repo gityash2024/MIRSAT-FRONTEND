@@ -236,10 +236,15 @@ api.interceptors.response.use(
         return retryRequestWithBackoff(error, 0);
       }
       
-      toast('Request timed out. Please try again.', { 
-        icon: '⏱️',
-        duration: 4000 
-      });
+      // Login owns its single, contextual error message. A global toast here
+      // otherwise appears alongside the form error and can be mistaken for an
+      // account-state failure.
+      if (!error.config?.url?.includes('/auth/login')) {
+        toast('Request timed out. Please try again.', {
+          icon: '⏱️',
+          duration: 4000
+        });
+      }
       return Promise.reject(error);
     }
     
@@ -262,8 +267,9 @@ api.interceptors.response.use(
       
       // Retry for gateway/timeout errors (502, 503, 504, 522)
       if ([502, 503, 504, 522].includes(status)) {
+        const isLoginRequest = error.config?.url?.includes('/auth/login');
         // Only show toast on first attempt, retry will handle subsequent attempts
-        if (!error.config._retryCount || error.config._retryCount === 0) {
+        if (!isLoginRequest && (!error.config._retryCount || error.config._retryCount === 0)) {
           toast('Server is busy. Retrying...', { 
             icon: '🔄',
             duration: 3000 

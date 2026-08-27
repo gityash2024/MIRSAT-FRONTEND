@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   FileText, 
   Flag, 
   Award, 
@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { calculateScorePercentage, formatScorePercentage } from '../../utils/inspectionScoring';
 
 const PreviewContainer = styled.div`
   background-color: white;
@@ -1032,7 +1033,7 @@ const ReportPreviewComponent = ({
   
   const score = reportData?.score || 0;
   const maxScore = reportData?.maxScore || 0;
-  const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const percentage = calculateScorePercentage(score, maxScore);
   
   const getComplianceStatus = (percent) => {
     if (percent >= 80) return 'full_compliance';
@@ -1071,7 +1072,7 @@ const ReportPreviewComponent = ({
         <OverviewGrid>
           <StatCard>
             <Award size={24} color="var(--color-navy)" />
-            <CircleScore score={percentage}>{percentage}%</CircleScore>
+            <CircleScore score={percentage}>{formatScorePercentage(percentage)}%</CircleScore>
             <StatLabel>{t('common.overallScore')}</StatLabel>
           </StatCard>
           
@@ -1159,9 +1160,7 @@ const ReportPreviewComponent = ({
         </SectionsHeader>
         
         {(reportData.sections || []).map((section, index) => {
-          const sectionPercentage = section.maxScore > 0 
-            ? Math.round((section.score / section.maxScore) * 100) 
-            : 0;
+          const sectionPercentage = calculateScorePercentage(section.score, section.maxScore);
           
           return (
             <SectionItem key={section.id || index}>
@@ -1174,7 +1173,7 @@ const ReportPreviewComponent = ({
                 <SectionScore score={sectionPercentage}>
                   <StatusBadge status={section.status || 'not_applicable'}>
                     <StatusIcon status={section.status || 'not_applicable'} />
-                    <span>{sectionPercentage}%</span>
+                    <span>{formatScorePercentage(sectionPercentage)}%</span>
                   </StatusBadge>
                   <span className="score-display">{section.score || 0}/{section.maxScore || 0}</span>
                   {openSection === section.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}

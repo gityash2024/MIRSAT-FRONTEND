@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { calculatePageScore, calculateSectionScore, getQuestionScore } from './inspectionScoring';
+import {
+  calculatePageScore,
+  calculateScorePercentage,
+  calculateSectionScore,
+  formatScorePercentage,
+  getQuestionScore,
+} from './inspectionScoring';
 
 describe('inspection scoring', () => {
   it('uses the configured answer score and question weight, not question count', () => {
@@ -87,5 +93,11 @@ describe('inspection scoring', () => {
       q2: 'partial_compliance',
       q3: true,
     })).toEqual({ total: 16, achieved: 16, percentage: 100 });
+  });
+
+  it('truncates score percentages to two decimal places without rounding up', () => {
+    expect(calculateScorePercentage(836956, 1000000)).toBe(83.69);
+    expect(formatScorePercentage(calculateScorePercentage(836956, 1000000))).toBe('83.69');
+    expect(formatScorePercentage(calculateScorePercentage(84, 100))).toBe('84.00');
   });
 });

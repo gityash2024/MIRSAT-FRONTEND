@@ -84,6 +84,8 @@ import {
 import {
   calculatePageScore,
   calculateSectionScore,
+  calculateScorePercentage,
+  formatScorePercentage,
   getQuestionScore,
 } from '../../utils/inspectionScoring';
 import { API_CONFIG } from '../../config/api';
@@ -2156,6 +2158,27 @@ const QuestionText = styled.div`
     font-size: 14px;
     flex: 1 1 100%;
     min-width: 0;
+  }
+`;
+
+const QuestionDescription = styled.p`
+  margin: -6px 0 16px 44px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 400;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+
+  @media (max-width: 768px) {
+    margin: -4px 0 12px 40px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    margin-left: 0;
+    font-size: 12px;
   }
 `;
 
@@ -4364,7 +4387,7 @@ const UserTaskDetail = () => {
         return;
       }
 
-      const percentage = Math.round((achievedPoints / totalPoints) * 100) || 0;
+      const percentage = calculateScorePercentage(achievedPoints, totalPoints);
 
       const result = {
         total: totalPoints,
@@ -7082,7 +7105,7 @@ const UserTaskDetail = () => {
                                 padding: '2px 8px',
                                 borderRadius: '10px',
                               }}>
-                                {pageScore.percentage}%
+                                {formatScorePercentage(pageScore.percentage)}%
                               </span>
                               <span style={{
                                 fontSize: '12px',
@@ -7297,7 +7320,7 @@ const UserTaskDetail = () => {
                           padding: '1px 6px',
                           borderRadius: '8px',
                         }}>
-                          {sectionScore.percentage}%
+                          {formatScorePercentage(sectionScore.percentage)}%
                         </span>
                         <SectionScore active={isActive}>
                           <Star size={12} />
@@ -7391,6 +7414,12 @@ const UserTaskDetail = () => {
                   {currentSection.questions && currentSection.questions.length > 0 ? (
                     currentSection.questions.map((question, qIndex) => {
                       const questionId = question._id || question.id;
+                      const snapshotDescription = typeof question.description === 'string'
+                        ? question.description.trim()
+                        : '';
+                      const questionDescription = snapshotDescription ||
+                        currentTask?.liveQuestionDescriptionFallbacks?.[String(questionId)] ||
+                        '';
                       let response = currentTask.questionnaireResponses?.[questionId];
 
                       if (response === undefined) {
@@ -7440,6 +7469,12 @@ const UserTaskDetail = () => {
                               )}
                             </QuestionBadges>
                           </QuestionHeader>
+
+                          {questionDescription && (
+                            <QuestionDescription>
+                              {questionDescription}
+                            </QuestionDescription>
+                          )}
 
                           {renderQuestionInput(question, currentTask, handleSaveInspectionResponse)}
                         </QuestionCard>
@@ -7851,7 +7886,7 @@ const UserTaskDetail = () => {
               <Award size={16} />
               {t('tasks.complianceScore')}
             </StatCardHeader>
-            <StatCardValue>{scores.percentage}%</StatCardValue>
+            <StatCardValue>{formatScorePercentage(scores.percentage)}%</StatCardValue>
             <StatMiniProgress>
               <StatMiniProgressBar 
                 progress={scores.percentage}
@@ -8117,7 +8152,7 @@ const UserTaskDetail = () => {
                       <MetricCard $color="green" $bgColor="rgba(39, 174, 96, 0.1)">
                         <MetricLabel>{t('tasks.complianceScore')}</MetricLabel>
                         <MetricValue $color="#27ae60">
-                          {scores.percentage}%
+                          {formatScorePercentage(scores.percentage)}%
                         </MetricValue>
                         <MetricDescription>
                           {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
@@ -8303,7 +8338,7 @@ const UserTaskDetail = () => {
                     <div style={{ background: 'rgba(55, 136, 216, 0.1)', padding: '20px', borderRadius: '12px' }}>
                       <div style={{ fontSize: '12px', color: 'var(--color-navy)', marginBottom: '8px', fontWeight: '600' }}>{t('tasks.overallScore')}</div>
                       <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy)' }}>
-                        {scores.percentage}%
+                        {formatScorePercentage(scores.percentage)}%
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
                         {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
@@ -8384,7 +8419,7 @@ const UserTaskDetail = () => {
                                   <td style={{ padding: '10px', fontWeight: '700' }}>{page.number}</td>
                                   <td style={{ padding: '10px', fontWeight: '700' }}>{page.name}</td>
                                   <td style={{ padding: '10px', textAlign: 'center', color: page.total > 0 ? '#16a34a' : '#64748b', fontWeight: '700' }}>
-                                    {page.total > 0 ? `${page.percentage}%` : 'N/A'}
+                                    {page.total > 0 ? `${formatScorePercentage(page.percentage)}%` : 'N/A'}
                                   </td>
                                   <td style={{ padding: '10px', textAlign: 'center', fontWeight: '600' }}>{page.achieved}/{page.total}</td>
                                 </tr>
@@ -8393,7 +8428,7 @@ const UserTaskDetail = () => {
                                     <td style={{ padding: '10px 10px 10px 24px', color: '#64748b' }}>{section.number}</td>
                                     <td style={{ padding: '10px', color: '#475569' }}>{section.name}</td>
                                     <td style={{ padding: '10px', textAlign: 'center', color: section.total > 0 ? '#16a34a' : '#64748b' }}>
-                                      {section.total > 0 ? `${section.percentage}%` : 'N/A'}
+                                      {section.total > 0 ? `${formatScorePercentage(section.percentage)}%` : 'N/A'}
                                     </td>
                                     <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{section.achieved}/{section.total}</td>
                                   </tr>

@@ -35,7 +35,7 @@ describe('inspection PDF score summary', () => {
     expect(calculateReportScoreSummary(rows, {
       'q-marina-answered': 'full_compliance',
       'q-marina-unanswered': 'non_compliance',
-    })).toEqual({ achieved: 208, total: 326, percentage: 64 });
+    })).toEqual({ achieved: 208, total: 326, percentage: 63.8 });
   });
 
   it('keeps N/A and recommended questions out of the PDF denominator', () => {
@@ -114,5 +114,19 @@ describe('inspection PDF score summary', () => {
       total: 10,
       percentage: 70
     });
+  });
+
+  it('uses truncated two-decimal score percentages in report summaries', () => {
+    const rows = [{
+      id: 'decimal-score',
+      question: {
+        type: 'compliance',
+        scores: { full_compliance: 1000000, partial_compliance: 836956, non_compliance: 0 },
+      },
+    }];
+
+    expect(calculateReportScoreSummary(rows, {
+      'decimal-score': 'partial_compliance',
+    })).toEqual({ achieved: 836956, total: 1000000, percentage: 83.69 });
   });
 });
