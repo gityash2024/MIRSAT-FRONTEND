@@ -91,9 +91,9 @@ export const agentPages = {
   },
   inspection_templates: {
     label: 'Templates',
-    route: '/inspection',
+    route: '/templates',
     searchField: 'inspection_templates.search',
-    createRoute: '/inspection/create/build',
+    createRoute: '/templates/create/build',
     createAction: 'inspection_templates.create',
     filterAction: 'inspection_templates.filter',
     formKey: 'inspection_templates.form',
@@ -141,7 +141,7 @@ export const agentPages = {
   },
   inspection_report: {
     label: 'Inspection Report',
-    route: '/inspection',
+    route: '/templates',
     exportActions: {
       pdf: 'inspection_report.download.pdf',
       docx: 'inspection_report.download.docx',

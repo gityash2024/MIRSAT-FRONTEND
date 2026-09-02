@@ -43,6 +43,15 @@ import AssetList from '../pages/assets';
 import UserDashboard from '../pages/UserDashboard';
 import UserTasks from '../pages/UserTasks/index';
 import UserTaskDetail from '../pages/UserTasks/UserTaskDetail';
+
+// `/inspection` was historically used for the template UI. Keep old bookmarks
+// working while every visible navigation path uses the unambiguous `/templates`.
+const LegacyTemplateRedirect = () => {
+  const { '*': legacyPath = '' } = useParams();
+  const location = useLocation();
+  const suffix = legacyPath ? `/${legacyPath}` : '';
+  return <Navigate replace to={`/templates${suffix}${location.search}${location.hash}`} />;
+};
 import PreInspectionQuestionnaire from '../pages/UserTasks/PreInspectionQuestionnaire';
 import UserProfile from '../pages/profile';
 // import AgentAdmin from '../pages/agentAdmin';
@@ -122,16 +131,16 @@ const AppRoutes = () => {
           <Route path="/users/:userId" element={<UserView />} />
           <Route path="/users/:userId/edit" element={<UserEdit />} />
           
-          <Route path="/inspection" element={<InspectionLevel />}>
+          <Route path="/templates" element={<InspectionLevel />}>
             <Route index element={<InspectionLevelList />} />
             <Route path="tree" element={<InspectionLevelTree />} />
           </Route>
-          <Route path="/inspection/create/*">
+          <Route path="/templates/create/*">
             <Route index element={<Navigate to="build" replace />} />
             <Route path="build" element={<InspectionLevelForm />} />
             <Route path="report" element={<InspectionReportView isCreating={true} />} />
           </Route>
-          <Route path="/inspection/:id">
+          <Route path="/templates/:id">
             <Route index element={<Navigate to="build" replace />} />
             <Route path="build" element={<InspectionLevelView />} />
             <Route path="report" element={<InspectionReportView />} />
@@ -141,6 +150,7 @@ const AppRoutes = () => {
               <Route path="report" element={<InspectionReportView isEditing={true} />} />
             </Route>
           </Route>
+          <Route path="/inspection/*" element={<LegacyTemplateRedirect />} />
           
           <Route path="/questionnaire" element={<QuestionnaireList />} />
           <Route path="/questionnaire/create" element={<QuestionCreate />} />

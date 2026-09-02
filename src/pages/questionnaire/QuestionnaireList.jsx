@@ -972,7 +972,7 @@ const QuestionnaireList = () => {
 
   const handleRowClick = (id) => {
     // Instead of navigating to a questionnaire view, directly view the question
-    navigate(`/inspection/templates?view=${id}`);
+    navigate(`/templates?view=${id}`);
   };
   
   const handleMenuToggle = (id, e) => {

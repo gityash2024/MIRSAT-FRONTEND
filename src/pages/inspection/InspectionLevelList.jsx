@@ -1545,7 +1545,6 @@ const InspectionLevelList = ({
             placeholder={t('inspections.searchTemplates')}
             value={searchTerm}
             onChange={handleSearch}
-            disabled={loading}
           />
         </SearchBox>
 
@@ -1583,7 +1582,7 @@ const InspectionLevelList = ({
           <Button
             variant="primary"
             as={Link}
-            to="/inspection/create"
+            to="/templates/create"
             disabled={loading}
             data-agent-action="inspection_templates.create"
           >
@@ -1620,7 +1619,7 @@ const InspectionLevelList = ({
           <Button
             variant="primary"
             as={Link}
-            to="/inspection/create"
+            to="/templates/create"
             data-agent-action="inspection_templates.create"
           >
             <Plus size={18} />
@@ -1655,7 +1654,7 @@ const InspectionLevelList = ({
                         <LevelActions>
                           <HeaderActionButton
                             as={Link}
-                            to={`/inspection/${level._id || level.id}`}
+                            to={`/templates/${level._id || level.id}`}
                             title={t('common.view')}
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -1664,7 +1663,7 @@ const InspectionLevelList = ({
                           </HeaderActionButton>
                           <HeaderActionButton
                             as={Link}
-                            to={`/inspection/${level._id || level.id}/edit`}
+                            to={`/templates/${level._id || level.id}/edit`}
                             title={t('common.edit')}
                             onClick={(e) => e.stopPropagation()}
                           >

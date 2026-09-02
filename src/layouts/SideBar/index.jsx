@@ -219,7 +219,7 @@ const Sidebar = ({ isOpen, width }) => {
       {
         icon: FileText, 
         label: 'Templates', 
-        path: '/inspection',
+        path: '/templates',
         module: 'TEMPLATE',
         permissions: ['view_inspections', 'create_inspections', 'edit_inspections', 'delete_inspections']
       },
@@ -324,7 +324,7 @@ const Sidebar = ({ isOpen, width }) => {
         managerMenuItems.push({
           icon: FileText, 
           label: 'Templates', 
-          path: '/inspection',
+          path: '/templates',
           module: 'TEMPLATE',
           permissions: []
         });

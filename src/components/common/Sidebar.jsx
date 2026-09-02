@@ -413,7 +413,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     },
     {
       title: t('inspections.title'),
-      path: '/inspection',
+      path: '/templates',
       icon: ListChecks,
       permission: 'view_inspections',
       modulePermission: 'access_template',

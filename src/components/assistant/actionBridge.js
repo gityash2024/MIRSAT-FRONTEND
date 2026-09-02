@@ -251,7 +251,7 @@ const runSingleAction = async (action, navigate, handlers = {}) => {
         user_tasks: '/user-tasks',
         users: '/users',
         assets: '/assets',
-        inspection_templates: '/inspection',
+        inspection_templates: '/templates',
         questionnaires: '/questionnaire/edit',
         profile: '/profile',
       };

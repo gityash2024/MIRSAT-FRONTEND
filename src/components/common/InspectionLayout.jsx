@@ -256,7 +256,7 @@ const InspectionLayout = ({
     if (onBack) {
       onBack();
     } else {
-      navigate('/inspection');
+      navigate('/templates');
     }
   };
   
@@ -384,4 +384,4 @@ const InspectionLayout = ({
   );
 };
 
-export default InspectionLayout; 
+export default InspectionLayout;

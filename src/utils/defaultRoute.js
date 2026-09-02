@@ -4,7 +4,7 @@ const MANAGER_MODULE_ROUTES = [
   { permission: MODULE_PERMISSIONS.DASHBOARD, path: '/dashboard' },
   { permission: MODULE_PERMISSIONS.TASKS, path: '/tasks' },
   { permission: MODULE_PERMISSIONS.USERS, path: '/users' },
-  { permission: MODULE_PERMISSIONS.TEMPLATE, path: '/inspection' },
+  { permission: MODULE_PERMISSIONS.TEMPLATE, path: '/templates' },
   { permission: MODULE_PERMISSIONS.ASSETS, path: '/assets' },
   { permission: MODULE_PERMISSIONS.QUESTIONNAIRES, path: '/questionnaire' },
   { permission: MODULE_PERMISSIONS.CALENDAR, path: '/calendar' },

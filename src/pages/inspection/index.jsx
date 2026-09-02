@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
-import { Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import InspectionLevelList from './InspectionLevelList';
 import { inspectionService } from '../../services/inspection.service';
@@ -12,27 +11,9 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 24px;
-  flex-direction: column;
-  
-  svg {
-    animation: spin 1.5s linear infinite;
-    filter: drop-shadow(0 0 8px rgba(0, 0, 72, 0.2));
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const InspectionLevel = () => {
   const location = useLocation();
-  const isListView = location.pathname === '/inspection';
+  const isListView = location.pathname === '/templates';
   const [loading, setLoading] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const { t } = useTranslation();
@@ -55,9 +36,10 @@ const InspectionLevel = () => {
   });
 
   // Prevent fetch loops
-  const isFetchingRef = useRef(false);
   const debounceTimerRef = useRef(null);
   const initialFetchDoneRef = useRef(false);
+  const queryEffectReadyRef = useRef(false);
+  const requestVersionRef = useRef(0);
   const unmountedRef = useRef(false);
 
   // Clean up on unmount
@@ -96,13 +78,9 @@ const InspectionLevel = () => {
 
   // Stable fetch function that doesn't change with re-renders
   const fetchInspectionLevels = useCallback(async () => {
-    // Prevent duplicate fetches
-    if (isFetchingRef.current || unmountedRef.current) {
-      console.log('Skipping fetch - already in progress or component unmounted');
-      return;
-    }
+    if (unmountedRef.current) return;
 
-    isFetchingRef.current = true;
+    const requestVersion = ++requestVersionRef.current;
     setLoading(true);
 
     try {
@@ -110,14 +88,13 @@ const InspectionLevel = () => {
         ...filters,
         search: searchTerm,
         page: pagination.page,
-        limit: pagination.limit,
-        _t: Date.now() // Cache buster
+        limit: pagination.limit
       };
 
       console.log('Fetching inspection data with params:', params);
       const response = await inspectionService.getInspectionLevels(params);
 
-      if (!unmountedRef.current) {
+      if (!unmountedRef.current && requestVersion === requestVersionRef.current) {
         setInspectionData(response?.results || []);
         setPagination(prev => ({
           ...prev,
@@ -127,30 +104,43 @@ const InspectionLevel = () => {
         initialFetchDoneRef.current = true;
       }
     } catch (error) {
-      if (!unmountedRef.current) {
+      if (!unmountedRef.current && requestVersion === requestVersionRef.current) {
         console.error('Error fetching inspection levels:', error);
         handleError(error);
       }
     } finally {
-      if (!unmountedRef.current) {
+      if (!unmountedRef.current && requestVersion === requestVersionRef.current) {
         setLoading(false);
       }
-      isFetchingRef.current = false;
     }
   }, [filters, searchTerm, pagination.page, pagination.limit, handleError]);
 
   // Initial data fetch only
   useEffect(() => {
-    if (isListView && !initialFetchDoneRef.current && !isFetchingRef.current) {
+    if (isListView && !initialFetchDoneRef.current) {
       console.log('Initial fetch');
+      initialFetchDoneRef.current = true;
       fetchInspectionLevels();
     }
   }, [isListView, fetchInspectionLevels]);
 
+  useEffect(() => {
+    if (!isListView) {
+      initialFetchDoneRef.current = false;
+      queryEffectReadyRef.current = false;
+    }
+  }, [isListView]);
+
   // When filters or search changes, debounce the fetch
   useEffect(() => {
-    // Skip the initial render-triggered effect
-    if (!initialFetchDoneRef.current) return;
+    if (!isListView) return undefined;
+
+    // The initial fetch above owns the first load. Subsequent changes are
+    // debounced so the searchable list remains mounted and focused.
+    if (!queryEffectReadyRef.current) {
+      queryEffectReadyRef.current = true;
+      return;
+    }
 
     console.log('Filter/search change detected, debouncing fetch');
 
@@ -167,7 +157,7 @@ const InspectionLevel = () => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filters, searchTerm, fetchInspectionLevels]);
+  }, [filters, searchTerm, pagination.page, pagination.limit, isListView, fetchInspectionLevels]);
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
@@ -211,21 +201,6 @@ const InspectionLevel = () => {
       pagination,
       onPageChange: handlePageChange
     };
-
-    if (loading) {
-      return (
-        <LoadingContainer>
-          <Loader size={40} color="var(--color-navy)" />
-          <p style={{
-            marginTop: '16px',
-            color: 'var(--color-navy)',
-            fontSize: '16px'
-          }}>
-            {t('inspections.loadingTemplates')}
-          </p>
-        </LoadingContainer>
-      );
-    }
 
     return <InspectionLevelList {...sharedProps} />;
   }, [

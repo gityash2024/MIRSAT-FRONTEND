@@ -1242,7 +1242,7 @@ const AgentWidget = () => {
   };
 
   // record://recordType/id links (emitted by the agent for real records) render as clickable chips.
-  const recordPaths = { tasks: '/tasks', users: '/users', assets: '/assets', inspection_templates: '/inspection', questionnaires: '/questionnaire/edit' };
+  const recordPaths = { tasks: '/tasks', users: '/users', assets: '/assets', inspection_templates: '/templates', questionnaires: '/questionnaire/edit' };
   const MarkdownLink = ({ href, children }) => {
     const match = /^record:\/\/([a-z_]+)\/([a-fA-F0-9]{24})$/.exec(href || '');
     if (match && recordPaths[match[1]]) {

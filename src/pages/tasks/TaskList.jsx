@@ -553,7 +553,7 @@ const TaskList = () => {
   const { allAssetsForDropdown } = useSelector((state) => state.assets || { allAssetsForDropdown: [] });
   const { levels } = useSelector((state) => state.inspectionLevels || { levels: { results: [] } });
   const { assetTypes } = useSelector((state) => state.assetTypes || { assetTypes: [] });
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Debug: Log tasks and pagination whenever they change
   useEffect(() => {
@@ -572,6 +572,7 @@ const TaskList = () => {
   const [showAssetDropdown, setShowAssetDropdown] = useState(false);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const searchTimeoutRef = useRef(null);
+  const appliedInitialUrlStatusRef = useRef(false);
 
   const inspectionTemplateOptions = Array.isArray(levels?.results)
     ? levels.results
@@ -594,16 +595,34 @@ const TaskList = () => {
   ];
 
   useEffect(() => {
-    const statusFromDashboard = searchParams.get('status');
+    // Dashboard status is an initial hand-off only. Once the task list is
+    // open, users fully control the status filter and the URL mirrors them.
+    if (appliedInitialUrlStatusRef.current) return;
+    appliedInitialUrlStatusRef.current = true;
+
     const supportedStatuses = ['pending', 'in_progress', 'archived', 'delayed'];
-    if (statusFromDashboard && supportedStatuses.includes(statusFromDashboard)) {
+    const statusesFromDashboard = searchParams
+      .getAll('status')
+      .filter((status) => supportedStatuses.includes(status));
+
+    if (statusesFromDashboard.length > 0) {
       const currentStatus = Array.isArray(filters?.status) ? filters.status : [];
-      if (currentStatus.length !== 1 || currentStatus[0] !== statusFromDashboard) {
-        dispatch(setFilters({ ...filters, status: [statusFromDashboard] }));
+      if (
+        currentStatus.length !== statusesFromDashboard.length
+        || currentStatus.some((status, index) => status !== statusesFromDashboard[index])
+      ) {
+        dispatch(setFilters({ ...filters, status: statusesFromDashboard }));
         dispatch(setPagination({ page: 1 }));
       }
     }
   }, [dispatch, filters, searchParams]);
+
+  const syncStatusQuery = (statuses) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('status');
+    statuses.forEach((status) => nextParams.append('status', status));
+    setSearchParams(nextParams, { replace: true });
+  };
 
   useEffect(() => {
     // Initialize filters if they don't exist
@@ -765,6 +784,10 @@ const loadTasks = async () => {
     // Dispatch the updated filters
     dispatch(setFilters(updatedFilters));
 
+    if (category === 'status') {
+      syncStatusQuery(currentFilters);
+    }
+
     // Reset pagination when filters change
     dispatch(setPagination({ page: 1 }));
   };
@@ -776,6 +799,9 @@ const loadTasks = async () => {
       [category]: currentFilters.filter(item => item !== value)
     };
     dispatch(setFilters(updatedFilters));
+    if (category === 'status') {
+      syncStatusQuery(updatedFilters.status);
+    }
   };
 
   const clearAllFilters = () => {
@@ -792,6 +818,7 @@ const loadTasks = async () => {
     setSearchTerm('');
     dispatch(setFilters(clearedFilters));
     dispatch(setPagination({ page: 1 }));
+    syncStatusQuery([]);
   };
 
   const getFilterLabel = (category, value) => {

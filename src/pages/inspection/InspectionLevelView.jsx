@@ -1029,7 +1029,7 @@ const InspectionLevelView = () => {
       try {
         await inspectionService.deleteInspectionLevel(id);
         toast.success('Template deleted successfully');
-        navigate('/inspection');
+        navigate('/templates');
       } catch (error) {
         throw error;
       }
@@ -1445,7 +1445,7 @@ const InspectionLevelView = () => {
     return (
       <InspectionLayout 
         title={t('inspections.loadingTemplate')} 
-        baseUrl={`/inspection/${id}`}
+        baseUrl={`/templates/${id}`}
       >
         <div style={{ padding: '20px', textAlign: 'center' }}>
           <div style={{ marginBottom: '16px' }}>
@@ -1469,14 +1469,14 @@ const InspectionLevelView = () => {
     return (
       <InspectionLayout 
         title={t('common.error')} 
-        baseUrl={`/inspection/${id}`}
+        baseUrl={`/templates/${id}`}
       >
         <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626' }}>
           <AlertTriangle size={32} style={{ margin: '0 auto 16px' }} />
           <p>{t('inspections.failedToLoadTemplateData')}</p>
           <Button
             variant="secondary"
-            onClick={() => navigate('/inspection')}
+            onClick={() => navigate('/templates')}
             style={{ margin: '16px auto 0', display: 'inline-flex' }}
           >
             {t('inspections.backToTemplates')}
@@ -1491,9 +1491,9 @@ const InspectionLevelView = () => {
   return (
     <InspectionLayout 
       title={level.name || t('inspections.inspectionTemplate')} 
-      onBack={() => navigate('/inspection')}
+      onBack={() => navigate('/templates')}
       onPublish={handlePublish}
-      baseUrl={`/inspection/${id}`}
+      baseUrl={`/templates/${id}`}
       lastPublished={level.updatedAt ? formatPlatformDateTime(level.updatedAt) : null}
       showBuildTabOnly={true}
     >
@@ -1560,7 +1560,7 @@ const InspectionLevelView = () => {
         <ButtonGroup>
           <Button 
             as={Link} 
-            to={`/inspection/${id}/edit/build`}
+            to={`/templates/${id}/edit/build`}
             variant="primary"
           >
             <Edit size={16} />

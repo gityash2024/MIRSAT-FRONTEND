@@ -375,14 +375,14 @@ const TreeNodeComponent = ({
               <>
                 <ActionButton 
                   as={Link} 
-                  to={`/inspection/${node._id}`}
+                  to={`/templates/${node._id}`}
                   disabled={loading}
                 >
                   <Eye size={14} />
                 </ActionButton>
                 <ActionButton 
                   as={Link} 
-                  to={`/inspection/${node._id}/edit`}
+                  to={`/templates/${node._id}/edit`}
                   disabled={loading}
                 >
                   <Edit size={14} />
@@ -722,7 +722,7 @@ const InspectionLevelTree = ({
           <Button 
             variant="primary" 
             as={Link} 
-            to="/inspection/create"
+            to="/templates/create"
             disabled={loading}
           >
             <Plus size={18} />
@@ -778,7 +778,7 @@ const InspectionLevelTree = ({
             <Button 
               variant="primary" 
               as={Link} 
-              to="/inspection/create"
+              to="/templates/create"
             >
               <Plus size={18} />
               {t('inspections.addTemplate')}

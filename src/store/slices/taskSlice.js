@@ -8,6 +8,7 @@ const initialState = {
   currentTask: null,
   loading: false,
   error: null,
+  currentRequestId: null,
   filters: {
     status: [],
     priority: [],
@@ -400,12 +401,17 @@ const taskSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTasks.pending, (state) => {
+      .addCase(fetchTasks.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.currentRequestId = action.meta.requestId;
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
+        // A slower response from an earlier filter state must never replace the
+        // results for the user's latest selection.
+        if (state.currentRequestId !== action.meta.requestId) return;
         state.loading = false;
+        state.currentRequestId = null;
         console.log('Redux: fetchTasks.fulfilled - Full payload:', action.payload);
         console.log('Redux: Pagination data from API:', action.payload.pagination);
 
@@ -426,7 +432,9 @@ const taskSlice = createSlice({
         state.pagination = paginationData;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
+        if (state.currentRequestId !== action.meta.requestId) return;
         state.loading = false;
+        state.currentRequestId = null;
         state.error = action.payload;
       })
       .addCase(getTaskById.pending, (state) => {

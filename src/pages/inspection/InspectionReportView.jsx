@@ -688,11 +688,11 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
 
   const handleGoToBuildTab = () => {
     if (isCreating) {
-      navigate('/inspection/create/build');
+      navigate('/templates/create/build');
     } else if (isEditing) {
-      navigate(`/inspection/${id}/edit/build`);
+      navigate(`/templates/${id}/edit/build`);
     } else {
-      navigate(`/inspection/${id}/build`);
+      navigate(`/templates/${id}/build`);
     }
   };
 
@@ -747,7 +747,7 @@ const InspectionReportView = ({ isCreating = false, isEditing = false }) => {
     }
   };
 
-  const baseUrl = isEditing ? `/inspection/${id}/edit` : isCreating ? '/inspection/create' : `/inspection/${id}`;
+  const baseUrl = isEditing ? `/templates/${id}/edit` : isCreating ? '/templates/create' : `/templates/${id}`;
 
   return (
     <InspectionLayout

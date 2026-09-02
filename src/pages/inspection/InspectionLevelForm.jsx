@@ -7118,7 +7118,7 @@ const InspectionLevelForm = () => {
         localStorage.removeItem(LOCAL_STORAGE_KEY);
 
         // Redirect to the templates listing page after successful creation
-        navigate('/inspection');
+        navigate('/templates');
         setSaveMessage('Template created successfully');
         toast.success('Template created successfully');
         return response.data;
@@ -7126,7 +7126,7 @@ const InspectionLevelForm = () => {
 
       setSaveMessage('Template saved successfully');
       setTimeout(() => setSaveMessage(''), 3000);
-      navigate('/inspection');
+      navigate('/templates');
       setLoading(false);
       toast.success('Template updated successfully');
       return response.data;
@@ -7188,7 +7188,7 @@ const InspectionLevelForm = () => {
         // Redirect to template listing after publishing
         if (isPublishing) {
           setTimeout(() => {
-            navigate('/inspection');
+            navigate('/templates');
           }, 1500);
         }
       }
@@ -9046,14 +9046,14 @@ const InspectionLevelForm = () => {
           isOpen={isDiscardModalOpen}
           onClose={() => setIsDiscardModalOpen(false)}
           onCancel={() => {
-            // Navigate to /inspection on cancel (keep data in localStorage)
-            navigate('/inspection');
+            // Return to the template list on cancel (keep data in localStorage)
+            navigate('/templates');
           }}
           onConfirm={() => {
             // Clear localStorage and navigate on discard
             localStorage.removeItem(LOCAL_STORAGE_KEY);
             hasShownRestoreToast.current = false;
-            navigate('/inspection');
+            navigate('/templates');
           }}
         />
       )}
