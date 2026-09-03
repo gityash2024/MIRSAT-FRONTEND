@@ -13,6 +13,7 @@ import {
 } from '../utils/exportLocalization';
 import { formatPlatformDateTime } from '../utils/platformDate';
 import { calculateScorePercentage, formatScorePercentage } from '../utils/inspectionScoring';
+import { optimizePdfImage, PDF_IMAGE_PRESETS } from '../utils/pdfImageOptimization';
 
 const HEADER_HEIGHT = 28;
 const TOP_MARGIN = 14;
@@ -555,11 +556,11 @@ const drawPageDecorations = ({
   const logoY = TOP_MARGIN - 10;
 
   if (leftLogo) {
-    doc.addImage(leftLogo, 'PNG', SIDE_MARGIN, logoY, mirsatLogoW, mirsatLogoH);
+    doc.addImage(leftLogo.data, leftLogo.format, SIDE_MARGIN, logoY, mirsatLogoW, mirsatLogoH, leftLogo.alias, 'FAST');
   }
 
   if (rightLogo) {
-    doc.addImage(rightLogo, 'PNG', pageWidth - SIDE_MARGIN - srsaLogoW, logoY + 1, srsaLogoW, srsaLogoH);
+    doc.addImage(rightLogo.data, rightLogo.format, pageWidth - SIDE_MARGIN - srsaLogoW, logoY + 1, srsaLogoW, srsaLogoH, rightLogo.alias, 'FAST');
   }
 
   doc.setDrawColor(colors.border);
@@ -596,8 +597,22 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     value === null || value === undefined || value === '' ? L('na') : String(value)
   );
   const normalizedTaskData = normalizeTaskDataInput(taskData);
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
   const fontLoaded = await loadArabicFont(doc);
+  const imageAssets = new Map();
+  let imageSequence = 0;
+  const getImageAsset = (source, presetName, fixedAlias = null) => {
+    if (!source || typeof source !== 'string') return Promise.resolve(null);
+    const key = `${presetName}:${source}`;
+    if (!imageAssets.has(key)) {
+      const alias = fixedAlias || `inspection-report-${presetName}-${imageSequence += 1}`;
+      imageAssets.set(key, optimizePdfImage(source, {
+        ...PDF_IMAGE_PRESETS[presetName],
+        alias
+      }));
+    }
+    return imageAssets.get(key);
+  };
 
   const colors = {
     navy: '#102a63',
@@ -841,7 +856,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
       const display = await responseToDisplay(value, exportLanguage);
       const metadata = findResponseMetadata(responseMetadata, questionId, key);
 
-      if (display.image) preImageMap.set(index, display.image);
+      if (display.image) preImageMap.set(index, await getImageAsset(display.image, 'evidence'));
 
       const responseCell = buildResponseCellText(display, metadata, exportLanguage);
 
@@ -885,7 +900,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
             const targetH = Math.max(8, Math.min(10, data.cell.height - 2));
             const targetW = targetH * 1.6;
             const imageX = rtl ? data.cell.x + 1 : data.cell.x + data.cell.width - targetW - 1;
-            doc.addImage(image, 'PNG', imageX, data.cell.y + 1, targetW, targetH);
+            doc.addImage(image.data, image.format, imageX, data.cell.y + 1, targetW, targetH, image.alias, 'FAST');
           } catch (error) {
             // keep text fallback only
           }
@@ -974,7 +989,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
           const display = await responseToDisplay(value, exportLanguage);
           const metadata = findResponseMetadata(responseMetadata, row.id, key);
 
-          if (display.image) imageMap.set(index, display.image);
+          if (display.image) imageMap.set(index, await getImageAsset(display.image, 'evidence'));
 
           const responseCell = buildResponseCellText(display, metadata, exportLanguage);
 
@@ -1023,7 +1038,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
                 const targetH = Math.max(7, Math.min(9, data.cell.height - 2));
                 const targetW = targetH * 1.6;
                 const imageX = rtl ? data.cell.x + 1 : data.cell.x + data.cell.width - targetW - 1;
-                doc.addImage(image, 'PNG', imageX, data.cell.y + 1, targetW, targetH);
+                doc.addImage(image.data, image.format, imageX, data.cell.y + 1, targetW, targetH, image.alias, 'FAST');
               } catch (error) {
                 // keep text fallback only
               }
@@ -1043,10 +1058,12 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     y += 4;
 
     if (normalizedTaskData?.signature && typeof normalizedTaskData.signature === 'string') {
-      const signatureImage = await fetchImageSource(normalizedTaskData.signature) || normalizedTaskData.signature;
-      if (signatureImage && typeof signatureImage === 'string' && signatureImage.startsWith('data:image/')) {
+      const signatureSource = await fetchImageSource(normalizedTaskData.signature) || normalizedTaskData.signature;
+      if (signatureSource && typeof signatureSource === 'string' && signatureSource.startsWith('data:image/')) {
         try {
-          doc.addImage(signatureImage, 'PNG', rtl ? pageWidth - SIDE_MARGIN - 62 : SIDE_MARGIN, y, 62, 24);
+          const signatureImage = await getImageAsset(signatureSource, 'signature');
+          if (!signatureImage) throw new Error('Signature image is unavailable');
+          doc.addImage(signatureImage.data, signatureImage.format, rtl ? pageWidth - SIDE_MARGIN - 62 : SIDE_MARGIN, y, 62, 24, signatureImage.alias, 'FAST');
         } catch (error) {
           text(L('digitallySigned'), rtl ? pageWidth - SIDE_MARGIN : SIDE_MARGIN, y + 8, { size: 10, color: colors.success });
         }
@@ -1065,8 +1082,10 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     }
   }
 
-  const leftLogo = await toDataUrl(`${window.location.origin}/report-assets/mirsat.png`);
-  const rightLogo = await toDataUrl(`${window.location.origin}/report-assets/srsa-logo.png`);
+  const leftLogoSource = await toDataUrl(`${window.location.origin}/report-assets/mirsat.png`);
+  const rightLogoSource = await toDataUrl(`${window.location.origin}/report-assets/srsa-logo.png`);
+  const leftLogo = await getImageAsset(leftLogoSource, 'mirsatLogo', 'inspection-report-mirsat-logo');
+  const rightLogo = await getImageAsset(rightLogoSource, 'srsaLogo', 'inspection-report-srsa-logo');
   const generatedAt = formatExportDate(new Date(), exportLanguage, { includeTime: true });
 
   const totalPages = doc.getNumberOfPages();
