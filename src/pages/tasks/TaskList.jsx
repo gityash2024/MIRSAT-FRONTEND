@@ -31,6 +31,7 @@ import {
   orderForLanguage,
   orderRowsForLanguage
 } from '../../utils/exportLocalization';
+import { formatTaskReportScore, getTaskReportScoreColor, getTaskReportScoreValue } from '../../utils/taskReportScore';
 import {
   decorateReportPages,
   drawReportHeader,
@@ -851,11 +852,15 @@ const loadTasks = async () => {
   const hasAppliedCriteria = hasActiveFilters || !!(filters?.search && String(filters.search).trim());
   const clearAllLabel = t('common.clearAll') === 'common.clearAll' ? 'Clear All' : t('common.clearAll');
 
-  const buildExportQueryParams = () => {
+  const buildExportQueryParams = ({ includeReportScore = false } = {}) => {
     const queryParams = {
       page: 1,
       limit: pagination?.total || 10000
     };
+
+    if (includeReportScore) {
+      queryParams.includeReportScore = true;
+    }
 
     const arrayFilterKeys = ['status', 'priority', 'assignedTo', 'inspectionLevel', 'assetType', 'asset'];
     arrayFilterKeys.forEach((key) => {
@@ -871,8 +876,8 @@ const loadTasks = async () => {
     return queryParams;
   };
 
-  const fetchAllTasksForExport = async () => {
-    const response = await taskService.getTasks(buildExportQueryParams());
+  const fetchAllTasksForExport = async ({ includeReportScore = false } = {}) => {
+    const response = await taskService.getTasks(buildExportQueryParams({ includeReportScore }));
     const rows = Array.isArray(response?.data) ? response.data : [];
 
     return rows.map(task => ({
@@ -915,7 +920,7 @@ const loadTasks = async () => {
     const { format } = pendingExport;
 
     try {
-      const data = await fetchAllTasksForExport();
+      const data = await fetchAllTasksForExport({ includeReportScore: format === 'pdf' });
 
       if (format === 'pdf') {
         await generatePDFExport(data, fileName, language);
@@ -966,7 +971,8 @@ const loadTasks = async () => {
         { header: formatPdfText(L('priority'), language), dataKey: 'priority' },
         { header: formatPdfText(L('status'), language), dataKey: 'status' },
         { header: formatPdfText(L('dueDate'), language), dataKey: 'dueDate' },
-        { header: formatPdfText(L('progress'), language), dataKey: 'progress' }
+        { header: formatPdfText(L('progress'), language), dataKey: 'progress' },
+        { header: formatPdfText(L('score'), language), dataKey: 'score' }
       ], language);
 
       // Prepare data for the table - process Arabic text
@@ -983,7 +989,9 @@ const loadTasks = async () => {
         priority: formatPdfText(formatPriorityForExport(task.priority, language), language),
         status: formatPdfText(formatStatusForExport(task.status, language), language),
         dueDate: isArabicExport(language) ? formatExportDate(task.deadline, language) : formatDate(task.deadline),
-        progress: `${task.overallProgress || 0}%`
+        progress: `${task.overallProgress || 0}%`,
+        score: formatTaskReportScore(task.reportScore),
+        scoreValue: getTaskReportScoreValue(task.reportScore)
       }));
 
       // Generate the table with Arabic font support
@@ -1015,6 +1023,11 @@ const loadTasks = async () => {
         margin: { ...reportTableTheme(fontLoaded, language, doc).margin },
         didParseCell: function (data) {
           localizePdfTable(data, language, fontLoaded);
+          if (data.section === 'body' && data.column.dataKey === 'score') {
+            const score = tableData[data.row.index]?.scoreValue || 0;
+            data.cell.styles.textColor = getTaskReportScoreColor(score);
+            data.cell.styles.fontStyle = 'bold';
+          }
         }
       });
 
