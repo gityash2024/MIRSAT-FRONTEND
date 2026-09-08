@@ -95,6 +95,7 @@ import PreInspectionStepForm from './components/PreInspectionStepForm';
 import QuestionnaireStepForm from './components/QuestionnaireStepForm';
 import InspectionStepForm from './components/InspectionStepForm';
 import { Rotate3dIcon } from 'lucide-react';
+import { isImageResponse } from '../../utils/imageResponse';
 
 const fadeIn = keyframes`
   from {
@@ -6441,7 +6442,7 @@ const UserTaskDetail = () => {
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    {response.startsWith('data:image/') ? (
+                    {isImageResponse(response) ? (
                       <div>
                         <div style={{
                           fontSize: '12px',
@@ -6682,7 +6683,7 @@ const UserTaskDetail = () => {
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    {response.startsWith('data:image/') ? (
+                    {isImageResponse(response) ? (
                       <div>
                         <div style={{
                           fontSize: '12px',
@@ -8458,7 +8459,7 @@ const UserTaskDetail = () => {
                         {t('tasks.signature')}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        {typeof currentTask.signature === 'string' && currentTask.signature.startsWith('data:image/') && (
+                        {isImageResponse(currentTask.signature) && (
                           <img
                             src={currentTask.signature}
                             alt="Final signature"
@@ -8559,7 +8560,7 @@ const UserTaskDetail = () => {
 
                                       // Handle file responses with preview
                                       if (question.type === 'file' && response) {
-                                        if (response.startsWith('data:image/')) {
+                                        if (isImageResponse(response)) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
                                               <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
@@ -8632,7 +8633,7 @@ const UserTaskDetail = () => {
 
                                       // Handle signature responses with preview
                                       if (question.type === 'signature' && response) {
-                                        if (response.startsWith('data:image/')) {
+                                        if (isImageResponse(response)) {
                                           return (
                                             <div style={{ marginTop: '8px' }}>
                                               <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
