@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
+import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
@@ -66,6 +67,7 @@ const LoginContainer = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
+  position: relative;
 
   input {
     padding: 1rem; /* Equal padding from all sides */
@@ -341,6 +343,32 @@ const Input = styled.input`
   }
 `;
 
+const PasswordToggle = styled.button`
+  position: absolute;
+  right: 1rem;
+  top: 1.5rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(0, 59, 102, 0.72);
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #003b66;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2a75a5;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+`;
+
 const ErrorMessage = styled.span`
   color: #ff6b6b;
   font-size: 0.875rem;
@@ -534,6 +562,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage, isRTL } = useLanguage();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -670,6 +699,7 @@ const Login = () => {
               <Input
                 type="email"
                 name="email"
+                autoComplete="username"
                 placeholder={t('auth.emailPlaceholder')}
                 value={formData.email}
                 onChange={handleChange}
@@ -679,12 +709,22 @@ const Login = () => {
 
             <FormGroup>
               <Input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
+                autoComplete="current-password"
                 placeholder={t('auth.passwordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
+                style={{ paddingRight: '2.75rem' }}
               />
+              <PasswordToggle
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                title={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </PasswordToggle>
               {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
             </FormGroup>
 

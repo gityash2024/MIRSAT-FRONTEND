@@ -748,7 +748,6 @@
     "startDate": "Start Date",
     "endDate": "End Date",
     "results": "results",
-    "nonCompliant": "Non-compliant",
     "flaggedAt": "Flagged At",
     "failedToLoadFlaggedItems": "Failed to load flagged items",
     "failedToLoadFilterOptions": "Failed to load filter options",
@@ -797,7 +796,9 @@
     "activateConfirmTitle": "Activate Inspection",
     "deactivateConfirmMsg": "Are you sure you want to deactivate this inspection? Inspectors will not be able to perform or submit this inspection while inactive.",
     "activateConfirmMsg": "Are you sure you want to activate this inspection? It will become available to inspectors.",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "navigation": {
     "home": "Home",
@@ -838,7 +839,7 @@
     "noTaskStatusDescription": "Status information is not available yet.",
     "tasksCompletedThisMonth": "Tasks Completed This Month",
     "averageCompletionTime": "Average Completion Time",
-    "completionRate": "Completion Rate",
+    "completionRate": "complete",
     "noPerformanceData": "No performance data",
     "noPerformanceDataDescription": "Performance metrics will be available as you complete tasks.",
     "overdueTasks": "Overdue Tasks",
@@ -867,7 +868,6 @@
     "taskCount": "Task Count",
     "taskCountSingular": "{{count}} task",
     "taskCountPlural": "{{count}} tasks",
-    "completionRate": "complete",
     "ofTotalTasks": "of total",
     "activeTasks": "active",
     "overdueTasksLabel": "overdue",
@@ -1357,7 +1357,7 @@
     "signatureProvided": "Signature provided",
     "completeAndArchive": "Complete & Archive",
     "archiving": "Archiving...",
-    "readyToComplete": "Ready to Complete",
+    "readyToComplete": "Your inspection is complete and ready for submission.",
     "inspectionSignedAndReadyToArchive": "This inspection has been signed and is ready to be archived.",
     "signFinalReport": "Sign Final Report",
     "pleaseProvideSignature": "Please provide your signature to complete the inspection report.",
@@ -1458,7 +1458,6 @@
     "currentProgress": "Current Progress",
     "unansweredQuestions": "Unanswered Required Questions",
     "allQuestionsAnswered": "All Required Questions Answered!",
-    "readyToComplete": "Your inspection is complete and ready for submission.",
     "progressCalculating": "Progress is being calculated. The display should update to 100% shortly.",
     "clickToNavigate": "Click to navigate to this question",
     "navigatedTo": "Navigated to"
