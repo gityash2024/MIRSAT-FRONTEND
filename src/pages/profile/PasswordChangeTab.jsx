@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import api from '../../utils/axios';
+import { authService } from '../../services/auth.service';
 
 const FormCard = styled.div`
   background: white;
@@ -256,8 +257,11 @@ const PasswordChangeTab = () => {
       };
 
       const response = await api.patch('/users/profile', updateData);
-      
+
       if (response.data.success) {
+        // The server rotates the token when the password changes; adopt it so
+        // this session survives while all others are invalidated.
+        authService.applyRotatedToken(response.data.token);
         setMessage({ 
           type: 'success', 
           text: response.data.message || t('profile.passwordChangedSuccessfully') 

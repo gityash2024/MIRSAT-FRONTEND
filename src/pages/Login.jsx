@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTurnstile } from '../hooks/useTurnstile';
+import TurnstileHost from '../components/TurnstileHost';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
@@ -563,6 +565,9 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  // Invisible until Cloudflare actually challenges someone; adds no height to
+  // the card and never disables the submit button.
+  const turnstile = useTurnstile('login');
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage, isRTL } = useLanguage();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -619,7 +624,12 @@ const Login = () => {
 
     try {
       // Dispatch login thunk
+      // Minted here rather than on page load, so the token is seconds old when
+      // it reaches the server and its lifetime is never a factor.
+      const captchaToken = await turnstile.execute();
+
       const resultAction = await dispatch(login({
+        captchaToken,
         ...formData,
         // Email addresses are case-insensitive. Keep the password exactly as
         // entered, including any intentional whitespace.
@@ -775,6 +785,7 @@ const Login = () => {
         </Footer>
       </ContentWrapper>
     </LoginContainer>
+    <TurnstileHost containerRef={turnstile.containerRef} interactive={turnstile.interactive} />
     </>
   );
 };

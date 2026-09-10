@@ -48,9 +48,9 @@ const getInitialState = () => {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password, captchaToken }, { rejectWithValue }) => {
     try {
-      return await authService.login(email, password);
+      return await authService.login(email, password, captchaToken);
     } catch (error) {
       return rejectWithValue(classifyLoginError(error));
     }

@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import boat from '../assets/boat.jpeg';
+import { useTurnstile } from '../hooks/useTurnstile';
+import TurnstileHost from '../components/TurnstileHost';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -224,6 +226,7 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [emailSent, setEmailSent] = useState(false);
+  const turnstile = useTurnstile('forgot_password');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -242,7 +245,8 @@ const ForgotPassword = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      await authService.forgotPassword(email);
+      const captchaToken = await turnstile.execute();
+      await authService.forgotPassword(email, captchaToken);
       setEmailSent(true);
       setMessage({ 
         type: 'success', 
@@ -254,6 +258,7 @@ const ForgotPassword = () => {
         text: error.response?.data?.message || t('auth.resetEmailFailed') 
       });
     } finally {
+      turnstile.reset();
       setIsLoading(false);
     }
   };
@@ -332,6 +337,7 @@ const ForgotPassword = () => {
           <Link to="/arabic">العربية</Link>
         </Footer>
       </ForgotPasswordContainer>
+    <TurnstileHost containerRef={turnstile.containerRef} interactive={turnstile.interactive} />
     </>
   );
 };

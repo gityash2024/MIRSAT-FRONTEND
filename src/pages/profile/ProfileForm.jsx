@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import api from '../../utils/axios';
 import { useAuth } from '../../hooks/useAuth';
 import { fetchDepartments } from '../../store/slices/departmentSlice';
+import { authService } from '../../services/auth.service';
 
 const FormCard = styled.div`
   background: white;
@@ -340,6 +341,8 @@ const ProfileForm = () => {
       const response = await api.put('/users/profile', updateData);
 
       if (response.data.success) {
+        // Present only when the password was changed in this request.
+        authService.applyRotatedToken(response.data.token);
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         setProfileData(prev => ({
           ...prev,
