@@ -7,7 +7,7 @@ import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import boat from '../assets/boat.jpeg';
 import { useTurnstile } from '../hooks/useTurnstile';
-import TurnstileHost from '../components/TurnstileHost';
+import TurnstileField from '../components/TurnstileField';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -245,7 +245,7 @@ const ForgotPassword = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const captchaToken = await turnstile.execute();
+      const captchaToken = await turnstile.getToken();
       await authService.forgotPassword(email, captchaToken);
       setEmailSent(true);
       setMessage({ 
@@ -314,6 +314,8 @@ const ForgotPassword = () => {
                   />
                 </FormGroup>
 
+                <TurnstileField containerRef={turnstile.containerRef} />
+
                 <SubmitButton
                   type="submit"
                   whileHover={{ scale: 1.02 }}
@@ -337,7 +339,6 @@ const ForgotPassword = () => {
           <Link to="/arabic">العربية</Link>
         </Footer>
       </ForgotPasswordContainer>
-    <TurnstileHost containerRef={turnstile.containerRef} interactive={turnstile.interactive} />
     </>
   );
 };

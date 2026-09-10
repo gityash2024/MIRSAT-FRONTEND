@@ -7,36 +7,38 @@ import {
 } from '../config/turnstile';
 
 /**
- * Invisible Turnstile, executed on demand.
+ * Visible Cloudflare Turnstile widget.
  *
- * Rendered with `execution: 'execute'` and `appearance: 'interaction-only'`, so
- * it occupies zero height for the overwhelming majority of users who are never
- * challenged. That is what keeps the login card exactly the size it is today -
- * the card sits in a `height: 100vh; overflow: hidden` container, so an in-flow
- * 65px widget would clip on short viewports.
+ * Rendered on mount at `size: "flexible"` so it fills the card's inner width
+ * (330px on desktop) at the standard ~65px height, and solves itself in the
+ * background - the user sees the familiar Cloudflare box confirming the page is
+ * protected, without having to click anything in the normal case.
  *
- * Running the challenge inside the submit handler rather than on mount also
- * means the token is minted milliseconds before it is posted, so its ~300s
- * lifetime is never a factor.
+ * The token is captured as soon as Cloudflare issues it. `getToken()` returns
+ * it immediately when it is already there, and otherwise waits briefly for it
+ * rather than submitting blind. Tokens are single use, so `reset()` is called
+ * after every attempt - that is what lets someone who mistyped their password
+ * simply try again without reloading.
  *
- * Returns `execute()` which resolves to a token, or to null when Turnstile is
- * switched off or unavailable - the caller submits regardless and the server
- * decides. Failing the sign-in because a CAPTCHA script did not load would be
- * a worse outcome than letting the server's own rate limiting handle it.
+ * With no site key configured the hook does nothing at all: no script is
+ * loaded, no container is rendered, and the pages behave exactly as they did
+ * before Turnstile existed.
  */
 export const useTurnstile = (action) => {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
-  const pendingRef = useRef(null);
-  const [interactive, setInteractive] = useState(false);
+  const tokenRef = useRef(null);
+  const waitersRef = useRef([]);
+  const [ready, setReady] = useState(false);
 
-  const settle = useCallback((token) => {
-    const pending = pendingRef.current;
-    if (!pending) return;
-    pendingRef.current = null;
-    clearTimeout(pending.timer);
-    setInteractive(false);
-    pending.resolve(token);
+  const deliver = useCallback((token) => {
+    tokenRef.current = token;
+    const waiters = waitersRef.current;
+    waitersRef.current = [];
+    waiters.forEach(({ resolve, timer }) => {
+      clearTimeout(timer);
+      resolve(token);
+    });
   }, []);
 
   useEffect(() => {
@@ -49,16 +51,17 @@ export const useTurnstile = (action) => {
         widgetIdRef.current = turnstile.render(containerRef.current, {
           sitekey: TURNSTILE_SITE_KEY,
           action,
-          execution: 'execute',
-          appearance: 'interaction-only',
-          callback: (token) => settle(token),
-          'error-callback': () => settle(null),
-          'timeout-callback': () => settle(null),
-          'before-interactive-callback': () => setInteractive(true),
-          'after-interactive-callback': () => setInteractive(false),
+          size: 'flexible',
+          // Cloudflare refreshes an expired token on its own, so a user who
+          // leaves the page open still submits a valid one.
+          'refresh-expired': 'auto',
+          callback: (token) => { setReady(true); deliver(token); },
+          'expired-callback': () => { tokenRef.current = null; setReady(false); },
+          'error-callback': () => { setReady(false); deliver(null); },
+          'timeout-callback': () => deliver(null),
         });
       })
-      .catch(() => { /* blocked or offline: execute() resolves null */ });
+      .catch(() => { /* blocked or offline: getToken() resolves null */ });
 
     return () => {
       cancelled = true;
@@ -68,32 +71,33 @@ export const useTurnstile = (action) => {
         try { window.turnstile.remove(id); } catch { /* already gone */ }
       }
     };
-  }, [action, settle]);
+  }, [action, deliver]);
 
-  const execute = useCallback(() => {
-    if (!TURNSTILE_ENABLED || widgetIdRef.current === null || !window.turnstile) {
-      return Promise.resolve(null);
-    }
-    // A challenge is already running - do not start a second one.
-    if (pendingRef.current) return Promise.resolve(null);
+  /**
+   * Resolve to a token, or to null if Turnstile is off, blocked, or slow.
+   * Submitting without one is safe: the server decides, and the rate limiter
+   * and per-account lockout are unaffected either way.
+   */
+  const getToken = useCallback(() => {
+    if (!TURNSTILE_ENABLED || widgetIdRef.current === null) return Promise.resolve(null);
+    if (tokenRef.current) return Promise.resolve(tokenRef.current);
 
     return new Promise((resolve) => {
-      const timer = setTimeout(() => settle(null), TURNSTILE_EXECUTE_TIMEOUT_MS);
-      pendingRef.current = { resolve, timer };
-      try {
-        window.turnstile.execute(widgetIdRef.current);
-      } catch {
-        settle(null);
-      }
+      const timer = setTimeout(() => {
+        waitersRef.current = waitersRef.current.filter((w) => w.resolve !== resolve);
+        resolve(null);
+      }, TURNSTILE_EXECUTE_TIMEOUT_MS);
+      waitersRef.current.push({ resolve, timer });
     });
-  }, [settle]);
+  }, []);
 
   const reset = useCallback(() => {
+    tokenRef.current = null;
     if (widgetIdRef.current === null || !window.turnstile) return;
     try { window.turnstile.reset(widgetIdRef.current); } catch { /* ignore */ }
   }, []);
 
-  return { containerRef, execute, reset, interactive, enabled: TURNSTILE_ENABLED };
+  return { containerRef, getToken, reset, ready, enabled: TURNSTILE_ENABLED };
 };
 
 export default useTurnstile;

@@ -5,7 +5,7 @@ import styled, { createGlobalStyle } from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTurnstile } from '../hooks/useTurnstile';
-import TurnstileHost from '../components/TurnstileHost';
+import TurnstileField from '../components/TurnstileField';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-hot-toast';
 import boat from '../assets/boat.jpeg';
@@ -44,6 +44,15 @@ const LoginContainer = styled.div`
   background: url(${boat}) center/cover no-repeat;
   overflow: hidden;
   direction: ${props => props.isRTL ? 'rtl' : 'ltr'};
+
+  /* The card grew by the height of the Turnstile widget. On a short desktop
+     window the panel's translateY(6rem) plus the card's 76px top margin could
+     otherwise push the Sign In button under the fold, where overflow:hidden
+     would clip it with no way to scroll. Only engages below 820px tall, so the
+     normal desktop layout is completely untouched. */
+  @media (min-width: 769px) and (max-height: 820px) {
+    overflow-y: auto;
+  }
 
   &::before {
     content: '';
@@ -164,6 +173,11 @@ const LoginPanel = styled.div`
   align-items: center;
   transform: translateY(6rem);
 
+  /* Reclaim vertical space on short windows instead of relying on scroll. */
+  @media (min-width: 769px) and (max-height: 820px) {
+    transform: translateY(2rem);
+  }
+
   @media (max-width: 768px) {
     width: 100%;
     max-width: 400px;
@@ -278,6 +292,10 @@ const LoginCard = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 16px 38px rgba(0, 24, 57, 0.22);
   margin-top: 76px;
+
+  @media (min-width: 769px) and (max-height: 820px) {
+    margin-top: 24px;
+  }
   
   @media (max-width: 768px) {
     width: 100%;
@@ -565,8 +583,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  // Invisible until Cloudflare actually challenges someone; adds no height to
-  // the card and never disables the submit button.
   const turnstile = useTurnstile('login');
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage, isRTL } = useLanguage();
@@ -624,9 +640,9 @@ const Login = () => {
 
     try {
       // Dispatch login thunk
-      // Minted here rather than on page load, so the token is seconds old when
-      // it reaches the server and its lifetime is never a factor.
-      const captchaToken = await turnstile.execute();
+      // Already solved in the background in the normal case; otherwise wait
+      // briefly rather than submitting blind.
+      const captchaToken = await turnstile.getToken();
 
       const resultAction = await dispatch(login({
         captchaToken,
@@ -742,6 +758,8 @@ const Login = () => {
               {t('auth.forgotPassword')}
             </ForgotPassword>
 
+            <TurnstileField containerRef={turnstile.containerRef} />
+
             <SubmitButton
               type="submit"
               whileHover={{ scale: 1.02 }}
@@ -785,7 +803,6 @@ const Login = () => {
         </Footer>
       </ContentWrapper>
     </LoginContainer>
-    <TurnstileHost containerRef={turnstile.containerRef} interactive={turnstile.interactive} />
     </>
   );
 };
