@@ -96,6 +96,7 @@ import QuestionnaireStepForm from './components/QuestionnaireStepForm';
 import InspectionStepForm from './components/InspectionStepForm';
 import { Rotate3dIcon } from 'lucide-react';
 import { isImageResponse } from '../../utils/imageResponse';
+import { openExternal } from '../../utils/openExternal';
 
 const fadeIn = keyframes`
   from {
@@ -3452,6 +3453,15 @@ const UploadButton = styled(SignatureButton)`
   }
 `;
 
+// lucide's <Loader> is already used for in-button loading elsewhere in this
+// file, but with no animation rule attached it sits perfectly still. Wrap it
+// with the same `rotate` keyframes RefreshButton uses so the icon actually
+// spins. Sized to match the emoji it replaces, so the button does not resize.
+const SpinningLoader = styled(Loader)`
+  animation: ${rotate} 1s linear infinite;
+  flex: none;
+`;
+
 const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
@@ -3679,6 +3689,9 @@ const getPageCompletionRate = (page, responses) => {
 const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, isDisabled, onSaveResponse, formatCaptureMetadata }) => {
   const { t } = useTranslation();
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  // Local, because this memo component sits outside the page's shared saving
+  // map. Saving a signature waits on geolocation like any other media capture.
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
   const signaturePadRef = useRef(null);
 
   const handleOpenSignatureModal = useCallback((e) => {
@@ -3707,10 +3720,16 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
     }
 
     const dataURL = signaturePadRef.current.toDataURL('image/png');
-    const saved = await onSaveResponse(questionId, dataURL, { captureType: 'question_signature' });
-    if (saved) {
-      setShowSignatureModal(false);
-      toast.success(t('tasks.signatureSavedSuccessfully'));
+    setIsSavingSignature(true);
+    try {
+      const saved = await onSaveResponse(questionId, dataURL, { captureType: 'question_signature' });
+      if (saved) {
+        setShowSignatureModal(false);
+        toast.success(t('tasks.signatureSavedSuccessfully'));
+      }
+    } finally {
+      // Always released, so a failed save cannot strand the button.
+      setIsSavingSignature(false);
     }
   }, [questionId, onSaveResponse, t]);
 
@@ -3927,7 +3946,8 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
               >
                 {t('common.cancel')}
               </button>
-              <SaveButton type="button" onClick={handleSaveSignature}>
+              <SaveButton type="button" onClick={handleSaveSignature} disabled={isSavingSignature}>
+                {isSavingSignature && <SpinningLoader size={14} />}
                 {t('tasks.saveSignature')}
               </SaveButton>
             </SignatureActions>
@@ -3966,6 +3986,9 @@ const UserTaskDetail = () => {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureImage, setSignatureImage] = useState(null);
+  // The task-level signature upload does not go through
+  // handleSaveInspectionResponse, so it needs its own flag.
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const [hasSignatureInk, setHasSignatureInk] = useState(false);
   const signatureHasInkRef = useRef(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -4011,6 +4034,10 @@ const UserTaskDetail = () => {
   const [sectionComments, setSectionComments] = useState({});
   const [sectionCommentTexts, setSectionCommentTexts] = useState({});
   const [commentLoadingStates, setCommentLoadingStates] = useState({});
+  // Mirrors pendingSavesRef so the media controls can show progress. The ref
+  // itself is left alone -- it guards against concurrent saves, and a ref
+  // cannot drive a re-render. Keyed by question id, like commentLoadingStates.
+  const [savingQuestionIds, setSavingQuestionIds] = useState({});
 
   // Enhanced time tracking state
   const [isScreenActive, setIsScreenActive] = useState(false);
@@ -5454,6 +5481,7 @@ const UserTaskDetail = () => {
 
     try {
       pendingSavesRef.current.add(normalizedQuestionId);
+      setSavingQuestionIds((previous) => ({ ...previous, [normalizedQuestionId]: true }));
 
       // Store current state before API calls
       const currentPageId = selectedPage;
@@ -5529,6 +5557,14 @@ const UserTaskDetail = () => {
       return false;
     } finally {
       pendingSavesRef.current.delete(normalizedQuestionId);
+      // Cleared here so every exit path -- success, thrown error, early return
+      // after the flag was raised -- always releases the spinner.
+      setSavingQuestionIds((previous) => {
+        if (!previous[normalizedQuestionId]) return previous;
+        const next = { ...previous };
+        delete next[normalizedQuestionId];
+        return next;
+      });
     }
   };
 
@@ -5594,32 +5630,41 @@ const UserTaskDetail = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setIsUploadingSignature(true);
+
     // Validate file format and size (1MB limit) before processing
     const { validateFileWithToast } = await import('../../utils/fileValidation');
     if (!validateFileWithToast(file, toast, t)) {
       e.target.value = '';
+      setIsUploadingSignature(false);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = async (event) => {
-      const dataUrl = event.target.result;
-      const validation = await validateSignatureDataUrl(dataUrl);
-      if (!validation.valid) {
-        toast.error(validation.message);
-        setSignatureImage(null);
-        setHasSignatureInk(false);
-        signatureHasInkRef.current = false;
-        e.target.value = '';
-        return;
-      }
+      try {
+        const dataUrl = event.target.result;
+        const validation = await validateSignatureDataUrl(dataUrl);
+        if (!validation.valid) {
+          toast.error(validation.message);
+          setSignatureImage(null);
+          setHasSignatureInk(false);
+          signatureHasInkRef.current = false;
+          e.target.value = '';
+          return;
+        }
 
-      setSignatureImage(dataUrl);
-      setHasSignatureInk(true);
-      signatureHasInkRef.current = true;
+        setSignatureImage(dataUrl);
+        setHasSignatureInk(true);
+        signatureHasInkRef.current = true;
+      } finally {
+        // Released on every branch, including the invalid-signature return.
+        setIsUploadingSignature(false);
+      }
     };
     reader.onerror = () => {
       toast.error(t('tasks.failedToReadFile'));
+      setIsUploadingSignature(false);
     };
     reader.readAsDataURL(file);
   };
@@ -6024,6 +6069,10 @@ const UserTaskDetail = () => {
     const localValue = localInputValues[questionId];
     const displayValue = localValue !== undefined ? localValue : response;
     const isDisabled = task.status === 'completed' || task.status === 'archived' || task.isActive === false || task.inspectionLevel?.isActive === false || Boolean(inputOptions.disabled);
+    // True while this question's answer is being processed and saved. Media
+    // captures pass a captureType, which makes the save fetch location first,
+    // so the wait can be long enough that the UI looks frozen without this.
+    const isSavingResponse = Boolean(savingQuestionIds[String(questionId)]);
 
     let questionType = question.type || question.answerType;
 
@@ -6215,7 +6264,7 @@ const UserTaskDetail = () => {
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png"
-                    disabled={isDisabled}
+                    disabled={isDisabled || isSavingResponse}
                     onChange={async (e) => {
                       if (isDisabled || !e.target.files || !e.target.files[0]) return;
                       const file = e.target.files[0];
@@ -6246,9 +6295,9 @@ const UserTaskDetail = () => {
 
                   <button
                     type="button"
-                    disabled={isDisabled}
+                    disabled={isDisabled || isSavingResponse}
                     onClick={() => {
-                      if (isDisabled) return;
+                      if (isDisabled || isSavingResponse) return;
 
                       // Camera capture functionality
                       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -6319,6 +6368,19 @@ const UserTaskDetail = () => {
                             video.play();
 
                             captureBtn.onclick = () => {
+                              // Raw-DOM modal, so this cannot use the React
+                              // spinner. Re-encoding a full-resolution frame to
+                              // JPEG blocks the main thread, and the save that
+                              // follows waits on geolocation, so without this
+                              // the button looks dead. Every exit branch below
+                              // removes the whole modal, so there is nothing to
+                              // restore.
+                              if (captureBtn.disabled) return;
+                              captureBtn.disabled = true;
+                              captureBtn.style.opacity = '0.6';
+                              captureBtn.style.cursor = 'not-allowed';
+                              captureBtn.textContent = `⏳ ${t('common.saving') || 'Saving...'}`;
+
                               canvas.width = video.videoWidth;
                               canvas.height = video.videoHeight;
                               ctx.drawImage(video, 0, 0);
@@ -6421,16 +6483,16 @@ const UserTaskDetail = () => {
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      cursor: (isDisabled || isSavingResponse) ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      opacity: isDisabled ? 0.5 : 1
+                      opacity: (isDisabled || isSavingResponse) ? 0.5 : 1
                     }}
                   >
-                    📷 {t('tasks.camera')}
+                    {isSavingResponse ? <SpinningLoader size={14} /> : '📷'} {t('tasks.camera')}
                   </button>
                 </div>
 
@@ -6465,7 +6527,7 @@ const UserTaskDetail = () => {
                             border: '1px solid #e2e8f0',
                             cursor: 'pointer'
                           }}
-                          onClick={() => window.open(response, '_blank')}
+                          onClick={() => openExternal(response)}
                         />
                       </div>
                     ) : response.startsWith('data:') ? (
@@ -6545,9 +6607,9 @@ const UserTaskDetail = () => {
                 }}>
                   <button
                     type="button"
-                    disabled={isDisabled}
+                    disabled={isDisabled || isSavingResponse}
                     onClick={() => {
-                      if (isDisabled) return;
+                      if (isDisabled || isSavingResponse) return;
 
                       // Instant photo/video capture
                       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -6618,6 +6680,19 @@ const UserTaskDetail = () => {
                             video.play();
 
                             captureBtn.onclick = () => {
+                              // Raw-DOM modal, so this cannot use the React
+                              // spinner. Re-encoding a full-resolution frame to
+                              // JPEG blocks the main thread, and the save that
+                              // follows waits on geolocation, so without this
+                              // the button looks dead. Every exit branch below
+                              // removes the whole modal, so there is nothing to
+                              // restore.
+                              if (captureBtn.disabled) return;
+                              captureBtn.disabled = true;
+                              captureBtn.style.opacity = '0.6';
+                              captureBtn.style.cursor = 'not-allowed';
+                              captureBtn.textContent = `⏳ ${t('common.saving') || 'Saving...'}`;
+
                               canvas.width = video.videoWidth;
                               canvas.height = video.videoHeight;
                               ctx.drawImage(video, 0, 0);
@@ -6662,16 +6737,16 @@ const UserTaskDetail = () => {
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      cursor: (isDisabled || isSavingResponse) ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      opacity: isDisabled ? 0.5 : 1
+                      opacity: (isDisabled || isSavingResponse) ? 0.5 : 1
                     }}
                   >
-                    📷 {t('tasks.camera')}
+                    {isSavingResponse ? <SpinningLoader size={14} /> : '📷'} {t('tasks.camera')}
                   </button>
                 </div>
 
@@ -6706,7 +6781,7 @@ const UserTaskDetail = () => {
                             border: '1px solid #e2e8f0',
                             cursor: 'pointer'
                           }}
-                          onClick={() => window.open(response, '_blank')}
+                          onClick={() => openExternal(response)}
                         />
                       </div>
                     ) : (
@@ -8576,7 +8651,7 @@ const UserTaskDetail = () => {
                                                   border: '1px solid #e2e8f0',
                                                   cursor: 'pointer'
                                                 }}
-                                                onClick={() => window.open(response, '_blank')}
+                                                onClick={() => openExternal(response)}
                                               />
                                               {responseMetadata && (
                                                 <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
@@ -8649,7 +8724,7 @@ const UserTaskDetail = () => {
                                                   border: '1px solid #e2e8f0',
                                                   cursor: 'pointer'
                                                 }}
-                                                onClick={() => window.open(response, '_blank')}
+                                                onClick={() => openExternal(response)}
                                               />
                                               {responseMetadata && (
                                                 <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
@@ -9123,8 +9198,8 @@ const UserTaskDetail = () => {
               )}
 
               {signatureMethod === 'upload' && (
-                <UploadButton onClick={handleSignatureUpload}>
-                  <Upload size={16} />
+                <UploadButton onClick={handleSignatureUpload} disabled={isUploadingSignature}>
+                  {isUploadingSignature ? <SpinningLoader size={16} /> : <Upload size={16} />}
                   {t('tasks.uploadImage')}
                 </UploadButton>
               )}

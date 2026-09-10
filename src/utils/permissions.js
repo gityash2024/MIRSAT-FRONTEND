@@ -74,6 +74,40 @@ export const ROLES = {
   INSPECTOR: 'inspector',
 };
 
+/**
+ * Role privilege ordering, mirroring ROLE_RANK in the backend's
+ * auth.middleware.ts. Lower number = more privileged.
+ */
+export const ROLE_RANK = {
+  [ROLES.SUPERADMIN]: 0,
+  [ROLES.ADMIN]: 1,
+  [ROLES.MANAGER]: 2,
+  [ROLES.SUPERVISOR]: 3,
+  [ROLES.INSPECTOR]: 4,
+  user: 5,
+};
+
+export const rankOfRole = (role) => {
+  const rank = ROLE_RANK[String(role || '').toLowerCase()];
+  return rank === undefined ? Number.MAX_SAFE_INTEGER : rank;
+};
+
+/**
+ * The roles a given user may assign when creating or editing an account.
+ *
+ * The API enforces the same rule and returns 403 otherwise, so offering a role
+ * here that the server will reject would just produce a confusing error. A user
+ * may assign roles at or below their own rank, and only a superadmin may create
+ * another superadmin.
+ */
+export const getAssignableRoles = (actorRole) => {
+  const actorRank = rankOfRole(actorRole);
+  return Object.entries(ROLES).filter(([, value]) => {
+    if (value === ROLES.SUPERADMIN) return actorRole === ROLES.SUPERADMIN;
+    return rankOfRole(value) >= actorRank;
+  });
+};
+
 // Define ALL permissions for admin
 const ALL_PERMISSIONS = Object.values(PERMISSIONS).reduce((acc, group) => {
   return [...acc, ...Object.values(group)];

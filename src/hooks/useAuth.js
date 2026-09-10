@@ -13,7 +13,6 @@ export const useAuth = () => {
   const login = useCallback(async (email, password) => {
     try {
       let result = await dispatch(loginAction({ email, password })).unwrap();
-      console.log(result,'result')
       
       // Log successful login
       await FrontendLogger.logLogin(email, true);

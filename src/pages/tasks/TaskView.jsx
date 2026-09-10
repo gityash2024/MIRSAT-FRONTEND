@@ -22,6 +22,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { PERMISSIONS } from '../../utils/permissions';
 import Skeleton from '../../components/ui/Skeleton';
 import { formatPlatformDate, formatPlatformDateTime } from '../../utils/platformDate';
+import { openExternal } from '../../utils/openExternal';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -2386,7 +2387,7 @@ const TaskView = () => {
                                 <Paperclip size={14} />
                                 <span>{attachment.filename || 'File'}</span>
                                 <button
-                                  onClick={() => window.open(attachment.url, '_blank')}
+                                  onClick={() => openExternal(attachment.url)}
                                   style={{
                                     padding: '2px 6px',
                                     background: 'var(--color-navy)',
@@ -2473,7 +2474,7 @@ const TaskView = () => {
                         </span>
                       </div>
                       <button
-                        onClick={() => window.open(attachment.url, '_blank')}
+                        onClick={() => openExternal(attachment.url)}
                         style={{
                           padding: '4px 8px',
                           background: '#e2e8f0',

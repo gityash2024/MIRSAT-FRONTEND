@@ -66,13 +66,28 @@ export const copyArtifactMarkdown = async (artifact) => {
   return markdown;
 };
 
+/**
+ * Neutralise spreadsheet formula injection.
+ *
+ * Excel, LibreOffice and Google Sheets execute any cell whose text begins with
+ * =, +, - or @ (a leading tab or carriage return has the same effect). Report
+ * data comes from user-entered inspection content, so a value like
+ * `=cmd|'/c calc'!A1` would run when a colleague opens the exported file.
+ * Prefixing a single quote makes the cell render as literal text.
+ */
+const NEUTRALISE_PREFIX = /^[=+\-@\t\r]/;
+const neutraliseFormula = (value) => {
+  const text = value == null ? '' : String(value);
+  return NEUTRALISE_PREFIX.test(text) ? `'${text}` : text;
+};
+
 export const exportArtifactCsv = (artifact) => {
   const cols = columnsOf(artifact);
   const grid = [cols.map((c) => c.label), ...rowsOf(artifact).map((r) => cols.map((c) => r[c.key]))];
   const csv = grid
     .map((line) => line
       .map((value) => {
-        const text = cellText(value);
+        const text = neutraliseFormula(cellText(value));
         return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
       })
       .join(','))
@@ -83,11 +98,17 @@ export const exportArtifactCsv = (artifact) => {
 
 export const exportArtifactExcel = (artifact) => {
   const cols = columnsOf(artifact);
-  const aoa = [cols.map((c) => c.label), ...rowsOf(artifact).map((r) => cols.map((c) => (r[c.key] ?? '')))];
+  const aoa = [
+    cols.map((c) => c.label),
+    ...rowsOf(artifact).map((r) => cols.map((c) => neutraliseFormula(r[c.key] ?? ''))),
+  ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(aoa), 'Report');
   if (artifact?.metrics?.length) {
-    const summary = [['Metric', 'Value'], ...artifact.metrics.map((m) => [m.label, m.value])];
+    const summary = [
+      ['Metric', 'Value'],
+      ...artifact.metrics.map((m) => [neutraliseFormula(m.label), neutraliseFormula(m.value)]),
+    ];
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(summary), 'Summary');
   }
   const out = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });

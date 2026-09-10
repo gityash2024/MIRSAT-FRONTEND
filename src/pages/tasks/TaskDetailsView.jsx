@@ -32,6 +32,7 @@ import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { toast } from 'react-hot-toast';
 import { formatPlatformDate } from '../../utils/platformDate';
 import { calculatePageScore, calculateSectionScore } from '../../utils/inspectionScoring';
+import { openExternal } from '../../utils/openExternal';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -1717,7 +1718,7 @@ const TaskDetailsView = () => {
                                                 border: '1px solid #e2e8f0',
                                                 cursor: 'pointer'
                                               }}
-                                              onClick={() => window.open(response, '_blank')}
+                                              onClick={() => openExternal(response)}
                                             />
                                           </div>
                                         ) : response.startsWith('data:') ? (
@@ -1778,7 +1779,7 @@ const TaskDetailsView = () => {
                                               border: '1px solid #e2e8f0',
                                               cursor: 'pointer'
                                             }}
-                                            onClick={() => window.open(response, '_blank')}
+                                            onClick={() => openExternal(response)}
                                           />
                                         ) : (
                                           <span style={{ color: '#6b7280' }}>✍️ Signature provided</span>
@@ -1817,7 +1818,7 @@ const TaskDetailsView = () => {
                                                 cursor: 'pointer',
                                                 objectFit: 'contain'
                                               }}
-                                              onClick={() => window.open(response, '_blank')}
+                                              onClick={() => openExternal(response)}
                                             />
                                           </div>
                                         ) : response.startsWith('data:') ? (

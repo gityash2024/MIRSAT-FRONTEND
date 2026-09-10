@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { formatPlatformDateTime } from '../../utils/platformDate';
+import { openExternal } from '../../utils/openExternal';
 import { 
   X, 
   Calendar, 
@@ -1449,7 +1450,7 @@ const LogDetailsModal = ({ log, isOpen, onClose }) => {
                               <MediaName>{item.name}</MediaName>
                               <MediaSize>{item.size}</MediaSize>
                             </MediaInfo>
-                            <PreviewButton onClick={() => window.open(item.url, '_blank')}>
+                            <PreviewButton onClick={() => openExternal(item.url)}>
                               <Eye size={14} />
                               {t('logs.preview')}
                             </PreviewButton>

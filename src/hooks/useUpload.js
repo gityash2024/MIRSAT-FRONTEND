@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useSelector } from 'react-redux';
 import { API_CONFIG } from '../config/api';
 import { validateFileWithToast, handleFileSizeError } from '../utils/fileValidation';
 import { toast } from 'react-hot-toast';
@@ -8,7 +7,17 @@ import { toast } from 'react-hot-toast';
 export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { token } = useSelector((state) => state.auth);
+  // The auth slice has no `token` field (see authSlice getInitialState), so
+  // reading it from there sent "Authorization: Bearer undefined" on every
+  // upload. Read the token where it actually lives, the same way the shared
+  // axios interceptors do.
+  const getToken = () => {
+    try {
+      return localStorage.getItem('token');
+    } catch {
+      return null;
+    }
+  };
 
   const uploadFile = async (file) => {
     try {
@@ -29,7 +38,7 @@ export const useUpload = () => {
       const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOADS}/attachment`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+          ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {})
         },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

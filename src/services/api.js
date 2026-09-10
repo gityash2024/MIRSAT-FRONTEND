@@ -210,8 +210,6 @@ api.interceptors.response.use(
       error.message = apiErrorMessage;
     }
 
-    console.log(error,'error-----');
-
     if (error.config?._skipRetry) {
       return Promise.reject(error);
     }

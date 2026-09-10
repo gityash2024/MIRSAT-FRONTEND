@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS, MANAGER_HIDDEN_MODULES } from '../../../utils/permissions';
+import { PERMISSIONS, ROLES, DEFAULT_PERMISSIONS, MODULE_PERMISSIONS, MANAGER_HIDDEN_MODULES, getAssignableRoles } from '../../../utils/permissions';
 import { useAuth } from '../../../hooks/useAuth';
 import { fetchDepartments } from '../../../store/slices/departmentSlice';
 
@@ -622,7 +622,10 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
             value={formData.role || ''}
             onChange={handleChange}
           >
-            {Object.entries(ROLES).map(([key, value]) => (
+            {/* Only roles this user is actually allowed to assign. The API
+                enforces the same hierarchy, so listing the rest would just
+                produce a 403 on save. */}
+            {getAssignableRoles(currentUser?.role).map(([key, value]) => (
               <option key={value} value={value}>
                 {translateRole(key)}
               </option>

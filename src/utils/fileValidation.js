@@ -91,10 +91,16 @@ export const validateFileFormat = (file) => {
     const normalizedMimeType = file.type.toLowerCase();
     const isValidMimeType = ALLOWED_FILE_TYPES.includes(normalizedMimeType);
     
-    // If MIME type doesn't match but extension does, still allow (some browsers have incorrect MIME types)
-    // But log for debugging
+    // A declared MIME type that contradicts the extension is rejected rather
+    // than merely warned about: previously a polyglot named `payload.png` but
+    // typed `application/pdf` sailed through. Absent MIME types are still
+    // tolerated below, since some browsers omit them. The backend performs the
+    // authoritative check either way.
     if (!isValidMimeType) {
-      console.warn(`File "${file.name}" has MIME type "${file.type}" which doesn't match allowed types, but extension "${fileExtension}" is valid. Allowing upload.`);
+      return {
+        valid: false,
+        error: `File "${file.name}" is not a supported image. Please upload a JPG, JPEG or PNG file.`,
+      };
     }
   } else {
     // No MIME type provided - rely on extension check only

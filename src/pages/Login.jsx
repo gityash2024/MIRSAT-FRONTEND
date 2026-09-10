@@ -599,7 +599,6 @@ const Login = () => {
 
     
       
-   console.log(resultAction,'resultAction')
    navigate(getDefaultRouteForUser(resultAction?.user));
     } catch (error) {
       const errorCode = typeof error === 'object' ? error?.code : 'server';
