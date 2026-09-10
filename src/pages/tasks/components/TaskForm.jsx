@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { Upload, Users, X, File, Plus, Minus, Trash2, Check, ExternalLink, User, Tag, ChevronDown, ChevronUp, Database, Loader } from 'lucide-react';
 import { statusOptions, priorityOptions } from '../../../constants/taskOptions';
 import { createTask, updateTask, uploadTaskAttachment } from '../../../store/slices/taskSlice';
 import { toast } from 'react-hot-toast';
@@ -1725,7 +1725,19 @@ const TaskForm = ({
   const [isSubmitting, setIsSubmitting] = useState(propIsSubmitting);
   const [errors, setErrors] = useState({});
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Calendar mode: lock the Delete button while the delete request runs.
+  const handleCalendarDelete = async () => {
+    if (isDeletingEvent) return;
+    setIsDeletingEvent(true);
+    try {
+      await onDelete();
+    } finally {
+      setIsDeletingEvent(false);
+    }
+  };
   const [selectedUserId, setSelectedUserId] = useState('');
   const [filteredAssets, setFilteredAssets] = useState(assets || []);
   const [selectedTemplateType, setSelectedTemplateType] = useState(null);
@@ -2659,11 +2671,21 @@ const TaskForm = ({
           <Button
             type="button"
             variant="secondary"
-            onClick={onDelete}
+            onClick={handleCalendarDelete}
+            disabled={isDeletingEvent}
             style={{ marginRight: 'auto' }}
           >
-            <Trash2 size={16} />
-            {t('common.delete')}
+            {isDeletingEvent ? (
+              <>
+                <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                {t('common.deleting')}
+              </>
+            ) : (
+              <>
+                <Trash2 size={16} />
+                {t('common.delete')}
+              </>
+            )}
           </Button>
         )}
 

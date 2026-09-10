@@ -2461,6 +2461,7 @@ const QuestionItemComponent = ({
   const [expanded, setExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
   const [librarySearchQuery, setLibrarySearchQuery] = useState('');
   const [questionFilter, setQuestionFilter] = useState('all');
   const [showLogicBuilder, setShowLogicBuilder] = useState(false);
@@ -2748,11 +2749,13 @@ const QuestionItemComponent = ({
 
   // New function to save question to library
   const saveToLibrary = async () => {
+    if (isSavingToLibrary) return;
     if (!question.text) {
       toast.error('Please add question text before saving to library');
       return;
     }
 
+    setIsSavingToLibrary(true);
     try {
       // Prepare question for library
       const libraryQuestion = {
@@ -2778,6 +2781,8 @@ const QuestionItemComponent = ({
     } catch (error) {
       console.error('Error saving to library:', error);
       toast.error('Failed to save question to library');
+    } finally {
+      setIsSavingToLibrary(false);
     }
   };
 
@@ -3566,6 +3571,7 @@ const QuestionItemComponent = ({
                 <Button
                   type="button"
                   onClick={saveToLibrary}
+                  disabled={isSavingToLibrary}
                   style={{
                     width: '100%',
                     minWidth: '140px',
@@ -3581,12 +3587,15 @@ const QuestionItemComponent = ({
                     border: '1px solid #d1d5db',
                     background: 'white',
                     color: 'var(--color-navy)',
-                    cursor: 'pointer',
+                    cursor: isSavingToLibrary ? 'not-allowed' : 'pointer',
+                    opacity: isSavingToLibrary ? 0.6 : 1,
                     transition: 'all 0.2s',
                     boxSizing: 'border-box'
                   }}
                 >
-                  <Save size={16} />
+                  {isSavingToLibrary
+                    ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    : <Save size={16} />}
                   {t('common.saveToLibrary')}
                 </Button>
 

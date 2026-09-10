@@ -92,6 +92,7 @@ const PrefButton = styled.button`
   border: 1px solid ${(p) => (p.$active ? 'var(--color-teal)' : '#cbd5e1')};
   background: ${(p) => (p.$active ? 'var(--color-teal)' : '#fff')};
   color: ${(p) => (p.$active ? '#fff' : '#475467')};
+  &:disabled { opacity: .6; cursor: not-allowed; }
 `;
 
 const Row = styled.div`display: flex; gap: 8px;`;
@@ -113,7 +114,18 @@ const Hint = styled.small`color: #667085;`;
 const ProviderCard = ({ provider, status, isPreferred, encryptionReady, onSaved, onPreferred }) => {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
+  const [prefBusy, setPrefBusy] = useState(false);
   const configured = Boolean(status?.configured);
+
+  const handlePreferred = async () => {
+    if (prefBusy) return;
+    setPrefBusy(true);
+    try {
+      await onPreferred(provider.id);
+    } finally {
+      setPrefBusy(false);
+    }
+  };
 
   const save = async () => {
     const trimmed = value.trim();
@@ -148,7 +160,7 @@ const ProviderCard = ({ provider, status, isPreferred, encryptionReady, onSaved,
           ? <span className="status ok"><ShieldCheck size={13} /> Saved ••{status.last4}</span>
           : <span className="status none"><AlertTriangle size={13} /> Not set</span>}
         {configured && (
-          <PrefButton type="button" $active={isPreferred} disabled={!configured} onClick={() => onPreferred(provider.id)} title="Use as preferred provider">
+          <PrefButton type="button" $active={isPreferred} disabled={!configured || prefBusy} onClick={handlePreferred} title="Use as preferred provider">
             <Star size={12} /> {isPreferred ? 'Preferred' : 'Set preferred'}
           </PrefButton>
         )}

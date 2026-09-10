@@ -1,6 +1,6 @@
 // src/pages/notifications/index.jsx
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, AlertTriangle, Info, Calendar, Clock, ArrowRight, X, Filter } from 'lucide-react';
+import { Bell, Check, AlertTriangle, Info, Calendar, Clock, ArrowRight, X, Filter, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -416,6 +416,11 @@ const ActionIconButton = styled.button`
     outline: none;
     box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.2);
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const CardLink = styled(Link)`
@@ -676,6 +681,11 @@ const ActionButton = styled.button`
     background: #f8fafc;
     border-color: var(--color-navy);
   }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const NotificationsPage = () => {
@@ -693,6 +703,24 @@ const NotificationsPage = () => {
   const [filter, setFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  // Notification ids with a mark-read/delete request in flight; only that
+  // card's buttons disable, the rest of the list stays usable.
+  const [pendingIds, setPendingIds] = useState(() => new Set());
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
+
+  const withPendingId = async (id, action) => {
+    if (pendingIds.has(id)) return;
+    setPendingIds((prev) => new Set(prev).add(id));
+    try {
+      await action();
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -714,18 +742,24 @@ const NotificationsPage = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    try {
-      await markAsRead(id);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
+    await withPendingId(id, async () => {
+      try {
+        await markAsRead(id);
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    });
   };
 
   const handleMarkAllAsRead = async () => {
+    if (isMarkingAll) return;
+    setIsMarkingAll(true);
     try {
       await markAllAsRead();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+    } finally {
+      setIsMarkingAll(false);
     }
   };
 
@@ -734,11 +768,13 @@ const NotificationsPage = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    try {
-      await deleteNotification(id);
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
+    await withPendingId(id, async () => {
+      try {
+        await deleteNotification(id);
+      } catch (error) {
+        console.error('Error deleting notification:', error);
+      }
+    });
   };
 
   const handleFilterChange = (newFilter) => {
@@ -774,8 +810,8 @@ const NotificationsPage = () => {
           <FilterButton isActive={filter === 'read'} onClick={() => handleFilterChange('read')}>
             {t('notifications.read')}
           </FilterButton>
-          <ActionButton onClick={handleMarkAllAsRead}>
-            <Check size={16} />
+          <ActionButton onClick={handleMarkAllAsRead} disabled={isMarkingAll}>
+            {isMarkingAll ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={16} />}
             {t('notifications.markAllAsRead')}
           </ActionButton>
         </ActionButtons>
@@ -822,9 +858,12 @@ const NotificationsPage = () => {
                         }}
                         title={t('notifications.markAsReadTitle')}
                         type="button"
+                        disabled={pendingIds.has(notificationId)}
                         aria-label={t('notifications.markAsReadTitle')}
                       >
-                        <Check size={16} />
+                        {pendingIds.has(notificationId)
+                          ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                          : <Check size={16} />}
                       </ActionIconButton>
                     )}
                     <ActionIconButton 
@@ -835,9 +874,12 @@ const NotificationsPage = () => {
                       }}
                       title={t('notifications.deleteNotificationTitle')}
                       type="button"
+                      disabled={pendingIds.has(notificationId)}
                       aria-label={t('notifications.deleteNotificationTitle')}
                     >
-                      <X size={16} />
+                      {pendingIds.has(notificationId)
+                        ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        : <X size={16} />}
                     </ActionIconButton>
                   </CardActions>
                 </NotificationCardContent>

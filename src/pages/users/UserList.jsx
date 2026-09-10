@@ -1294,6 +1294,7 @@ const UserList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toggleConfirm, setToggleConfirm] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { hasPermission, userRole } = usePermissions();
@@ -1365,13 +1366,18 @@ const UserList = () => {
   };
 
   const handleConfirmDelete = async () => {
+    if (!deleteConfirm || isDeleting) return;
+
     try {
+      setIsDeleting(true);
       await api.delete(`/users/${deleteConfirm.id}`);
       toast.success('User deleted successfully');
       fetchUsersList();
       setDeleteConfirm(null);
     } catch (error) {
       toast.error('Failed to delete user');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1886,11 +1892,18 @@ const UserList = () => {
               <strong>{t('common.thisActionCannotBeUndone')}</strong>
             </DialogMessage>
             <DialogActions>
-              <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+              <Button variant="secondary" onClick={() => setDeleteConfirm(null)} disabled={isDeleting}>
                 {t('common.cancel')}
               </Button>
-              <Button variant="primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}>
-                {t('common.permanentlyDelete')}
+              <Button variant="primary" onClick={handleConfirmDelete} disabled={isDeleting} style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}>
+                {isDeleting ? (
+                  <>
+                    <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    {t('common.deleting')}
+                  </>
+                ) : (
+                  t('common.permanentlyDelete')
+                )}
               </Button>
             </DialogActions>
           </DialogContent>

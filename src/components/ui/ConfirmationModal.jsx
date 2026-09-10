@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import styled from 'styled-components';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Loader } from 'lucide-react';
 import { Z_INDEX } from '../../utils/zIndex';
 
 const ModalOverlay = styled.div`
@@ -280,19 +280,37 @@ const ConfirmationModal = ({
   showIcon = true,
   loading = false
 }) => {
+  // Async confirm handlers return a promise. Hold the buttons until it settles
+  // so a double click cannot send the request twice, and show progress even
+  // for callers that never pass `loading`.
+  const [pending, setPending] = useState(false);
+  const inFlightRef = useRef(false);
+  const busy = loading || pending;
+
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    onConfirm();
+    if (busy || inFlightRef.current) return;
+    const result = onConfirm();
+    if (result && typeof result.then === 'function') {
+      inFlightRef.current = true;
+      setPending(true);
+      const settle = () => {
+        inFlightRef.current = false;
+        setPending(false);
+      };
+      result.then(settle, settle);
+    }
   };
 
   const handleCancel = () => {
+    if (busy) return;
     onClose();
   };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      handleCancel();
     }
   };
 
@@ -316,16 +334,21 @@ const ConfirmationModal = ({
             <Button
               variant="secondary"
               onClick={handleCancel}
-              disabled={loading}
+              disabled={busy}
             >
               {cancelText}
             </Button>
             <Button
               variant={confirmVariant}
               onClick={handleConfirm}
-              disabled={loading}
+              disabled={busy}
             >
-              {loading ? 'Processing...' : confirmText}
+              {busy ? (
+                <>
+                  <Loader size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />
+                  Processing...
+                </>
+              ) : confirmText}
             </Button>
           </ModalActions>
         </ModalBody>

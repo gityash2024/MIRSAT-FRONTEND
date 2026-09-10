@@ -81,6 +81,8 @@
     "add": "Add",
     "adding": "Adding...",
     "saving": "Saving...",
+    "deleting": "Deleting...",
+    "starting": "Starting...",
     "search": "Search",
     "filter": "Filter",
     "export": "Export",

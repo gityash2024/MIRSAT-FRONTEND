@@ -3997,6 +3997,11 @@ const UserTaskDetail = () => {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showUnansweredModal, setShowUnansweredModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  // In-flight flags for action buttons that call the API directly.
+  const [isStartingTask, setIsStartingTask] = useState(false);
+  const [isSubmittingForLater, setIsSubmittingForLater] = useState(false);
+  const [isSubmittingSignature, setIsSubmittingSignature] = useState(false);
+  const saveAndSubmitInFlightRef = useRef(false);
   const [signatureJustSaved, setSignatureJustSaved] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
   const [selectedReportFormat, setSelectedReportFormat] = useState('excel');
@@ -4906,6 +4911,9 @@ const UserTaskDetail = () => {
       return;
     }
 
+    if (isStartingTask) return;
+    setIsStartingTask(true);
+
     try {
       await userTaskService.startTask(taskId);
       toast.success(t('tasks.taskStartedSuccessfully'));
@@ -4921,6 +4929,8 @@ const UserTaskDetail = () => {
       startScreenTimer();
     } catch (error) {
       toast.error(error.response?.data?.message || t('tasks.failedToStartTask'));
+    } finally {
+      setIsStartingTask(false);
     }
   };
 
@@ -5047,6 +5057,8 @@ const UserTaskDetail = () => {
   };
 
   const handleSubmitAndDownloadLater = async () => {
+    if (isSubmittingForLater) return;
+    setIsSubmittingForLater(true);
     try {
       toast.loading(t('tasks.submittingInspectionForLaterDownload'));
 
@@ -5062,6 +5074,8 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.dismiss();
       toast.error(`${t('tasks.failedToSubmitInspection')}: ${error.message || t('common.error')}`);
+    } finally {
+      setIsSubmittingForLater(false);
     }
   };
 
@@ -5735,7 +5749,7 @@ const UserTaskDetail = () => {
   };
 
   // New Save and Submit functionality for compliance completion
-  const handleSaveAndSubmit = async () => {
+  const saveAndSubmitSignature = async () => {
     if (currentTask?.isActive === false || currentTask?.inspectionLevel?.isActive === false) {
       toast.error(t('auth.inspectionInactiveBanner') || 'This inspection is currently inactive and cannot be performed or submitted.');
       return;
@@ -5802,6 +5816,20 @@ const UserTaskDetail = () => {
     } catch (error) {
       toast.dismiss();
       toast.error(`${t('tasks.failedToSubmitComplianceData')}: ${error.message || t('common.error')}`);
+    }
+  };
+
+  // Guard the whole flow, including the signature validation that runs before
+  // the request, so a double click cannot submit the signature twice.
+  const handleSaveAndSubmit = async () => {
+    if (saveAndSubmitInFlightRef.current) return;
+    saveAndSubmitInFlightRef.current = true;
+    setIsSubmittingSignature(true);
+    try {
+      await saveAndSubmitSignature();
+    } finally {
+      saveAndSubmitInFlightRef.current = false;
+      setIsSubmittingSignature(false);
     }
   };
 
@@ -8262,8 +8290,8 @@ const UserTaskDetail = () => {
 
                 {(currentTask.status === 'pending' || !currentTask.status) && !isArchivedTask && (
                   <div style={{ textAlign: 'center', margin: '32px 0' }}>
-                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading || scheduledStartLocked || isTaskInactive}>
-                      {scheduledStartLocked ? <Clock size={20} /> : <Play size={20} />}
+                    <StartTaskButton onClick={handleStartTask} disabled={actionLoading || isStartingTask || scheduledStartLocked || isTaskInactive}>
+                      {isStartingTask ? <SpinningLoader size={20} /> : scheduledStartLocked ? <Clock size={20} /> : <Play size={20} />}
                       {scheduledStartLocked ? t('tasks.scheduled') : t('tasks.startInspection')}
                     </StartTaskButton>
                   </div>
@@ -8948,6 +8976,7 @@ const UserTaskDetail = () => {
                       <QuickActionButton
                         primary
                         onClick={handleSubmitAndDownloadLater}
+                        disabled={isSubmittingForLater}
                         style={{
                           padding: '16px 32px',
                           fontSize: '16px',
@@ -8959,7 +8988,7 @@ const UserTaskDetail = () => {
                           height: '56px'
                         }}
                       >
-                        <CheckCircle size={20} />
+                        {isSubmittingForLater ? <SpinningLoader size={20} /> : <CheckCircle size={20} />}
                         {t('tasks.submitAndDownloadLater')}
                       </QuickActionButton>
                     )}
@@ -9215,14 +9244,14 @@ const UserTaskDetail = () => {
 
               <SaveButton
                 onClick={handleSaveAndSubmit}
-                disabled={!signatureImage || !hasSignatureInk}
+                disabled={!signatureImage || !hasSignatureInk || isSubmittingSignature}
                 style={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   marginLeft: '8px',
                   fontWeight: '600'
                 }}
               >
-                <CheckCircle size={16} />
+                {isSubmittingSignature ? <SpinningLoader size={16} /> : <CheckCircle size={16} />}
                 {t('tasks.saveAndSubmit')}
               </SaveButton>
             </SignatureActions>

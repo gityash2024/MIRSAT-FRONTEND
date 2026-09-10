@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle, PlayCircle, Power } from 'lucide-react';
+import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, Database, X, CheckCircle, PlayCircle, Power, Loader } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import TaskStatus from './TaskStatus';
@@ -336,7 +336,20 @@ const DialogButton = styled.button`
       background: var(--color-offwhite);
     }
   `}
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
+
+// In-button progress label for the confirm dialogs below.
+const BusyLabel = ({ label }) => (
+  <>
+    <Loader size={14} style={{ animation: 'spin 1s linear infinite', verticalAlign: 'middle', marginRight: 6 }} />
+    {label}
+  </>
+);
 
 const LoadingOverlay = styled.div`
   display: flex;
@@ -998,6 +1011,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [toggleConfirm, setToggleConfirm] = useState(null);
   const [startNowConfirm, setStartNowConfirm] = useState(null);
+  // Which confirm dialog has a request in flight ('delete' | 'toggle' | 'startNow').
+  const [pendingAction, setPendingAction] = useState(null);
   const [sublevelsModal, setSublevelsModal] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'createdAt',
@@ -1081,6 +1096,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   };
 
   const handleConfirmDelete = async () => {
+    if (pendingAction) return;
+    setPendingAction('delete');
     try {
       const taskId = deleteConfirm._id || deleteConfirm.id;
       await dispatch(deleteTask(taskId)).unwrap();
@@ -1090,6 +1107,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       if (!error.message) {
         toast.error(t('tasks.failedToDeleteTask'));
       }
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -1107,12 +1126,16 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   };
 
   const handleConfirmStartNow = async () => {
+    if (pendingAction) return;
+    setPendingAction('startNow');
     try {
       const taskId = startNowConfirm._id || startNowConfirm.id;
       await dispatch(startTaskNow(taskId)).unwrap();
       setStartNowConfirm(null);
     } catch (error) {
       console.error('Error starting inspection now:', error);
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -1122,6 +1145,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
   };
 
   const handleConfirmToggle = async () => {
+    if (pendingAction) return;
+    setPendingAction('toggle');
     try {
       const taskId = toggleConfirm._id || toggleConfirm.id;
       await dispatch(toggleTaskActive(taskId)).unwrap();
@@ -1131,6 +1156,8 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
       if (!error.message) {
         toast.error(t('auth.toggleFailed') || 'Failed to update status');
       }
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -1518,11 +1545,11 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               {t('common.deleteTaskConfirm')} "{deleteConfirm.title}"? {t('common.thisActionCannotBeUndone')}.
             </DialogMessage>
             <DialogActions>
-              <DialogButton onClick={() => setDeleteConfirm(null)}>
+              <DialogButton onClick={() => setDeleteConfirm(null)} disabled={!!pendingAction}>
                 {t('common.cancel')}
               </DialogButton>
-              <DialogButton variant="danger" onClick={handleConfirmDelete}>
-                {t('common.delete')}
+              <DialogButton variant="danger" onClick={handleConfirmDelete} disabled={!!pendingAction}>
+                {pendingAction === 'delete' ? <BusyLabel label={t('common.deleting')} /> : t('common.delete')}
               </DialogButton>
             </DialogActions>
           </DialogContent>
@@ -1543,12 +1570,13 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 : (t('auth.activateConfirmMsg') || `Are you sure you want to activate "${toggleConfirm.title}"? It will become available to inspectors.`)}
             </DialogMessage>
             <DialogActions>
-              <DialogButton onClick={() => setToggleConfirm(null)}>
+              <DialogButton onClick={() => setToggleConfirm(null)} disabled={!!pendingAction}>
                 {t('common.cancel')}
               </DialogButton>
               <DialogButton
                 variant={toggleConfirm.isActive !== false ? 'danger' : 'primary'}
                 onClick={handleConfirmToggle}
+                disabled={!!pendingAction}
                 style={
                   toggleConfirm.isActive !== false
                     ? {}
@@ -1559,9 +1587,11 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                       }
                 }
               >
-                {toggleConfirm.isActive !== false
-                  ? (t('common.deactivate') || 'Deactivate')
-                  : (t('common.activate') || 'Activate')}
+                {pendingAction === 'toggle'
+                  ? <BusyLabel label={toggleConfirm.isActive !== false ? t('common.deactivating') : t('common.activating')} />
+                  : toggleConfirm.isActive !== false
+                    ? (t('common.deactivate') || 'Deactivate')
+                    : (t('common.activate') || 'Activate')}
               </DialogButton>
             </DialogActions>
           </DialogContent>
@@ -1576,18 +1606,19 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               {t('tasks.startNowConfirm', { title: startNowConfirm.title })}
             </DialogMessage>
             <DialogActions>
-              <DialogButton onClick={() => setStartNowConfirm(null)}>
+              <DialogButton onClick={() => setStartNowConfirm(null)} disabled={!!pendingAction}>
                 {t('common.cancel')}
               </DialogButton>
               <DialogButton
                 onClick={handleConfirmStartNow}
+                disabled={!!pendingAction}
                 style={{
                   background: 'var(--color-navy)',
                   color: 'white',
                   border: 'none'
                 }}
               >
-                {t('tasks.startNow')}
+                {pendingAction === 'startNow' ? <BusyLabel label={t('common.starting')} /> : t('tasks.startNow')}
               </DialogButton>
             </DialogActions>
           </DialogContent>

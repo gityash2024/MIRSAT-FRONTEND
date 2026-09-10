@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { X, FileText, Download, Calendar, User, Tag } from 'lucide-react';
+import { X, FileText, Download, Calendar, User, Tag, Loader } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Z_INDEX } from '../../utils/zIndex';
 import { useTranslation } from 'react-i18next';
@@ -485,6 +485,9 @@ const DocumentNamingModal = ({
 }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  // Locks the Export button while an async export runs so it cannot fire twice.
+  const [isExporting, setIsExporting] = useState(false);
+  const exportInFlightRef = useRef(false);
   
   const [namingCriteria, setNamingCriteria] = useState({
     documentType: true,
@@ -582,8 +585,18 @@ const DocumentNamingModal = ({
   };
 
   const handleExport = () => {
+    if (exportInFlightRef.current) return;
     const fileName = generateFileName();
-    onExport(fileName, exportLanguage);
+    const result = onExport(fileName, exportLanguage);
+    if (result && typeof result.then === 'function') {
+      exportInFlightRef.current = true;
+      setIsExporting(true);
+      const settle = () => {
+        exportInFlightRef.current = false;
+        setIsExporting(false);
+      };
+      result.then(settle, settle);
+    }
   };
 
   if (!isOpen) return null;
@@ -766,9 +779,18 @@ const DocumentNamingModal = ({
           <Button variant="secondary" onClick={onClose} data-agent-action="document_export.cancel">
             {t('common.cancel')}
           </Button>
-          <Button variant="primary" onClick={handleExport} data-agent-action="document_export.confirm">
-            <Download size={16} />
-            {exportLabel} {formatLabel}
+          <Button variant="primary" onClick={handleExport} disabled={isExporting} data-agent-action="document_export.confirm">
+            {isExporting ? (
+              <>
+                <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                {t('common.exporting')}
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                {exportLabel} {formatLabel}
+              </>
+            )}
           </Button>
         </ButtonGroup>
       </ModalContent>
