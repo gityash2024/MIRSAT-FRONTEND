@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { DARK_PALETTE } from '../../theme/darkPalette';
 import { gsap } from 'gsap';
 import { 
   Search, Filter, PlayCircle, Clock, CheckCircle, XCircle, 
@@ -328,11 +329,28 @@ const TaskCard = styled.div`
       transform: translateY(-2px);
     }
   }
+
+  /* Column layout so the action buttons sit at the bottom and every card in
+     a grid row shares one height. */
+  display: flex;
+  flex-direction: column;
+
+  /* Dark theme: solid card with a clear edge. */
+  html[data-theme='dark'] & {
+    background: ${DARK_PALETTE.surface};
+    border: 1px solid ${DARK_PALETTE.border};
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  }
+
+  html[data-theme='dark'] &:hover {
+    border-color: ${DARK_PALETTE.goldBorder};
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  }
 `;
 
 const TaskHeader = styled.div`
   padding: 16px;
-  border-bottom: 1px solid rgba(241, 245, 249, 0.5);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -340,6 +358,11 @@ const TaskHeader = styled.div`
   background: rgba(255, 255, 255, 0.3);
   gap: 12px;
   min-width: 0;
+
+  html[data-theme='dark'] & {
+    background: ${DARK_PALETTE.surfaceRaised};
+    border-bottom-color: ${DARK_PALETTE.border};
+  }
 
   @media (max-width: 480px) {
     padding: 12px;
@@ -419,6 +442,14 @@ const TaskBody = styled.div`
   min-width: 0;
   overflow: hidden;
 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  html[data-theme='dark'] & {
+    background: transparent;
+  }
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -481,8 +512,11 @@ const TaskDetailRow = styled.div`
 `;
 
 const TaskProgress = styled.div`
-  margin: 20px 0;
+  margin: 20px 0 0;
+  padding-top: 4px;
   position: relative;
+  /* Pushed to the bottom of the body so progress bars line up across cards. */
+  margin-top: auto;
   
   .progress-header {
     display: flex;
@@ -554,13 +588,20 @@ const TaskProgress = styled.div`
 
 const TaskActions = styled.div`
   padding: 16px;
-  border-top: 1px solid rgba(241, 245, 249, 0.5);
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
   display: flex;
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.3);
   position: relative;
   gap: 12px;
   flex-wrap: wrap;
+
+  margin-top: auto;
+
+  html[data-theme='dark'] & {
+    background: ${DARK_PALETTE.surfaceInset};
+    border-top-color: ${DARK_PALETTE.border};
+  }
 
   @media (max-width: 480px) {
     padding: 12px;

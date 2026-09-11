@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import { DARK_PALETTE } from '../theme/darkPalette';
 
 // Define the color palette based on client requirements
 const colors = {
@@ -190,6 +191,83 @@ const theme = createTheme({
   },
   // Export the raw colors for use in styled-components
   customColors: colors,
+});
+
+// Dark variant for the MUI screens. styled-components get their dark colors
+// from src/theme/stylisDarkPlugin.js instead.
+export const darkTheme = createTheme(theme, {
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: DARK_PALETTE.navy,
+      light: DARK_PALETTE.navyBorder,
+      dark: DARK_PALETTE.navyDark,
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: DARK_PALETTE.background,
+      paper: DARK_PALETTE.surface,
+    },
+    text: {
+      primary: DARK_PALETTE.textPrimary,
+      secondary: DARK_PALETTE.textTertiary,
+      disabled: 'rgba(255, 255, 255, 0.5)',
+    },
+    divider: DARK_PALETTE.border,
+    action: {
+      active: DARK_PALETTE.textSecondary,
+      hover: 'rgba(255, 255, 255, 0.08)',
+      selected: 'rgba(255, 255, 255, 0.16)',
+      focus: 'rgba(255, 255, 255, 0.12)',
+      disabled: 'rgba(255, 255, 255, 0.3)',
+      disabledBackground: 'rgba(255, 255, 255, 0.12)',
+    },
+  },
+  typography: {
+    h1: { color: DARK_PALETTE.textPrimary },
+    h2: { color: DARK_PALETTE.textPrimary },
+    h3: { color: DARK_PALETTE.textPrimary },
+    h4: { color: DARK_PALETTE.textPrimary },
+    h5: { color: DARK_PALETTE.textPrimary },
+    h6: { color: DARK_PALETTE.textPrimary },
+    body1: { color: DARK_PALETTE.textPrimary },
+    body2: { color: DARK_PALETTE.textTertiary },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        containedPrimary: {
+          backgroundColor: DARK_PALETTE.navy,
+          '&:hover': {
+            backgroundColor: DARK_PALETTE.navyDark,
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: DARK_PALETTE.surface,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: DARK_PALETTE.surface,
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          backgroundColor: DARK_PALETTE.border,
+        },
+      },
+    },
+  },
 });
 
 export default theme;

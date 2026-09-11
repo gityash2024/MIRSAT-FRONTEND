@@ -22,6 +22,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { isCompactViewport } from '../../utils/layout';
 import mirSatLogo from '../../assets/mirsat-logo-white.svg';
 import takamolLogo from '../../assets/tms-logo-white.svg';
+import { DARK_PALETTE } from '../../theme/darkPalette';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
@@ -46,6 +47,12 @@ const SidebarContainer = styled.div`
       return '0';
     }});
     box-shadow: ${props => props.$collapsed ? 'none' : '0 0 20px rgba(0, 0, 0, 0.3)'};
+  }
+
+  /* Dark theme: near-black panel like the mobile app instead of navy. */
+  html[data-theme='dark'] & {
+    background: ${DARK_PALETTE.backgroundLight};
+    border-inline-end: 1px solid ${DARK_PALETTE.border};
   }
 `;
 
@@ -115,9 +122,17 @@ const CollapseButton = styled.button`
   &:hover {
     background: rgba(255, 255, 255, 0.15);
   }
-  
+
   @media (max-width: 1100px) {
     display: none;
+  }
+
+  html[data-theme='dark'] & {
+    background: ${props => props.$collapsed ? DARK_PALETTE.backgroundLight : 'none'};
+  }
+
+  html[data-theme='dark'] &:hover {
+    background: rgba(255, 255, 255, 0.15);
   }
 `;
 
@@ -276,7 +291,16 @@ const StyledLink = styled.div`
       border-radius: 0 2px 2px 0;
     }
   }
-  
+
+  html[data-theme='dark'] &.active {
+    color: ${DARK_PALETTE.gold};
+    background: rgba(245, 196, 81, 0.12);
+
+    &:before {
+      background: ${DARK_PALETTE.gold};
+    }
+  }
+
   @media (max-width: 1100px) {
     padding: 0.875rem 1.5rem;
   }

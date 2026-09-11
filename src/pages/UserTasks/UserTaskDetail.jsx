@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
+import { DARK_PALETTE } from '../../theme/darkPalette';
 import { format, differenceInSeconds } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import FrontendLogger from '../../services/frontendLogger.service';
@@ -183,6 +184,9 @@ const PageContainer = styled.div`
   padding: 20px;
   position: relative;
   overflow-x: hidden;
+  /* clip looks identical to hidden but is not a scroll container, so the
+     pinned inspection section header can stick to the window. */
+  overflow-x: clip;
 
   @media (max-width: 768px) {
     padding: 12px;
@@ -201,6 +205,7 @@ const MainContent = styled.div`
   box-sizing: border-box;
   min-width: 0;
   overflow-x: hidden;
+  overflow-x: clip;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -971,6 +976,14 @@ const Tab = styled.button`
     @media (max-width: 768px) {
       transform: translateY(-1px);
     }
+
+    /* Dark theme: gold "selected" treatment instead of the navy glow. */
+    html[data-theme='dark'] & {
+      background: ${DARK_PALETTE.goldSoft};
+      color: ${DARK_PALETTE.gold};
+      border: 1px solid ${DARK_PALETTE.goldBorder};
+      box-shadow: none;
+    }
   ` : css`
     background: transparent;
     color: #64748b;
@@ -1162,6 +1175,11 @@ const ProgressBar = styled.div`
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(55, 136, 216, 0.4);
   }
+
+  html[data-theme='dark'] &::after {
+    background: linear-gradient(90deg, ${DARK_PALETTE.gold}, #d9a63a);
+    box-shadow: 0 2px 8px rgba(245, 196, 81, 0.35);
+  }
 `;
 
 const InspectionContainer = styled.div`
@@ -1215,7 +1233,8 @@ const InspectionHeader = styled.div`
   box-sizing: border-box;
   overflow: visible;
   position: relative;
-  z-index: 1;
+  /* Above the sticky section header (z 20) so the page dropdown opens over it. */
+  z-index: 21;
 
   > div:first-child {
     flex: 0 1 auto;
@@ -1555,13 +1574,15 @@ const InspectionLayout = styled.div`
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  height: calc(82vh - 80px);
+  /* Grows with its questions so the page scrollbar is the only one
+     (previously a fixed calc(82vh - 80px) box with its own inner scroll). */
+  height: auto;
   min-width: 0;
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
-  
+  overflow: visible;
+
   @media (max-width: 1200px) {
     display: flex;
     flex-direction: column;
@@ -1891,6 +1912,13 @@ const SectionNavItem = styled.div`
       0 4px 15px rgba(55, 136, 216, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border-color: rgba(55, 136, 216, 0.3);
+
+    html[data-theme='dark'] & {
+      background: ${DARK_PALETTE.goldSoft};
+      color: ${DARK_PALETTE.gold};
+      border-color: ${DARK_PALETTE.goldBorder};
+      box-shadow: none;
+    }
   ` : css`
     background: rgba(255, 255, 255, 0.82);
     color: #1a202c;
@@ -1954,7 +1982,7 @@ const ContentPanel = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -1992,6 +2020,16 @@ const ContentHeader = styled.div`
   width: 100%;
   box-sizing: border-box;
 
+  /* Stays pinned under the fixed 64px top bar while the page scrolls
+     through the section's questions. */
+  @media (min-width: 769px) {
+    position: sticky;
+    top: 64px;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(10px);
+  }
+
   @media (max-width: 768px) {
     padding: 16px 20px;
     gap: 12px;
@@ -2027,7 +2065,8 @@ const QuestionCounter = styled.div`
 
 const QuestionsContent = styled.div`
   flex: 1;
-  overflow-y: auto;
+  overflow-y: visible;
+  min-height: 60vh;
   padding: 28px 32px;
   display: block;
   min-width: 0;
@@ -2372,6 +2411,13 @@ const OptionButton = styled.button`
     box-shadow: 
       0 4px 15px rgba(55, 136, 216, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    /* Dark theme: the chosen answer is a solid gold chip, like the mobile app. */
+    html[data-theme='dark'] & {
+      background: linear-gradient(135deg, ${DARK_PALETTE.gold}, #e0ae3c);
+      color: #111111;
+      box-shadow: 0 4px 14px rgba(245, 196, 81, 0.28);
+    }
   ` : css`
     &:hover {
       background: rgba(55, 136, 216, 0.1);
@@ -3190,6 +3236,10 @@ const SignatureImage = styled.img`
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  /* Signature ink is black; keep the paper white in dark mode too. */
+  html[data-theme='dark'] & {
+    background: #ffffff;
+  }
 `;
 
 const SignatureInfo = styled.div`
@@ -3370,6 +3420,12 @@ const SignatureCanvas = styled.div`
       width: 100% !important;
       height: 150px !important;
     }
+  }
+
+  /* Signature ink is black; keep the pad white in dark mode too. */
+  html[data-theme='dark'] & canvas,
+  html[data-theme='dark'] & img {
+    background: #ffffff;
   }
   
   @media (max-width: 768px) {
@@ -3779,7 +3835,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
             justifyContent: 'center',
             marginBottom: '12px'
           }}>
-            <div style={{
+            <div className="signature-paper" style={{
               border: '1px solid #e5e7eb',
               borderRadius: '6px',
               padding: '8px',
@@ -3904,7 +3960,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
                 Please sign in the area below
               </div>
 
-              <div style={{
+              <div className="signature-paper" style={{
                 border: '2px solid #e5e7eb',
                 borderRadius: '8px',
                 background: 'white',
@@ -4068,6 +4124,19 @@ const UserTaskDetail = () => {
   const pageNavigationRef = useRef(null);
   const dropdownRef = useRef(null);
   const questionsContentRef = useRef(null);
+  const contentHeaderRef = useRef(null);
+
+  // The questions share the page scrollbar, so when the section changes while
+  // the user is scrolled down into the questions (e.g. Ctrl+Arrow), bring the
+  // new section's first question back under the pinned header.
+  useEffect(() => {
+    const panel = contentHeaderRef.current?.parentElement;
+    if (!panel) return;
+    const panelTop = panel.getBoundingClientRect().top;
+    if (panelTop < 64) {
+      window.scrollBy({ top: panelTop - 72, behavior: 'auto' });
+    }
+  }, [selectedSection]);
 
   // Derive currentPage from inspectionPages and selectedPage
   const currentPage = useMemo(() => {
@@ -7448,7 +7517,7 @@ const UserTaskDetail = () => {
 
 
           <ContentPanel>
-            <ContentHeader>
+            <ContentHeader ref={contentHeaderRef}>
               <ContentTitle>
                 {currentSection ? (
                   <>

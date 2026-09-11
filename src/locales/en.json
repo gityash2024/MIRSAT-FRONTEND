@@ -137,6 +137,8 @@
     "english": "English",
     "arabic": "العربية",
     "logout": "Logout",
+    "switchToDarkMode": "Switch to dark mode",
+    "switchToLightMode": "Switch to light mode",
     "login": "Login",
     "register": "Register",
     "forgotPassword": "Forgot Password?",

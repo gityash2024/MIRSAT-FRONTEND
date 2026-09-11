@@ -136,6 +136,8 @@
     "english": "English",
     "arabic": "العربية",
     "logout": "تسجيل الخروج",
+    "switchToDarkMode": "التبديل إلى الوضع الداكن",
+    "switchToLightMode": "التبديل إلى الوضع الفاتح",
     "login": "تسجيل الدخول",
     "register": "تسجيل",
     "forgotPassword": "نسيت كلمة المرور؟",

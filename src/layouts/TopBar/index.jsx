@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import useNotification from '../../hooks/useNotification';
 import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
 import LanguageToggle from '../../components/ui/LanguageToggle';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import { isCompactViewport } from '../../utils/layout';
@@ -354,7 +355,9 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
       </LeftSection>
       
       <RightSection>
-        <LanguageToggle 
+        <ThemeToggle />
+
+        <LanguageToggle
           isOpen={isLanguageOpen}
           onOpen={() => {
             closeAllDropdowns('language');
