@@ -33,6 +33,7 @@ import { toast } from 'react-hot-toast';
 import { formatPlatformDate } from '../../utils/platformDate';
 import { calculatePageScore, calculateSectionScore } from '../../utils/inspectionScoring';
 import { openExternal } from '../../utils/openExternal';
+import ResponseAttachment from '../../components/ResponseAttachment';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -1703,52 +1704,7 @@ const TaskDetailsView = () => {
                                     {question.type === 'date' && response && <bdi dir="ltr">{formatPlatformDate(response)}</bdi>}
                                     {question.type === 'file' && response && (
                                       <div style={{ marginTop: '8px' }}>
-                                        {response.startsWith('data:image/') ? (
-                                          <div>
-                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                              📎 Image uploaded
-                                            </div>
-                                            <img
-                                              src={response}
-                                              alt="Uploaded file"
-                                              style={{
-                                                maxWidth: '200px',
-                                                maxHeight: '150px',
-                                                borderRadius: '6px',
-                                                border: '1px solid #e2e8f0',
-                                                cursor: 'pointer'
-                                              }}
-                                              onClick={() => openExternal(response)}
-                                            />
-                                          </div>
-                                        ) : response.startsWith('data:') ? (
-                                          <div>
-                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                              📎 File uploaded
-                                            </div>
-                                            <button
-                                              onClick={() => {
-                                                const link = document.createElement('a');
-                                                link.href = response;
-                                                link.download = 'uploaded-file';
-                                                link.click();
-                                              }}
-                                              style={{
-                                                padding: '8px 12px',
-                                                background: '#0369a1',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px'
-                                              }}
-                                            >
-                                              Download File
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <span style={{ color: '#0369a1' }}>📎 File uploaded: {response}</span>
-                                        )}
+                                        <ResponseAttachment value={response} label="Uploaded file" />
                                       </div>
                                     )}
                                     {question.type === 'signature' && response && (
@@ -1802,53 +1758,7 @@ const TaskDetailsView = () => {
                                     )}
                                     {question.type === 'media' && response && (
                                       <div style={{ marginTop: '8px' }}>
-                                        {response.startsWith('data:image/') || response.startsWith('data:image') ? (
-                                          <div>
-                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                              📷 Image uploaded
-                                            </div>
-                                            <img
-                                              src={response}
-                                              alt="Uploaded media"
-                                              style={{
-                                                maxWidth: '300px',
-                                                maxHeight: '200px',
-                                                borderRadius: '6px',
-                                                border: '1px solid #e2e8f0',
-                                                cursor: 'pointer',
-                                                objectFit: 'contain'
-                                              }}
-                                              onClick={() => openExternal(response)}
-                                            />
-                                          </div>
-                                        ) : response.startsWith('data:') ? (
-                                          <div>
-                                            <div style={{ marginBottom: '8px', color: '#0369a1', fontSize: '12px' }}>
-                                              📎 Media file uploaded
-                                            </div>
-                                            <button
-                                              onClick={() => {
-                                                const link = document.createElement('a');
-                                                link.href = response;
-                                                link.download = 'uploaded-media';
-                                                link.click();
-                                              }}
-                                              style={{
-                                                padding: '8px 12px',
-                                                background: '#0369a1',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px'
-                                              }}
-                                            >
-                                              Download Media
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <span style={{ color: '#0369a1' }}>📎 Media: {response}</span>
-                                        )}
+                                        <ResponseAttachment value={response} label="Uploaded media" />
                                       </div>
                                     )}
                                     {question.type === 'number' && response && (

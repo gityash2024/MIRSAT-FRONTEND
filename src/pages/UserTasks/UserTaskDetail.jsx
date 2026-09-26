@@ -98,6 +98,7 @@ import InspectionStepForm from './components/InspectionStepForm';
 import { Rotate3dIcon } from 'lucide-react';
 import { isImageResponse } from '../../utils/imageResponse';
 import { openExternal } from '../../utils/openExternal';
+import ResponseAttachment from '../../components/ResponseAttachment';
 
 const fadeIn = keyframes`
   from {
@@ -6601,77 +6602,7 @@ const UserTaskDetail = () => {
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    {isImageResponse(response) ? (
-                      <div>
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#16a34a',
-                          fontWeight: '500',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          ✅ Image uploaded
-                        </div>
-                        <img
-                          src={response}
-                          alt="File preview"
-                          style={{
-                            maxWidth: '200px',
-                            maxHeight: '150px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => openExternal(response)}
-                        />
-                      </div>
-                    ) : response.startsWith('data:') ? (
-                      <div>
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#16a34a',
-                          fontWeight: '500',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          ✅ File uploaded
-                        </div>
-                        <button
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = response;
-                            link.download = 'uploaded-file';
-                            link.click();
-                          }}
-                          style={{
-                            padding: '8px 12px',
-                            background: '#000048',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Download File
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{
-                        fontSize: '14px',
-                        color: '#16a34a',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
-                        ✅ Uploaded: {response}
-                      </div>
-                    )}
+                    <ResponseAttachment value={response} label="Uploaded file" />
                     {questionCaptureMetadata && (
                       <div style={{
                         marginTop: '8px',
@@ -6855,44 +6786,7 @@ const UserTaskDetail = () => {
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    {isImageResponse(response) ? (
-                      <div>
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#16a34a',
-                          fontWeight: '500',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          ✅ {t('tasks.photoCaptured')}
-                        </div>
-                        <img
-                          src={response}
-                          alt="Captured media"
-                          style={{
-                            maxWidth: '200px',
-                            maxHeight: '150px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => openExternal(response)}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{
-                        fontSize: '14px',
-                        color: '#16a34a',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
-                        ✅ {t('tasks.mediaCaptured')}
-                      </div>
-                    )}
+                    <ResponseAttachment value={response} label="Captured media" />
                     {questionCaptureMetadata && (
                       <div style={{
                         marginTop: '8px',
@@ -8732,75 +8626,29 @@ const UserTaskDetail = () => {
 
                                       // Handle file responses with preview
                                       if (question.type === 'file' && response) {
-                                        if (isImageResponse(response)) {
-                                          return (
-                                            <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
-                                                📎 {t('tasks.imageUploaded')}
+                                        return (
+                                          <div style={{ marginTop: '8px' }}>
+                                            <ResponseAttachment value={response} label="Uploaded file" />
+                                            {responseMetadata && (
+                                              <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                Captured: {formatCaptureMetadata(responseMetadata)}
                                               </div>
-                                              <img
-                                                src={response}
-                                                alt="Uploaded file"
-                                                style={{
-                                                  maxWidth: '200px',
-                                                  maxHeight: '150px',
-                                                  borderRadius: '6px',
-                                                  border: '1px solid #e2e8f0',
-                                                  cursor: 'pointer'
-                                                }}
-                                                onClick={() => openExternal(response)}
-                                              />
-                                              {responseMetadata && (
-                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
-                                                  Captured: {formatCaptureMetadata(responseMetadata)}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        } else if (response.startsWith('data:')) {
-                                          return (
-                                            <div style={{ marginTop: '8px' }}>
-                                              <div style={{ marginBottom: '8px', color: '#000048', fontSize: '12px' }}>
-                                                📎 {t('tasks.fileUploaded')}
+                                            )}
+                                          </div>
+                                        );
+                                      }
+
+                                      if (question.type === 'media' && response) {
+                                        return (
+                                          <div style={{ marginTop: '8px' }}>
+                                            <ResponseAttachment value={response} label="Captured media" />
+                                            {responseMetadata && (
+                                              <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
+                                                Captured: {formatCaptureMetadata(responseMetadata)}
                                               </div>
-                                              <button
-                                                onClick={() => {
-                                                  const link = document.createElement('a');
-                                                  link.href = response;
-                                                  link.download = 'uploaded-file';
-                                                  link.click();
-                                                }}
-                                                style={{
-                                                  padding: '8px 12px',
-                                                  background: '#000048',
-                                                  color: 'white',
-                                                  border: 'none',
-                                                  borderRadius: '6px',
-                                                  cursor: 'pointer',
-                                                  fontSize: '12px'
-                                                }}
-                                              >
-                                                {t('tasks.downloadFile')}
-                                              </button>
-                                              {responseMetadata && (
-                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
-                                                  Captured: {formatCaptureMetadata(responseMetadata)}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        } else {
-                                          return (
-                                            <div>
-                                              <div>{`📎 ${t('tasks.fileUploaded')}: ${response}`}</div>
-                                              {responseMetadata && (
-                                                <div style={{ marginTop: '8px', color: '#475569', fontSize: '12px' }}>
-                                                  Captured: {formatCaptureMetadata(responseMetadata)}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        }
+                                            )}
+                                          </div>
+                                        );
                                       }
 
                                       // Handle signature responses with preview
