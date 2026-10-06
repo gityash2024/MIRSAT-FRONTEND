@@ -73,7 +73,7 @@ import { fetchAssetTypes } from '../../store/slices/assetTypeSlice';
 import api from '../../services/api';
 import ReportPreviewComponent from '../../components/reports/ReportPreviewComponent';
 import Alert from '@mui/material/Alert';
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 
 const TEMPLATE_IMPORT_EXCEL_SHEET_NAME = 'Template Import';
 const TEMPLATE_IMPORT_EXCEL_BASIC_INFO_SHEET_NAME = 'Basic Info';

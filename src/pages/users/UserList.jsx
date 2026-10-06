@@ -37,7 +37,7 @@ import { PERMISSIONS } from '../../utils/permissions';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers, deleteUser } from '../../store/slices/userSlice';
 import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 import Skeleton from '../../components/ui/Skeleton';
 
 import UserFilter from './components/UserFilters';
