@@ -11,6 +11,7 @@ import takamolBrandLogo from '../assets/tms-logo-white.svg';
 import { useLanguage } from '../context/LanguageContext';
 import { useTurnstile } from '../hooks/useTurnstile';
 import TurnstileField from '../components/TurnstileField';
+import LegalLinks from '../components/common/LegalLinks';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -554,6 +555,7 @@ const ForgotPassword = () => {
           </Panel>
 
           <Footer isRTL={isRTL}>
+            <LegalLinks />
             <FooterMeta>
               <span>{t('auth.copyright')}</span>
               <LanguageToggle
@@ -585,4 +587,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword; 
+export default ForgotPassword;

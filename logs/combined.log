@@ -1,0 +1,4 @@
+{"enabled":true,"from":"MIRSAT <noreply@mirsat.co>","frontendUrl":"https://staging.mirsat.cc","host":"NOT_CONFIGURED","level":"info","message":"Email service configuration:","port":"NOT_CONFIGURED","secure":"NOT_CONFIGURED","timestamp":"2026-10-21T06:40:25.921Z","transport":"smtp","user":"NOT_CONFIGURED"}
+{"level":"warn","message":"Email frontend URL is not configured. Using environment-aware fallback: https://staging.mirsat.cc","timestamp":"2026-10-21T06:40:25.923Z"}
+{"level":"warn","message":"Set EMAIL_FRONTEND_URL to the public frontend URL for this environment","timestamp":"2026-10-21T06:40:25.923Z"}
+{"level":"warn","message":"smtp email configuration incomplete. Missing: SMTP_HOST, SMTP_USER, SMTP_PASS. Email service will be disabled.","timestamp":"2026-10-21T06:40:25.923Z"}

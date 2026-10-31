@@ -194,7 +194,8 @@ const TIMEZONES = [
     name: 'India',
     timezone: 'Asia/Kolkata',
     label: 'India (Kolkata)'
-  }
+  },
+  { id: 'gmt', name: 'GMT', timezone: 'Etc/GMT', label: 'GMT (UTC+00:00)' }
 ];
 
 const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {

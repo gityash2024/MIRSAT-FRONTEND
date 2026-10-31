@@ -403,6 +403,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         city: asset.city || '',
         location: asset.location || '',
         color: asset.color || '#f5f7fb',
+        textColor: asset.textColor,
       });
       setErrors({});
     } else {
@@ -454,6 +455,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     setFormData({
       ...formData,
       [name]: value,
+      ...(name === 'color' ? { textColor: '#ffffff' } : {}),
     });
     
     // Clear error for this field when user starts typing
@@ -479,6 +481,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
         city: formData.city.trim(),
         location: formData.location.trim(),
         color: formData.color || '#f5f7fb',
+        ...(formData.textColor ? { textColor: formData.textColor } : {}),
       };
 
       if (asset) {

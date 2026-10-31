@@ -56,6 +56,10 @@ export const addQuestionToLibrary = createAsyncThunk(
         scores,
         scoring: normalizeScoring(questionData.scoring, scores),
         includeNA: questionData.includeNA,
+        isScored: questionData.isScored,
+        flaggedOptions: questionData.flaggedOptions,
+        weight: questionData.weight,
+        weightUnit: questionData.weightUnit,
         required: questionData.required !== undefined ? questionData.required : true,
         requirementType: questionData.requirementType || 'mandatory'
       };

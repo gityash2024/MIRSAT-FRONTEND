@@ -17,6 +17,7 @@ import { fetchInspectionLevels } from '../../store/slices/inspectionLevelSlice';
 import { fetchAssets } from '../../store/slices/assetSlice';
 import { toast } from 'react-hot-toast';
 import Skeleton from '../../components/ui/Skeleton';
+import { CALENDAR_POINT_DURATION, CALENDAR_STATUSES, calendarEventsForView, transformTasksToCalendarEvents } from '../../utils/calendarEvents';
 
 const CalendarContainer = styled.div`
   padding: 24px;
@@ -119,43 +120,66 @@ const CalendarWrapper = styled.div`
     .fc-event {
       border-radius: 4px;
       border: none;
-      padding: 2px 4px;
+      padding: 3px 6px;
       font-size: 12px;
       cursor: pointer;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
+      overflow: hidden;
+      min-height: 22px;
+      line-height: 1.4;
+
+      &:hover { filter: brightness(1.12); }
+    }
+
+    .inspection-event-content {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .inspection-event-time {
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .inspection-event-title {
+      font-size: 12px;
+      font-weight: 500;
+      font-style: normal;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .fc-timegrid-event .inspection-event-content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+    }
+
+    .fc-daygrid-more-link, .fc-timegrid-more-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-navy);
+    }
+
+    .fc-popover {
+      max-width: min(360px, calc(100vw - 32px));
+      z-index: 20;
+    }
+
+    .fc-popover .fc-event {
       white-space: normal;
-      overflow: visible;
-      min-height: 18px;
-      line-height: 1.3;
+    }
 
-      @media (max-width: 768px) {
-        font-size: 11px;
-        padding: 2px 4px;
-        min-height: 16px;
-      }
-
-      @media (max-width: 480px) {
-        font-size: 10px;
-        padding: 2px 4px;
-        min-height: 16px;
-      }
-
-      &:hover {
-        opacity: 0.9;
-      }
-
-      .fc-event-title {
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        overflow: visible;
-      }
-
-      .fc-event-time {
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
+    .fc-popover .inspection-event-title {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .fc-day-today {
@@ -235,38 +259,8 @@ const CalendarWrapper = styled.div`
       }
 
       .fc-timegrid-event {
-        font-size: 12px;
-        padding: 4px 6px;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        overflow: visible;
-        min-height: 20px;
-        line-height: 1.3;
-
-        @media (max-width: 768px) {
-          font-size: 11px;
-          padding: 3px 5px;
-          min-height: 18px;
-        }
-
-        @media (max-width: 480px) {
-          font-size: 10px;
-          padding: 2px 4px;
-          min-height: 16px;
-        }
-
-        .fc-event-title {
-          word-wrap: break-word;
-          overflow-wrap: break-word;
-          white-space: normal;
-          overflow: visible;
-        }
-
-        .fc-event-time {
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
+        padding: 3px 5px;
+        overflow: hidden;
       }
 
       .fc-col-header-cell {
@@ -309,33 +303,8 @@ const CalendarWrapper = styled.div`
       }
 
       .fc-daygrid-event {
-        margin: 1px 2px;
-        padding: 2px 4px;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        overflow: visible;
-        min-height: 16px;
-        line-height: 1.3;
-
-        @media (max-width: 768px) {
-          margin: 1px;
-          padding: 2px 3px;
-          min-height: 14px;
-        }
-
-        @media (max-width: 480px) {
-          margin: 1px;
-          padding: 1px 2px;
-          min-height: 14px;
-        }
-
-        .fc-event-title {
-          word-wrap: break-word;
-          overflow-wrap: break-word;
-          white-space: normal;
-          overflow: visible;
-        }
+        margin: 2px;
+        min-height: 22px;
       }
     }
 
@@ -634,6 +603,29 @@ const CalendarViewSkeleton = () => (
   </CalendarContainer>
 );
 
+const StatusLegend = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+  color: #64748b;
+  font-size: 12px;
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+`;
+
 const CalendarView = () => {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
@@ -642,6 +634,7 @@ const CalendarView = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [cachedEvents, setCachedEvents] = useState([]);
+  const [calendarView, setCalendarView] = useState('dayGridMonth');
 
   const dispatch = useDispatch();
   const { tasks, loading, filters, pagination } = useSelector((state) => state.tasks);
@@ -660,31 +653,11 @@ const CalendarView = () => {
 
   // Ensure the tasks are processed into events and cached to prevent UI flicker
   useEffect(() => {
-    if (tasks?.length > 0) {
-      const eventsList = transformTasksToEvents(tasks);
+    if (Array.isArray(tasks)) {
+      const eventsList = transformTasksToCalendarEvents(tasks);
       setCachedEvents(eventsList);
     }
   }, [tasks]);
-
-  // Transform tasks into events for the calendar
-  const transformTasksToEvents = (tasksList) => {
-    if (!tasksList || !Array.isArray(tasksList)) return [];
-
-    return tasksList.map(task => ({
-      id: task._id || task.id,
-      title: task.title,
-      start: task.deadline ? new Date(task.deadline) : null,
-      end: task.deadline ? new Date(new Date(task.deadline).getTime() + 2 * 60 * 60 * 1000) : null, // Add 2 hours for end time
-      backgroundColor: getStatusColor(task.status),
-      borderColor: getStatusColor(task.status),
-      type: task.inspectionLevel?._id || '',
-      assignee: task.assignedTo?.length > 0 ? task.assignedTo[0]._id : '',
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      taskData: task // Keep the original task data
-    }));
-  };
 
   const loadEvents = () => {
     dispatch(fetchTasks({
@@ -694,27 +667,6 @@ const CalendarView = () => {
       isCalendarView: true // Add a flag to indicate this is for calendar view
     }));
   };
-
-  function getStatusColor(status) {
-    switch (status) {
-      case 'pending':
-        return 'var(--color-navy)'; // Dark blue
-      case 'in_progress':
-        return 'var(--color-navy)'; // Medium blue
-      case 'completed':
-        return '#10b981'; // Green
-      case 'cancelled':
-        return '#ef4444'; // Red
-      case 'archived':
-        return '#6b7280'; // Gray
-      case 'incomplete':
-        return '#f59e0b'; // Orange
-      case 'partially_completed':
-        return '#8b5cf6'; // Purple
-      default:
-        return 'var(--color-navy)'; // Default blue
-    }
-  }
 
   const handleLimitChange = (e) => {
     const newLimit = parseInt(e.target.value);
@@ -817,7 +769,8 @@ const CalendarView = () => {
         assignedTo: assignedUserId,
         inspectionLevel: inspectionLevelId,
         asset: assetId,
-        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+        startDate: task.startDate || null,
+        deadline: task.deadline || '',
         location: task.location || ''
       });
       setShowEventModal(true);
@@ -917,12 +870,20 @@ const CalendarView = () => {
     },
     selectable: true,
     selectMirror: true,
-    dayMaxEvents: true,
+    dayMaxEvents: 3,
+    eventMaxStack: 3,
+    moreLinkClick: 'popover',
+    datesSet: ({ view }) => setCalendarView(view.type),
     weekends: true,
     select: handleDateSelect,
     eventClick: handleEventClick,
     eventContent: renderEventContent,
-    height: "auto",
+    // Match the local time zone used by the inspection date/time pickers.
+    timeZone: 'local',
+    nextDayThreshold: '00:00:00',
+    defaultTimedEventDuration: CALENDAR_POINT_DURATION,
+    eventDisplay: 'block',
+    height: 'clamp(600px, 75vh, 820px)',
     direction: isRTL ? 'rtl' : 'ltr'
   };
 
@@ -949,9 +910,18 @@ const CalendarView = () => {
         ) : (
           <FullCalendar
             {...calendarConfig}
-            events={cachedEvents.length > 0 ? cachedEvents : transformTasksToEvents(tasks)}
+            events={calendarEventsForView(cachedEvents.length > 0 ? cachedEvents : transformTasksToCalendarEvents(tasks), calendarView)}
           />
         )}
+        <StatusLegend role="group" aria-label={t('calendar.statusLegend')}>
+          <span>{t('calendar.statusLegend')}:</span>
+          {CALENDAR_STATUSES.map(({ status, label, color }) => (
+            <span className="legend-item" key={status}>
+              <span className="legend-swatch" style={{ backgroundColor: color }} aria-hidden="true" />
+              {t(label)}
+            </span>
+          ))}
+        </StatusLegend>
       </CalendarWrapper>
 
       <PaginationContainer>
@@ -1014,36 +984,13 @@ const CalendarView = () => {
 
 const renderEventContent = (eventInfo) => {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '2px',
-      wordWrap: 'break-word',
-      overflowWrap: 'break-word',
-      whiteSpace: 'normal',
-      overflow: 'visible',
-      width: '100%',
-      minWidth: 0
-    }}>
-      {eventInfo.timeText && (
-        <span style={{
-          fontWeight: 'bold',
-          fontSize: '0.85em',
-          whiteSpace: 'nowrap',
-          flexShrink: 0
-        }}>
+    <div className="inspection-event-content" title={eventInfo.event.title}>
+      {eventInfo.isStart && eventInfo.timeText && (
+        <span className="inspection-event-time">
           {eventInfo.timeText}
         </span>
       )}
-      <span style={{
-        fontStyle: 'italic',
-        fontSize: '0.9em',
-        wordWrap: 'break-word',
-        overflowWrap: 'break-word',
-        whiteSpace: 'normal',
-        overflow: 'visible',
-        lineHeight: '1.3'
-      }}>
+      <span className="inspection-event-title">
         {eventInfo.event.title}
       </span>
     </div>

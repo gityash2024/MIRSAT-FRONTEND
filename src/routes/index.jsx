@@ -5,6 +5,7 @@ import PublicRoute from './PublicRoute';
 import Login from '../pages/Login';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
+import LegalPage from '../pages/legal/LegalPage';
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -104,6 +105,8 @@ const AppRoutes = () => {
 
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/privacy-policy" element={<LegalPage documentType="privacy" />} />
+      <Route path="/terms-and-conditions" element={<LegalPage documentType="terms" />} />
 
       {/* Admin, Manager, and Supervisor Routes - Shared Access */}
       <Route element={<PrivateRoute allowedRoles={[ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]} />}>

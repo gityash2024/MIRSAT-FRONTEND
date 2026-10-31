@@ -88,6 +88,7 @@ import {
   calculateScorePercentage,
   formatScorePercentage,
   getQuestionScore,
+  isScorableQuestion,
 } from '../../utils/inspectionScoring';
 import { API_CONFIG } from '../../config/api';
 import { validateSignatureDataUrl } from '../../utils/signatureValidation';
@@ -7498,14 +7499,7 @@ const UserTaskDetail = () => {
                         }
                       }
 
-                      // CRITICAL FIX: Determine if question is scorable
-                      const questionType = String(question.type || question.answerType || '').toLowerCase();
-                      const scorableTypes = ['yesno', 'yes_no', 'yes/no', 'boolean', 'compliance'];
-                      // Exclude non-scorable types: text, number, date, signature, file, media, checkbox, select, multiple_choice
-                      const isScorable = scorableTypes.includes(questionType) &&
-                        question.requirementType !== 'recommended' &&
-                        question.mandatory !== false &&
-                        question.required !== false;
+                      const isScorable = isScorableQuestion(question);
 
                       const questionScore = getQuestionScore(question, response);
 

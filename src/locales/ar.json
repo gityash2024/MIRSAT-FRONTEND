@@ -422,6 +422,10 @@
     "question": "السؤال",
     "untitledQuestion": "سؤال بدون عنوان",
     "questionSettings": "إعدادات السؤال",
+    "questionWeightPercent": "وزن السؤال (%)",
+    "enterQuestionWeightPercentage": "أدخل وزن السؤال كنسبة مئوية.",
+    "flagged": "مُعلَّم",
+    "isQuestionScored": "هل يتم احتساب درجة السؤال؟",
     "requirementType": "نوع المتطلب",
     "mandatory": "إجباري",
     "thisQuestionIsRequired": "هذا السؤال مطلوب",
@@ -1798,7 +1802,9 @@
     "createEvent": "إنشاء التفتيش",
     "updateEvent": "تحديث التفتيش",
     "deadline": "الموعد النهائي",
-    "dueDate": "تاريخ الاستحقاق"
+    "dueDate": "تاريخ الاستحقاق",
+    "statusLegend": "حالة التفتيش",
+    "partiallyCompleted": "مكتمل جزئياً"
   },
   "questionnaire": {
     "title": "الاستبيان",
@@ -1813,5 +1819,36 @@
     "noQuestionsFound": "لم يتم العثور على أسئلة",
     "tryAdjustingSearch": "حاول تعديل بحثك أو إنشاء سؤال جديد.",
     "optional": "اختياري"
+  },
+  "templateTransfer": {
+    "selectImportTemplates": "اختر القوالب المراد استيرادها",
+    "importSelectionHelp": "اختر القوالب من هذا الملف. يحدد خيار تحديد الكل جميع القوالب الموجودة في الملف. لن يتم تغيير القوالب الحالية.",
+    "importSelected": "استيراد القوالب المحددة",
+    "import": "استيراد",
+    "importing": "جارٍ الاستيراد…",
+    "importExcel": "استيراد Excel",
+    "importJson": "استيراد JSON",
+    "exportExcel": "تصدير بصيغة Excel",
+    "exportJson": "تصدير بصيغة JSON",
+    "selectTemplates": "تحديد القوالب للتصدير",
+    "selectionHelp": "اختر القوالب المطابقة للفلاتر الحالية. يشمل تحديد الكل جميع الصفحات.",
+    "selectAll": "تحديد الكل",
+    "selectedCount": "عدد القوالب المحددة: {{count}}",
+    "continueExport": "متابعة التصدير",
+    "noTemplates": "لا توجد قوالب مطابقة.",
+    "loadFailed": "تعذر تحميل القوالب. حاول مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "importSuccess": "تم استيراد القوالب بنجاح: {{count}}. لم يتم تغيير القوالب الحالية.",
+    "importFailed": "تعذر تأكيد الاستيراد. حدّث قائمة القوالب قبل إعادة المحاولة.",
+    "unsupportedVersion": "تنسيق ملف نقل القوالب أو إصداره غير مدعوم.",
+    "invalidTemplates": "يجب أن يحتوي الملف على قالب واحد على الأقل له اسم.",
+    "excelCellTooLong": "يتجاوز أحد الحقول الحد المسموح لخلية Excel. صدّر بصيغة JSON للحفاظ على قائمة التحقق كاملة.",
+    "invalidWorkbook": "ملف قوالب Excel غير صالح. استخدم ملف تصدير MIRSAT أو الملف النموذجي من إضافة قالب.",
+    "invalidWorkbookRow": "بيانات قائمة التحقق غير صالحة في صف Excel رقم {{row}}. احتفظ بمفاتيح القوالب والمسارات والإعدادات دون تغيير.",
+    "wrongFileType": "اختر ملفاً بصيغة {{format}}.",
+    "emptyFile": "الملف المحدد فارغ.",
+    "fileTooLarge": "يتجاوز حجم النقل 50 ميجابايت. اختر عدداً أقل من القوالب لكل ملف.",
+    "useListImport": "استخدم زر الاستيراد في صفحة القوالب لنقل قوائم التحقق المُصدَّرة مع جميع إعداداتها.",
+    "malformedJson": "الملف المحدد ليس ملف JSON صالحاً."
   }
 }

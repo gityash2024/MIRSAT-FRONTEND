@@ -5,6 +5,7 @@ import Sidebar from '../../components/common/Sidebar';
 import Topbar from '../TopBar';
 import { useLanguage } from '../../context/LanguageContext';
 import { isCompactViewport } from '../../utils/layout';
+import LegalLinks from '../../components/common/LegalLinks';
 
 // const AgentWidget = lazy(() => import('../../components/assistant/AgentWidget'));
 
@@ -138,6 +139,9 @@ const MainLayout = () => {
         />
         <MainContent>
           <Outlet />
+          <footer style={{ marginTop: 24, paddingTop: 16, color: '#475569' }}>
+            <LegalLinks centered />
+          </footer>
         </MainContent>
       </MainContentWrapper>
       {/* <Suspense fallback={null}>

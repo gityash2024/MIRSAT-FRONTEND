@@ -448,8 +448,8 @@ const Dashboard = () => {
     upcomingInspections: []
   });
   const [loading, setLoading] = useState(true);
-  const [inspectorSort, setInspectorSort] = useState({ key: null, direction: 'asc' });
-  const [templateSort, setTemplateSort] = useState({ key: null, direction: 'asc' });
+  const [inspectorSort, setInspectorSort] = useState({ key: 'count', direction: 'desc' });
+  const [templateSort, setTemplateSort] = useState({ key: 'count', direction: 'desc' });
   const [showAllInspectors, setShowAllInspectors] = useState(false);
   const [showAllTemplates, setShowAllTemplates] = useState(false);
   const [hoveredStatus, setHoveredStatus] = useState(null);
@@ -785,7 +785,7 @@ const Dashboard = () => {
 
       <ChartsGrid>
         <ScrollAnimation animation="slideIn" delay={0.2}>
-          <ChartCard>
+          <ChartCard style={{ height: '100%' }}>
             <SectionHeader>
               <SectionTitle>{t('dashboard.inspectionStatus')}</SectionTitle>
             </SectionHeader>
@@ -826,7 +826,7 @@ const Dashboard = () => {
         </ScrollAnimation>
 
         <ScrollAnimation animation="slideIn" delay={0.3}>
-          <ChartCard>
+          <ChartCard style={{ height: '100%' }}>
             <SectionHeader>
               <SectionTitle>{t('dashboard.upcomingInspections')}</SectionTitle>
               <SectionAction type="button" onClick={() => navigate('/tasks?status=pending')}>
@@ -879,15 +879,15 @@ const Dashboard = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                      <th style={{ textAlign: 'center' }}>
                         {t('common.inspector')}
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                      <th style={{ textAlign: 'center' }}>
                         <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('dashboard.taskCount', { defaultValue: 'Task Count' })} <SortIndicator active={inspectorSort.key === 'count'} direction={inspectorSort.direction} />
                         </button>
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                      <th style={{ textAlign: 'center' }}>
                         <button type="button" onClick={() => toggleSort(setInspectorSort, inspectorSort, 'avgTime')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('common.time')} <SortIndicator active={inspectorSort.key === 'avgTime'} direction={inspectorSort.direction} />
                         </button>
@@ -904,18 +904,18 @@ const Dashboard = () => {
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            textAlign: currentLanguage === 'ar' ? 'right' : 'left'
+                            textAlign: 'center'
                           }} title={item.name}>
                             {item.name}
                           </td>
                           <td style={{
-                            textAlign: currentLanguage === 'ar' ? 'right' : 'left',
+                            textAlign: 'center',
                             fontWeight: 600,
                             color: '#3b82f6'
                           }}>
                             {formatTaskCount(item.count)}
                           </td>
-                          <td style={{ color: '#475569' }}>
+                          <td style={{ color: '#475569', textAlign: 'center' }}>
                             {formatDuration(item.avgTime)}
                           </td>
                         </tr>
@@ -949,10 +949,10 @@ const Dashboard = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                      <th style={{ textAlign: 'center' }}>
                         {t('dashboard.templates', { defaultValue: 'Templates' })}
                       </th>
-                      <th style={{ textAlign: currentLanguage === 'ar' ? 'right' : 'left' }}>
+                      <th style={{ textAlign: 'center' }}>
                         <button type="button" onClick={() => toggleSort(setTemplateSort, templateSort, 'count')} style={{ border: 0, background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {t('dashboard.count')} <SortIndicator active={templateSort.key === 'count'} direction={templateSort.direction} />
                         </button>
@@ -969,12 +969,12 @@ const Dashboard = () => {
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            textAlign: currentLanguage === 'ar' ? 'right' : 'left'
+                            textAlign: 'center'
                           }} title={item.name}>
                             {item.name}
                           </td>
                           <td style={{
-                            textAlign: currentLanguage === 'ar' ? 'right' : 'left',
+                            textAlign: 'center',
                             fontWeight: 600,
                             color: '#8b5cf6'
                           }}>

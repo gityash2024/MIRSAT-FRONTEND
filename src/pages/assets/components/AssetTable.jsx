@@ -111,6 +111,7 @@ const Table = styled.table`
 const StyledTableRow = styled.tr`
   background-color: ${props => props.$rowColor || '#ffffff'};
   transition: background-color 0.2s ease;
+  ${props => props.$whiteText ? 'td { color: #ffffff; }' : ''}
   
   &:hover {
     background-color: ${props => {
@@ -430,7 +431,7 @@ const AssetTable = ({
               const assetId = getAssetId(asset);
               const rowColor = asset.color || '#ffffff';
               return (
-                <StyledTableRow key={assetId || `asset-${index}`} $rowColor={rowColor}>
+                <StyledTableRow key={assetId || `asset-${index}`} $rowColor={rowColor} $whiteText={asset.textColor === '#ffffff' || !['#ffffff', '#fff', '#f5f7fb', 'white', 'transparent'].includes(rowColor.toLowerCase())}>
                   <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                   <td>{asset.uniqueId || '--'}</td>
                   <td>{asset.type || '--'}</td>

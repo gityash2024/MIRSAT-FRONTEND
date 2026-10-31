@@ -18,6 +18,9 @@ import DocumentNamingModal from '../../components/ui/DocumentNamingModal';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import { formatPlatformDate } from '../../utils/platformDate';
+import TemplateExportSelectionModal from './TemplateExportSelectionModal';
+import TemplateImportSelectionModal from './TemplateImportSelectionModal';
+import { downloadTemplateTransfer, readTemplateImportFile } from '../../utils/templateTransfer';
 
 const ExportDropdown = styled.div`
   position: relative;
@@ -1100,10 +1103,19 @@ const InspectionLevelList = ({
   const [levelToClone, setLevelToClone] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
+  const [showExportSelection, setShowExportSelection] = useState(false);
+  const [showImportDropdown, setShowImportDropdown] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [pendingImport, setPendingImport] = useState(null);
+  const importDropdownRef = useRef(null);
+  const importInFlightRef = useRef(false);
+  const jsonImportRef = useRef(null);
+  const excelImportRef = useRef(null);
   const exportDropdownRef = useRef(null);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
+  const { hasPermission } = usePermissions();
 
   const translateStatus = (status) => {
     const statusMap = {
@@ -1217,16 +1229,17 @@ const InspectionLevelList = ({
     e.preventDefault();
     e.stopPropagation();
     setShowExportDropdown(!showExportDropdown);
+    setShowImportDropdown(false);
   };
 
   const handleExport = async (format) => {
     setPendingExport({ format });
-    setShowDocumentModal(true);
+    setShowExportSelection(true);
     setShowExportDropdown(false);
   };
 
   const handleConfirmExport = async (fileName, language = 'en') => {
-    if (!pendingExport) return;
+    if (!pendingExport?.ids?.length) return;
 
     try {
       setLoading(true);
@@ -1242,20 +1255,15 @@ const InspectionLevelList = ({
         format: pendingExport.format,
         fileName,
         language,
-        search: searchTerm,
-        page: 1,
-        limit: pagination?.totalResults || 10000
+        ids: pendingExport.ids.join(',')
       };
 
-      Object.entries(filters || {}).forEach(([key, value]) => {
-        if (Array.isArray(value) && value.length > 0) {
-          params[key] = value;
-        } else if (value) {
-          params[key] = value;
-        }
-      });
-
-      await inspectionService.exportInspectionLevels(params);
+      if (pendingExport.format === 'xlsx' || pendingExport.format === 'json') {
+        const bundle = await inspectionService.getTemplateTransfer(pendingExport.ids);
+        downloadTemplateTransfer(bundle, pendingExport.format, fileName, t);
+      } else {
+        await inspectionService.exportInspectionLevels(params);
+      }
       toast.success(`Export as ${pendingExport.format.toUpperCase()} successful`);
     } catch (error) {
       console.error('Export failed', error);
@@ -1277,6 +1285,43 @@ const InspectionLevelList = ({
       setLoading(false);
       setShowDocumentModal(false);
       setPendingExport(null);
+    }
+  };
+
+  const handleTemplateFileImport = async (event, format) => {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file || importInFlightRef.current) return;
+    importInFlightRef.current = true;
+    setIsImporting(true);
+    setShowImportDropdown(false);
+    try {
+      const bundle = await readTemplateImportFile(file, format, t);
+      setPendingImport(bundle);
+    } catch (error) {
+      toast.error(error.message || t('templateTransfer.importFailed'));
+    } finally {
+      input.value = '';
+      importInFlightRef.current = false;
+      setIsImporting(false);
+    }
+  };
+
+  const handleConfirmTemplateImport = async bundle => {
+    if (!bundle.templates?.length || importInFlightRef.current) return;
+    importInFlightRef.current = true;
+    setIsImporting(true);
+    try {
+      const result = await inspectionService.importTemplates(bundle);
+      setPendingImport(null);
+      toast.success(t('templateTransfer.importSuccess', { count: result.importedCount }));
+      if (fetchData) await fetchData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.response?.data?.error?.message
+        || error.message || t('templateTransfer.importFailed'));
+    } finally {
+      importInFlightRef.current = false;
+      setIsImporting(false);
     }
   };
 
@@ -1337,6 +1382,7 @@ const InspectionLevelList = ({
       if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
         setShowExportDropdown(false);
       }
+      if (importDropdownRef.current && !importDropdownRef.current.contains(event.target)) setShowImportDropdown(false);
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -1562,7 +1608,7 @@ const InspectionLevelList = ({
             <Button
               variant="secondary"
               onClick={handleExportDropdownToggle}
-              disabled={loading}
+              disabled={loading || isImporting}
             >
               <DownloadDone size={18} />
               {t('common.export')}
@@ -1577,8 +1623,38 @@ const InspectionLevelList = ({
                 <FileText size={16} />
                 {t('inspections.exportAsWord')}
               </DropdownItem>
+              <DropdownItem onClick={() => handleExport('xlsx')}>
+                <FileText size={16} />{t('templateTransfer.exportExcel')}
+              </DropdownItem>
+              <DropdownItem onClick={() => handleExport('json')}>
+                <FileText size={16} />{t('templateTransfer.exportJson')}
+              </DropdownItem>
             </DropdownContent>
           </ExportDropdown>
+          {hasPermission(PERMISSIONS.INSPECTIONS.CREATE_INSPECTIONS) && (
+            <ExportDropdown ref={importDropdownRef}>
+              <Button variant="secondary" disabled={loading || isImporting || !!pendingImport} onClick={() => {
+                setShowImportDropdown(value => !value);
+                setShowExportDropdown(false);
+              }}>
+                {isImporting ? <Loader size={18} /> : <Upload size={18} />}
+                {t(isImporting ? 'templateTransfer.importing' : 'templateTransfer.import')}
+                <ChevronDownCircle size={14} />
+              </Button>
+              <DropdownContent show={showImportDropdown}>
+                <DropdownItem onClick={() => { setShowImportDropdown(false); excelImportRef.current?.click(); }}>
+                  <FileText size={16} />{t('templateTransfer.importExcel')}
+                </DropdownItem>
+                <DropdownItem onClick={() => { setShowImportDropdown(false); jsonImportRef.current?.click(); }}>
+                  <FileText size={16} />{t('templateTransfer.importJson')}
+                </DropdownItem>
+              </DropdownContent>
+              <input ref={jsonImportRef} type="file" accept=".json,application/json" hidden
+                onChange={event => handleTemplateFileImport(event, 'json')} />
+              <input ref={excelImportRef} type="file" accept=".xlsx,.xls" hidden
+                onChange={event => handleTemplateFileImport(event, 'xlsx')} />
+            </ExportDropdown>
+          )}
           <Button
             variant="primary"
             as={Link}
@@ -1752,7 +1828,21 @@ const InspectionLevelList = ({
         </LevelGrid>
       )}
 
-      {showDocumentModal && pendingExport && (
+      {pendingImport && (
+        <TemplateImportSelectionModal bundle={pendingImport} busy={isImporting}
+          onClose={() => { if (!importInFlightRef.current) setPendingImport(null); }}
+          onConfirm={handleConfirmTemplateImport} />
+      )}
+      {showExportSelection && pendingExport && (
+        <TemplateExportSelectionModal service={inspectionService} filters={filters} search={searchTerm}
+          onClose={() => { setShowExportSelection(false); setPendingExport(null); }}
+          onConfirm={ids => {
+            setPendingExport(previous => ({ ...previous, ids }));
+            setShowExportSelection(false);
+            setShowDocumentModal(true);
+          }} />
+      )}
+      {showDocumentModal && pendingExport?.ids?.length > 0 && (
         <DocumentNamingModal
           isOpen={showDocumentModal}
           onClose={() => setShowDocumentModal(false)}
@@ -1760,6 +1850,7 @@ const InspectionLevelList = ({
           exportFormat={pendingExport.format}
           documentType="Templates-Report"
           defaultCriteria={['documentType', 'currentDate']}
+          showLanguageSelector={pendingExport.format !== 'json' && pendingExport.format !== 'xlsx'}
         />
       )}
       {/* Pagination Controls */}

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import boat from '../assets/boat.jpeg';
+import LegalLinks from '../components/common/LegalLinks';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -444,6 +445,7 @@ const ResetPassword = () => {
         </ContentWrapper>
 
         <Footer>
+          <LegalLinks />
           ©2025 Mirsat
           <Link to="/english">English</Link> |
           <Link to="/arabic">العربية</Link>
@@ -453,4 +455,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;

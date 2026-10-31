@@ -14,6 +14,7 @@ import takamolBrandLogo from '../assets/tms-logo-white.svg';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { getDefaultRouteForUser } from '../utils/defaultRoute';
+import LegalLinks from '../components/common/LegalLinks';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -499,6 +500,13 @@ const LanguageSeparator = styled.span`
   }
 `;
 
+const LoginLegalLinks = styled.div`
+  width: 100%;
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+`;
+
 const Footer = styled.div`
   position: absolute;
   bottom: 2.5rem;
@@ -775,6 +783,9 @@ const Login = () => {
             </SignUpText> */}
           </form>
           </LoginCard>
+          <LoginLegalLinks>
+            <LegalLinks centered />
+          </LoginLegalLinks>
         </LoginPanel>
         
         <Footer isRTL={isRTL}>

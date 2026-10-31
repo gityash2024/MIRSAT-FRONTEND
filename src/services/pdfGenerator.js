@@ -1,3 +1,5 @@
+import { getConfiguredComplianceFlag } from '../utils/complianceFlags';
+import { getQuestionWeight, isScorableQuestion as isScorableInspectionQuestion } from '../utils/inspectionScoring';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import ArabicReshaper from 'arabic-reshaper';
@@ -93,13 +95,7 @@ const formatDuration = (secondsValue, language = 'en') => {
   return `${hours} hr${hours === 1 ? '' : 's'} ${remaining} min${remaining === 1 ? '' : 's'}`;
 };
 
-const isScorableQuestion = (question) => {
-  const qType = (question?.type || question?.answerType || '').toLowerCase();
-  if (!['yesno', 'compliance'].includes(qType)) return false;
-  if (question?.requirementType === 'recommended') return false;
-  if (question?.mandatory === false || question?.required === false) return false;
-  return true;
-};
+const isScorableQuestion = (question) => isScorableInspectionQuestion(question, new Set(['yesno', 'compliance']));
 
 const getMaxScore = (question) => {
   if (question?.scores && typeof question.scores === 'object') {
@@ -112,11 +108,13 @@ const getMaxScore = (question) => {
       .map((value) => Number(value))
       .filter((value) => Number.isFinite(value));
     if (values.length > 0) {
+      if (question?.isScored === true) return Math.max(0, ...values);
       const max = Math.max(...values);
       if (Number.isFinite(max) && max > 0) return max;
     }
   }
 
+  if (question?.isScored === true && ['select', 'multiple', 'multiple_choice', 'checkbox'].includes(question?.type || question?.answerType)) return 0;
   const fromScoring = Number(question?.scoring?.max || question?.scores?.max || 0);
   if (Number.isFinite(fromScoring) && fromScoring > 0) return fromScoring;
 
@@ -137,6 +135,7 @@ const normalizeScoreValue = (value) => String(value ?? '')
   .replace(/\s+/g, ' ');
 
 const getConfiguredScore = (scores, response) => {
+  if (Array.isArray(response)) return Math.max(0, ...response.map(value => getConfiguredScore(scores, value) ?? 0));
   if (!scores || typeof scores !== 'object' || response === null || response === undefined || response === '') {
     return undefined;
   }
@@ -282,7 +281,7 @@ export const calculateReportScoreSummary = (questionRows, responses) => {
       return;
     }
 
-    const weight = Number(question?.weight) || 1;
+    const weight = getQuestionWeight(question);
     if (weight <= 0) return;
     const max = getMaxScore(question);
     const weightedMax = max * weight;
@@ -396,7 +395,7 @@ const getQuestionScoreLabel = (question, response) => {
   }
 
   const max = getMaxScore(question);
-  const weight = Number(question?.weight || 1);
+  const weight = question?.weightUnit === 'percentage' ? getQuestionWeight(question) : Number(question?.weight || 1);
   const weightedMax = max * weight;
 
   let earned = 0;
@@ -409,7 +408,8 @@ const getQuestionScoreLabel = (question, response) => {
     earned = weightedMax / 2;
   }
 
-  return `${Number(earned.toFixed(2))}/${Number(weightedMax.toFixed(2))}`;
+  const precision = question?.weightUnit === 'percentage' ? 12 : 2;
+  return `${Number(earned.toFixed(precision))}/${Number(weightedMax.toFixed(precision))}`;
 };
 
 const deriveFlaggedItems = (taskData, questionRows, responses) => {
@@ -424,7 +424,7 @@ const deriveFlaggedItems = (taskData, questionRows, responses) => {
   const flagged = [];
   questionRows.forEach((row) => {
     const { value } = findResponseEntry(responses, row.id);
-    if (!isNonCompliant(value)) return;
+    if (!(getConfiguredComplianceFlag(row.question, value) ?? isNonCompliant(value))) return;
 
     flagged.push({
       itemNo: flagged.length + 1,
@@ -635,6 +635,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   const questionRows = extractQuestionRows(normalizedTaskData);
   const preInspectionQuestions = extractPreInspectionQuestions(normalizedTaskData);
   const scoreSummary = calculateReportScoreSummary(questionRows, responses);
+  const reportScorePrecision = questionRows.some(row => row.question?.weightUnit === 'percentage') ? 12 : 2;
   const reportScoreSummaries = buildReportScoreSummaries(normalizedTaskData, responses);
   const flaggedItems = deriveFlaggedItems(normalizedTaskData, questionRows, responses);
 
@@ -693,7 +694,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
 
   const formatScore = (value) => {
     const numericValue = Number(value || 0);
-    return Number.isInteger(numericValue) ? String(numericValue) : String(Number(numericValue.toFixed(2)));
+    return Number.isInteger(numericValue) ? String(numericValue) : String(Number(numericValue.toFixed(reportScorePrecision)));
   };
 
   const formatReportScorePercentage = (summary) => (
@@ -821,7 +822,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
   const durationText = formatDuration(normalizedTaskData?.taskMetrics?.timeSpent, exportLanguage);
 
   const cards = [
-    { title: L('score'), value: `${formatScorePercentage(scoreSummary.percentage)}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(2))}/${Number(scoreSummary.total.toFixed(2))}`, color: colors.navy },
+    { title: L('score'), value: `${formatScorePercentage(scoreSummary.percentage)}%`, subtitle: `${Number(scoreSummary.achieved.toFixed(reportScorePrecision))}/${Number(scoreSummary.total.toFixed(reportScorePrecision))}`, color: colors.navy },
     { title: L('flaggedItems'), value: String(flaggedItems.length), subtitle: L('task'), color: colors.danger },
     { title: L('duration'), value: durationText, subtitle: L('total'), color: colors.warning }
   ];

@@ -335,10 +335,13 @@ export const inspectionService = {
       this.startLoading('Exporting inspection levels...');
       
       const { format = 'pdf', fileName = 'inspection-levels', ...otherParams } = params;
-      const response = await api.get(`/inspection/export/${format}`, { 
-        params: { ...otherParams, fileName },
-        responseType: 'blob' 
-      });
+      // Selected IDs go in the body so Select All is not constrained by URL
+      // length. Preserve the legacy GET export used by existing callers.
+      const response = otherParams.ids
+        ? await api.post(`/inspection/export/${format}`, { ...otherParams, fileName }, { responseType: 'blob' })
+        : await api.get(`/inspection/export/${format}`, {
+          params: { ...otherParams, fileName }, responseType: 'blob'
+        });
       
       // Create a URL for the blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -361,6 +364,41 @@ export const inspectionService = {
     } finally {
       this.stopLoading();
     }
+  },
+
+  async getTemplateExportChoices(params = {}) {
+    const choices = [];
+    let expectedTotal;
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const response = await api.get('/inspection', { params: { ...params, summary: 'true', page, limit: 200 } });
+      if (!Array.isArray(response.data?.results)) throw new Error('Failed to load templates.');
+      if (expectedTotal === undefined) expectedTotal = response.data.totalResults;
+      else if (response.data.totalResults !== expectedTotal) throw new Error('The template list changed. Please reload it.');
+      choices.push(...response.data.results);
+      totalPages = Number(response.data.totalPages) || 1;
+      page += 1;
+    } while (page <= totalPages);
+    const uniqueChoices = [...new Map(choices.map(choice => [String(choice._id || choice.id), choice])).values()];
+    if (expectedTotal !== undefined && uniqueChoices.length !== Number(expectedTotal)) {
+      throw new Error('The template list changed. Please reload it.');
+    }
+    return uniqueChoices;
+  },
+
+  async getTemplateTransfer(ids) {
+    if (!Array.isArray(ids) || !ids.length) throw new Error('Select at least one template to export.');
+    const response = await api.post('/inspection/export/json', { ids });
+    return response.data;
+  },
+
+  async importTemplates(bundle) {
+    // Use the existing retry opt-out: replaying an import can duplicate copies
+    // if a network error happened after the server saved the first request.
+    const response = await api.post('/inspection/import', bundle, { timeout: 120000, _skipRetry: true });
+    inspectionLevelsCache.clear();
+    return response.data;
   },
 
   async deleteSubLevel(inspectionId, subLevelId) {

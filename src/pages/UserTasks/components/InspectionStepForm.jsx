@@ -1,3 +1,4 @@
+import { getQuestionScore, isScorableQuestion } from '../../../utils/inspectionScoring';
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
@@ -1274,18 +1275,17 @@ const InspectionStepForm = ({
     questions.forEach(question => {
       if (!question) return;
       
-      // CRITICAL FIX: Exclude recommended questions from scoring
-      if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-        return; // Skip recommended/non-mandatory questions
+      if (!isScorableQuestion(question, new Set(['yesno', 'compliance']))) {
+        return;
       }
       
-      // CRITICAL FIX: Only score Yes/No and Compliance question types
-      const questionType = question.type || question.answerType;
-      const scorableTypes = ['yesno', 'compliance'];
-      if (!scorableTypes.includes(questionType)) {
-        return; // Skip text, signature, date, number, file, and other non-scorable types
+      if (typeof question.isScored === 'boolean' || question.weightUnit === 'percentage') {
+        const score = getQuestionScore(question, getQuestionResponse(question._id, sectionId));
+        totalPossible += score.total;
+        totalAchieved += score.achieved;
+        return;
       }
-      
+
       // Get max score from question data
       const maxScore = question.scoring?.max || 
         (question.scores ? Math.max(...Object.values(question.scores).filter(v => !isNaN(v))) : 0) || 2;
@@ -1348,18 +1348,17 @@ const InspectionStepForm = ({
             subLevel.questions.forEach(question => {
               if (!question || !question._id) return;
               
-              // CRITICAL FIX: Exclude recommended questions from scoring
-              if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
-                return; // Skip recommended/non-mandatory questions
+              if (!isScorableQuestion(question, new Set(['yesno', 'compliance']))) {
+                return;
               }
               
-              // CRITICAL FIX: Only score Yes/No and Compliance question types
-              const questionType = question.type || question.answerType;
-              const scorableTypes = ['yesno', 'compliance'];
-              if (!scorableTypes.includes(questionType)) {
-                return; // Skip text, signature, date, number, file, and other non-scorable types
+              if (typeof question.isScored === 'boolean' || question.weightUnit === 'percentage') {
+                const score = getQuestionScore(question, getQuestionResponse(question._id, subLevel._id));
+                sectionTotalPossible += score.total;
+                sectionAchieved += score.achieved;
+                return;
               }
-              
+
               // Get max score from question data
               const maxScore = question.scoring?.max || 
                 (question.scores ? Math.max(...Object.values(question.scores).filter(v => !isNaN(v))) : 0) || 2;
@@ -2319,19 +2318,15 @@ const InspectionStepForm = ({
   
   // Add calculateQuestionScore inside the component
   const calculateQuestionScore = (question, sectionId) => {
-    // CRITICAL FIX: Exclude recommended questions from scoring
-    if (question.requirementType === 'recommended' || question.mandatory === false || question.required === false) {
+    if (typeof question?.isScored === 'boolean' || question?.weightUnit === 'percentage') {
+      const score = getQuestionScore(question, getQuestionResponse(question._id, sectionId));
+      return { ...score, percentage: score.total > 0 ? Math.round(score.achieved / score.total * 100) : 0 };
+    }
+    if (!isScorableQuestion(question, new Set(['yesno', 'compliance']))) {
       return { achieved: 0, total: 0, percentage: 0 };
     }
     
-    // CRITICAL FIX: Only score Yes/No and Compliance question types
-    const questionType = question.type || question.answerType;
-    const scorableTypes = ['yesno', 'compliance'];
-    if (!scorableTypes.includes(questionType)) {
-      return { achieved: 0, total: 0, percentage: 0 }; // Text, signature, date, etc. should never be scored
-    }
-    
-    if (!question || !question.scoring || !question.scoring.enabled) {
+    if (!question.scoring || !question.scoring.enabled) {
       return { achieved: 0, total: question?.scoring?.max || 0, percentage: 0 };
     }
     

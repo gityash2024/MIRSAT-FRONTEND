@@ -54,6 +54,7 @@ export const calculateScorePercentage = (achieved, total) => {
 export const formatScorePercentage = (value) => truncateScorePercentage(value).toFixed(2);
 
 const getConfiguredScore = (scores, value) => {
+  if (Array.isArray(value)) return Math.max(0, ...value.map(item => getConfiguredScore(scores, item) ?? 0));
   if (!scores || value === null || value === undefined || value === '') return undefined;
 
   const valueKey = String(value);
@@ -84,22 +85,48 @@ const getQuestionMaxScore = (question) => {
     return Math.max(0, ...configuredScores);
   }
 
+  if (['select', 'multiple', 'multiple_choice', 'checkbox'].includes(normalizeValue(question?.type || question?.answerType))) return 0;
+
   return Number(question?.scoring?.max)
     || Number(question?.scores?.max)
     || 2;
 };
 
-export const getQuestionScore = (question, response) => {
-  const questionType = normalizeValue(question?.type || question?.answerType);
-  const isScorable = SCOREABLE_QUESTION_TYPES.has(questionType)
+// An explicit choice is independent of Required. Legacy snapshots keep their
+// original scoring rules until an author changes either question setting.
+export const isQuestionScored = (question) => typeof question?.isScored === 'boolean'
+  ? question.isScored
+  : SCOREABLE_QUESTION_TYPES.has(normalizeValue(question?.type || question?.answerType))
     && normalizeValue(question?.requirementType) !== 'recommended'
-    && question?.mandatory !== false
-    && question?.required !== false;
+    && question?.mandatory !== false && question?.required !== false;
 
-  if (!isScorable) return { total: 0, achieved: 0 };
+export const isScorableQuestion = (question, legacyTypes = SCOREABLE_QUESTION_TYPES) => {
+  const type = normalizeValue(question?.type || question?.answerType);
+  const types = question?.isScored === true
+    ? new Set([...SCOREABLE_QUESTION_TYPES, 'select', 'multiple', 'multiple_choice', 'checkbox'])
+    : legacyTypes;
+  return isQuestionScored(question) && types.has(type);
+};
+
+export const getQuestionWeight = (question) => {
+  if (question?.weightUnit === 'percentage') {
+    const percent = Number(question.weight ?? 100);
+    return Number.isFinite(percent) && percent >= 0 ? percent / 100 : 0;
+  }
+  return typeof question?.isScored === 'boolean'
+    ? Math.max(0, Number(question?.weight ?? 1) || 0) : Number(question?.weight) || 1;
+};
+
+// Display legacy multipliers as equivalent percentages without changing saved
+// snapshots: 1x is 100%. Once edited, the numeric percentage is stored directly.
+export const getQuestionWeightPercentage = (question) => question?.weightUnit === 'percentage'
+  ? Number(question.weight ?? 100) : Number(question?.weight ?? 1) === 0 ? 0 : getQuestionWeight(question) * 100;
+
+export const getQuestionScore = (question, response) => {
+  if (!isScorableQuestion(question)) return { total: 0, achieved: 0 };
 
   const maxScore = getQuestionMaxScore(question);
-  const weight = Number(question?.weight) || 1;
+  const weight = getQuestionWeight(question);
   const value = getScoreResponseValue(response);
   const normalizedValue = normalizeValue(value);
 
