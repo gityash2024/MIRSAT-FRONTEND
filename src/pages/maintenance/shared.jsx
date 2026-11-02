@@ -900,7 +900,7 @@ export function Preview({ path, title, onClose }) {
       ) : media ? (
         media.type === "application/pdf" ? (
           <Suspense fallback={<p>{m("Loading…")}</p>}>
-            <PdfPreview url={media.url} title={title} />
+            <PdfPreview blob={media.blob} title={title} />
           </Suspense>
         ) : (
           <img

@@ -44,7 +44,7 @@ export const maintenanceService = {
     const response = await api.get(`${prefix}${path}`, {
       responseType: "blob",
     });
-    return { url: URL.createObjectURL(response.data), type: response.data.type };
+    return { url: URL.createObjectURL(response.data), type: response.data.type, blob: response.data };
   },
 };
 export const maintenanceError = (error) =>

@@ -6,7 +6,7 @@ import { Actions, Button, ErrorBox, Label, useCopy } from "./shared";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-export default function PdfPreview({ url, title }) {
+export default function PdfPreview({ blob, title }) {
   const m = useCopy();
   const canvas = useRef(null);
   const container = useRef(null);
@@ -26,14 +26,25 @@ export default function PdfPreview({ url, title }) {
   }, []);
   useEffect(() => {
     let live = true;
-    const loading = getDocument({
-      url,
-      isEvalSupported: false,
-      useSystemFonts: true,
-    });
-    loading.promise
+    let loading;
+    setDocument(null);
+    setPage(1);
+    setBusy(true);
+    setError("");
+    // The API has already authenticated and downloaded this file. Supplying
+    // its bytes avoids a second request through the blob URL/XHR transport.
+    blob.arrayBuffer()
+      .then((buffer) => {
+        if (!live) return undefined;
+        loading = getDocument({
+          data: new Uint8Array(buffer),
+          isEvalSupported: false,
+          useSystemFonts: true,
+        });
+        return loading.promise;
+      })
       .then((pdf) => {
-        if (live) setDocument(pdf);
+        if (live && pdf) setDocument(pdf);
       })
       .catch((err) => {
         if (live) {
@@ -43,9 +54,9 @@ export default function PdfPreview({ url, title }) {
       });
     return () => {
       live = false;
-      loading.destroy();
+      loading?.destroy();
     };
-  }, [url]);
+  }, [blob]);
   useEffect(() => {
     if (!document) return undefined;
     let live = true;
@@ -159,6 +170,6 @@ export default function PdfPreview({ url, title }) {
   );
 }
 PdfPreview.propTypes = {
-  url: PropTypes.string.isRequired,
+  blob: PropTypes.shape({ arrayBuffer: PropTypes.func.isRequired }).isRequired,
   title: PropTypes.string.isRequired,
 };
