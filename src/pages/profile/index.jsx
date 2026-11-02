@@ -54,7 +54,7 @@ const PageTitle = styled.h1`
 `;
 
 const PageSubtitle = styled.p`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 16px;
   margin: 0;
 `;
@@ -181,7 +181,7 @@ const ProfileMetaItem = styled.div`
   
   .label {
     font-weight: 500;
-    color: #64748b;
+    color: var(--color-text-muted);
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -215,7 +215,7 @@ const TabButton = styled.button`
   background: transparent;
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;

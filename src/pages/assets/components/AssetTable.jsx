@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Eye, Edit, Trash, MoreVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Loader } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 // import Skeleton from '../../../components/ui/Skeleton'; // COMMENTED OUT
 
 const TableContainer = styled.div`
@@ -343,6 +344,7 @@ const AssetTable = ({
   onViewTasks
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isRTL } = useLanguage();
   // Helper function to get asset ID (handles both 'id' and '_id' fields)
   const getAssetId = (asset) => {
@@ -435,7 +437,7 @@ const AssetTable = ({
                   <RowNumber>{(pagination.page - 1) * pagination.limit + index + 1}</RowNumber>
                   <td>{asset.uniqueId || '--'}</td>
                   <td>{asset.type || '--'}</td>
-                  <td>{asset.displayName || '--'}</td>
+                  <td><button type="button" onClick={() => navigate(`/assets/${assetId}`)} style={{ color:'inherit', background:'none', border:0, font:'inherit', fontWeight:600, textAlign:'start', cursor:'pointer', padding:0 }}>{asset.displayName || '--'}</button></td>
                   <td>{asset.city || '--'}</td>
                   <td>{asset.location || '--'}</td>
                   <ActionsCell>

@@ -286,6 +286,9 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
   const translateModuleName = (moduleName) => {
     const moduleMap = {
       'ASSETS': t('common.assets'),
+      'DOCUMENTS': t('Documents', { ns: 'maintenance' }),
+      'FAULTS': t('Fault Reports', { ns: 'maintenance' }),
+      'WAREHOUSE': t('Spare Parts & Warehouse', { ns: 'maintenance' }),
       'TEMPLATE': t('common.template'),
       'USERS': t('common.users'),
       'PROFILE': t('common.profile'),

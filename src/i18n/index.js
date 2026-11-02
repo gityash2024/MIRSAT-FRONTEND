@@ -3,13 +3,17 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import enTranslation from '../locales/en.json';
 import arTranslation from '../locales/ar.json';
+import maintenanceEn from '../locales/maintenance.en.json';
+import maintenanceAr from '../locales/maintenance.ar.json';
 
 const resources = {
   en: {
-    translation: enTranslation
+    translation: enTranslation,
+    maintenance: maintenanceEn
   },
   ar: {
-    translation: arTranslation
+    translation: arTranslation,
+    maintenance: maintenanceAr
   }
 };
 

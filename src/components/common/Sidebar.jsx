@@ -14,6 +14,8 @@ import {
   FileText,
   Activity,
   Search,
+  AlertTriangle,
+  Package,
   X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,12 +25,18 @@ import { isCompactViewport } from '../../utils/layout';
 import mirSatLogo from '../../assets/mirsat-logo-white.svg';
 import takamolLogo from '../../assets/tms-logo-white.svg';
 import { DARK_PALETTE } from '../../theme/darkPalette';
+import { canBrowseMaintenance } from '../../pages/maintenance/shared';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
   color: white;
+  --sidebar-header-height: ${props => props.$collapsed ? '86px' : 'clamp(128px, 18.5dvh, 328px)'};
+  --sidebar-footer-height: ${props => props.$collapsed ? '84px' : 'clamp(64px, 7dvh, 112px)'};
+  --sidebar-search-height: 0px;
+  --sidebar-row-height: clamp(38px, calc((100dvh - var(--sidebar-header-height) - var(--sidebar-footer-height) - var(--sidebar-search-height) - 16px) / var(--sidebar-menu-count)), 78px);
   height: 100vh;
-  width: ${props => props.$collapsed ? '70px' : '280px'};
+  height: 100dvh;
+  width: ${props => props.$collapsed ? '70px' : '297px'};
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -39,6 +47,9 @@ const SidebarContainer = styled.div`
   box-shadow: ${props => props.$collapsed ? 'none' : '2px 0 8px rgba(0, 0, 0, 0.15)'};
   
   @media (max-width: 1100px) {
+    --sidebar-header-height: 112px;
+    --sidebar-search-height: 76px;
+    --sidebar-footer-height: 64px;
     width: 280px;
     transform: translateX(${props => {
       if (props.$collapsed) {
@@ -58,15 +69,21 @@ const SidebarContainer = styled.div`
 
 const Logo = styled.div`
   position: relative;
-  padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '0.75rem 3.5rem'};
+  padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '117px 3.5rem 97px'};
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: ${props => props.$collapsed ? '86px' : '116px'};
+  height: var(--sidebar-header-height);
+  min-height: var(--sidebar-header-height);
+  box-sizing: border-box;
+  flex-shrink: 0;
   
+  @media (min-width: 1101px) and (max-height: 1399px) {
+    padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '64px 1.5rem 12px'};
+  }
   @media (max-width: 1100px) {
-    min-height: 112px;
+    padding: 0.75rem 3.5rem;
   }
 `;
 
@@ -78,11 +95,14 @@ const BrandLockup = styled.div`
 
   img {
     display: block;
-    height: 78px;
+    height: 114px;
     width: auto;
     flex-shrink: 0;
   }
 
+  @media (min-width: 1101px) and (max-height: 1399px) {
+    img { height: clamp(52px, calc(var(--sidebar-header-height) - 76px), 114px); }
+  }
   @media (max-width: 1100px) {
     img {
       height: 72px;
@@ -100,6 +120,7 @@ const SidebarHeaderActions = styled.div`
   align-items: center;
   transform: translateY(-50%);
   z-index: 1;
+  @media (max-width: 1100px) { left: auto; right: auto; inset-inline-end: 0.75rem; }
 `;
 
 const CollapseButton = styled.button`
@@ -158,6 +179,8 @@ const ToggleButton = styled.button`
 `;
 
 const SearchContainer = styled.div`
+  position: absolute; top: 12px; left: 0; right: 0;
+  @media(max-width:1100px){position:static;}
   padding: ${props => props.$collapsed ? '0.5rem' : '1rem'};
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -165,9 +188,16 @@ const SearchContainer = styled.div`
   height: ${props => props.$collapsed ? '0' : 'auto'};
   overflow: hidden;
   
+  @media (min-width: 1101px) and (max-height: 1399px) {
+    top: 4px;
+    padding: ${props => props.$collapsed ? '0' : '8px 16px'};
+    border-bottom: 0;
+  }
   @media (max-width: 1100px) {
     opacity: 1;
-    height: auto;
+    height: var(--sidebar-search-height);
+    box-sizing: border-box;
+    flex-shrink: 0;
     padding: 1rem;
   }
 `;
@@ -238,6 +268,9 @@ const SearchInput = styled.input`
 
 const Nav = styled.nav`
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.5rem 0;
@@ -260,16 +293,22 @@ const Nav = styled.nav`
   }
 `;
 
-const StyledLink = styled.div`
+const StyledLink = styled.button.attrs({ type: "button" })`
+  width: 100%; border: 0; background: transparent; text-align: start; font: inherit;
+  &:focus-visible { outline: 2px solid white; outline-offset: -3px; }
   display: flex;
   align-items: center;
-  padding: 0.875rem ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
+  height: var(--sidebar-row-height);
+  min-height: var(--sidebar-row-height);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 0 ${props => props.$collapsed ? '0.75rem' : '1.5rem'};
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(255, 255, 255, 0.94);
+  transition: background-color 0.2s ease, color 0.2s ease;
   position: relative;
   cursor: pointer;
-  margin: 0.25rem 0;
+  margin: 0;
   
   &:hover {
     color: white;
@@ -278,17 +317,22 @@ const StyledLink = styled.div`
   
   &.active {
     color: white;
-    background: #0043CE80;
-    
-    &:before {
+    background: #292965;
+    border-radius: 4px;
+    width: calc(100% - 2px);
+    margin-inline: 1px;
+
+    &::after {
       content: '';
       position: absolute;
-      ${props => props.$isRTL ? 'right: 0;' : 'left: 0;'}
-      top: 0;
-      height: 100%;
-      width: 4px;
-      background: white;
-      border-radius: 0 2px 2px 0;
+      inset-inline-end: ${props => props.$collapsed ? '8px' : '24px'};
+      top: 50%;
+      transform: translateY(-50%);
+      width: ${props => props.$collapsed ? '6px' : '14px'};
+      height: ${props => props.$collapsed ? '6px' : '14px'};
+      border-radius: 50%;
+      background: var(--color-navy);
+      pointer-events: none;
     }
   }
 
@@ -296,13 +340,13 @@ const StyledLink = styled.div`
     color: ${DARK_PALETTE.gold};
     background: rgba(245, 196, 81, 0.12);
 
-    &:before {
+    &::after {
       background: ${DARK_PALETTE.gold};
     }
   }
 
   @media (max-width: 1100px) {
-    padding: 0.875rem 1.5rem;
+    padding: 0 1.5rem;
   }
 `;
 
@@ -318,7 +362,8 @@ const IconWrapper = styled.div`
 `;
 
 const NavText = styled.span`
-  font-size: 0.95rem;
+  font-size: clamp(16px, calc(var(--sidebar-row-height) * 0.282), 22px);
+  line-height: 1.35;
   font-weight: 500;
   opacity: ${props => props.$collapsed ? '0' : '1'};
   width: ${props => props.$collapsed ? '0' : 'auto'};
@@ -344,9 +389,11 @@ const BrandFooter = styled.div`
   display: flex;
   justify-content: ${props => props.$collapsed ? 'center' : 'flex-start'};
   align-items: center;
-  padding: ${props => props.$collapsed ? '1rem 0.5rem' : '0.9rem 1.35rem'};
+  padding: ${props => props.$collapsed ? '0 0.5rem' : '0 1.35rem'};
+  box-sizing: border-box;
+  height: var(--sidebar-footer-height);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  min-height: ${props => props.$collapsed ? '84px' : '112px'};
+  min-height: var(--sidebar-footer-height);
 
   .brand-wordmark {
     display: block;
@@ -399,10 +446,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     return user.permissions.includes(permission);
   };
   
-  const userRole = user?.role?.toLowerCase() || 'inspector';
+  const storedRole = user?.role?.toLowerCase() || 'inspector';
+  const userRole = storedRole === 'superadmin' ? 'admin' : storedRole;
 
   // Define navigation items with required permissions
   const getNavigationItems = () => [
+    { title: t('Fault Reports', { ns: 'maintenance' }), path: '/fault-reports', icon: AlertTriangle, maintenanceModule: 'faults' },
+    { title: t('Spare Parts', { ns: 'maintenance' }), path: '/spare-parts', icon: Package, maintenanceModule: 'warehouse' },
+    { title: t('Documents', { ns: 'maintenance' }), path: '/documents', icon: FileText, maintenanceModule: 'documents' },
     {
       title: t('navigation.dashboard'),
       path: userRole === 'inspector' ? '/user-dashboard' : '/dashboard',
@@ -487,9 +538,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   // Get menu items based on role and permissions
   const allMenuItems = useMemo(() => {
-    const navigationItems = getNavigationItems();
+    const navigationOrder = ['/dashboard', '/user-dashboard', '/tasks', '/user-tasks', '/fault-reports', '/templates', '/assets', '/spare-parts', '/calendar', '/documents', '/questionnaire', '/users', '/logs', '/profile'];
+    const navigationItems = getNavigationItems().sort((a, b) => navigationOrder.indexOf(a.path) - navigationOrder.indexOf(b.path));
     
     return navigationItems.filter(item => {
+      if (item.maintenanceModule) return canBrowseMaintenance(user, item.maintenanceModule);
       if (!item.roles.includes(userRole)) {
         return false;
       }
@@ -571,7 +624,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   return (
-    <SidebarContainer $collapsed={effectiveCollapsed} $isRTL={isRTL}>
+    <SidebarContainer inert={isMobile && effectiveCollapsed ? "" : undefined} aria-hidden={isMobile && effectiveCollapsed ? true : undefined} $collapsed={effectiveCollapsed} $isRTL={isRTL} style={{ '--sidebar-menu-count': Math.max(menuItems.length, 1) }}>
       <Logo $collapsed={effectiveCollapsed} $isRTL={isRTL}>
         {!effectiveCollapsed && (
           <BrandLockup>
@@ -596,16 +649,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               )}
             </CollapseButton>
           )}
-          <ToggleButton onClick={handleToggle}>
+          <ToggleButton aria-label={t("common.close", { defaultValue: "Close navigation" })} onClick={handleToggle}>
             {effectiveCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </ToggleButton>
         </SidebarHeaderActions>
       </Logo>
       
-      <SearchContainer $collapsed={effectiveCollapsed}>
+      <SearchContainer inert={effectiveCollapsed ? "" : undefined} aria-hidden={effectiveCollapsed ? true : undefined} $collapsed={effectiveCollapsed}>
         <SearchInputWrapper>
           <SearchInput
             type="text"
+            aria-label={t('common.search')}
             placeholder={t('common.search') || 'Search...'}
             value={searchQuery}
             onChange={handleSearchChange}
@@ -628,7 +682,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           menuItems.map((item) => (
             <StyledLink 
               key={item.path}
+              aria-label={item.title}
+              title={effectiveCollapsed ? item.title : undefined}
               className={isActiveRoute(item.path) ? 'active' : ''}
+              aria-current={isActiveRoute(item.path) ? 'page' : undefined}
               $collapsed={effectiveCollapsed}
               $isRTL={isRTL}
               onClick={() => handleNavigation(item.path)}

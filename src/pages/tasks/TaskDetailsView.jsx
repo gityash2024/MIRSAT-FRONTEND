@@ -231,7 +231,7 @@ const InfoContent = styled.div`
 
 const InfoLabel = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 `;
 
@@ -331,7 +331,7 @@ const QuestionStatus = styled.div`
 
 const QuestionDetails = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 `;
 
@@ -344,7 +344,7 @@ const ResponseSection = styled.div`
 
 const ResponseLabel = styled.div`
   font-size: 11px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
   font-weight: 500;
 `;
@@ -365,7 +365,7 @@ const ScoreItem = styled.div`
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const ScoreValue = styled.span`
@@ -1204,7 +1204,7 @@ const TaskDetailsView = () => {
               animation: 'spin 1s linear infinite',
               marginBottom: '16px'
             }} />
-            <h3 style={{ color: '#64748b', marginBottom: '8px' }}>{t('tasks.loadingTaskDetails')}</h3>
+            <h3 style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }}>{t('tasks.loadingTaskDetails')}</h3>
             <p style={{ color: '#9ca3af' }}>{t('tasks.pleaseWaitWhileFetching')}</p>
           </div>
         </Content>
@@ -1268,7 +1268,7 @@ const TaskDetailsView = () => {
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: '48px' }}>
-            <FileText size={48} style={{ marginBottom: '16px', color: '#64748b' }} />
+            <FileText size={48} style={{ marginBottom: '16px', color: 'var(--color-text-muted)' }} />
             <h3>{t('tasks.taskNotFound')}</h3>
             <p>{t('tasks.taskNotFoundDescription')}</p>
           </div>
@@ -1542,7 +1542,7 @@ const TaskDetailsView = () => {
               <div style={{
                 marginTop: '8px',
                 fontSize: '12px',
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 display: 'flex',
                 justifyContent: 'space-between'
               }}>
@@ -1585,7 +1585,7 @@ const TaskDetailsView = () => {
                         </tr>
                         {page.sections.map((section) => (
                           <tr key={`completed-section-score-${section.number}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '10px 10px 10px 24px', color: '#64748b' }}>{section.number}</td>
+                            <td style={{ padding: '10px 10px 10px 24px', color: 'var(--color-text-muted)' }}>{section.number}</td>
                             <td style={{ padding: '10px', color: '#475569' }}>{section.name}</td>
                             <td style={{ padding: '10px', textAlign: 'center', color: section.total > 0 ? '#16a34a' : '#64748b' }}>
                               {section.total > 0 ? `${section.percentage}%` : 'N/A'}

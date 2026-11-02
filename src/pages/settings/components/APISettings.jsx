@@ -46,7 +46,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const Card = styled.div`
@@ -81,7 +81,7 @@ const APIKeyName = styled.h3`
 
 const APIKeyDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const APIKeyDetails = styled.div`
@@ -89,7 +89,7 @@ const APIKeyDetails = styled.div`
   flex-wrap: wrap;
   gap: 16px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 
   span {
     display: flex;
@@ -131,7 +131,7 @@ const StatCard = styled.div`
 
 const StatLabel = styled.span`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const StatValue = styled.span`

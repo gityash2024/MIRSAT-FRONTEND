@@ -100,7 +100,7 @@ const Checkbox = styled.label`
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
   width: 100%;
@@ -200,7 +200,7 @@ const FilterTag = styled.div`
     background: none;
     padding: 2px;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     flex-shrink: 0;
 
     @media (max-width: 480px) {

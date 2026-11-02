@@ -222,7 +222,7 @@ const SearchInput = styled.div`
   }
   
   svg {
-    color: #94a3b8;
+    color: var(--color-text-muted);
     flex-shrink: 0;
 
     @media (max-width: 480px) {
@@ -251,14 +251,14 @@ const FilterButton = styled.button`
 const LoadingWrapper = styled.div`
   padding: 40px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 16px;
 `;
 
 const NoResultsWrapper = styled.div`
   padding: 40px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   
   h3 {
     font-size: 18px;
@@ -318,7 +318,7 @@ const TableHeader = styled.div`
 const HeaderCell = styled.div`
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -378,7 +378,7 @@ const InfoCell = styled.div`
       content: "${props => props.label}";
       font-size: 13px;
       font-weight: 600;
-      color: #64748b;
+      color: var(--color-text-muted);
       display: block;
       margin-bottom: 4px;
     }
@@ -472,7 +472,7 @@ const QuestionnaireName = styled.div`
 
 const Description = styled.div`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -564,7 +564,7 @@ const ActionsButton = styled.button`
   border-radius: 4px;
   border: none;
   background: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   flex-shrink: 0;
   
@@ -725,7 +725,7 @@ const Pagination = styled.div`
 
 const PaginationInfo = styled.div`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 

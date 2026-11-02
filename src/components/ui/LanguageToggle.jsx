@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import { Globe, ChevronDown } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect, useRef, useId } from "react";
+import styled from "styled-components";
+import { Globe, ChevronDown } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { useTranslation } from "react-i18next";
 
 const LanguageToggleContainer = styled.div`
   position: relative;
@@ -12,7 +12,7 @@ const LanguageToggleContainer = styled.div`
 `;
 
 const LanguageButton = styled.button`
-  background: transparent;
+  background: ${(props) => (props.$compact ? "#f5faff" : "transparent")};
   border: none;
   display: flex;
   align-items: center;
@@ -61,7 +61,7 @@ const LanguageButton = styled.button`
   .chevron {
     opacity: 0.5;
     transition: transform 0.3s;
-    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transform: ${(props) => (props.$isOpen ? "rotate(180deg)" : "rotate(0deg)")};
     flex-shrink: 0;
 
     @media (max-width: 768px) {
@@ -85,9 +85,9 @@ const LanguageDropdown = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 160px;
   padding: 8px 0;
-  opacity: ${props => props.$isOpen ? 1 : 0};
-  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.$isOpen ? '0' : '-10px'});
+  opacity: ${(props) => (props.$isOpen ? 1 : 0)};
+  visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
+  transform: translateY(${(props) => (props.$isOpen ? "0" : "-10px")});
   transition: all 0.3s;
   z-index: 1000;
 
@@ -125,7 +125,7 @@ const LanguageOption = styled.button`
     width: 20px;
     height: 15px;
     border-radius: 2px;
-    background: ${props => props.$flagColor || '#e5e7eb'};
+    background: ${(props) => props.$flagColor || "#e5e7eb"};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -135,16 +135,22 @@ const LanguageOption = styled.button`
   }
 `;
 
-const LanguageToggle = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
+const LanguageToggle = ({
+  isOpen: controlledIsOpen,
+  onOpen,
+  onClose,
+  compact = false,
+}) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const { currentLanguage, changeLanguage, languages } = useLanguage();
   const { t } = useTranslation();
   const containerRef = useRef(null);
+  const menuId = useId();
 
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
-  const currentLang = languages.find(lang => lang.code === currentLanguage);
+  const currentLang = languages.find((lang) => lang.code === currentLanguage);
 
   const handleToggle = () => {
     if (isControlled) {
@@ -171,38 +177,67 @@ const LanguageToggle = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
   useEffect(() => {
     if (!isControlled) {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setInternalIsOpen(false);
         }
       };
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isControlled]);
 
   return (
-    <LanguageToggleContainer ref={containerRef}>
-      <LanguageButton 
+    <LanguageToggleContainer
+      ref={containerRef}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && isOpen) {
+          event.preventDefault();
+          if (isControlled) onClose?.();
+          else setInternalIsOpen(false);
+          containerRef.current?.querySelector("button")?.focus();
+        }
+      }}
+    >
+      <LanguageButton
         onClick={handleToggle}
         $isOpen={isOpen}
+        $compact={compact}
+        type="button"
+        aria-label={t("common.language", { defaultValue: "Language" })}
+        aria-expanded={isOpen}
+        aria-controls={menuId}
       >
         <Globe size={16} className="icon" />
-        <span>{currentLang?.nativeName || currentLang?.name}</span>
+        <span>
+          {compact
+            ? currentLanguage === "ar"
+              ? "ع"
+              : "EN"
+            : currentLang?.nativeName || currentLang?.name}
+        </span>
         <ChevronDown size={14} className="chevron" />
       </LanguageButton>
 
-      <LanguageDropdown $isOpen={isOpen}>
+      <LanguageDropdown
+        id={menuId}
+        $isOpen={isOpen}
+        inert={!isOpen ? "" : undefined}
+      >
         {languages.map((language) => (
           <LanguageOption
+            type="button"
+            aria-pressed={currentLanguage === language.code}
             key={language.code}
-            className={currentLanguage === language.code ? 'active' : ''}
+            className={currentLanguage === language.code ? "active" : ""}
             onClick={() => handleLanguageChange(language.code)}
-            $flagColor={language.code === 'en' ? '#1d4ed8' : '#059669'}
+            $flagColor={language.code === "en" ? "#1d4ed8" : "#059669"}
           >
-            <div className="flag">
-              {language.code === 'en' ? 'EN' : 'ع'}
-            </div>
+            <div className="flag">{language.code === "en" ? "EN" : "ع"}</div>
             <span>{language.nativeName}</span>
           </LanguageOption>
         ))}

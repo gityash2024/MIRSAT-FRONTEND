@@ -624,7 +624,7 @@ const Button = styled.button`
   gap: 8px;
   padding: 8px 16px;
   background-color: #f1f5f9;
-  color: #64748b;
+  color: var(--color-text-muted);
   border: none;
   border-radius: 4px;
   font-weight: 500;
@@ -757,7 +757,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -866,7 +866,7 @@ const SaveButton = styled.button`
   justify-content: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: #4CAF50;
+  background-color: #24734b;
   color: white;
   border: none;
   border-radius: 4px;
@@ -1123,7 +1123,7 @@ const Tab = styled.div`
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
+  color: ${props => props.$active ? 'var(--color-navy)' : 'var(--color-text-muted)'};
   opacity: ${props => props.$isDragging ? 0.5 : 1};
   background: ${props => {
     if (props.$isDragging) return '#e2e8f0';
@@ -1198,7 +1198,7 @@ const TabCount = styled.span`
   width: 24px;
   height: 24px;
   background-color: ${props => props.$active ? 'var(--color-navy)' : '#e2e8f0'};
-  color: ${props => props.$active ? 'white' : '#64748b'};
+  color: ${props => props.$active ? 'white' : 'var(--color-text-muted)'};
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
@@ -1624,7 +1624,7 @@ const LibraryModalTitle = styled.h2`
 const LibraryModalClose = styled.button`
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
@@ -1668,7 +1668,7 @@ const LibrarySearchInput = styled.input`
   }
   
   &::placeholder {
-    color: #94a3b8;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -1677,7 +1677,7 @@ const LibrarySearchIcon = styled.div`
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--color-text-muted);
 `;
 
 const LibraryQuestionsList = styled.div`
@@ -1740,7 +1740,7 @@ const LibraryQuestionMeta = styled.div`
   align-items: center;
   gap: 16px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const LibraryQuestionType = styled.span`
@@ -1753,14 +1753,14 @@ const LibraryQuestionType = styled.span`
 `;
 
 const LibraryQuestionOptions = styled.span`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 12px;
 `;
 
 const LibraryEmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const LibraryEmptyIcon = styled.div`
@@ -1808,7 +1808,7 @@ const LibraryModalButton = styled.button`
     }
   ` : `
     background: white;
-    color: #64748b;
+    color: var(--color-text-muted);
     border: 1px solid #d1d5db;
     
     &:hover {
@@ -1908,7 +1908,7 @@ const ModalTitle = styled.h3`
 const ModalClose = styled.button`
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 24px;
   padding: 4px;
@@ -1956,7 +1956,7 @@ const SearchInput = styled.div`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -1988,13 +1988,13 @@ const QuestionLibraryItemFooter = styled.div`
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const QuestionLibraryEmpty = styled.div`
   text-align: center;
   padding: 32px 0;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const SaveToLibraryButton = styled.button`
@@ -2019,7 +2019,7 @@ const AutoSaveIndicator = styled.div`
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: ${props => props.status === 'saving' ? 'var(--color-navy)' : props.status === 'saved' ? '#22c55e' : '#64748b'};
+  color: ${props => props.status === 'saving' ? 'var(--color-navy)' : props.status === 'saved' ? '#22c55e' : 'var(--color-text-muted)'};
   padding: 4px 8px;
   border-radius: 4px;
   background: ${props => props.status === 'saving' ? '#e8eaf6' : props.status === 'saved' ? '#f0fdf4' : 'transparent'};
@@ -2144,7 +2144,7 @@ const PaginationContainer = styled.div`
 
 const PageInfo = styled.div`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const PaginationButtons = styled.div`
@@ -2373,7 +2373,7 @@ const QuestionTableRow = styled.div`
 
 const DragHandleIcon = styled.div`
   cursor: grab;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2383,7 +2383,7 @@ const DragHandleIcon = styled.div`
   
   &:hover {
     background: #e2e8f0;
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -2853,7 +2853,7 @@ const QuestionItemComponent = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 transition: 'transform 0.2s ease',
                 transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
                 width: '20px',
@@ -2875,7 +2875,7 @@ const QuestionItemComponent = ({
             {question.description && (
               <div style={{
                 fontSize: '13px',
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -3074,9 +3074,9 @@ const QuestionItemComponent = ({
                     aria-describedby={`question-weight-help-${sectionIndex}-${questionIndex}`}
                     style={{ paddingInlineEnd: '32px' }}
                   />
-                  <span aria-hidden="true" style={{ position: 'absolute', insetInlineEnd: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }}>%</span>
+                  <span aria-hidden="true" style={{ position: 'absolute', insetInlineEnd: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>%</span>
                 </div>
-                <div id={`question-weight-help-${sectionIndex}-${questionIndex}`} style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <div id={`question-weight-help-${sectionIndex}-${questionIndex}`} style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   {t('common.enterQuestionWeightPercentage')}
                 </div>
               </FormGroup>
@@ -3521,7 +3521,7 @@ const QuestionItemComponent = ({
                     onChange={(e) => updateQuestion({ ...question, weight: Math.max(1, parseInt(e.target.value) || 1) })}
                     min="1"
                   />
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                     Multiplies the base score value
               </div>
                 </FormGroup> */}
@@ -3534,7 +3534,7 @@ const QuestionItemComponent = ({
                     disabled={true}
                     style={{
                       backgroundColor: '#f8fafc',
-                      color: '#64748b',
+                      color: 'var(--color-text-muted)',
                       cursor: 'not-allowed',
                       width: '100%',
                       maxWidth: '100%',
@@ -3544,7 +3544,7 @@ const QuestionItemComponent = ({
                   />
                   <div style={{
                     fontSize: '12px',
-                    color: '#64748b',
+                    color: 'var(--color-text-muted)',
                     marginTop: '4px',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
@@ -3691,7 +3691,7 @@ const QuestionItemComponent = ({
               {libraryLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
                   <Loader size={32} style={{ marginBottom: '16px', color: 'var(--color-navy)' }} />
-                  <div style={{ color: '#64748b', fontSize: '16px' }}>Loading questions...</div>
+                  <div style={{ color: 'var(--color-text-muted)', fontSize: '16px' }}>Loading questions...</div>
                 </div>
               ) : (
                 <LibraryQuestionsList>
@@ -3997,7 +3997,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
               border: 'none',
               cursor: 'pointer',
               fontSize: '20px',
-              color: '#64748b',
+              color: 'var(--color-text-muted)',
               flexShrink: 0,
               padding: '4px',
               display: 'flex',
@@ -4022,7 +4022,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
           <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '16px', color: 'var(--color-navy)' }}>
             {t('common.currentTemplateInformation')}
           </div>
-          <div style={{ fontSize: '14px', color: '#64748b', display: 'grid', gap: '8px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', display: 'grid', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
               <strong>{t('common.name')}:</strong>
               <span style={{ color: '#334155', fontWeight: '500' }}>{formData.name || t('common.untitled')}</span>
@@ -4137,7 +4137,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
                 </div>
                 <div style={{ 
                   fontSize: '12px',
-                  color: '#64748b'
+                  color: 'var(--color-text-muted)'
                 }}>
                   {activity.timestamp}
                 </div>
@@ -4148,7 +4148,7 @@ const ActivityHistoryCard = ({ formData, activities = [], isOpen, onClose }) => 
           <div style={{ 
             padding: '16px',
             textAlign: 'center', 
-            color: '#64748b',
+            color: 'var(--color-text-muted)',
             fontSize: '14px',
             background: '#f1f5f9',
             borderRadius: '6px'
@@ -4273,7 +4273,7 @@ const MoveQuestionModal = ({
             ) : (
               <div style={{
                 padding: '12px',
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 background: '#ffffff',
                 borderRadius: '8px',
                 border: '1px solid #e2e8f0',
@@ -4544,7 +4544,7 @@ const MobilePreviewPanel = ({
             border: '2px dashed #e2e8f0',
             borderRadius: '4px',
             textAlign: 'center',
-            color: '#64748b',
+            color: 'var(--color-text-muted)',
             boxSizing: 'border-box'
           }}>
             {t('common.signature')}
@@ -4559,7 +4559,7 @@ const MobilePreviewPanel = ({
             border: '2px dashed #e2e8f0',
             borderRadius: '4px',
             textAlign: 'center',
-            color: '#64748b',
+            color: 'var(--color-text-muted)',
             boxSizing: 'border-box'
           }}>
             📷 {t('common.mediaUpload')}
@@ -4574,7 +4574,7 @@ const MobilePreviewPanel = ({
             border: '2px dashed #e2e8f0',
             borderRadius: '4px',
             textAlign: 'center',
-            color: '#64748b',
+            color: 'var(--color-text-muted)',
             boxSizing: 'border-box'
           }}>
             📎 {t('common.fileUpload')}
@@ -4715,7 +4715,7 @@ const MobilePreviewPanel = ({
         <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {formData.name || t('common.untitledTemplate')}
         </h2>
-        <div style={{ fontSize: '13px', color: '#64748b', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {formData.description || t('common.noDescriptionProvided')}
         </div>
       </div>
@@ -4800,7 +4800,7 @@ const MobilePreviewPanel = ({
             {currentPageData.name || `${t('common.page')} ${currentPage + 1}`}
           </h3>
           {currentPageData.description && (
-            <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <p style={{ color: 'var(--color-text-muted)', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               {currentPageData.description}
             </p>
           )}
@@ -4896,7 +4896,7 @@ const MobilePreviewPanel = ({
               {isExpanded && (
                 <div style={{ padding: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   {section.description && (
-                    <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                    <p style={{ color: 'var(--color-text-muted)', margin: '0 0 16px 0', fontSize: '14px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                       {section.description}
                     </p>
                   )}
@@ -4985,7 +4985,7 @@ const MobilePreviewPanel = ({
                         {isQuestionExpanded && (
                           <div style={{ padding: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                             {question.description && (
-                              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                              <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '12px', wordWrap: 'break-word', overflowWrap: 'break-word', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                                 {question.description}
                               </div>
                             )}
@@ -5098,7 +5098,7 @@ const MobilePreviewPanel = ({
             textAlign: 'center',
             backgroundColor: 'white',
             borderRadius: '8px',
-            color: '#94a3b8',
+            color: 'var(--color-text-muted)',
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box'
@@ -5215,7 +5215,7 @@ const InspectionSaveButton = styled.button`
   gap: 8px;
   min-height: 38px;
   padding: 8px 18px;
-  background-color: #4CAF50;
+  background-color: #24734b;
   color: white;
   border: none;
   border-radius: 6px;
@@ -5613,7 +5613,7 @@ const SectionTab = styled.div`
   padding: 8px 18px;
   cursor: pointer;
   font-size: 14px;
-  color: ${props => props.$active ? 'var(--color-navy)' : '#64748b'};
+  color: ${props => props.$active ? 'var(--color-navy)' : 'var(--color-text-muted)'};
   font-weight: ${props => props.$active ? '700' : '500'};
   background: ${props => {
     if (props.$isDragging) return '#e2e8f0';
@@ -7230,7 +7230,7 @@ const InspectionLevelForm = () => {
             <div style={{
               fontSize: '16px',
               fontWeight: activePageIndex === pageIndex ? '600' : '500',
-              color: activePageIndex === pageIndex ? 'var(--color-navy)' : '#64748b',
+              color: activePageIndex === pageIndex ? 'var(--color-navy)' : 'var(--color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'
@@ -7241,7 +7241,7 @@ const InspectionLevelForm = () => {
                 <span style={{
                   marginLeft: '8px',
                   fontSize: '13px',
-                  color: '#64748b',
+                  color: 'var(--color-text-muted)',
                   fontWeight: 'normal'
                 }}>
                   ({page.sections.length} section{page.sections.length !== 1 ? 's' : ''})
@@ -7250,7 +7250,7 @@ const InspectionLevelForm = () => {
             </div>
 
             {page.description && (
-              <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                 {page.description}
               </div>
             )}
@@ -7271,7 +7271,7 @@ const InspectionLevelForm = () => {
                 padding: '4px',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                color: '#64748b'
+                color: 'var(--color-text-muted)'
               }}
               title="Edit Page"
             >
@@ -7367,7 +7367,7 @@ const InspectionLevelForm = () => {
               <span style={{
                 marginLeft: '8px',
                 fontSize: '13px',
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 fontWeight: 'normal'
               }}>
                 ({section.questions.length} question{section.questions.length !== 1 ? 's' : ''})
@@ -7422,7 +7422,7 @@ const InspectionLevelForm = () => {
             <div style={{
               marginBottom: '16px',
               fontSize: '14px',
-              color: '#64748b'
+              color: 'var(--color-text-muted)'
             }}>
               {section.description}
             </div>
@@ -7456,7 +7456,7 @@ const InspectionLevelForm = () => {
             <div style={{
               padding: '20px',
               textAlign: 'center',
-              color: '#94a3b8',
+              color: 'var(--color-text-muted)',
               backgroundColor: '#f8fafc',
               borderRadius: '6px'
             }}>
@@ -7764,7 +7764,7 @@ const InspectionLevelForm = () => {
             backgroundColor: activeTab === 'basic-info' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
             backdropFilter: activeTab === 'basic-info' ? 'blur(10px)' : 'none',
             boxShadow: activeTab === 'basic-info' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
-            color: activeTab === 'basic-info' ? 'var(--color-navy)' : '#64748b',
+            color: activeTab === 'basic-info' ? 'var(--color-navy)' : 'var(--color-text-muted)',
             fontWeight: activeTab === 'basic-info' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
@@ -7782,7 +7782,7 @@ const InspectionLevelForm = () => {
             backgroundColor: activeTab === 'pages-questions' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
             backdropFilter: activeTab === 'pages-questions' ? 'blur(10px)' : 'none',
             boxShadow: activeTab === 'pages-questions' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
-            color: activeTab === 'pages-questions' ? 'var(--color-navy)' : '#64748b',
+            color: activeTab === 'pages-questions' ? 'var(--color-navy)' : 'var(--color-text-muted)',
             fontWeight: activeTab === 'pages-questions' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
@@ -7800,7 +7800,7 @@ const InspectionLevelForm = () => {
             backgroundColor: activeTab === 'report' ? 'rgba(59, 73, 223, 0.15)' : 'transparent',
             backdropFilter: activeTab === 'report' ? 'blur(10px)' : 'none',
             boxShadow: activeTab === 'report' ? '0 4px 12px rgba(59, 73, 223, 0.2)' : 'none',
-            color: activeTab === 'report' ? 'var(--color-navy)' : '#64748b',
+            color: activeTab === 'report' ? 'var(--color-navy)' : 'var(--color-text-muted)',
             fontWeight: activeTab === 'report' ? '700' : '500',
             fontSize: '14px',
             whiteSpace: 'nowrap',
@@ -7879,7 +7879,7 @@ const InspectionLevelForm = () => {
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '20px',
-                  color: '#64748b',
+                  color: 'var(--color-text-muted)',
                   flexShrink: 0,
                   padding: '4px',
                   display: 'flex',
@@ -7894,7 +7894,7 @@ const InspectionLevelForm = () => {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ marginTop: 0, color: '#64748b' }}>{t('common.followTheseStepsToCreate')}</p>
+              <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>{t('common.followTheseStepsToCreate')}</p>
 
               <div style={{
                 background: '#f1f5f9',
@@ -7926,7 +7926,7 @@ const InspectionLevelForm = () => {
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
                   {t('common.startByFillingOut')}
                 </p>
-                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: 'var(--color-text-muted)' }}>
                   <li>{t('common.templateNameIsRequired')}</li>
                   <li>{t('common.chooseAnAppropriateType')}</li>
                   <li>{t('common.addAClearDescription')}</li>
@@ -7963,7 +7963,7 @@ const InspectionLevelForm = () => {
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
                   {t('common.createTheStructureOfYourTemplate')}
                 </p>
-                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: 'var(--color-text-muted)' }}>
                   <li>{t('common.addPagesToOrganize')}</li>
                   <li>{t('common.addTemplateLevelsToEachPage')}</li>
                   <li>{t('common.createQuestionsWithAppropriateTypes')}</li>
@@ -8000,7 +8000,7 @@ const InspectionLevelForm = () => {
                 <p style={{ margin: '0 0 8px 32px', color: '#475569' }}>
                   {t('common.previewYourTemplateAndPublish')}
                 </p>
-                <ul style={{ paddingLeft: '48px', margin: '0', color: '#64748b' }}>
+                <ul style={{ paddingLeft: '48px', margin: '0', color: 'var(--color-text-muted)' }}>
                   <li>{t('common.useTheReportTabToPreview')}</li>
                   <li>{t('common.saveYourTemplateFrequently')}</li>
                   <li>{t('common.clickPublishWhenReady')}</li>

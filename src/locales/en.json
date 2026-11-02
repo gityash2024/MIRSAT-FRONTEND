@@ -760,7 +760,23 @@
     "failedToLoadFlaggedItems": "Failed to load flagged items",
     "failedToLoadFilterOptions": "Failed to load filter options",
     "exportFunctionalityComingSoon": "Export functionality coming soon",
-    "filters": "Filters"
+    "filters": "Filters",
+    "openNavigation": "Open navigation",
+    "accountMenu": "Account menu",
+    "total": "Total",
+    "showLess": "Show less",
+    "notAvailable": "Not available",
+    "applied": "Applied",
+    "untitled": "Untitled",
+    "reportPreviewAndPublishing": "Report preview and publishing",
+    "share": "Share",
+    "print": "Print",
+    "order": "Order",
+    "completedAt": "Completed at",
+    "timestamp": "Timestamp",
+    "progress": "Progress",
+    "superadmin": "Super Admin",
+    "timezoneChanged": "Timezone changed to {{timezone}}"
   },
   "auth": {
     "setNewPassword": "Set New Password",
@@ -890,7 +906,8 @@
     "question": "Question",
     "response": "Response",
     "noFlaggedItems": "No Flagged Items",
-    "noFlaggedItemsDescription": "There are no flagged items matching your filters."
+    "noFlaggedItemsDescription": "There are no flagged items matching your filters.",
+    "noTemplateData": "No inspection data available for templates"
   },
   "inspections": {
     "title": "Templates",
@@ -1468,7 +1485,43 @@
     "allQuestionsAnswered": "All Required Questions Answered!",
     "progressCalculating": "Progress is being calculated. The display should update to 100% shortly.",
     "clickToNavigate": "Click to navigate to this question",
-    "navigatedTo": "Navigated to"
+    "navigatedTo": "Navigated to",
+    "fileUploadFailed": "Failed to upload file. Please try again.",
+    "savingTimeoutRetry": "Request timed out. Please try again.",
+    "payloadTooLarge": "Data size is too large. Please reduce the file sizes and try again.",
+    "networkErrorRetry": "Network error. Please check your connection and try again.",
+    "savingQuestionnaire": "Saving questionnaire...",
+    "partiallyCompleted": "Partially completed",
+    "missingTaskId": "Task ID is missing",
+    "invalidTaskId": "Invalid task ID",
+    "errorLoadingTaskDataTryAgain": "Failed to load task data. Please try again.",
+    "taskIdMissing": "Task ID is missing",
+    "taskStatusUpdatedSuccessfully": "Task status updated successfully",
+    "failedToUpdateTaskStatus": "Failed to update task status",
+    "unableToLoadTaskDetails": "Unable to load task details",
+    "failedToLoadTask": "Failed to load task",
+    "requestedTaskCouldNotBeFound": "The requested task could not be found",
+    "taskDetailsAndProgress": "Task details and progress",
+    "noDescriptionProvided": "No description provided",
+    "noAssetAssigned": "No asset assigned",
+    "createdOn": "Created on",
+    "noAssignees": "No assignees",
+    "unknownTemplate": "Unknown template",
+    "addComment": "Add comment",
+    "userAssignmentRequired": "User assignment is required",
+    "taskUpdatedSuccessfully": "Inspection updated successfully",
+    "failedToUpdateTask": "Failed to update inspection",
+    "failedToCreateTask": "Failed to create inspection",
+    "errorOccurred": "An error occurred. Please try again.",
+    "titleRequired": "Title is required",
+    "descriptionRequired": "Description is required",
+    "deadlineRequired": "Deadline is required",
+    "templateRequired": "Template is required",
+    "assignees": "Assignees",
+    "noPreInspectionQuestionsAdded": "No pre-inspection questions added",
+    "failedToDeleteTask": "Failed to delete task",
+    "inspectionSublevels": "Inspection sublevels",
+    "invalidFileFormat": "Unsupported file format. Please select a JPG, JPEG, or PNG image."
   },
   "reports": {
     "title": "Reports",
@@ -1541,7 +1594,9 @@
     "addUser": "Add User",
     "loadingUsers": "Users loading...",
     "exportAsPDF": "Export as PDF",
-    "confirmChanges": "Confirm Changes"
+    "confirmChanges": "Confirm Changes",
+    "userNotFound": "User not found",
+    "updateUserInformation": "Update user information"
   },
   "assets": {
     "title": "Assets",
@@ -1578,7 +1633,15 @@
     "uniqueIdAlphaNumeric": "Use only letters, numbers, hyphens, and underscores.",
     "assetIdAlreadyExists": "An asset with this Unique ID already exists.",
     "failedToSaveAsset": "Failed to save asset",
-    "checkRequiredFields": "Please check the required fields"
+    "checkRequiredFields": "Please check the required fields",
+    "assetId": "Asset ID",
+    "assetName": "Asset Name",
+    "assetType": "Asset Type",
+    "typeRequired": "Asset type is required",
+    "displayNameRequired": "Asset name is required",
+    "cityRequired": "City is required",
+    "locationRequired": "Location is required",
+    "assetIdMissing": "Asset ID is missing"
   },
   "questionnaires": {
     "title": "Questionnaires",
@@ -1611,7 +1674,13 @@
     "unpublishQuestionnaire": "Unpublish Questionnaire",
     "questionnaireCreated": "Questionnaire created successfully",
     "questionnaireUpdated": "Questionnaire updated successfully",
-    "questionnaireDeleted": "Questionnaire deleted successfully"
+    "questionnaireDeleted": "Questionnaire deleted successfully",
+    "confirmPassword": "Confirm Password",
+    "newPassword": "New Password",
+    "passwordChanged": "Password changed successfully",
+    "resetSettings": "Reset Settings",
+    "saveSettings": "Save Settings",
+    "settingsSaved": "Settings saved successfully"
   },
   "notifications": {
     "title": "Notifications",
@@ -1681,7 +1750,27 @@
     "saveSettings": "Save Settings",
     "resetSettings": "Reset Settings",
     "settingsSaved": "Settings saved successfully",
-    "passwordChanged": "Password changed successfully"
+    "passwordChanged": "Password changed successfully",
+    "organizationDetails": "Organization Details",
+    "organizationDescription": "Manage your organization's information and branding",
+    "companyName": "Company Name",
+    "enterCompanyName": "Enter company name",
+    "address": "Address",
+    "enterAddress": "Enter address",
+    "city": "City",
+    "enterCity": "Enter city",
+    "country": "Country",
+    "enterCountry": "Enter country",
+    "phoneNumber": "Phone Number",
+    "enterPhoneNumber": "Enter phone number",
+    "emailAddress": "Email Address",
+    "enterEmailAddress": "Enter email address",
+    "website": "Website",
+    "enterWebsiteURL": "Enter website URL",
+    "companyDescription": "Company Description",
+    "enterCompanyDescription": "Enter company description",
+    "companyLogo": "Company Logo",
+    "logoDescription": "Upload your company logo"
   },
   "logs": {
     "title": "Logs",
@@ -1778,7 +1867,16 @@
     "logInformation": "Log Information",
     "technicalDetails": "Technical Details",
     "activityDetails": "Activity Details",
-    "preview": "Preview"
+    "preview": "Preview",
+    "failedToFetchLogDetails": "Failed to load log details",
+    "loadingLogDetails": "Loading log details...",
+    "errorLoadingLogDetails": "Error loading log details",
+    "logNotFound": "Log not found",
+    "unknownUser": "Unknown user",
+    "unknownRole": "Unknown role",
+    "noEmail": "No email address",
+    "unknownTask": "Unknown task",
+    "unknown": "Unknown"
   },
   "profile": {
     "profileInformation": "Profile Information",
@@ -1913,7 +2011,32 @@
     "loadingQuestions": "Loading questions...",
     "noQuestionsFound": "No questions found",
     "tryAdjustingSearch": "Try adjusting your search or create a new question.",
-    "optional": "Optional"
+    "optional": "Optional",
+    "failedToSaveQuestionnaire": "Failed to save questionnaire",
+    "general": "General",
+    "noQuestionsAvailable": "No questions available",
+    "noInspectionQuestionsForTask": "No inspection questions are available for this task",
+    "questions": "Questions",
+    "inspectionQuestionnaire": "Inspection Questionnaire",
+    "noQuestionsMatchFilters": "No questions match the selected filters",
+    "overallCompliance": "Overall compliance",
+    "completed": "Completed",
+    "inProgress": "In progress",
+    "notStarted": "Not started",
+    "addCommentOptional": "Add a comment (optional)",
+    "addGeneralNotesOptional": "Add general notes (optional)",
+    "allRequiredQuestionsAnswered": "All required questions have been answered",
+    "pleaseAnswerAllRequiredQuestions": "Please answer all required questions",
+    "complianceScoringSummary": "Compliance Scoring Summary",
+    "mandatory": "Mandatory",
+    "recommended": "Recommended",
+    "fullCompliancePoints": "Full Compliance: 2 points",
+    "partialCompliancePoints": "Partial Compliance: 1 point",
+    "nonCompliancePoints": "Non-Compliance: 0 points",
+    "notApplicableExcluded": "Not Applicable: Excluded",
+    "saveQuestionnaire": "Save Questionnaire",
+    "notApplicableShort": "N/A",
+    "notApplicable": "Not Applicable"
   },
   "calendar": {
     "createNewEvent": "Create New Inspection",
@@ -1923,7 +2046,9 @@
     "deadline": "Deadline",
     "dueDate": "Due Date",
     "statusLegend": "Inspection status",
-    "partiallyCompleted": "Partially Completed"
+    "partiallyCompleted": "Partially Completed",
+    "noPermissionToView": "You do not have permission to view the calendar",
+    "assigneeInspector": "Assignee / Inspector"
   },
   "templateTransfer": {
     "selectImportTemplates": "Select templates to import",
@@ -1955,5 +2080,23 @@
     "fileTooLarge": "This transfer exceeds 50 MB. Select fewer templates per file.",
     "useListImport": "Use Import on the Templates page to transfer exported checklists with all their settings.",
     "malformedJson": "The selected file is not valid JSON."
+  },
+  "timezones": {
+    "ksa": {
+      "name": "KSA",
+      "label": "KSA (Riyadh)"
+    },
+    "us": {
+      "name": "US",
+      "label": "US (New York)"
+    },
+    "india": {
+      "name": "India",
+      "label": "India (Kolkata)"
+    },
+    "gmt": {
+      "name": "GMT",
+      "label": "GMT (UTC+00:00)"
+    }
   }
 }

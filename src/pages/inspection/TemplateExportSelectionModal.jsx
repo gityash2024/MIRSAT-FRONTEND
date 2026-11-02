@@ -25,7 +25,7 @@ const Dialog = styled.div`
   padding: 24px;
   color: var(--color-navy);
   h2 { font-size: 20px; margin: 0; }
-  p { color: #64748b; font-size: 14px; margin: 12px 0; }
+  p { color: var(--color-text-muted); font-size: 14px; margin: 12px 0; }
   header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   footer { margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
   input[type='search'] { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 12px; }
@@ -33,7 +33,7 @@ const Dialog = styled.div`
   input[type='checkbox'] { flex-shrink: 0; accent-color: var(--color-navy); }
   .choices { max-height: 42vh; overflow-y: auto; border-block: 1px solid #e2e8f0; }
   .choices label + label { border-top: 1px solid #f1f5f9; }
-  .template-type { display: block; color: #64748b; font-size: 12px; margin-top: 4px; }
+  .template-type { display: block; color: var(--color-text-muted); font-size: 12px; margin-top: 4px; }
   @media (max-width: 480px) { padding: 16px; }
 `;
 const Button = styled.button`

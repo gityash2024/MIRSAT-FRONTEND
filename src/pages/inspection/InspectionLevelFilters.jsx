@@ -112,7 +112,7 @@ const CustomCheckbox = styled.div`
 
 const CheckboxText = styled.span`
   font-size: 14px;
-  color: ${props => props.$checked ? 'var(--color-navy)' : '#64748b'};
+  color: ${props => props.$checked ? 'var(--color-navy)' : 'var(--color-text-muted)'};
   font-weight: ${props => props.$checked ? '500' : '400'};
   transition: all 0.2s;
 `;
@@ -194,7 +194,7 @@ const FilterTag = styled.div`
     border: none;
     background: white;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     border-radius: 50%;
     transition: all 0.2s;
     width: 16px;

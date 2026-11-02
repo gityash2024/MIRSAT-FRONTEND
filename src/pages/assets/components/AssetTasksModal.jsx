@@ -67,7 +67,7 @@ const ModalTitle = styled.h3`
 const CloseButton = styled.button`
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 8px;
   display: flex;
@@ -194,7 +194,7 @@ const TaskDetail = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   align-items: flex-start;
   
   svg {
@@ -229,7 +229,7 @@ const TaskButton = styled(Link)`
 const EmptyState = styled.div`
   padding: 32px 20px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   
   p {
     margin-top: 12px;
@@ -431,7 +431,7 @@ const AssetTasksModal = ({ isOpen, onClose, asset }) => {
             </TaskList>
           ) : (
             <EmptyState>
-              <AlertTriangle size={40} style={{ color: '#94a3b8', marginBottom: '8px' }} />
+              <AlertTriangle size={40} style={{ color: 'var(--color-text-muted)', marginBottom: '8px' }} />
               <h4 style={{ margin: '0 0 8px 0', color: '#334155' }}>{t('assets.noTasksFound')}</h4>
               <p>{t('assets.noTasksAssociatedWithAsset')}</p>
             </EmptyState>

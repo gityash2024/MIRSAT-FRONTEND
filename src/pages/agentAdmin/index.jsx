@@ -17,7 +17,7 @@ const PageTitle = styled.h1`
   font-weight: 700;
   margin-bottom: 4px;
 `;
-const PageSubtitle = styled.p`color: #64748b; font-size: 15px; margin: 0 0 20px;`;
+const PageSubtitle = styled.p`color: var(--color-text-muted); font-size: 15px; margin: 0 0 20px;`;
 const TabsHeader = styled.div`
   display: inline-flex;
   gap: 6px;

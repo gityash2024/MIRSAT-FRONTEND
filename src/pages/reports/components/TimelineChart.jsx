@@ -55,7 +55,7 @@ const Title = styled.h3`
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const FilterTabs = styled.div`
@@ -154,7 +154,7 @@ const TimelineTitle = styled.h4`
 
 const TimelineTime = styled.span`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -162,7 +162,7 @@ const TimelineTime = styled.span`
 
 const TimelineDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin: 0;
   line-height: 1.5;
 `;
@@ -211,7 +211,7 @@ const LoadingContainer = styled.div`
   height: 200px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const TimelineChart = ({ dateRange, filters }) => {

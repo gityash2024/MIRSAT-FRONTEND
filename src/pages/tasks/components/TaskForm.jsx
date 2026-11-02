@@ -193,7 +193,7 @@ const SelectedItem = styled.span`
     cursor: pointer;
     display: flex;
     align-items: center;
-    color: #64748b;
+    color: var(--color-text-muted);
     &:hover {
       color: #dc2626;
     }
@@ -286,7 +286,7 @@ const AttachmentItem = styled.div`
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     position: absolute;
     right: 8px;
     top: 50%;
@@ -470,7 +470,7 @@ const UserPickerButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   &:hover {
     color: var(--color-navy);
   }
@@ -521,7 +521,7 @@ const AdvancedToggle = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   &:hover {
     color: var(--color-navy);
   }
@@ -540,7 +540,7 @@ const UploadButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   &:hover {
     color: var(--color-navy);
   }
@@ -561,7 +561,7 @@ const IconButton = styled.button`
   border: none;
   padding: 0;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
   &:hover {
     color: var(--color-navy);
   }
@@ -585,7 +585,7 @@ const UserBadge = styled.span`
 `;
 
 const NoUsersText = styled.span`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 12px;
 `;
 
@@ -717,7 +717,7 @@ const QuestionText = styled.div`
 
 const QuestionType = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 0;
   margin-top: 4px;
   display: flex;
@@ -839,7 +839,7 @@ const LibraryItemTitle = styled.div`
 
 const LibraryItemType = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const RequiredBadge = styled.span`
@@ -871,7 +871,7 @@ const AddQuestionButton = styled.button`
   background: #f1f5f9;
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   width: 100%;
   max-width: 100%;
@@ -896,7 +896,7 @@ const AddQuestionButton = styled.button`
 const EmptyState = styled.div`
   text-align: center;
   padding: 24px;
-  color: #64748b;
+  color: var(--color-text-muted);
   background: #f8fafc;
   border-radius: 8px;
   border: 1px dashed #cbd5e1;
@@ -1390,7 +1390,7 @@ const PreInspectionQuestions = ({
               min="0"
               placeholder={t('tasks.questionWeightPlaceholder')}
             />
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
               {t('common.setToZeroForNonScoredQuestions')}
             </div>
           </FormGroup>
@@ -1683,6 +1683,7 @@ const TaskForm = ({
   isEdit = false, // For calendar mode - whether editing
   isCalendarMode = false, // Flag to indicate calendar mode
   initialDeadline, // For calendar mode - initial deadline from selected date
+  sourceFaultId,
   submitButtonText = 'Save',
   isSubmitting: propIsSubmitting = false,
   usersProp = [],
@@ -1967,7 +1968,7 @@ const TaskForm = ({
         // Tasks mode - create task
         console.log('Creating new task');
 
-        const createResult = await dispatch(createTask(taskData)).unwrap();
+        const createResult = await dispatch(createTask(sourceFaultId ? { ...taskData, sourceFaultId } : taskData)).unwrap();
 
         // Log task creation
         await FrontendLogger.logActivity({
@@ -2384,7 +2385,7 @@ const TaskForm = ({
             />
             <span>{t('tasks.startImmediately')}</span>
           </ToggleSwitch>
-          <small style={{ color: '#64748b', lineHeight: 1.4 }}>
+          <small style={{ color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
             {formData.startImmediately ? t('tasks.startImmediatelyHelp') : t('tasks.startScheduledHelp')}
           </small>
         </FormGroup>

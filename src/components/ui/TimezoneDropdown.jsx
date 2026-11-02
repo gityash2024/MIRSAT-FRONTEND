@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { TIMEZONE_CHANGE_EVENT } from "../../utils/selectedTimezone";
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { Clock, ChevronDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -114,7 +116,7 @@ const DropdownContent = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   min-width: 200px;
-  display: ${props => props.isOpen ? 'block' : 'none'};
+  display: ${props => props.$isOpen ? 'block' : 'none'};
 
   @media (max-width: 768px) {
     right: 0;
@@ -154,7 +156,7 @@ const DropdownItem = styled.button`
 
 const ChevronIcon = styled(ChevronDown)`
   transition: transform 0.2s ease;
-  transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+  transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
 const DropdownTimeDisplay = styled.div`
@@ -257,17 +259,20 @@ const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
   const handleTimezoneSelect = (timezone) => {
     setSelectedTimezone(timezone.timezone);
     localStorage.setItem('selectedTimezone', timezone.timezone);
+    window.dispatchEvent(new Event(TIMEZONE_CHANGE_EVENT));
     if (isControlled) {
       onClose?.();
     } else {
       setInternalIsOpen(false);
     }
-    toast.success(`Timezone changed to ${timezone.label}`);
+    toast.success(t('common.timezoneChanged', {
+      timezone: t(`timezones.${timezone.id}.label`),
+    }));
   };
 
   const getSelectedTimezoneLabel = () => {
     const selected = TIMEZONES.find(tz => tz.timezone === selectedTimezone);
-    return selected ? selected.name : 'KSA';
+    return t(`timezones.${selected?.id || 'ksa'}.name`);
   };
 
   return (
@@ -277,10 +282,10 @@ const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
       <DropdownButton onClick={toggleDropdown}>
         <Clock size={16} />
         <span>{getSelectedTimezoneLabel()}</span>
-        <ChevronIcon size={14} isOpen={isOpen} />
+        <ChevronIcon size={14} $isOpen={isOpen} />
       </DropdownButton>
       
-      <DropdownContent isOpen={isOpen}>
+      <DropdownContent $isOpen={isOpen}>
         <DropdownTimeDisplay>
           <div className="time">{currentTime}</div>
           <div className="label">{t('common.currentTime')}</div>
@@ -292,7 +297,7 @@ const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
             onClick={() => handleTimezoneSelect(timezone)}
             className={selectedTimezone === timezone.timezone ? 'active' : ''}
           >
-            {timezone.label}
+            {t(`timezones.${timezone.id}.label`)}
           </DropdownItem>
         ))}
       </DropdownContent>
@@ -300,4 +305,10 @@ const TimezoneDropdown = ({ isOpen: controlledIsOpen, onOpen, onClose }) => {
   );
 };
 
-export default TimezoneDropdown; 
+TimezoneDropdown.propTypes = {
+  isOpen: PropTypes.bool,
+  onOpen: PropTypes.func,
+  onClose: PropTypes.func,
+};
+
+export default TimezoneDropdown;

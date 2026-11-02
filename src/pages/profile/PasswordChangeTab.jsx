@@ -173,7 +173,7 @@ const InfoCard = styled.div`
 `;
 
 const InfoText = styled.p`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   margin: 0;
   line-height: 1.5;

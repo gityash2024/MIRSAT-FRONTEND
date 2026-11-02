@@ -208,7 +208,7 @@ const InfoRow = styled.div`
 
 const InfoLabel = styled.span`
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 

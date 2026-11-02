@@ -29,7 +29,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const PreferenceList = styled.div`
@@ -82,7 +82,7 @@ const PreferenceTitle = styled.h3`
 
 const PreferenceDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const Toggle = styled.label`

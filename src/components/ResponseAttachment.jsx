@@ -105,7 +105,7 @@ export default function ResponseAttachment({ value, label = 'Attachment' }) {
           <button type="button" onClick={openViewer} style={actionStyle} aria-label={`View ${label}`}><Eye size={14} /> View</button>
           <button type="button" onClick={download} disabled={busy} style={actionStyle} aria-label={`Download ${label}`}><Download size={14} /> {busy ? 'Downloading…' : 'Download'}</button>
         </div>
-      ) : <span style={{ color: '#64748b', fontSize: 12 }}>Attachment unavailable</span>}
+      ) : <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>Attachment unavailable</span>}
       {viewerUrl && createPortal(
         <div role="dialog" aria-modal="true" aria-label={`${label} preview`} onClick={() => setViewerUrl('')}
           style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,.8)', display: 'grid', placeItems: 'center', padding: 24 }}>

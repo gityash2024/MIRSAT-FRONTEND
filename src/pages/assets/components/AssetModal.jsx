@@ -628,7 +628,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                 </Select>
                 {errors.type && <ErrorText>{errors.type}</ErrorText>}
                 {assetTypes.length === 0 && (
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                     No asset types available. Create one first.
                   </div>
                 )}
@@ -696,7 +696,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
                     {formData.color}
                   </ColorPreview>
                 </ColorPickerContainer>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                   This color will be used for the asset row in the listing
                 </div>
               </FormGroup>

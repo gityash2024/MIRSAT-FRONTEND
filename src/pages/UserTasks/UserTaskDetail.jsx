@@ -633,7 +633,7 @@ const MetaCard = styled.div`
 const MetaLabel = styled.div`
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -815,7 +815,7 @@ const StatCardHeader = styled.div`
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 500;
 `;
@@ -988,7 +988,7 @@ const Tab = styled.button`
     }
   ` : css`
     background: transparent;
-    color: #64748b;
+    color: var(--color-text-muted);
     
     &:hover {
       background: rgba(55, 136, 216, 0.1);
@@ -1004,7 +1004,7 @@ const Tab = styled.button`
     
     &:hover {
       background: transparent;
-      color: #64748b;
+      color: var(--color-text-muted);
       border: none;
     }
   }
@@ -2058,7 +2058,7 @@ const QuestionCounter = styled.div`
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   background: #f8fafc;
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 999px;
@@ -2206,7 +2206,7 @@ const QuestionText = styled.div`
 
 const QuestionDescription = styled.p`
   margin: -6px 0 16px 44px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.55;
   font-weight: 400;
@@ -2398,7 +2398,7 @@ const OptionButton = styled.button`
   border-radius: 20px;
   border: 2px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.9);
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -2577,7 +2577,7 @@ const CommentsContainer = styled.div`
 
 const CommentTime = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const CommentText = styled.div`
@@ -2651,7 +2651,7 @@ const RefreshButton = styled.button`
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -2756,7 +2756,7 @@ const ScoreItem = styled.div`
 
 const ScoreLabel = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
   font-weight: 500;
 `;
@@ -2854,7 +2854,7 @@ const MetricValue = styled.div`
 
 const MetricDescription = styled.div`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -3247,7 +3247,7 @@ const SignatureImage = styled.img`
 const SignatureInfo = styled.div`
   text-align: center;
   margin-top: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -3556,7 +3556,7 @@ const LoadingIndicator = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
-  color: #64748b;
+  color: var(--color-text-muted);
   
   h3 {
     font-size: 18px;
@@ -3810,7 +3810,7 @@ const SignatureCanvasComponent = React.memo(({ questionId, response, metadata, i
 
   return (
     <div>
-      <div style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px' }}>
+      <div style={{ marginBottom: '16px', color: 'var(--color-text-muted)', fontSize: '14px' }}>
         {isDisabled ? t('tasks.signature') : t('tasks.digitalSignatureRequired')}
       </div>
 
@@ -7085,7 +7085,7 @@ const UserTaskDetail = () => {
         <InspectionHeader>
           <div>
             <InspectionTitle>{t('tasks.inspectionQuestionnaire')}</InspectionTitle>
-            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+            <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
               {t('tasks.completeAllSectionsToFinish')}
             </div>
           </div>
@@ -7267,7 +7267,7 @@ const UserTaskDetail = () => {
             )}
             {!isSectionsPanelOpen ? (
               <div 
-                style={{ padding: '20px 0', display: 'flex', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                style={{ padding: '20px 0', display: 'flex', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-muted)' }}
                 onClick={() => setIsSectionsPanelOpen(true)}
               >
                 <ChevronRight size={20} />
@@ -7285,7 +7285,7 @@ const UserTaskDetail = () => {
                 </NavigationTitle>
                 <button 
                   onClick={() => setIsSectionsPanelOpen(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b', display: 'none' }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'none' }}
                 >
                   <ChevronLeft size={20} />
                 </button>
@@ -7779,7 +7779,7 @@ const UserTaskDetail = () => {
           {/* <TaskTitle>{taskDisplayName}</TaskTitle> */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {inspectionNameLabel}
               </div>
               <div style={{ fontWeight: '600', color: '#1a202c' }}>
@@ -7787,7 +7787,7 @@ const UserTaskDetail = () => {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {templateNameLabel}
               </div>
               <div style={{ fontWeight: '600', color: '#1a202c' }}>
@@ -7796,7 +7796,7 @@ const UserTaskDetail = () => {
             </div>
           </div>
           {currentTask.description && currentTask.description.trim() !== String(taskDisplayName).trim() && (
-            <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
               {currentTask.description}
             </p>
           )}
@@ -8073,13 +8073,13 @@ const UserTaskDetail = () => {
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.createdBy')}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.createdBy')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {currentTask.createdBy?.name || currentTask.createdBy?.email || currentTask.createdBy || t('common.unknown')}
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.assignedTo')}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.assignedTo')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {Array.isArray(currentTask.assignedTo)
                             ? currentTask.assignedTo.map(user => user.name || user.email || user).join(', ')
@@ -8088,24 +8088,24 @@ const UserTaskDetail = () => {
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.asset')}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.asset')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {currentTask.asset?.displayName || currentTask.asset?.name || currentTask.asset || t('common.notApplicable')}
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{templateNameLabel}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{templateNameLabel}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>
                           {templateDisplayName}
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.created')}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.created')}</div>
                         <div style={{ fontWeight: '600', color: '#1a202c' }}>{formatDate(currentTask.createdAt)}</div>
                       </div>
                       {currentTask.status && (
                         <div>
-                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.status')}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.status')}</div>
                           <div style={{
                             fontWeight: '600',
                             color: currentTask.status === 'completed' ? '#16a34a' :
@@ -8125,7 +8125,7 @@ const UserTaskDetail = () => {
                       )}
                       {currentTask.priority && (
                         <div>
-                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{t('tasks.priority')}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{t('tasks.priority')}</div>
                           <div style={{ fontWeight: '600', color: '#1a202c' }}>
                             <PriorityBadge priority={currentTask.priority}>
                               {currentTask.priority === 'high' ? t('tasks.high') :
@@ -8175,7 +8175,7 @@ const UserTaskDetail = () => {
                             </span>
                             <span style={{
                               fontSize: '12px',
-                              color: '#64748b'
+                              color: 'var(--color-text-muted)'
                             }}>
                               {formatDate(comment.createdAt || comment.timestamp)}
                             </span>
@@ -8287,7 +8287,7 @@ const UserTaskDetail = () => {
                     </div>
                     <p style={{
                       fontSize: '14px',
-                      color: '#64748b',
+                      color: 'var(--color-text-muted)',
                       margin: 0
                     }}>
                       This inspection has been completed and archived. All data is now in read-only mode.
@@ -8311,7 +8311,7 @@ const UserTaskDetail = () => {
                         <ProgressValue>
                           {displayProgress}%
                           {questionAnswerSummary.requiredTotalCount > 0 && (
-                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontWeight: 700 }}>
+                            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px', fontWeight: 700 }}>
                               {questionAnswerSummary.requiredAnsweredCount}/{questionAnswerSummary.requiredTotalCount}
                             </div>
                           )}
@@ -8401,7 +8401,7 @@ const UserTaskDetail = () => {
                       <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy)' }}>
                         {formatScorePercentage(scores.percentage)}%
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         {scores.achieved} {t('tasks.of')} {scores.total} {t('tasks.points')}
                       </div>
                     </div>
@@ -8413,7 +8413,7 @@ const UserTaskDetail = () => {
                           ? `${questionAnswerSummary.requiredAnsweredCount}/${questionAnswerSummary.requiredTotalCount}`
                           : `${displayProgress}%`}
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         {t('tasks.questionsAnswered')}
                       </div>
                     </div>
@@ -8425,7 +8425,7 @@ const UserTaskDetail = () => {
                           ? formatTimeFromSeconds(displayTime)
                           : formatTimeSpent((currentTask.taskMetrics?.timeSpent || 0) / 3600)}
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         {activeTab === 'inspection' && currentTask?.status === 'in_progress' && !currentTask?.signature && currentTask?.status !== 'completed' && currentTask?.status !== 'archived'
                           ? `${formatTimeAsHHMM(displayTime)} - ${t('tasks.liveTimer')}`
                           : t('tasks.totalDuration')}
@@ -8437,7 +8437,7 @@ const UserTaskDetail = () => {
                       <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-navy-dark)' }}>
                         {inspectionPages.length}
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         {t('tasks.totalSections')}
                       </div>
                     </div>
@@ -8486,7 +8486,7 @@ const UserTaskDetail = () => {
                                 </tr>
                                 {page.sections.map((section) => (
                                   <tr key={`section-score-${section.number}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '10px 10px 10px 24px', color: '#64748b' }}>{section.number}</td>
+                                    <td style={{ padding: '10px 10px 10px 24px', color: 'var(--color-text-muted)' }}>{section.number}</td>
                                     <td style={{ padding: '10px', color: '#475569' }}>{section.name}</td>
                                     <td style={{ padding: '10px', textAlign: 'center', color: section.total > 0 ? '#16a34a' : '#64748b' }}>
                                       {section.total > 0 ? `${formatScorePercentage(section.percentage)}%` : 'N/A'}
@@ -8730,7 +8730,7 @@ const UserTaskDetail = () => {
                       <div style={{ textAlign: 'center' }}>
                         <Edit size={48} color="#64748b" style={{ marginBottom: '16px' }} />
                         <p style={{ 
-                          color: '#64748b',
+                          color: 'var(--color-text-muted)',
                           fontSize: '16px',
                           marginBottom: '20px'
                         }}>
@@ -8950,7 +8950,7 @@ const UserTaskDetail = () => {
                           {!isComplete && (
                             <p style={{
                               fontSize: '12px',
-                              color: '#64748b',
+                              color: 'var(--color-text-muted)',
                               fontStyle: 'italic'
                             }}>
                               {t('tasks.completeAllInspectionSectionsToEnableArchiving')}
@@ -9038,7 +9038,7 @@ const UserTaskDetail = () => {
             </ModalHeader>
 
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <p style={{ marginBottom: '16px', color: '#64748b', fontSize: '14px', flexShrink: 0 }}>
+              <p style={{ marginBottom: '16px', color: 'var(--color-text-muted)', fontSize: '14px', flexShrink: 0 }}>
                 {t('tasks.pleaseProvideSignature')}
               </p>
 
@@ -9112,7 +9112,7 @@ const UserTaskDetail = () => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '12px',
-                      color: '#64748b'
+                      color: 'var(--color-text-muted)'
                     }}>
                       <Upload size={40} />
                       <span>{t('tasks.clickToUploadSignatureImage')}</span>
@@ -9246,7 +9246,7 @@ const UserTaskDetail = () => {
                             <div style={{ fontWeight: '600', fontSize: '14px', color: '#1f2937', marginBottom: '4px', wordBreak: 'break-word' }}>
                               {item.questionText}
                             </div>
-                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                               <span><strong>Page:</strong> {item.pageName}</span>
                               <span>•</span>
                               <span><strong>Section:</strong> {item.sectionName}</span>
@@ -9305,7 +9305,7 @@ const UserTaskDetail = () => {
                             <div style={{ fontWeight: '600', fontSize: '14px', color: '#1f2937', marginBottom: '4px', wordBreak: 'break-word' }}>
                               {item.questionText}
                             </div>
-                            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                               <span><strong>Page:</strong> {item.pageName}</span>
                               <span>•</span>
                               <span><strong>Section:</strong> {item.sectionName}</span>
@@ -9415,7 +9415,7 @@ const UserTaskDetail = () => {
                   </h3>
                   <p style={{
                     margin: '4px 0 0 0',
-                    color: '#64748b',
+                    color: 'var(--color-text-muted)',
                     fontSize: '14px'
                   }}>
                     {t('tasks.inspectionSignedAndReadyToArchive')}
@@ -9430,7 +9430,7 @@ const UserTaskDetail = () => {
                 <ul style={{
                   marginTop: '12px',
                   paddingLeft: '24px',
-                  color: '#64748b',
+                  color: 'var(--color-text-muted)',
                   lineHeight: '1.6'
                 }}>
                   <li>{t('tasks.markedAsCompletedAndArchived')}</li>
@@ -9529,7 +9529,7 @@ const UserTaskDetail = () => {
                 borderRadius: '12px',
                 marginBottom: '20px'
               }}>
-                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
                   {t('tasks.currentProgress') || 'Current Progress'}
                 </div>
                 <div style={{ 
@@ -9539,7 +9539,7 @@ const UserTaskDetail = () => {
                 }}>
                   {displayProgress}%
                 </div>
-                <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                   {`${questionAnswerSummary.requiredAnsweredCount} of ${questionAnswerSummary.requiredTotalCount} required questions answered`}
                 </div>
               </div>
@@ -9559,7 +9559,7 @@ const UserTaskDetail = () => {
                       <div style={{ fontSize: '18px', fontWeight: '600', color: '#27ae60', marginBottom: '8px' }}>
                         {t('tasks.allQuestionsAnswered') || 'All Required Questions Answered!'}
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         {taskCompletionPercentage === 100 
                           ? (t('tasks.readyToComplete') || 'Your inspection is complete and ready for submission.')
                           : (t('tasks.progressCalculating') || 'Progress is being calculated. The display should update to 100% shortly.')}
@@ -9659,7 +9659,7 @@ const UserTaskDetail = () => {
                           </div>
                           <div style={{
                             fontSize: '11px',
-                            color: '#64748b',
+                            color: 'var(--color-text-muted)',
                             marginTop: '4px',
                             fontStyle: 'italic'
                           }}>

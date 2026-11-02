@@ -69,7 +69,7 @@ const DateInput = styled.div`
   label {
     display: block;
     font-size: 12px;
-    color: #64748b;
+    color: var(--color-text-muted);
     margin-bottom: 4px;
   }
 

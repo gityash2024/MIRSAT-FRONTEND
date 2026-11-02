@@ -1,9 +1,7 @@
-# Maintenance release boundary
+# MMS UAT release boundary
 
-This release preserves the existing inspection platform and the 15 maintenance updates. It excludes the Documents, Fault Reports, Asset Profiles/Register and Warehouse modules.
+Based on the maintenance release with all 15 updates. Includes Documents, Fault Reports, Asset Profiles/Register, and Spare Parts/Warehouse. Mobile retains the maintenance app; no MMS mobile modules.
 
-Deploy to Staging, UAT, mirsat.cc and mirsat.co using each environment's existing database, files, accounts and integration identity. Set AGENT_ENABLED=false. No historical inspection rewrite or archived-score recalculation is part of this release.
+Deploy only to mmsuat.mirsat.cc / api-mmsuat.mirsat.cc initially. Use an isolated database, private file directory and service identity. AI stays disabled. No customer or local sprint data is seeded.
 
-Public mobile builds use https://mirsatprod.mymultimeds.com/api/v1. Android retains com.Mirsat.i; App Store retains com.takamol.mirsat and team W4DMM9SM2Q. OTA updates remain disabled.
-
-MMS UAT is isolated on feat/mmsuat. Later promotion to mirsat.cc requires explicit UAT approval; the other three portals remain on maintenance.
+Promote to mirsat.cc only following explicit MMS UAT approval. mirsat.co, uat.mirsat.cc and staging.mirsat.cc remain on maintenance.

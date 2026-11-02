@@ -25,7 +25,7 @@ const Title = styled.h3`
 
 const Description = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin: 0;
 `;
 
@@ -59,7 +59,7 @@ const Placeholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   background: #f8fafc;
   border-radius: 8px;

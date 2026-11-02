@@ -528,7 +528,7 @@ const DetailItem = styled.div`
 
 const DetailLabel = styled.span`
   font-weight: 600;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 13px;
   min-width: 120px;
   text-transform: uppercase;
@@ -651,7 +651,7 @@ const InfoRow = styled.div`
 
 const InfoLabel = styled.span`
   font-weight: 500;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -757,7 +757,7 @@ const ChangeItem = styled.div`
 
 const ChangeLabel = styled.span`
   font-weight: 500;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   min-width: 120px;
   font-size: 12px;
 `;
@@ -790,7 +790,7 @@ const NewValue = styled.span`
 `;
 
 const ArrowIcon = styled(ArrowRight)`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   width: 16px;
   height: 16px;
 `;
@@ -834,7 +834,7 @@ const MediaName = styled.div`
 `;
 
 const MediaSize = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 12px;
 `;
 
@@ -975,7 +975,7 @@ const UserName = styled.div`
 `;
 
 const UserRole = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 2px;
   text-transform: capitalize;
@@ -992,7 +992,7 @@ const UserRole = styled.div`
 `;
 
 const UserEmail = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 12px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -1062,7 +1062,7 @@ const TaskInfo = styled.div`
   flex-direction: column;
   gap: 8px;
   font-size: 14px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -1092,7 +1092,7 @@ const TaskInfoRow = styled.div`
 
 const TaskInfoLabel = styled.span`
   font-weight: 500;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 

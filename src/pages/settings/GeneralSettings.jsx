@@ -31,7 +31,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const FormGrid = styled.div`
@@ -59,7 +59,7 @@ const Label = styled.label`
   gap: 8px;
 
   .icon {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -78,7 +78,7 @@ const Input = styled.input`
   }
 
   &::placeholder {
-    color: #94a3b8;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -99,7 +99,7 @@ const Textarea = styled.textarea`
   }
 
   &::placeholder {
-    color: #94a3b8;
+    color: var(--color-text-muted);
   }
 `;
 

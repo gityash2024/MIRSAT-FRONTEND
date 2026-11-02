@@ -234,7 +234,7 @@ const NoQuestionsMessage = styled.div`
   
   p {
     font-size: 14px;
-    color: #64748b;
+    color: var(--color-text-muted);
   }
   
   svg {
@@ -331,7 +331,7 @@ const ScoreItem = styled.div`
   
   .score-label {
     font-size: 12px;
-    color: #64748b;
+    color: var(--color-text-muted);
     margin-bottom: 6px;
   }
   
@@ -705,7 +705,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
       <Container>
         <Title>
           <Clipboard size={20} />
-          Inspection Questionnaire
+          {t('questionnaire.inspectionQuestionnaire')}
         </Title>
         <NoQuestionsMessage>
           <HelpCircle size={48} />
@@ -746,7 +746,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
         <ScoringSummary>
           <SectionTitle style={{ margin: '0 0 16px 0' }}>
             <BarChart2 size={18} />
-            Compliance Scoring Summary
+            {t('questionnaire.complianceScoringSummary')}
           </SectionTitle>
           
           <ScoreGrid>
@@ -761,10 +761,10 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             <ScoreItem>
               <div className="score-label">{t('questionnaire.questions')}</div>
               <div className="score-value">
-                {questions.filter(q => q.mandatory !== false).length} Mandatory 
+                {questions.filter(q => q.mandatory !== false).length} {t('questionnaire.mandatory')}
                 {questions.filter(q => q.mandatory === false).length > 0 && (
                   <span className="score-percent">
-                    (+{questions.filter(q => q.mandatory === false).length} Recommended)
+                    (+{questions.filter(q => q.mandatory === false).length} {t('questionnaire.recommended')})
                   </span>
                 )}
               </div>
@@ -795,16 +795,16 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
           
           <ScoringCriteria>
             <div className="criteria-item full">
-              <CheckCircle size={14} /> Full Compliance: 2 points
+              <CheckCircle size={14} /> {t('questionnaire.fullCompliancePoints')}
             </div>
             <div className="criteria-item partial">
-              <AlertCircle size={14} /> Partial Compliance: 1 point
+              <AlertCircle size={14} /> {t('questionnaire.partialCompliancePoints')}
             </div>
             <div className="criteria-item non">
-              <XCircle size={14} /> Non-Compliance: 0 points
+              <XCircle size={14} /> {t('questionnaire.nonCompliancePoints')}
             </div>
             <div className="criteria-item na">
-              <HelpCircle size={14} /> Not Applicable: Excluded
+              <HelpCircle size={14} /> {t('questionnaire.notApplicableExcluded')}
             </div>
           </ScoringCriteria>
         </ScoringSummary>
@@ -842,21 +842,21 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     onClick={() => handleResponse(questionId, 'yes')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    Yes
+                    {t('common.yes')}
                   </OptionButton>
                   <OptionButton 
                     selected={response === 'no'}
                     onClick={() => handleResponse(questionId, 'no')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    No
+                    {t('common.no')}
                   </OptionButton>
                   <OptionButton 
                     selected={response === 'na'}
                     onClick={() => handleResponse(questionId, 'na')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    N/A
+                    {t('questionnaire.notApplicableShort')}
                   </OptionButton>
                 </QuestionOptions>
               )}
@@ -870,7 +870,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     value="full_compliance"
                     disabled={isQuestionnaireCompleted}
                   >
-                    Full Compliance
+                    {t('common.fullCompliance')}
                   </ComplianceButton>
                   <ComplianceButton 
                     selected={response === 'partial_compliance'}
@@ -878,7 +878,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     value="partial_compliance"
                     disabled={isQuestionnaireCompleted}
                   >
-                    Partial Compliance
+                    {t('common.partialCompliance')}
                   </ComplianceButton>
                   <ComplianceButton 
                     selected={response === 'non_compliance'}
@@ -886,7 +886,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     value="non_compliance"
                     disabled={isQuestionnaireCompleted}
                   >
-                    Non-Compliance
+                    {t('common.nonCompliant')}
                   </ComplianceButton>
                   <ComplianceButton 
                     selected={response === 'not_applicable'}
@@ -894,7 +894,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     value="not_applicable"
                     disabled={isQuestionnaireCompleted}
                   >
-                    Not Applicable
+                    {t('questionnaire.notApplicable')}
                   </ComplianceButton>
                 </QuestionOptions>
               )}
@@ -923,21 +923,21 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
                     onClick={() => handleResponse(questionId, 'yes')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    Yes
+                    {t('common.yes')}
                   </OptionButton>
                   <OptionButton 
                     selected={response === 'no'}
                     onClick={() => handleResponse(questionId, 'no')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    No
+                    {t('common.no')}
                   </OptionButton>
                   <OptionButton 
                     selected={response === 'na'}
                     onClick={() => handleResponse(questionId, 'na')}
                     disabled={isQuestionnaireCompleted}
                   >
-                    N/A
+                    {t('questionnaire.notApplicableShort')}
                   </OptionButton>
                 </QuestionOptions>
               )}
@@ -988,7 +988,7 @@ const QuestionnaireStepForm = ({ task, onSave, filteredCategory, filteredQuestio
             // disabled={isSubmitting || !allAnswered}
           >
             {isSubmitting ? <Loader size={16} /> : <Save size={16} />}
-            Save Questionnaire
+            {t('questionnaire.saveQuestionnaire')}
           </SaveButton>
         </ButtonContainer>
       )}

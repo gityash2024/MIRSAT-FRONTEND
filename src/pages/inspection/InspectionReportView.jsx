@@ -231,7 +231,7 @@ const NoDataTitle = styled.h3`
 `;
 
 const NoDataMessage = styled.p`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   margin-bottom: 24px;
   word-wrap: break-word;
   overflow-wrap: break-word;

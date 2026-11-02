@@ -73,7 +73,7 @@ const DetailItem = styled.div`
 const DetailLabel = styled.div`
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 `;
 
@@ -111,7 +111,7 @@ const SubLevelItem = styled.div`
   
   p {
     font-size: 13px;
-    color: #64748b;
+    color: var(--color-text-muted);
     margin: 0;
   }
 `;

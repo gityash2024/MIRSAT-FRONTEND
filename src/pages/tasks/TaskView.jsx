@@ -384,7 +384,7 @@ const ChartTitle = styled.h4`
 const EmptyState = styled.div`
   text-align: center;
   padding: 40px 20px;
-  color: #64748b;
+  color: var(--color-text-muted);
   
   h3 {
     font-size: 18px;
@@ -1092,7 +1092,7 @@ const TaskView = () => {
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <AlertTriangle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
                 <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>{t('tasks.failedToLoadTask')}</h3>
-                <p style={{ color: '#64748b', marginBottom: '24px' }}>
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px' }}>
                   {error || 'An error occurred while loading the task details.'}
                 </p>
                 <button
@@ -1137,9 +1137,9 @@ const TaskView = () => {
           <MainContent>
             <Card>
               <div style={{ textAlign: 'center', padding: '40px' }}>
-                <HelpCircle size={48} style={{ color: '#94a3b8', marginBottom: '16px' }} />
+                <HelpCircle size={48} style={{ color: 'var(--color-text-muted)', marginBottom: '16px' }} />
                 <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>{t('tasks.taskNotFound')}</h3>
-                <p style={{ color: '#64748b', marginBottom: '24px' }}>
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px' }}>
                   The task you're looking for doesn't exist or has been removed.
                 </p>
                 <button
@@ -1474,14 +1474,14 @@ const TaskView = () => {
                       borderRadius: '8px',
                       border: '1px solid #e2e8f0'
                     }}>
-                      <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
                         <strong>{t('tasks.totalSections')}:</strong> {taskData.inspectionLevel.subLevels.length}
                       </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
                         <strong>{t('common.template')}:</strong> {taskData.inspectionLevel.name || t('tasks.unknownTemplate')}
                       </div>
                       {taskData.inspectionLevel.description && (
-                        <div style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
                           <strong>{t('common.description')}:</strong> {taskData.inspectionLevel.description}
                         </div>
                       )}
@@ -1666,7 +1666,7 @@ const TaskView = () => {
                                         <p style={{
                                           margin: '4px 0 0 0',
                                           fontSize: '14px',
-                                          color: '#64748b',
+                                          color: 'var(--color-text-muted)',
                                           lineHeight: '1.4'
                                         }}>
                                           {section.description}
@@ -1710,7 +1710,7 @@ const TaskView = () => {
                                     <div style={{ padding: '16px 20px' }}>
                                       <div style={{
                                         fontSize: '14px',
-                                        color: '#64748b',
+                                        color: 'var(--color-text-muted)',
                                         marginBottom: '12px',
                                         fontWeight: '500',
                                         display: 'flex',
@@ -1761,7 +1761,7 @@ const TaskView = () => {
                                               {question.description && (
                                                 <div style={{
                                                   fontSize: '13px',
-                                                  color: '#64748b',
+                                                  color: 'var(--color-text-muted)',
                                                   lineHeight: '1.4'
                                                 }}>
                                                   {question.description}
@@ -1769,7 +1769,7 @@ const TaskView = () => {
                                               )}
                                               <div style={{
                                                 fontSize: '12px',
-                                                color: '#94a3b8',
+                                                color: 'var(--color-text-muted)',
                                                 marginTop: '6px',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -1847,7 +1847,7 @@ const TaskView = () => {
                                   {question.description && (
                                     <div style={{
                                       fontSize: '13px',
-                                      color: '#64748b',
+                                      color: 'var(--color-text-muted)',
                                       lineHeight: '1.4'
                                     }}>
                                       {question.description}
@@ -1954,7 +1954,7 @@ const TaskView = () => {
                       {index + 1}. {question.text || 'Question text not available'}
                     </strong>
                     {question.description && (
-                      <p style={{ marginTop: '8px', color: '#64748b', fontSize: '14px' }}>
+                      <p style={{ marginTop: '8px', color: 'var(--color-text-muted)', fontSize: '14px' }}>
                         {question.description}
                       </p>
                     )}
@@ -1998,7 +1998,7 @@ const TaskView = () => {
                           {response.question && (
                             <div style={{
                               fontSize: '14px',
-                              color: '#64748b',
+                              color: 'var(--color-text-muted)',
                               marginBottom: '8px',
                               fontStyle: 'italic'
                             }}>
@@ -2053,7 +2053,7 @@ const TaskView = () => {
                       {response.completedBy && (
                         <div style={{
                           fontSize: '12px',
-                          color: '#64748b',
+                          color: 'var(--color-text-muted)',
                           marginTop: '12px',
                           paddingTop: '12px',
                           borderTop: '1px solid #e2e8f0'
@@ -2128,7 +2128,7 @@ const TaskView = () => {
                         }}>
                           <div style={{
                             fontSize: '12px',
-                            color: '#64748b',
+                            color: 'var(--color-text-muted)',
                             fontWeight: '500'
                           }}>
                             {formatDate(history.timestamp)}
@@ -2139,7 +2139,7 @@ const TaskView = () => {
                       {history.changedBy && (
                         <div style={{
                           fontSize: '12px',
-                          color: '#64748b',
+                          color: 'var(--color-text-muted)',
                           marginTop: '12px',
                           paddingTop: '12px',
                           borderTop: '1px solid #e2e8f0'
@@ -2215,7 +2215,7 @@ const TaskView = () => {
                     borderRadius: '8px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>SIGNED BY</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>SIGNED BY</div>
                     <div style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>
                       {taskData.signedBy || 'Unknown'}
                     </div>
@@ -2227,7 +2227,7 @@ const TaskView = () => {
                     borderRadius: '8px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>SIGNED AT</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>SIGNED AT</div>
                     <div style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>
                       {formatDate(taskData.signedAt)}
                     </div>
@@ -2246,7 +2246,7 @@ const TaskView = () => {
                       border: '1px solid #e2e8f0',
                       fontSize: '12px',
                       fontFamily: 'monospace',
-                      color: '#64748b',
+                      color: 'var(--color-text-muted)',
                       wordBreak: 'break-all'
                     }}>
                       {taskData.signature.substring(0, 100)}...
@@ -2334,7 +2334,7 @@ const TaskView = () => {
                             </div>
                             <div style={{
                               fontSize: '12px',
-                              color: '#64748b'
+                              color: 'var(--color-text-muted)'
                             }}>
                               {comment.user?.role || 'User'}
                             </div>
@@ -2342,7 +2342,7 @@ const TaskView = () => {
                         </div>
                         <div style={{
                           fontSize: '12px',
-                          color: '#64748b',
+                          color: 'var(--color-text-muted)',
                           textAlign: 'right'
                         }}>
                           <div><bdi dir="ltr">{formatPlatformDate(comment.createdAt || comment.timestamp, '—')}</bdi></div>
@@ -2367,7 +2367,7 @@ const TaskView = () => {
                         }}>
                           <div style={{
                             fontSize: '12px',
-                            color: '#64748b',
+                            color: 'var(--color-text-muted)',
                             marginBottom: '8px'
                           }}>
                             Attachments ({comment.attachments.length}):
@@ -2409,7 +2409,7 @@ const TaskView = () => {
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
                   <MessageSquare size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
                   <div style={{ fontSize: '16px', marginBottom: '8px' }}>No comments yet</div>
                   <div style={{ fontSize: '14px' }}>Be the first to add a comment to this task!</div>
@@ -2490,7 +2490,7 @@ const TaskView = () => {
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
                   No attachments found
                 </div>
               )}

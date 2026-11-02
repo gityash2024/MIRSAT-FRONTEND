@@ -1,33 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import { useAuth } from '../../hooks/useAuth';
-import { Bell, User, ChevronDown, LogOut, Menu } from 'lucide-react';
-import { NotificationDropdown } from '../../pages/notifications';
-import { useNavigate } from 'react-router-dom';
-import useNotification from '../../hooks/useNotification';
-import TimezoneDropdown from '../../components/ui/TimezoneDropdown';
-import LanguageToggle from '../../components/ui/LanguageToggle';
-import ThemeToggle from '../../components/ui/ThemeToggle';
-import { useTranslation } from 'react-i18next';
-import { useLanguage } from '../../context/LanguageContext';
-import { isCompactViewport } from '../../utils/layout';
+import React, { useState, useEffect, useRef } from "react";
+import styled from "styled-components";
+import { useAuth } from "../../hooks/useAuth";
+import { Bell, User, ChevronDown, LogOut, Menu } from "lucide-react";
+import { NotificationDropdown } from "../../pages/notifications";
+import { useNavigate } from "react-router-dom";
+import useNotification from "../../hooks/useNotification";
+import TimezoneDropdown from "../../components/ui/TimezoneDropdown";
+import LanguageToggle from "../../components/ui/LanguageToggle";
+import ThemeToggle from "../../components/ui/ThemeToggle";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "../../context/LanguageContext";
+import { isCompactViewport } from "../../utils/layout";
 
 const TopbarContainer = styled.div`
   position: fixed;
   top: 0;
-  ${props => props.$isRTL 
-    ? `
-      right: ${props.sidebarWidth}px;
+  ${(props) =>
+    props.$isRTL
+      ? `
+      right: ${props.$sidebarWidth}px;
       left: 0;
       transition: right 0.3s ease;
     `
-    : `
-      left: ${props.sidebarWidth}px;
+      : `
+      left: ${props.$sidebarWidth}px;
       right: 0;
       transition: left 0.3s ease;
-    `
-  }
-  height: 64px;
+    `}
+  height: 117px;
   background: white;
   display: flex;
   align-items: center;
@@ -35,8 +35,9 @@ const TopbarContainer = styled.div`
   justify-content: flex-end;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 50;
-  
+
   @media (max-width: 1100px) {
+    height: 64px;
     left: 0;
     right: 0;
     padding: 0 12px;
@@ -50,7 +51,7 @@ const TopbarContainer = styled.div`
 
 const LeftSection = styled.div`
   display: none;
-  
+
   @media (max-width: 1100px) {
     display: flex;
     align-items: center;
@@ -66,7 +67,7 @@ const HamburgerButton = styled.button`
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  
+
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
@@ -163,17 +164,17 @@ const UserMenuTrigger = styled.button`
 
   .user-info {
     text-align: right;
-    
+
     .name {
       font-weight: 500;
       color: #333;
     }
-    
+
     .role {
       font-size: 12px;
       color: #666;
     }
-    
+
     @media (max-width: 1100px) {
       display: none;
     }
@@ -203,9 +204,9 @@ const UserMenuDropdown = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 200px;
   padding: 8px 0;
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.isOpen ? '0' : '-10px'});
+  opacity: ${(props) => (props.$isOpen ? 1 : 0)};
+  visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
+  transform: translateY(${(props) => (props.$isOpen ? "0" : "-10px")});
   transition: all 0.3s;
   z-index: 1000;
   overflow: visible;
@@ -241,12 +242,12 @@ const MenuItem = styled.button`
   border: none;
   cursor: pointer;
   transition: background 0.3s;
-  color: ${props => props.variant === 'danger' ? '#dc2626' : '#333'};
+  color: ${(props) => (props.variant === "danger" ? "#dc2626" : "#333")};
   white-space: nowrap;
   overflow: visible;
   min-width: 0;
-  text-align: ${props => props.dir === 'rtl' ? 'right' : 'left'};
-  direction: ${props => props.dir || 'ltr'};
+  text-align: ${(props) => (props.dir === "rtl" ? "right" : "left")};
+  direction: ${(props) => props.dir || "ltr"};
   flex-wrap: nowrap;
 
   @media (max-width: 480px) {
@@ -258,13 +259,13 @@ const MenuItem = styled.button`
   }
 
   &:hover {
-    background: ${props => props.variant === 'danger' ? '#fee2e2' : '#f3f4f6'};
+    background: ${(props) => (props.variant === "danger" ? "#fee2e2" : "#f3f4f6")};
   }
 
   .icon {
     opacity: 0.7;
     flex-shrink: 0;
-    order: ${props => props.dir === 'rtl' ? 2 : 0};
+    order: ${(props) => (props.dir === "rtl" ? 2 : 0)};
   }
 
   span {
@@ -273,8 +274,8 @@ const MenuItem = styled.button`
     overflow: visible;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    text-align: ${props => props.dir === 'rtl' ? 'right' : 'left'};
-    order: ${props => props.dir === 'rtl' ? 1 : 1};
+    text-align: ${(props) => (props.dir === "rtl" ? "right" : "left")};
+    order: ${(props) => (props.dir === "rtl" ? 1 : 1)};
   }
 `;
 
@@ -289,17 +290,18 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { t, i18n } = useTranslation();
   const { isRTL } = useLanguage();
   const isMobile = isCompactViewport(window.innerWidth);
-  const sidebarWidth = isMobile ? 0 : (isSidebarOpen ? 280 : 70);
+  const sidebarWidth = isMobile ? 0 : isSidebarOpen ? 297 : 70;
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
 
   // Helper function to translate role names
   const translateRole = (role) => {
-    if (!role) return t('common.inspector');
+    if (!role) return t("common.inspector");
     const roleLower = role.toLowerCase();
-    if (roleLower === 'admin') return t('common.admin');
-    if (roleLower === 'inspector') return t('common.inspector');
-    if (roleLower === 'super admin' || roleLower === 'superadmin') return t('common.superAdmin');
+    if (roleLower === "admin") return t("common.admin");
+    if (roleLower === "inspector") return t("common.inspector");
+    if (roleLower === "super admin" || roleLower === "superadmin")
+      return t("common.superAdmin");
     return role; // Return original if no translation found
   };
 
@@ -310,16 +312,16 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
 
   // Close all dropdowns except the one being opened
   const closeAllDropdowns = (except = null) => {
-    if (except !== 'user') setIsUserMenuOpen(false);
-    if (except !== 'notification') setIsNotificationOpen(false);
-    if (except !== 'language') setIsLanguageOpen(false);
-    if (except !== 'timezone') setIsTimezoneOpen(false);
+    if (except !== "user") setIsUserMenuOpen(false);
+    if (except !== "notification") setIsNotificationOpen(false);
+    if (except !== "language") setIsLanguageOpen(false);
+    if (except !== "timezone") setIsTimezoneOpen(false);
   };
 
   const handleUserMenuToggle = () => {
     const newState = !isUserMenuOpen;
     if (newState) {
-      closeAllDropdowns('user');
+      closeAllDropdowns("user");
     }
     setIsUserMenuOpen(newState);
   };
@@ -327,14 +329,17 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
   const handleNotificationToggle = () => {
     const newState = !isNotificationOpen;
     if (newState) {
-      closeAllDropdowns('notification');
+      closeAllDropdowns("notification");
     }
     setIsNotificationOpen(newState);
   };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setIsNotificationOpen(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -342,61 +347,84 @@ const Topbar = ({ toggleSidebar, isSidebarOpen }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
-    <TopbarContainer sidebarWidth={sidebarWidth} $isRTL={isRTL}>
+    <TopbarContainer $sidebarWidth={sidebarWidth} $isRTL={isRTL}>
       <LeftSection>
-        <HamburgerButton onClick={toggleSidebar}>
+        <HamburgerButton
+          aria-label={t("common.openNavigation", { defaultValue: "Open navigation" })}
+          onClick={toggleSidebar}
+        >
           <Menu size={24} />
         </HamburgerButton>
       </LeftSection>
-      
+
       <RightSection>
         <ThemeToggle />
 
         <LanguageToggle
+          compact
           isOpen={isLanguageOpen}
           onOpen={() => {
-            closeAllDropdowns('language');
+            closeAllDropdowns("language");
             setIsLanguageOpen(true);
           }}
           onClose={() => setIsLanguageOpen(false)}
         />
-        
-        <TimezoneDropdown 
+
+        <TimezoneDropdown
           isOpen={isTimezoneOpen}
           onOpen={() => {
-            closeAllDropdowns('timezone');
+            closeAllDropdowns("timezone");
             setIsTimezoneOpen(true);
           }}
           onClose={() => setIsTimezoneOpen(false)}
         />
-        
+
         <NotificationContainer ref={notificationRef}>
-          <NotificationButton onClick={handleNotificationToggle}>
+          <NotificationButton
+            aria-label={t("common.notifications", {
+              defaultValue: "Notifications",
+            })}
+            aria-expanded={isNotificationOpen}
+            onClick={handleNotificationToggle}
+          >
             <Bell size={20} />
-            {unreadCount > 0 && <NotificationBadge>{unreadCount}</NotificationBadge>}
+            {unreadCount > 0 && (
+              <NotificationBadge>{unreadCount}</NotificationBadge>
+            )}
           </NotificationButton>
           <NotificationDropdown isOpen={isNotificationOpen} />
         </NotificationContainer>
 
         <UserMenuContainer ref={userMenuRef}>
-          <UserMenuTrigger onClick={handleUserMenuToggle}>
+          <UserMenuTrigger
+            aria-label={t("common.accountMenu", { defaultValue: "Account menu" })}
+            aria-expanded={isUserMenuOpen}
+            onClick={handleUserMenuToggle}
+          >
             <div className="user-info">
-              <div className="name">{user?.name || t('common.inspector')}</div>
+              <div className="name">{user?.name || t("common.inspector")}</div>
               <div className="role">{translateRole(user?.role)}</div>
             </div>
             <User size={20} />
             <ChevronDown size={16} />
           </UserMenuTrigger>
 
-          <UserMenuDropdown isOpen={isUserMenuOpen} dir={isRTL ? 'rtl' : 'ltr'}>
-            <MenuItem onClick={logout} variant="danger" dir={isRTL ? 'rtl' : 'ltr'}>
+          <UserMenuDropdown
+            $isOpen={isUserMenuOpen}
+            dir={isRTL ? "rtl" : "ltr"}
+          >
+            <MenuItem
+              onClick={logout}
+              variant="danger"
+              dir={isRTL ? "rtl" : "ltr"}
+            >
               <LogOut size={18} className="icon" />
-              <span>{t('common.logout')}</span>
+              <span>{t("common.logout")}</span>
             </MenuItem>
           </UserMenuDropdown>
         </UserMenuContainer>

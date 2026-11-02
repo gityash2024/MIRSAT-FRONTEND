@@ -57,14 +57,14 @@ function App() {
                   success: {
                     duration: 3000,
                     style: {
-                      background: '#10b981',
+                      background: '#16764d',
                       color: '#fff',
                     },
                   },
                   error: {
                     duration: 4000,
                     style: {
-                      background: '#ef4444',
+                      background: '#b91c1c',
                       color: '#fff',
                     },
                   },

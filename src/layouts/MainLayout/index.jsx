@@ -13,7 +13,7 @@ const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
   min-width: 0;
-  background-color: #f5f7fb;
+  background-color: ${props => props.$pageBackground};
 `;
 
 const Overlay = styled.div`
@@ -25,8 +25,8 @@ const Overlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 99;
-  opacity: ${props => props.isVisible ? 1 : 0};
-  visibility: ${props => props.isVisible ? 'visible' : 'hidden'};
+  opacity: ${props => props.$isVisible ? 1 : 0};
+  visibility: ${props => props.$isVisible ? 'visible' : 'hidden'};
   transition: opacity 0.3s, visibility 0.3s;
   
   @media (max-width: 1100px) {
@@ -38,8 +38,8 @@ const MainContentWrapper = styled.div`
   flex: 1;
   min-width: 0;
   ${props => props.$isRTL 
-    ? `margin-right: ${props.sidebarWidth}px;` 
-    : `margin-left: ${props.sidebarWidth}px;`
+    ? `margin-right: ${props.$sidebarWidth}px;`
+    : `margin-left: ${props.$sidebarWidth}px;`
   }
   transition: ${props => props.$isRTL ? 'margin-right' : 'margin-left'} 0.3s ease;
   
@@ -50,7 +50,7 @@ const MainContentWrapper = styled.div`
 `;
 
 const MainContent = styled.div`
-  padding: 80px 24px 24px;
+  padding: 149px 24px 24px;
   min-height: calc(100vh - 64px);
   min-width: 0;
   max-width: 100%;
@@ -79,7 +79,7 @@ const MainLayout = () => {
   
   const getSidebarWidth = () => {
     if (isMobile) return 0;
-    return isSidebarOpen ? 280 : 70;
+    return isSidebarOpen ? 297 : 70;
   };
 
   useEffect(() => {
@@ -120,7 +120,7 @@ const MainLayout = () => {
   };
 
   return (
-    <LayoutContainer>
+    <LayoutContainer $pageBackground={location.pathname.startsWith("/assets") ? "#F6F7F9" : /^\/(documents|fault-reports|spare-parts)/.test(location.pathname) ? "#F5FAFF" : "#f5f7fb"}>
       <Sidebar 
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -128,11 +128,11 @@ const MainLayout = () => {
       />
       {isMobile && (
         <Overlay 
-          isVisible={isSidebarOpen} 
+          $isVisible={isSidebarOpen}
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      <MainContentWrapper sidebarWidth={getSidebarWidth()} $isRTL={isRTL}>
+      <MainContentWrapper $sidebarWidth={getSidebarWidth()} $isRTL={isRTL}>
         <Topbar 
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}

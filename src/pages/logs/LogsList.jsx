@@ -94,7 +94,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 16px;
   margin: 0;
   font-weight: 500;
@@ -224,7 +224,7 @@ const StatValue = styled.div`
 `;
 
 const StatLabel = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
@@ -331,7 +331,7 @@ const SearchInput = styled.input`
   }
   
   &::placeholder {
-    color: #94a3b8;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -340,7 +340,7 @@ const SearchIcon = styled.div`
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--color-text-muted);
 
   @media (max-width: 768px) {
     left: 14px;
@@ -373,8 +373,8 @@ const FilterButton = styled.button`
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  background: ${props => props.active ? 'var(--color-teal)' : 'white'};
-  color: ${props => props.active ? 'white' : 'var(--color-gray-medium)'};
+  background: ${props => props.active ? '#276677' : 'white'};
+  color: ${props => props.active ? 'white' : 'var(--color-text-muted)'};
   border: 2px solid ${props => props.active ? 'var(--color-teal)' : 'var(--color-gray-light)'};
   border-radius: 12px;
   font-weight: 600;
@@ -416,7 +416,7 @@ const RefreshButton = styled.button`
   gap: 8px;
   padding: 12px 20px;
   background: white;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   border: 2px solid var(--color-gray-light);
   border-radius: 12px;
   font-weight: 600;
@@ -583,7 +583,7 @@ const FilterActions = styled.div`
 const ClearButton = styled.button`
   padding: 10px 20px;
   background: white;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   border: 2px solid var(--color-gray-light);
   border-radius: 8px;
   font-weight: 600;
@@ -894,7 +894,7 @@ const UserName = styled.div`
 `;
 
 const UserRole = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 11px;
   text-transform: capitalize;
   font-weight: 500;
@@ -925,13 +925,13 @@ const ActionBadge = styled.span`
   letter-spacing: 0.2px;
   background: ${props => {
     switch(props.type) {
-      case 'task_started': return 'var(--color-info)';
-      case 'task_completed': return 'var(--color-success)';
-      case 'task_progress_updated': return 'var(--color-warning)';
+      case 'task_started': return '#2563a6';
+      case 'task_completed': return '#24734b';
+      case 'task_progress_updated': return '#8c6216';
       case 'task_archived': return 'var(--color-navy)';
-      case 'questionnaire_completed': return '#8b5cf6';
-      case 'task_signature_added': return '#06b6d4';
-      default: return 'var(--color-gray-medium)';
+      case 'questionnaire_completed': return '#6d28d9';
+      case 'task_signature_added': return '#0e7490';
+      default: return '#526579';
     }
   }};
   color: white;
@@ -977,11 +977,11 @@ const SeverityBadge = styled.span`
   letter-spacing: 0.2px;
   background: ${props => {
     switch(props.level) {
-      case 'critical': return 'var(--color-error)';
-      case 'high': return 'var(--color-warning)';
-      case 'medium': return 'var(--color-info)';
-      case 'low': return 'var(--color-success)';
-      default: return 'var(--color-gray-medium)';
+      case 'critical': return '#b91c1c';
+      case 'high': return '#8c6216';
+      case 'medium': return '#2563a6';
+      case 'low': return '#24734b';
+      default: return '#526579';
     }
   }};
   color: white;
@@ -1053,7 +1053,7 @@ const TaskTitle = styled.div`
 
 const TaskStatus = styled.div`
   font-size: 11px;
-  color: ${props => props.color || 'var(--color-gray-medium)'};
+  color: ${props => props.color || 'var(--color-text-muted)'};
   text-transform: capitalize;
   font-weight: 500;
   word-wrap: break-word;
@@ -1073,7 +1073,7 @@ const TaskStatus = styled.div`
 
 const TaskPriority = styled.div`
   font-size: 10px;
-  color: ${props => props.color || 'var(--color-gray-medium)'};
+  color: ${props => props.color || 'var(--color-text-muted)'};
   text-transform: uppercase;
   font-weight: 600;
   margin-top: 2px;
@@ -1093,7 +1093,7 @@ const TaskPriority = styled.div`
 `;
 
 const DescriptionText = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.4;
   max-width: 200px;
@@ -1126,7 +1126,7 @@ const TimeInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -1159,7 +1159,7 @@ const SerialNumber = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 600;
   background: #f8fafc;
@@ -1198,7 +1198,7 @@ const ActionButton = styled.button`
   padding: 8px;
   border: none;
   background: #f8fafc;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1239,7 +1239,7 @@ const ActionButton = styled.button`
 const EmptyState = styled.div`
   text-align: center;
   padding: 80px 20px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   
   svg {
     margin-bottom: 16px;
@@ -1301,7 +1301,7 @@ const Pagination = styled.div`
 
 const PaginationInfo = styled.div`
   margin-right: 16px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 500;
   word-wrap: break-word;
@@ -1341,8 +1341,8 @@ const PaginationControls = styled.div`
 const PageButton = styled.button`
   padding: 8px 12px;
   border: 1px solid var(--color-gray-light);
-  background: ${props => props.active ? 'var(--color-teal)' : 'white'};
-  color: ${props => props.active ? 'white' : 'var(--color-gray-medium)'};
+  background: ${props => props.active ? '#276677' : 'white'};
+  color: ${props => props.active ? 'white' : 'var(--color-text-muted)'};
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;

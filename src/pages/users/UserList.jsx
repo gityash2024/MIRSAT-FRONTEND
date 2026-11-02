@@ -475,7 +475,7 @@ const StatusBadge = styled.span`
 const RowNumber = styled.td`
   text-align: center;
   font-size: 14px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   width: 50px;
   box-sizing: border-box;
 

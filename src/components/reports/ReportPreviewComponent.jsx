@@ -247,7 +247,7 @@ const StatValue = styled.div`
 
 const StatLabel = styled.div`
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   word-wrap: break-word;
@@ -335,7 +335,7 @@ const MetadataItem = styled.div`
 
 const MetadataLabel = styled.div`
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -504,7 +504,7 @@ const FlaggedItemHeader = styled.div`
 
 const FlaggedItemCategory = styled.div`
   font-size: 13px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -544,7 +544,7 @@ const FlaggedItemFooter = styled.div`
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   flex-wrap: wrap;
   gap: 8px;
   width: 100%;
@@ -766,7 +766,7 @@ const SectionScore = styled.div`
   
   .percentage {
     font-size: 12px;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
     white-space: nowrap;
     flex-shrink: 0;
 

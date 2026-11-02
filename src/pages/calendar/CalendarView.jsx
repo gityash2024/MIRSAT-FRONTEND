@@ -609,7 +609,7 @@ const StatusLegend = styled.div`
   align-items: center;
   gap: 8px 16px;
   margin-top: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 12px;
 
   .legend-item {

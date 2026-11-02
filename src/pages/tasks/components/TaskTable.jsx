@@ -211,7 +211,7 @@ const Table = styled.table`
 
   td {
     font-size: 14px;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
 
     @media (max-width: 768px) {
       font-size: 12px;
@@ -271,7 +271,7 @@ const DialogTitle = styled.h3`
 `;
 
 const DialogMessage = styled.p`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 24px;
   word-wrap: break-word;
@@ -329,7 +329,7 @@ const DialogButton = styled.button`
     }
   ` : `
     background: white;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
     border: 1px solid var(--color-gray-light);
 
     &:hover {
@@ -356,7 +356,7 @@ const LoadingOverlay = styled.div`
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -365,7 +365,7 @@ const NoDataMessage = styled.div`
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -388,7 +388,7 @@ const ActionButton = styled.button`
   border: none;
   padding: 6px;
   border-radius: 4px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -446,7 +446,7 @@ const PaginationContainer = styled.div`
 `;
 
 const PaginationInfo = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -552,7 +552,7 @@ const SortIcon = styled.span`
 const RowNumber = styled.td`
   text-align: center;
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   width: 50px;
 `;
 
@@ -583,7 +583,7 @@ const ProgressFill = styled.div`
 const ProgressText = styled.div`
   margin-top: 4px;
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   text-align: right;
 `;
 
@@ -629,7 +629,7 @@ const SublevelsModalCloseButton = styled.button`
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   
   &:hover {
     color: var(--color-navy);
@@ -660,7 +660,7 @@ const TreeItemName = styled.div`
 
 const TreeItemDescription = styled.div`
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 `;
 
 const Modal = styled.div`
@@ -759,7 +759,7 @@ const ModalTitle = styled.h3`
 const CloseButton = styled.button`
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
@@ -854,7 +854,7 @@ const RequiredTag = styled.span`
 const NoQuestionsMessage = styled.div`
   text-align: center;
   padding: 32px 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   background: #f8fafc;
   border-radius: 8px;
   border: 1px dashed #cbd5e1;
@@ -1512,7 +1512,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
                 })}
                 {pagination.pages > 5 && (
                   <>
-                    <span style={{ padding: '0 8px', color: 'var(--color-gray-medium)' }}>...</span>
+                    <span style={{ padding: '0 8px', color: 'var(--color-text-muted)' }}>...</span>
                     <PaginationButton
                       onClick={() => onPageChange(pagination.pages)}
                       style={{

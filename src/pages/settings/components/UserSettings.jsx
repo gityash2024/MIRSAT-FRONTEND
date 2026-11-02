@@ -41,7 +41,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const Card = styled.div`
@@ -76,7 +76,7 @@ const Label = styled.label`
   gap: 8px;
 
   .icon {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -241,7 +241,7 @@ const PolicyTitle = styled.h3`
 
 const PolicyDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const NotificationList = styled.div`

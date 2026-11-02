@@ -324,7 +324,7 @@ const FilterTag = styled.div`
     border: none;
     background: none;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     border-radius: 50%;
     transition: all 0.2s;
 
@@ -487,7 +487,7 @@ const EmptyStateTitle = styled.h3`
 `;
 
 const EmptyStateDescription = styled.p`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 24px;
 `;

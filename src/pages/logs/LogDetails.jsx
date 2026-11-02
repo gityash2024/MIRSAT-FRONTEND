@@ -122,7 +122,7 @@ const InfoRow = styled.div`
 
 const InfoLabel = styled.span`
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -213,7 +213,7 @@ const DetailItem = styled.div`
 
 const DetailLabel = styled.span`
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 13px;
   min-width: 120px;
 `;
@@ -261,13 +261,13 @@ const UserName = styled.div`
 `;
 
 const UserRole = styled.div`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 2px;
 `;
 
 const UserEmail = styled.div`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 12px;
 `;
 
@@ -290,7 +290,7 @@ const TaskInfo = styled.div`
   flex-direction: column;
   gap: 4px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const LoadingSpinner = styled.div`
@@ -662,7 +662,7 @@ const LogDetails = () => {
                 <Globe size={16} />
                 <div>
                   <div style={{ fontWeight: '500', fontSize: '14px' }}>IP Address</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                     {log.ipAddress} • {getIPLocation(log.ipAddress)}
                   </div>
                 </div>
@@ -674,7 +674,7 @@ const LogDetails = () => {
                 <Monitor size={16} />
                 <div>
                   <div style={{ fontWeight: '500', fontSize: '14px' }}>{t('logs.device')}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                     {getDeviceInfo(log.userAgent)}
                   </div>
                 </div>

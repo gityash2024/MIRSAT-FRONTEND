@@ -37,7 +37,7 @@ const Title = styled.h3`
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const TableControls = styled.div`
@@ -70,7 +70,7 @@ const SearchBar = styled.div`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -133,7 +133,7 @@ const Th = styled.th`
 const Td = styled.td`
   padding: 16px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   border-bottom: 1px solid #e2e8f0;
 `;
 
@@ -197,7 +197,7 @@ const LoadingContainer = styled.div`
   height: 200px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const InspectorPerformanceTable = ({ dateRange, filters }) => {
@@ -357,7 +357,7 @@ const InspectorPerformanceTable = ({ dateRange, filters }) => {
                           fill={index < Math.floor(inspector.rating) ? 'currentColor' : 'none'}
                         />
                       ))}
-                      <span style={{ marginLeft: '4px', color: '#64748b' }}>
+                      <span style={{ marginLeft: '4px', color: 'var(--color-text-muted)' }}>
                         {inspector.rating}
                       </span>
                     </Rating>

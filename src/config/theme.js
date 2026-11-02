@@ -55,6 +55,7 @@ export const cssVariables = {
   '--color-offwhite': colors.background.default,
   '--color-gray-light': colors.divider,
   '--color-gray-medium': colors.text.secondary,
+  '--color-text-muted': '#526579',
   '--color-gray-dark': colors.text.primary,
   
   '--color-success': colors.status.success,

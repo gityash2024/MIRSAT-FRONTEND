@@ -55,10 +55,10 @@ const StepCircle = styled.div`
   margin-bottom: 12px;
   position: relative;
   transition: all 0.3s ease;
-  background: ${props => props.active ? 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy) 100%)' : props.completed ? '#4caf50' : 'white'};
+  background: ${props => props.active ? 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy) 100%)' : props.completed ? '#24734b' : 'white'};
   color: ${props => (props.active || props.completed) ? 'white' : '#9ca3af'};
   box-shadow: ${props => (props.active || props.completed) ? '0 4px 12px rgba(0, 0, 0, 0.15)' : '0 2px 6px rgba(0, 0, 0, 0.05)'};
-  border: 2px solid ${props => props.completed ? '#4caf50' : props.active ? 'var(--color-navy)' : '#e5e7eb'};
+  border: 2px solid ${props => props.completed ? '#24734b' : props.active ? 'var(--color-navy)' : '#e5e7eb'};
   
   &:hover {
     transform: ${props => props.disabled ? 'none' : 'scale(1.05)'};
@@ -76,7 +76,7 @@ const StepLine = styled.div`
   left: calc(50% + 24px);
   right: calc(50% - 24px);
   height: 2px;
-  background: ${props => props.completed ? '#4caf50' : '#e5e7eb'};
+  background: ${props => props.completed ? '#24734b' : '#e5e7eb'};
   z-index: -1;
   
   @media (max-width: 768px) {
@@ -87,7 +87,7 @@ const StepLine = styled.div`
 const StepLabel = styled.div`
   font-size: 14px;
   font-weight: 500;
-  color: ${props => props.active ? 'var(--color-navy)' : props.completed ? '#4caf50' : '#6b7280'};
+  color: ${props => props.active ? 'var(--color-navy)' : props.completed ? '#24734b' : '#6b7280'};
   text-align: center;
   
   @media (max-width: 768px) {

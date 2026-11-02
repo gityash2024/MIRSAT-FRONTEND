@@ -39,7 +39,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const Card = styled.div`
@@ -74,7 +74,7 @@ const Label = styled.label`
   gap: 8px;
 
   .icon {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -156,7 +156,7 @@ const PreviewItem = styled.div`
   font-size: 14px;
 
   .label {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 
   .value {
@@ -379,7 +379,7 @@ const LocalizationSettings = () => {
           <RTLSwitch>
             <div>
               <Label style={{ marginBottom: '4px' }}>Right-to-Left (RTL) Mode</Label>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
+              <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
                 Enable RTL layout for languages that read from right to left
               </div>
             </div>

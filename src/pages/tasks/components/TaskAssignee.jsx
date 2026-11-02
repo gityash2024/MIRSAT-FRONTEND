@@ -151,7 +151,7 @@ const AssigneeCount = styled.div`
   background: #f1f5f9;
   border-radius: 12px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const getColorFromName = (name) => {
@@ -215,7 +215,7 @@ const TaskAssignee = ({
       )}
 
       {assignees.length === 0 && (
-        <AssigneeName style={{ color: '#64748b' }}>
+        <AssigneeName style={{ color: 'var(--color-text-muted)' }}>
           {t('common.unassigned')}
         </AssigneeName>
       )}

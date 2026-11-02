@@ -151,7 +151,7 @@ const StatCard = styled.div`
 
   .label {
     font-size: 14px;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
     min-height: 20px;
     margin-top: 4px;
     line-height: 20px;
@@ -283,7 +283,7 @@ const DoughnutCenter = styled.div`
 
   span {
     margin-top: 4px;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
     font-size: 12px;
   }
 `;
@@ -316,7 +316,7 @@ const StatusHoverCard = styled.div`
 
   span {
     margin-top: 4px;
-    color: #64748b;
+    color: var(--color-text-muted);
     font-size: 13px;
   }
 
@@ -927,7 +927,7 @@ const Dashboard = () => {
                 <div style={{
                   textAlign: 'center',
                   padding: '40px 20px',
-                  color: 'var(--color-gray-medium)'
+                  color: 'var(--color-text-muted)'
                 }}>
                   {t('dashboard.noInspectorData')}
                 </div>
@@ -989,7 +989,7 @@ const Dashboard = () => {
                 <div style={{
                   textAlign: 'center',
                   padding: '40px 20px',
-                  color: 'var(--color-gray-medium)'
+                  color: 'var(--color-text-muted)'
                 }}>
                   {t('dashboard.noTemplateData')}
                 </div>

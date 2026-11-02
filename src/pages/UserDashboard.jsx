@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { contrastingTextColor } from '../theme/darkColorTransform';
 import { 
   Calendar, 
   CheckSquare, 
@@ -354,7 +355,10 @@ const StatusItem = styled.div`
   .status-count {
     margin-left: auto;
     background: ${props => props.color};
-    color: white;
+    color: ${props => contrastingTextColor(props.color)};
+    html[data-theme='dark'] & {
+      color: ${props => contrastingTextColor(props.color)};
+    }
     width: 28px;
     height: 28px;
     border-radius: 50%;

@@ -39,7 +39,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const PolicyGrid = styled.div`
@@ -92,7 +92,7 @@ const PolicyTitle = styled.h3`
 
 const PolicyDescription = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const FormGroup = styled.div`
@@ -110,7 +110,7 @@ const Label = styled.label`
   gap: 8px;
 
   .icon {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -292,7 +292,7 @@ const PasswordInput = styled.div`
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #64748b;
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 4px;
     

@@ -8,6 +8,7 @@ import useNotification from '../../hooks/useNotification';
 import { useSelector } from 'react-redux';
 import { resolveNotificationPath } from '../../utils/notificationTarget';
 import { formatPlatformDate } from '../../utils/platformDate';
+import FaultNotices from '../maintenance/FaultNotices';
 
 // Mock data for fallback
 export const mockNotifications = [
@@ -180,13 +181,13 @@ const NotificationTitle = styled.h4`
 
 const NotificationMessage = styled.p`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 `;
 
 const Timestamp = styled.span`
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-text-muted);
 `;
 
 const ViewAllButton = styled(Link)`
@@ -252,6 +253,7 @@ export const NotificationDropdown = ({ isOpen }) => {
       </DropdownHeader>
 
       <NotificationList>
+        <FaultNotices isOpen={isOpen} />
         {visibleNotifications.map((notification, index) => (
           <NotificationItem 
             key={getNotificationId(notification) || `${notification.type}-${notification.createdAt}-${index}`}
@@ -312,7 +314,7 @@ const PageTitle = styled.h1`
 `;
 
 const PageDescription = styled.p`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -348,7 +350,7 @@ const FilterButton = styled.button`
 const LoadingMessage = styled.div`
   text-align: center;
   padding: 24px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -376,7 +378,7 @@ const CardTitle = styled.h3`
 
 const CardMessage = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 `;
 
@@ -385,7 +387,7 @@ const CardTimestamp = styled.div`
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-text-muted);
 `;
 
 const ActionIconButton = styled.button`
@@ -393,7 +395,7 @@ const ActionIconButton = styled.button`
   border: none;
   background: none;
   border-radius: 50%;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
@@ -472,7 +474,7 @@ const PaginationButton = styled.button`
 
 const PageInfo = styled.span`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const EmptyState = styled.div`
@@ -493,7 +495,7 @@ const EmptyTitle = styled.h3`
 
 const EmptyMessage = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const NotificationIcon = ({ type, priority }) => {
@@ -527,7 +529,7 @@ const NotificationIcon = ({ type, priority }) => {
         return {
           Icon: Bell,
           bg: '#f1f5f9',
-          color: '#64748b'
+          color: 'var(--color-text-muted)'
         };
     }
   };

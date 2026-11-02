@@ -89,7 +89,7 @@ const CloseButton = styled.button`
   border: none;
   padding: 8px;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;

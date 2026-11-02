@@ -155,7 +155,7 @@ const FilterTag = styled.div`
     border: none;
     background: none;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     border-radius: 50%;
     transition: all 0.2s;
 
@@ -219,7 +219,7 @@ const FilterTitle = styled.h2`
 `;
 
 const FilterDescription = styled.p`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 20px;
 `;
@@ -416,7 +416,7 @@ const TaskFilter = React.memo(({ filters, setFilters }) => {
                     <Check size={12} color="white" />
                   )}
                 </CustomCheckbox>
-                <User size={16} style={{ marginRight: '6px', color: 'var(--color-gray-medium)' }} />
+                <User size={16} style={{ marginRight: '6px', color: 'var(--color-text-muted)' }} />
                 <CheckboxText $checked={filters.assignedTo?.includes(user._id || user.id)}>
                   {user.name}
                 </CheckboxText>

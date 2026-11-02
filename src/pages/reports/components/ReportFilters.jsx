@@ -63,7 +63,7 @@ const CustomCheckbox = styled.div`
 
 const CheckboxLabel = styled.span`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const ActiveFilters = styled.div`
@@ -93,7 +93,7 @@ const FilterTag = styled.div`
     border: none;
     background: none;
     cursor: pointer;
-    color: #64748b;
+    color: var(--color-text-muted);
     border-radius: 50%;
     transition: all 0.2s;
 

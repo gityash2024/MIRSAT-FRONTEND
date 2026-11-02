@@ -56,7 +56,7 @@ const NoSubLevelsMessage = styled.div`
   
   p {
     font-size: 14px;
-    color: #64748b;
+    color: var(--color-text-muted);
   }
   
   svg {
@@ -115,7 +115,7 @@ const SearchBox = styled.div`
     left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -293,7 +293,7 @@ const ContentTitle = styled.h3`
 `;
 
 const ContentDescription = styled.p`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.6;
   margin: 12px 0;
@@ -388,7 +388,7 @@ const ScoreItem = styled.div`
   
   .score-label {
     font-size: 12px;
-    color: #64748b;
+    color: var(--color-text-muted);
     margin-bottom: 6px;
   }
   
@@ -542,7 +542,7 @@ const SearchButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--color-text-muted);
 `;
 
 const ResultsTitle = styled.h3`
@@ -779,7 +779,7 @@ const ProgressInfo = styled.div`
   font-size: 14px;
   
   .label {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
   
   .percentage {
@@ -815,7 +815,7 @@ const NoSelectionMessage = styled.div`
   justify-content: center;
   padding: 64px 24px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   
   svg {
     color: #e2e8f0;
@@ -842,7 +842,7 @@ const TimeInputContainer = styled.div`
 
 const TimeLabel = styled.span`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const StartTimerButton = styled.button`
@@ -1818,7 +1818,7 @@ const InspectionStepForm = ({
   const renderSearchResults = () => {
     if (!searchResults || searchResults.length === 0) {
       return (
-        <div style={{ padding: '16px', color: '#64748b', fontSize: '14px', textAlign: 'center' }}>
+        <div style={{ padding: '16px', color: 'var(--color-text-muted)', fontSize: '14px', textAlign: 'center' }}>
           No results found
         </div>
       );
@@ -1841,7 +1841,7 @@ const InspectionStepForm = ({
                 <LevelNumber>{result.levelNumber || ''}</LevelNumber>
                 {result.name || 'Unnamed'}
               </NodeLabel>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
                 {result.path}
               </div>
             </div>
@@ -1982,7 +1982,7 @@ const InspectionStepForm = ({
                   <QuestionBody isOpen={isOpen}>
                     {question.description && (
                       <p style={{ 
-                        color: '#64748b', 
+                        color: 'var(--color-text-muted)',
                         fontSize: '14px',
                         marginBottom: '12px'
                       }}>
@@ -2000,7 +2000,7 @@ const InspectionStepForm = ({
           <div style={{ 
             padding: '20px', 
             textAlign: 'center', 
-            color: '#64748b',
+            color: 'var(--color-text-muted)',
             background: '#f8fafc',
             borderRadius: '8px'
           }}>
@@ -2236,7 +2236,7 @@ const InspectionStepForm = ({
                           <QuestionBody isOpen={isQuestionOpen}>
                             {question.description && (
                               <p style={{ 
-                                color: '#64748b', 
+                                color: 'var(--color-text-muted)',
                                 fontSize: '14px',
                                 marginBottom: '12px'
                               }}>
@@ -2254,7 +2254,7 @@ const InspectionStepForm = ({
                   <div style={{ 
                     padding: '16px', 
                     textAlign: 'center', 
-                    color: '#64748b',
+                    color: 'var(--color-text-muted)',
                     background: '#f8fafc',
                     borderRadius: '8px'
                   }}>
@@ -2813,7 +2813,7 @@ const InspectionStepForm = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
+                color: 'var(--color-text-muted)',
                 fontSize: '14px'
               }}
             >
@@ -2841,7 +2841,7 @@ const InspectionStepForm = ({
         
       default:
         return (
-          <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+          <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
             No input available for this question type: {question.type}
           </div>
         );
@@ -3016,7 +3016,7 @@ const SectionNumber = styled.div`
 
 const SectionDescription = styled.div`
   padding: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.5;
   border-bottom: 1px solid #edf2f7;
@@ -3033,7 +3033,7 @@ const SectionScore = styled.div`
 
 const ScoreTitle = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 `;
 
@@ -3131,7 +3131,7 @@ const QuestionText = styled.div`
 `;
 
 const QuestionDescription = styled.div`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-left: 36px;
   margin-bottom: 16px;

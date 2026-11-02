@@ -68,7 +68,7 @@ const CalendarIcon = styled.div`
   transform: translateY(-50%);
   z-index: 1;
   pointer-events: none;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const DatePicker = ({ 

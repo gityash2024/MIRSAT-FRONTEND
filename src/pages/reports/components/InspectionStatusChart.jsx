@@ -64,7 +64,7 @@ const Title = styled.h3`
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const LegendItem = styled.div`
@@ -154,7 +154,7 @@ const StatusItem = styled.div`
 
 const StatusLabel = styled.span`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   min-width: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -227,7 +227,7 @@ const LoadingContainer = styled.div`
   height: 300px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const COLORS = ['var(--color-navy)', '#4caf50', '#ff9800', '#f44336'];
@@ -245,10 +245,10 @@ const CustomTooltip = ({ active, payload }) => {
         <p style={{ margin: 0, color: 'var(--color-navy)', fontWeight: 500 }}>
           {payload[0].name}
         </p>
-        <p style={{ margin: '4px 0 0', color: '#64748b' }}>
+        <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)' }}>
           {payload[0].value} templates
         </p>
-        <p style={{ margin: '4px 0 0', color: '#64748b' }}>
+        <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)' }}>
           {payload[0].payload.percentage}%
         </p>
       </div>

@@ -41,7 +41,7 @@ const SectionTitle = styled.div`
 
 const SectionDetails = styled.div`
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 `;
 
 const StatusBadge = styled.div`

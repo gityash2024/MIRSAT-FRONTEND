@@ -73,7 +73,7 @@ const IconWrapper = styled.div`
 const MetricTitle = styled.h3`
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin: 0;
 `;
 
@@ -91,7 +91,7 @@ const Value = styled.span`
 
 const Unit = styled.span`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const TrendIndicator = styled.div`
@@ -121,7 +121,7 @@ const BreakdownItem = styled.div`
 `;
 
 const BreakdownLabel = styled.span`
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const BreakdownValue = styled.span`
@@ -151,7 +151,7 @@ const LoadingContainer = styled.div`
   height: 200px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   grid-column: 1 / -1;
 `;
 

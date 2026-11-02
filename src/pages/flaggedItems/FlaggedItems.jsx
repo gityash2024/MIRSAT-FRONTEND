@@ -127,7 +127,7 @@ const Select = styled.select`
   }
 
   &:hover {
-    border-color: var(--color-gray-medium);
+    border-color: var(--color-text-muted);
   }
 `;
 
@@ -291,7 +291,7 @@ const Pagination = styled.div`
 `;
 
 const PaginationInfo = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 
@@ -333,7 +333,7 @@ const PaginationButton = styled.button`
 const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 
   svg {
     margin-bottom: 16px;

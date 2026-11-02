@@ -40,6 +40,13 @@ import Settings from '../pages/settings';
 import Reports from '../pages/reports';
 import CalendarView from '../pages/calendar/CalendarView';
 import AssetList from '../pages/assets';
+import Documents, { UploadDocument } from '../pages/maintenance/Documents';
+import FaultReports, { CreateFaultReport, FaultDetail, FaultWorkOrder } from '../pages/maintenance/FaultReports';
+import StockMovement from '../pages/maintenance/StockMovement';
+import PartEditor from '../pages/maintenance/PartEditor';
+import WarehousePage, { SparePartDetail } from '../pages/maintenance/Warehouse';
+import AssetProfile from '../pages/maintenance/AssetProfile';
+import AssetRegister, { CreateAsset, EditAsset } from '../pages/maintenance/AssetRegister';
 
 import UserDashboard from '../pages/UserDashboard';
 import UserTasks from '../pages/UserTasks/index';
@@ -159,7 +166,12 @@ const AppRoutes = () => {
           <Route path="/questionnaire/create" element={<QuestionCreate />} />
           <Route path="/questionnaire/edit/:id" element={<QuestionCreate />} />
           
-          <Route path="/assets" element={<AssetList />} />
+          <Route path="/assets" element={<AssetRegister />} />
+          <Route path="/assets/create" element={<CreateAsset />} />
+          <Route path="/assets/manage" element={<AssetList />} />
+          <Route path="/assets/:id/edit" element={<EditAsset />} />
+          <Route path="/assets/:id" element={<AssetProfile />} />
+          <Route path="/assets/:id/equipment/:equipmentId" element={<AssetProfile />} />
 
           <Route path="/reports/*" element={<Reports />} />
 
@@ -182,6 +194,17 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/documents/upload" element={<UploadDocument />} />
+          <Route path="/fault-reports" element={<FaultReports />} />
+          <Route path="/fault-reports/create" element={<CreateFaultReport />} />
+          <Route path="/fault-reports/:id" element={<FaultDetail />} />
+          <Route path="/fault-reports/:id/work-order" element={<FaultWorkOrder />} />
+          <Route path="/spare-parts" element={<WarehousePage />} />
+          <Route path="/spare-parts/create" element={<PartEditor />} />
+          <Route path="/spare-parts/:id/movements/:operation" element={<StockMovement />} />
+          <Route path="/spare-parts/:id/edit" element={<PartEditor />} />
+          <Route path="/spare-parts/:id" element={<SparePartDetail />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/logs/*" element={<LogsList />} />
         </Route>

@@ -204,7 +204,7 @@ const StatusBar = styled.div`
   padding: 8px 16px;
   background-color: white;
   border-bottom: 1px solid var(--color-gray-light);
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 13px;
 `;
 

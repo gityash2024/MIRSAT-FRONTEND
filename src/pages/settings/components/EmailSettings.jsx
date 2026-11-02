@@ -41,7 +41,7 @@ const SectionTitle = styled.h2`
 
 const SectionDescription = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const FormGrid = styled.div`
@@ -69,7 +69,7 @@ const Label = styled.label`
   gap: 8px;
 
   .icon {
-    color: #64748b;
+    color: var(--color-text-muted);
   }
 `;
 
@@ -102,7 +102,7 @@ const PasswordInput = styled.div`
     right: 8px;
     background: none;
     border: none;
-    color: #64748b;
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 4px;
 
@@ -487,7 +487,7 @@ const EmailSettings = () => {
                 onChange={(e) => handleTemplateChange('taskAssignment', 'body', e.target.value)}
               />
             </FormGroup>
-            <div style={{ fontSize: '13px', color: '#64748b' }}>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
               Available variables: {'{inspectorName}'}, {'{taskName}'}, {'{dueDate}'}, {'{priority}'}
             </div>
           </TemplateCard>
@@ -511,7 +511,7 @@ const EmailSettings = () => {
                 onChange={(e) => handleTemplateChange('taskUpdate', 'body', e.target.value)}
               />
             </FormGroup>
-            <div style={{ fontSize: '13px', color: '#64748b' }}>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
               Available variables: {'{userName}'}, {'{taskName}'}, {'{status}'}, {'{updateTime}'}
             </div>
           </TemplateCard>

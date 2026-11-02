@@ -77,7 +77,7 @@ const Title = styled.h3`
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const CategorySelect = styled.div`
@@ -165,7 +165,7 @@ const MetricCard = styled.div`
 
 const MetricLabel = styled.div`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 `;
 
@@ -191,7 +191,7 @@ const LoadingContainer = styled.div`
   height: 300px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const CustomTooltip = ({ active, payload, label }) => {

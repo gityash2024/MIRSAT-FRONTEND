@@ -67,7 +67,7 @@ const TEXT_MAP = {
   ], P.textSecondary),
   ...withKeys([
     '#4b5563', '#555555', '#5f6b7a', '#616161', '#64748b', '#666666',
-    '#667085', '#6b7280', '#718096', '#757575',
+    '#667085', '#6b7280', '#718096', '#757575', '#526579',
   ], P.textTertiary),
   ...withKeys([...NAVY_SHADES, ...NAVY_DARK_SHADES], P.navyText),
 };
@@ -180,6 +180,13 @@ function relativeLuminance({ r, g, b }) {
 export function contrastRatio(first, second) {
   const [light, dark] = [relativeLuminance(first), relativeLuminance(second)].sort((x, y) => y - x);
   return (light + 0.05) / (dark + 0.05);
+}
+
+/** Foreground for server-supplied badge fills, which stay saturated in both modes. */
+export function contrastingTextColor(background) {
+  const color = parseColor(background);
+  const darkText = '#0f172a';
+  return color && contrastRatio(color, parseColor(darkText)) >= 4.5 ? darkText : '#ffffff';
 }
 
 const SURFACE = parseColor(P.surface);

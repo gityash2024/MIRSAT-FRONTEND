@@ -58,7 +58,7 @@ const BackButton = styled.button`
   gap: 8px;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   cursor: pointer;
   padding: 8px 12px;
@@ -413,7 +413,7 @@ const RemoveButton = styled.button`
   justify-content: center;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -432,7 +432,7 @@ const QuestionContent = styled.div`
 
 const HelpText = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-top: 4px;
 `;
 

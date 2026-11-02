@@ -441,13 +441,13 @@ const isNonCompliant = (value) => {
   return NON_COMPLIANT_VALUES.has(String(value).trim().toLowerCase());
 };
 
-const loadArabicFont = async (doc) => {
+export const loadArabicFont = async (doc, { allowRemoteFallback = true } = {}) => {
   const sources = [
     `${window.location.origin}/fonts/Amiri-Regular.ttf`,
     'https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf'
   ];
 
-  for (const source of sources) {
+  for (const source of allowRemoteFallback ? sources : sources.slice(0, 1)) {
     try {
       const response = await fetch(source);
       if (!response.ok) continue;
@@ -535,7 +535,7 @@ const applyArabicCellFont = (data, fontLoaded) => {
   data.cell.styles.halign = 'right';
 };
 
-const drawPageDecorations = ({
+export const drawPageDecorations = ({
   doc,
   pageNumber,
   totalPages,
@@ -587,6 +587,20 @@ const drawPageDecorations = ({
     pageHeight - 6,
     { align: isArabicExport(language) ? 'left' : 'right' }
   );
+};
+
+export const loadReportLogos = async (getImageAsset = (source, presetName, alias) => (
+  source ? optimizePdfImage(source, { ...PDF_IMAGE_PRESETS[presetName], alias }) : null
+)) => {
+  const [leftSource, rightSource] = await Promise.all([
+    toDataUrl(`${window.location.origin}/report-assets/mirsat.png`),
+    toDataUrl(`${window.location.origin}/report-assets/srsa-logo.png`),
+  ]);
+  const [leftLogo, rightLogo] = await Promise.all([
+    getImageAsset(leftSource, 'mirsatLogo', 'inspection-report-mirsat-logo'),
+    getImageAsset(rightSource, 'srsaLogo', 'inspection-report-srsa-logo'),
+  ]);
+  return { leftLogo, rightLogo };
 };
 
 export const generateTaskPDF = async (taskData, language = 'en') => {
@@ -1083,10 +1097,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     }
   }
 
-  const leftLogoSource = await toDataUrl(`${window.location.origin}/report-assets/mirsat.png`);
-  const rightLogoSource = await toDataUrl(`${window.location.origin}/report-assets/srsa-logo.png`);
-  const leftLogo = await getImageAsset(leftLogoSource, 'mirsatLogo', 'inspection-report-mirsat-logo');
-  const rightLogo = await getImageAsset(rightLogoSource, 'srsaLogo', 'inspection-report-srsa-logo');
+  const { leftLogo, rightLogo } = await loadReportLogos(getImageAsset);
   const generatedAt = formatExportDate(new Date(), exportLanguage, { includeTime: true });
 
   const totalPages = doc.getNumberOfPages();

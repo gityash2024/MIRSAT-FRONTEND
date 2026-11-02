@@ -114,7 +114,7 @@ const CloseButton = styled.button`
 `;
 
 const NoAttachmentsMessage = styled.div`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   text-align: center;
   padding: 12px;

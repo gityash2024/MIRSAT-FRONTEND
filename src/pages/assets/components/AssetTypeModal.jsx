@@ -425,7 +425,7 @@ const EditInput = styled.input`
 const EmptyState = styled.div`
   text-align: center;
   padding: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
 `;
 

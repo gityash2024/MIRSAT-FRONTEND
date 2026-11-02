@@ -141,7 +141,7 @@ const SummaryValue = styled.div`
 
 const SummaryDescription = styled.div`
   font-size: 13px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
 
@@ -255,7 +255,7 @@ const StatCard = styled.div`
 
 const StatLabel = styled.div`
   font-size: 13px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 `;
 
@@ -310,7 +310,7 @@ const NodeInfo = styled.div`
 
   p {
     font-size: 13px;
-    color: var(--color-gray-medium);
+    color: var(--color-text-muted);
     margin: 0;
   }
 `;
@@ -326,7 +326,7 @@ const MetadataItem = styled.span`
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 `;
 
 const NodeActions = styled.div`
@@ -371,7 +371,7 @@ const ExpandCollapseButton = styled.button`
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   margin-right: 8px;
   
   &:hover {
@@ -570,7 +570,7 @@ const SectionAccordionHeader = styled.div`
 
   span {
     font-size: 12px;
-    color: #64748b;
+    color: var(--color-text-muted);
     white-space: nowrap;
     flex-shrink: 0;
 
@@ -615,7 +615,7 @@ const SectionDescription = styled.div`
   font-size: 13px;
   background: #f8fafc;
   font-style: italic;
-  color: #64748b;
+  color: var(--color-text-muted);
   word-wrap: break-word;
   overflow-wrap: break-word;
   width: 100%;
@@ -685,7 +685,7 @@ const QuestionNumberBadge = styled.div`
   min-width: 24px;
   height: 24px;
   background: #f1f5f9;
-  color: #64748b;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -740,7 +740,7 @@ const QuestionTextDisplay = styled.div`
 
 const QuestionDescriptionDisplay = styled.div`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -802,7 +802,7 @@ const QuestionOptionBadge = styled.div`
 const EmptyStateMessage = styled.div`
   padding: 16px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   background: white;
   font-style: italic;
   font-size: 13px;
@@ -844,7 +844,7 @@ const RequiredTag = styled.span`
 `;
 
 const QuestionDescription = styled.div`
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-bottom: 8px;
 `;
@@ -869,7 +869,7 @@ const QuestionMeta = styled.div`
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 `;
 
 const QuestionType = styled.span`
@@ -968,7 +968,7 @@ const ModalTitle = styled.h3`
 
 const ModalMessage = styled.p`
   margin: 0 0 24px 0;
-  color: var(--color-gray-medium);
+  color: var(--color-text-muted);
 `;
 
 const ModalActions = styled.div`
@@ -1183,7 +1183,7 @@ const InspectionLevelView = () => {
         <div style={{
           padding: '16px',
           textAlign: 'center',
-          color: 'var(--color-gray-medium)',
+          color: 'var(--color-text-muted)',
           background: 'var(--color-offwhite)',
           borderRadius: '8px'
         }}>
@@ -1269,7 +1269,7 @@ const InspectionLevelView = () => {
           background: 'var(--color-offwhite)', 
           borderRadius: '8px', 
           textAlign: 'center',
-          color: 'var(--color-gray-medium)'
+          color: 'var(--color-text-muted)'
         }}>
           <AlertTriangle size={18} style={{ marginBottom: '8px' }} />
           <p>{t('inspections.noQuestionsDefined')}</p>
@@ -1315,7 +1315,7 @@ const InspectionLevelView = () => {
         <div style={{
           padding: '16px',
           textAlign: 'center',
-          color: 'var(--color-gray-medium)',
+          color: 'var(--color-text-muted)',
           background: 'var(--color-offwhite)',
           borderRadius: '8px'
         }}>
@@ -1652,7 +1652,7 @@ const InspectionLevelView = () => {
                     <div style={{
                       padding: '24px',
                       textAlign: 'center',
-                      color: 'var(--color-gray-medium)',
+                      color: 'var(--color-text-muted)',
                       background: 'var(--color-offwhite)',
                       borderRadius: '8px'
                     }}>
@@ -1708,7 +1708,7 @@ const InspectionLevelView = () => {
                   ))}
                 </QuestionList>
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-gray-medium)' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
                   No general questions available
                 </div>
               )}
@@ -1750,7 +1750,7 @@ const InspectionLevelView = () => {
               <div style={{ 
                 textAlign: 'center', 
                 padding: '32px 0', 
-                color: 'var(--color-gray-medium)'
+                color: 'var(--color-text-muted)'
               }}>
                 <Clock size={24} style={{ marginBottom: '16px', opacity: 0.6 }} />
                 <p>No upcoming inspections scheduled</p>

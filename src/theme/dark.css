@@ -22,6 +22,31 @@ html[data-theme='dark'] ::selection {
   background: rgba(96, 165, 250, 0.35);
 }
 
+html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='hidden']),
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select,
+html[data-theme='dark'] select option {
+  background-color: #202020;
+  color: #fafafa;
+  border-color: #64748b;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+  color: #b1b4be;
+  opacity: 1;
+}
+
+html[data-theme='dark'] :is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+html[data-theme='dark'] .fc .fc-day-other .fc-daygrid-day-number,
+html[data-theme='dark'] .react-datepicker__day--outside-month:not(.react-datepicker__day--disabled) {
+  color: #b1b4be;
+}
+
 /* Browser autofill paints inputs pale yellow/blue. */
 html[data-theme='dark'] input:-webkit-autofill,
 html[data-theme='dark'] input:-webkit-autofill:hover,

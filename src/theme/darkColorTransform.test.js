@@ -69,7 +69,7 @@ describe('toDarkColor', () => {
   });
 
   it('makes every mapped text color readable on the dark surface', () => {
-    for (const color of ['#dc2626', '#0369a1', '#92400e', '#4338ca', '#333', '#475569']) {
+    for (const color of ['#b91c1c', '#dc2626', '#0369a1', '#92400e', '#4338ca', '#333', '#475569']) {
       expect(contrastRatio(parseColor(toDarkColor(color, TEXT)), SURFACE)).toBeGreaterThanOrEqual(4.5);
     }
   });

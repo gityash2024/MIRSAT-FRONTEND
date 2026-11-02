@@ -76,7 +76,7 @@ const Title = styled.h3`
 
 const Subtitle = styled.p`
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const ContentGrid = styled.div`
@@ -111,7 +111,7 @@ const MetricHeader = styled.div`
 
 const MetricName = styled.span`
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const MetricValue = styled.div`
@@ -125,7 +125,7 @@ const MetricValue = styled.div`
 
 const MetricUnit = styled.span`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const IssuesList = styled.div`
@@ -175,7 +175,7 @@ const IssueName = styled.span`
 
 const IssueLocation = styled.span`
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const IssueCount = styled.span`
@@ -194,7 +194,7 @@ const LoadingContainer = styled.div`
   height: 300px;
   width: 100%;
   font-size: 16px;
-  color: #64748b;
+  color: var(--color-text-muted);
 `;
 
 const CustomTooltip = ({ active, payload }) => {
@@ -216,13 +216,13 @@ const CustomTooltip = ({ active, payload }) => {
         }}>
           {payload[0].payload.region}
         </p>
-        <p style={{ margin: '4px 0', color: '#64748b' }}>
+        <p style={{ margin: '4px 0', color: 'var(--color-text-muted)' }}>
           Templates: {payload[0].value}
         </p>
-        <p style={{ margin: '4px 0', color: '#64748b' }}>
+        <p style={{ margin: '4px 0', color: 'var(--color-text-muted)' }}>
           Compliance: {payload[0].payload.compliance}%
         </p>
-        <p style={{ margin: '4px 0', color: '#64748b' }}>
+        <p style={{ margin: '4px 0', color: 'var(--color-text-muted)' }}>
           Issues: {payload[0].payload.issues}
         </p>
       </div>

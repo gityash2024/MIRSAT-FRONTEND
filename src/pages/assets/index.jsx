@@ -64,7 +64,7 @@ const PageTitle = styled.h1`
 `;
 
 const SubTitle = styled.p`
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   word-wrap: break-word;
   overflow-wrap: break-word;
