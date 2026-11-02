@@ -1,7 +1,7 @@
 import { getConfiguredComplianceFlag } from '../utils/complianceFlags';
 import { getQuestionWeight, isScorableQuestion as isScorableInspectionQuestion } from '../utils/inspectionScoring';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import ArabicReshaper from 'arabic-reshaper';
 import {
   exportText,
@@ -732,7 +732,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
       formatScore(footerSummary.total)
     ].map((cell) => pdfText(cell));
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [orderForLanguage(header, exportLanguage)],
       body: orderRowsForLanguage(body, exportLanguage),
@@ -797,7 +797,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     [L('status'), formatStatusForExport(normalizedTaskData?.status, exportLanguage)]
   ].map((row) => row.map((cell) => pdfText(cell)));
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y,
     head: [orderForLanguage([L('property'), L('value')].map((cell) => pdfText(cell)), exportLanguage)],
     body: orderRowsForLanguage(detailsRows, exportLanguage),
@@ -866,7 +866,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
 
     const preResponseColumn = rtl ? 0 : 2;
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [orderForLanguage(['#', L('question'), L('answer')].map((cell) => pdfText(cell)), exportLanguage)],
       body: orderRowsForLanguage(preRows, exportLanguage),
@@ -921,7 +921,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
     ? flaggedItems.map((item) => [String(item.itemNo), blank(item.checkpoint), blank(item.status)].map((cell) => pdfText(cell)))
     : [['-', L('noFlaggedItems'), '-'].map((cell) => pdfText(cell))];
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y,
     head: [orderForLanguage([L('itemNo'), L('checkpoint'), L('status')].map((cell) => pdfText(cell)), exportLanguage)],
     body: orderRowsForLanguage(flaggedRows, exportLanguage),
@@ -1002,7 +1002,7 @@ export const generateTaskPDF = async (taskData, language = 'en') => {
 
         const responseColumn = rtl ? 1 : 2;
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: y,
           head: [orderForLanguage(['#', L('checkpoint'), L('response'), L('score')].map((cell) => pdfText(cell)), exportLanguage)],
           body: orderRowsForLanguage(rows, exportLanguage),
