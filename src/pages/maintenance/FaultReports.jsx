@@ -51,6 +51,10 @@ import {
   readable,
 } from "./shared";
 
+// Existing inspection tasks serialize their identifier as `id`; older
+// responses and unpopulated references can still use `_id` or a string.
+const taskReferenceId = (task) => typeof task === "string" ? task : task?._id || task?.id;
+
 const priorities = ["low", "medium", "high", "critical"];
 const faultTypes = ["Mechanical", "Electrical", "Structural", "Other"];
 const states = [
@@ -844,7 +848,7 @@ export function FaultDetail() {
                     {m("Assign Fault")}
                   </Button>
                   {fault.workOrder ? (
-                    <Button as={Link} to={`/tasks/${fault.workOrder._id}`}>
+                    <Button as={Link} to={`/tasks/${taskReferenceId(fault.workOrder)}`}>
                       {m("Open Work Order")}
                     </Button>
                   ) : (
@@ -1366,7 +1370,7 @@ export function FaultWorkOrder() {
         {fault &&
           (fault.workOrder ? (
             <Panel>
-              <TextLink to={`/tasks/${fault.workOrder._id}`}>
+              <TextLink to={`/tasks/${taskReferenceId(fault.workOrder)}`}>
                 {m("Open Work Order")}
               </TextLink>
             </Panel>

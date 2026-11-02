@@ -10,7 +10,7 @@ import {
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Documents, { UploadDocument } from "./Documents";
-import FaultReports, { CreateFaultReport } from "./FaultReports";
+import FaultReports, { CreateFaultReport, FaultDetail, FaultWorkOrder } from "./FaultReports";
 import WarehousePage from "./Warehouse";
 import AssetProfile from "./AssetProfile";
 import PartEditor from "./PartEditor";
@@ -211,6 +211,8 @@ const mount = (component, path = "/") =>
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/assets/:id" element={component} />
+        <Route path="/fault-reports/:id/work-order" element={component} />
+        <Route path="/fault-reports/:id" element={component} />
         <Route path="*" element={component} />
       </Routes>
     </MemoryRouter>,
@@ -737,4 +739,22 @@ it('exports a branded register for selected documents while keeping original dow
   await screen.findByRole('button', { name: 'Export register · PDF' });
   expect(screen.getByRole('button', { name: 'Download selected file' })).toBeEnabled();
   expect(service.download).not.toHaveBeenCalled();
+});
+
+
+it.each([
+  { id: "task-id", title: "Linked task" },
+  { _id: "task-id", title: "Linked task" },
+  "task-id",
+])("opens the existing inspection task from fault details and the conversion page: %j", async (workOrder) => {
+  setup();
+  service.get.mockImplementation(async (path) => path === "/fault-reports/fault-id"
+    ? { data: { ...fixtures["/fault-reports"].data[0], workOrder, actions: [], history: [], attachments: [] } }
+    : fixtures[path] || { data: [] });
+  const view = mount(<FaultDetail />, "/fault-reports/fault-id");
+  expect(await screen.findByRole("link", { name: "Open Work Order" })).toHaveAttribute("href", "/tasks/task-id");
+  view.unmount();
+  mount(<FaultWorkOrder />, "/fault-reports/fault-id/work-order");
+  expect(await screen.findByRole("link", { name: "Open Work Order" })).toHaveAttribute("href", "/tasks/task-id");
+  expect(service.save).not.toHaveBeenCalled();
 });
