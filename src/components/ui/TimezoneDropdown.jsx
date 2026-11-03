@@ -48,6 +48,10 @@ const CurrentTimeDisplay = styled.div`
     padding: 4px 6px;
     min-width: 60px;
   }
+
+  @media (max-width: 360px) {
+    display: none;
+  }
 `;
 
 const DropdownButton = styled.button`
