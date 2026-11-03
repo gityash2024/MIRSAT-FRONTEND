@@ -27,7 +27,7 @@ const TopbarContainer = styled.div`
       right: 0;
       transition: left 0.3s ease;
     `}
-  height: 117px;
+  height: 64px;
   background: white;
   display: flex;
   align-items: center;

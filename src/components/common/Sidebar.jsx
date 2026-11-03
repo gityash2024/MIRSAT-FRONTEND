@@ -30,9 +30,9 @@ import { canBrowseMaintenance } from '../../pages/maintenance/shared';
 const SidebarContainer = styled.div`
   background: var(--color-navy);
   color: white;
-  --sidebar-header-height: ${props => props.$collapsed ? '86px' : 'clamp(128px, 18.5dvh, 328px)'};
+  --sidebar-header-height: ${props => props.$collapsed ? '86px' : '116px'};
   --sidebar-footer-height: ${props => props.$collapsed ? '84px' : 'clamp(64px, 7dvh, 112px)'};
-  --sidebar-search-height: 0px;
+  --sidebar-search-height: ${props => props.$collapsed ? '0px' : '76px'};
   --sidebar-row-height: clamp(38px, calc((100dvh - var(--sidebar-header-height) - var(--sidebar-footer-height) - var(--sidebar-search-height) - 16px) / var(--sidebar-menu-count)), 78px);
   height: 100vh;
   height: 100dvh;
@@ -69,7 +69,7 @@ const SidebarContainer = styled.div`
 
 const Logo = styled.div`
   position: relative;
-  padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '117px 3.5rem 97px'};
+  padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '0.75rem 3.5rem'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,9 +79,6 @@ const Logo = styled.div`
   box-sizing: border-box;
   flex-shrink: 0;
   
-  @media (min-width: 1101px) and (max-height: 1399px) {
-    padding: ${props => props.$collapsed ? '1.25rem 0.75rem' : '64px 1.5rem 12px'};
-  }
   @media (max-width: 1100px) {
     padding: 0.75rem 3.5rem;
   }
@@ -95,14 +92,11 @@ const BrandLockup = styled.div`
 
   img {
     display: block;
-    height: 114px;
+    height: 78px;
     width: auto;
     flex-shrink: 0;
   }
 
-  @media (min-width: 1101px) and (max-height: 1399px) {
-    img { height: clamp(52px, calc(var(--sidebar-header-height) - 76px), 114px); }
-  }
   @media (max-width: 1100px) {
     img {
       height: 72px;
@@ -179,20 +173,15 @@ const ToggleButton = styled.button`
 `;
 
 const SearchContainer = styled.div`
-  position: absolute; top: 12px; left: 0; right: 0;
-  @media(max-width:1100px){position:static;}
-  padding: ${props => props.$collapsed ? '0.5rem' : '1rem'};
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: ${props => props.$collapsed ? '0' : '1rem'};
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: ${props => props.$collapsed ? '0' : '1'};
   height: ${props => props.$collapsed ? '0' : 'auto'};
   overflow: hidden;
   
-  @media (min-width: 1101px) and (max-height: 1399px) {
-    top: 4px;
-    padding: ${props => props.$collapsed ? '0' : '8px 16px'};
-    border-bottom: 0;
-  }
   @media (max-width: 1100px) {
     opacity: 1;
     height: var(--sidebar-search-height);
