@@ -621,7 +621,7 @@ const TaskDetailsView = () => {
   const { userRole } = usePermissions();
   const { t } = useTranslation();
 
-  const { currentTask, taskDetailsLoading, error } = useSelector((state) => state.userTasks);
+  const { currentTask, taskDetailsLoading, detailsError: error } = useSelector((state) => state.userTasks);
   const [isExporting, setIsExporting] = useState(false);
   const [showDocumentNamingModal, setShowDocumentNamingModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
