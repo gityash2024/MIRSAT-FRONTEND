@@ -506,12 +506,27 @@ const DialogBox = styled.div`
     margin: 0;
     font-size: ${(p) => p.$titleSize || 22}px;
   }
+  header h2[data-with-icon] {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  [data-dialog-title-icon] {
+    display: grid;
+    flex: 0 0 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 50%;
+    color: #995909;
+    background: #fff1d6;
+  }
   @media (max-width: 650px) {
     padding: 18px;
   }
 `;
 export function Modal({
   title,
+  titleIcon,
   children,
   onClose,
   wide = false,
@@ -593,7 +608,10 @@ export function Modal({
         $topAligned={topAligned}
       >
         <header>
-          <h2 id={titleId}>{title}</h2>
+          <h2 id={titleId} data-with-icon={titleIcon ? true : undefined}>
+            {titleIcon && <span data-dialog-title-icon>{titleIcon}</span>}
+            {title}
+          </h2>
           <Button
             aria-label={m("Close")}
             type="button"
@@ -954,6 +972,7 @@ export const readable = (text) =>
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 Modal.propTypes = {
+  titleIcon: PropTypes.node,
   width: PropTypes.string,
   topAligned: PropTypes.bool,
   padding: PropTypes.string,

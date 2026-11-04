@@ -781,5 +781,12 @@
   "View all linked work orders": "عرض كل أوامر العمل المرتبطة",
   "Work Order Automation": "الإنشاء التلقائي لأوامر العمل",
   "Upcoming service dates based on this schedule.": "مواعيد الصيانة المقبلة بناءً على هذا الجدول.",
-  "Next": "التالي"
+  "Next": "التالي",
+  "Pause this maintenance plan?": "هل تريد إيقاف خطة الصيانة هذه مؤقتًا؟",
+  "While this plan is paused": "أثناء الإيقاف المؤقت لهذه الخطة",
+  "New automatic work orders will not be created.": "لن يتم إنشاء أوامر عمل تلقائية جديدة.",
+  "Upcoming service dates remain visible.": "تظل مواعيد الصيانة القادمة ظاهرة.",
+  "Existing work orders keep their current status.": "تحتفظ أوامر العمل الحالية بحالتها.",
+  "You can resume this plan at any time from the details page.": "يمكنك استئناف هذه الخطة في أي وقت من صفحة التفاصيل.",
+  "Review maintenance plans and their upcoming services.": "راجع خطط الصيانة ومواعيد الصيانة القادمة."
 }

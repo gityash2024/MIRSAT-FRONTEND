@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import styled from "styled-components";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -34,7 +35,95 @@ import {
   idOf,
   localDate,
   usePlanDate,
+  usePlanLabels,
 } from "./planPresentation";
+
+const EditorPanel = styled(Section)`
+  gap: 32px;
+  > section {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  > section + section {
+    padding-block-start: 8px;
+  }
+  @media (min-width: 901px) {
+    input:not([type="checkbox"]),
+    select {
+      min-height: 56px;
+    }
+    textarea {
+      min-height: 96px;
+    }
+  }
+`;
+
+const EditorToggle = styled(FieldLabel)`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-self: end;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--mp-soft);
+  input[type="checkbox"] {
+    appearance: none;
+    position: relative;
+    margin: 0;
+    flex: 0 0 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--mp-border);
+    cursor: pointer;
+    &:checked {
+      background: var(--mp-accent);
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      inset-block-start: 3px;
+      inset-inline-start: 3px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+    }
+    &:checked::after {
+      inset-inline-start: 21px;
+    }
+  }
+`;
+
+const PreviewRow = styled(Row)`
+  padding: 12px 14px;
+  border: 1px solid var(--mp-border);
+  border-radius: 8px;
+  background: var(--mp-soft);
+  gap: 14px;
+  [data-preview-number] {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--mp-day-count);
+    font-weight: 700;
+  }
+`;
+
+const EditorActions = styled(Row)`
+  justify-content: flex-end;
+  gap: 16px;
+  margin-block-start: 8px;
+  > * {
+    flex: 1;
+  }
+  > button {
+    flex: 1.5;
+  }
+`;
 
 const defaultValues = (asset) => ({
   name: "",
@@ -178,6 +267,7 @@ export function ProcedureTree({ record }) {
 function Editor({ existing, assetId }) {
   const m = useCopy(),
     date = usePlanDate(),
+    labels = usePlanLabels(),
     navigate = useNavigate();
   const [values, setValues] = useState(() =>
     existing ? editorValues(existing) : defaultValues(assetId),
@@ -282,7 +372,7 @@ function Editor({ existing, assetId }) {
     }
   };
   return (
-    <PlanPage>
+    <PlanPage data-plan-screen>
       <Row>
         <PlanLink to={back}>
           <ArrowLeft size={16} />
@@ -356,205 +446,212 @@ function Editor({ existing, assetId }) {
               </Section>
             ) : (
               <>
-                <Section>
-                  <h2>{m("Plan Details")}</h2>
-                  <MutedText>
-                    {m("Select the asset and preventive procedure.")}
-                  </MutedText>
-                  {inputControl("Plan Name", "name", "text", {
-                    required: true,
-                    maxLength: 200,
-                  })}
-                  <Columns $columns="repeat(3,minmax(0,1fr))">
-                    {choices(
-                      "Asset",
-                      "asset",
-                      records(data.assets, assetName),
-                      (asset) =>
-                        setValues({
-                          ...values,
-                          asset,
-                          equipment: "",
-                          template: "",
-                        }),
-                    )}
-                    {choices("Equipment", "equipment", records(data.equipment))}
-                    {choices(
-                      "Preventive Procedure / SOP",
-                      "template",
-                      records(data.templates),
-                    )}
-                  </Columns>
-                  <FieldLabel>
-                    {m("Description")}
-                    <textarea
-                      value={values.description}
-                      maxLength={5000}
-                      onChange={(event) =>
-                        change("description", event.target.value)
-                      }
-                    />
-                  </FieldLabel>
-                  {data.procedure && (
-                    <details>
-                      <summary>{m("Procedure Checklist")}</summary>
-                      <ProcedureTree record={data.procedure} />
-                    </details>
-                  )}
-                </Section>
-                <Section>
-                  <h2>{m("Automatic Schedule")}</h2>
-                  <MutedText>
-                    {m("Set when the plan begins and how often it repeats.")}
-                  </MutedText>
-                  <Columns>
-                    {choices(
-                      "Trigger Type",
-                      "trigger",
-                      enums([
-                        ["calendar", "Calendar Schedule"],
-                        ["meter", "Meter Reading"],
-                        ["combined", "Calendar + Meter"],
-                      ]),
-                    )}
+                <EditorPanel>
+                  <Section>
+                    <h2>{m("Plan Details")}</h2>
+                    <MutedText>
+                      {m("Select the asset and preventive procedure.")}
+                    </MutedText>
+                    {inputControl("Plan Name", "name", "text", {
+                      required: true,
+                      maxLength: 200,
+                    })}
+                    <Columns $columns="repeat(3,minmax(0,1fr))">
+                      {choices(
+                        "Asset",
+                        "asset",
+                        records(data.assets, assetName),
+                        (asset) =>
+                          setValues({
+                            ...values,
+                            asset,
+                            equipment: "",
+                            template: "",
+                          }),
+                      )}
+                      {choices(
+                        "Equipment",
+                        "equipment",
+                        records(data.equipment),
+                      )}
+                      {choices(
+                        "Preventive Procedure / SOP",
+                        "template",
+                        records(data.templates),
+                      )}
+                    </Columns>
                     <FieldLabel>
-                      {m("Time Zone")}
-                      <input
-                        value={values.timezone}
-                        list="plan-timezones"
-                        required
+                      {m("Description")}
+                      <textarea
+                        value={values.description}
+                        maxLength={5000}
                         onChange={(event) =>
-                          change("timezone", event.target.value)
+                          change("description", event.target.value)
                         }
                       />
-                      <datalist id="plan-timezones">
-                        {Array.from(
-                          new Set([
-                            "Asia/Riyadh",
-                            "UTC",
-                            ...(Intl.supportedValuesOf?.("timeZone") || []),
-                          ]),
-                        ).map((zone) => (
-                          <option key={zone} value={zone} />
-                        ))}
-                      </datalist>
                     </FieldLabel>
-                  </Columns>
-                  {values.trigger === "combined" && (
-                    <p>
-                      {m(
-                        "A work order is generated when either condition is reached first.",
+                    {data.procedure && (
+                      <details>
+                        <summary>{m("Procedure Checklist")}</summary>
+                        <ProcedureTree record={data.procedure} />
+                      </details>
+                    )}
+                  </Section>
+                  <Section>
+                    <h2>{m("Automatic Schedule")}</h2>
+                    <MutedText>
+                      {m("Set when the plan begins and how often it repeats.")}
+                    </MutedText>
+                    <Columns>
+                      {choices(
+                        "Trigger Type",
+                        "trigger",
+                        enums([
+                          ["calendar", "Calendar Schedule"],
+                          ["meter", "Meter Reading"],
+                          ["combined", "Calendar + Meter"],
+                        ]),
                       )}
-                    </p>
-                  )}
-                  <Columns
-                    $columns={
-                      values.trigger === "combined"
-                        ? undefined
-                        : "minmax(0,1fr)"
-                    }
-                  >
-                    {hasCalendar && (
-                      <Section as="fieldset">
-                        <legend>{m("Calendar Schedule")}</legend>
-                        {nested(
-                          "calendar",
-                          "firstDate",
-                          "First Service Date",
-                          "date",
+                      <FieldLabel>
+                        {m("Time Zone")}
+                        <input
+                          value={values.timezone}
+                          list="plan-timezones"
+                          required
+                          onChange={(event) =>
+                            change("timezone", event.target.value)
+                          }
+                        />
+                        <datalist id="plan-timezones">
+                          {Array.from(
+                            new Set([
+                              "Asia/Riyadh",
+                              "UTC",
+                              ...(Intl.supportedValuesOf?.("timeZone") || []),
+                            ]),
+                          ).map((zone) => (
+                            <option key={zone} value={zone} />
+                          ))}
+                        </datalist>
+                      </FieldLabel>
+                    </Columns>
+                    {values.trigger === "combined" && (
+                      <p>
+                        {m(
+                          "A work order is generated when either condition is reached first.",
                         )}
-                        <Columns>
+                      </p>
+                    )}
+                    <Columns
+                      $columns={
+                        values.trigger === "combined"
+                          ? undefined
+                          : "minmax(0,1fr)"
+                      }
+                    >
+                      {hasCalendar && (
+                        <Section as="fieldset">
+                          <legend>{m("Calendar Schedule")}</legend>
                           {nested(
                             "calendar",
-                            "interval",
-                            "Repeat Every",
-                            "number",
-                            { min: 1, max: 365, step: 1 },
+                            "firstDate",
+                            "First Service Date",
+                            "date",
                           )}
+                          <Columns>
+                            {nested(
+                              "calendar",
+                              "interval",
+                              "Repeat Every",
+                              "number",
+                              { min: 1, max: 365, step: 1 },
+                            )}
+                            <FieldLabel>
+                              {m("Frequency")}
+                              <select
+                                value={values.calendar.unit}
+                                onChange={(event) =>
+                                  change("calendar", {
+                                    ...values.calendar,
+                                    unit: event.target.value,
+                                  })
+                                }
+                              >
+                                {["Day", "Week", "Month", "Year"].map(
+                                  (unit) => (
+                                    <option
+                                      key={unit}
+                                      value={unit.toLowerCase()}
+                                    >
+                                      {m(unit)}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
+                            </FieldLabel>
+                          </Columns>
+                        </Section>
+                      )}
+                      {hasMeter && (
+                        <Section as="fieldset">
+                          <legend>{m("Operating Hours")}</legend>
                           <FieldLabel>
-                            {m("Frequency")}
-                            <select
-                              value={values.calendar.unit}
-                              onChange={(event) =>
-                                change("calendar", {
-                                  ...values.calendar,
-                                  unit: event.target.value,
-                                })
+                            {m("Current Reading")}
+                            <input
+                              value={
+                                selectedEquipment?.currentMeterReading ?? "—"
                               }
-                            >
-                              {["Day", "Week", "Month", "Year"].map((unit) => (
-                                <option key={unit} value={unit.toLowerCase()}>
-                                  {m(unit)}
-                                </option>
-                              ))}
-                            </select>
+                              readOnly
+                            />
                           </FieldLabel>
-                        </Columns>
-                      </Section>
+                          {nested(
+                            "meter",
+                            "firstThreshold",
+                            "Initial Service Threshold",
+                            "number",
+                            { min: 0, max: 1e9, step: 0.0001 },
+                          )}
+                          {nested(
+                            "meter",
+                            "interval",
+                            "Service Interval (hours)",
+                            "number",
+                            { min: 1, max: 1e9, step: 0.0001 },
+                          )}
+                        </Section>
+                      )}
+                    </Columns>
+                    <Columns>
+                      {choices(
+                        "Status",
+                        "status",
+                        enums([
+                          ["active", "Active"],
+                          ["paused", "Paused"],
+                        ]),
+                      )}
+                      <EditorToggle>
+                        {m("Create work order automatically")}
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          checked={
+                            values.automatic && data.canSchedule !== false
+                          }
+                          disabled={data.canSchedule === false}
+                          onChange={(event) =>
+                            change("automatic", event.target.checked)
+                          }
+                        />
+                      </EditorToggle>
+                    </Columns>
+                    {data.canSchedule === false && (
+                      <MutedText>
+                        {m("Task access is required for automatic generation.")}
+                      </MutedText>
                     )}
-                    {hasMeter && (
-                      <Section as="fieldset">
-                        <legend>{m("Operating Hours")}</legend>
-                        <FieldLabel>
-                          {m("Current Reading")}
-                          <input
-                            value={
-                              selectedEquipment?.currentMeterReading ?? "—"
-                            }
-                            readOnly
-                          />
-                        </FieldLabel>
-                        {nested(
-                          "meter",
-                          "firstThreshold",
-                          "Initial Service Threshold",
-                          "number",
-                          { min: 0, max: 1e9, step: 0.0001 },
-                        )}
-                        {nested(
-                          "meter",
-                          "interval",
-                          "Service Interval (hours)",
-                          "number",
-                          { min: 1, max: 1e9, step: 0.0001 },
-                        )}
-                      </Section>
-                    )}
-                  </Columns>
-                  <Columns>
-                    {choices(
-                      "Status",
-                      "status",
-                      enums([
-                        ["active", "Active"],
-                        ["paused", "Paused"],
-                      ]),
-                    )}
-                    <FieldLabel
-                      style={{
-                        display: "flex",
-                        alignSelf: "end",
-                        alignItems: "center",
-                        minHeight: 44,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={values.automatic && data.canSchedule !== false}
-                        disabled={data.canSchedule === false}
-                        onChange={(event) =>
-                          change("automatic", event.target.checked)
-                        }
-                      />{" "}
-                      {m("Create work order automatically")}
-                    </FieldLabel>
-                  </Columns>
-                  {data.canSchedule === false && (
-                    <MutedText>
-                      {m("Task access is required for automatic generation.")}
-                    </MutedText>
-                  )}
-                </Section>
+                  </Section>
+                </EditorPanel>
                 {(data.parts?.length > 0 ||
                   values.requiredParts.length > 0) && (
                   <Section>
@@ -660,9 +757,15 @@ function Editor({ existing, assetId }) {
           </Stack>
           <Stack>
             <Section>
-              <h2>{m("Schedule Preview")}</h2>
+              <div>
+                <h2>{m("Schedule Preview")}</h2>
+                <MutedText>{m("Upcoming Schedule")}</MutedText>
+              </div>
               <Banner>
-                <LabelText>{m("First Service")}</LabelText>
+                <Row $between>
+                  <LabelText>{m("First Service")}</LabelText>
+                  <small>{labels.frequency(values)}</small>
+                </Row>
                 {preview.data?.calendar[0] && (
                   <Row>
                     <CalendarDays size={20} />
@@ -682,12 +785,30 @@ function Editor({ existing, assetId }) {
                 )}
               </Banner>
               {preview.error && <ErrorBox>{m(preview.error)}</ErrorBox>}
-              {preview.data?.calendar.slice(1).map((value) => (
-                <Row key={value}>
-                  <CalendarDays size={16} />
-                  {date(value, values.timezone)}
-                </Row>
-              ))}
+              {preview.data?.calendar.length > 0 && (
+                <>
+                  <LabelText>{m("Upcoming Schedule")}</LabelText>
+                  {preview.data.calendar.slice(0, 3).map((value, index) => (
+                    <PreviewRow key={value}>
+                      <span data-preview-number aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <strong>{date(value, values.timezone)}</strong>
+                        <p>
+                          <MutedText>
+                            {m(
+                              index === 0
+                                ? "First Service"
+                                : "Following service",
+                            )}
+                          </MutedText>
+                        </p>
+                      </div>
+                    </PreviewRow>
+                  ))}
+                </>
+              )}
             </Section>
             {!review && (
               <Section>
@@ -749,37 +870,37 @@ function Editor({ existing, assetId }) {
                 </MutedText>
               </Section>
             )}
+            <EditorActions>
+              {review ? (
+                <PlanButton
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setReview(false)}
+                >
+                  {m("Back")}
+                </PlanButton>
+              ) : (
+                <PlanLink to={back}>{m("Cancel")}</PlanLink>
+              )}
+              <PlanButton
+                $primary
+                type="submit"
+                disabled={saving || options.loading || !preview.data}
+              >
+                <Check size={16} />
+                {m(
+                  saving
+                    ? "Saving…"
+                    : !review
+                      ? "Review"
+                      : existing
+                        ? "Save Changes"
+                        : "Create Maintenance Plan",
+                )}
+              </PlanButton>
+            </EditorActions>
           </Stack>
         </Columns>
-        <Row $between style={{ marginTop: 24 }}>
-          {review ? (
-            <PlanButton
-              type="button"
-              disabled={saving}
-              onClick={() => setReview(false)}
-            >
-              {m("Back")}
-            </PlanButton>
-          ) : (
-            <PlanLink to={back}>{m("Cancel")}</PlanLink>
-          )}
-          <PlanButton
-            $primary
-            type="submit"
-            disabled={saving || options.loading || !preview.data}
-          >
-            <Check size={16} />
-            {m(
-              saving
-                ? "Saving…"
-                : !review
-                  ? "Review"
-                  : existing
-                    ? "Save Changes"
-                    : "Create Maintenance Plan",
-            )}
-          </PlanButton>
-        </Row>
       </form>
     </PlanPage>
   );

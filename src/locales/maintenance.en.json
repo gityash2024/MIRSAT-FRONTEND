@@ -781,5 +781,12 @@
   "View all linked work orders": "View all linked work orders",
   "Work Order Automation": "Work Order Automation",
   "Upcoming service dates based on this schedule.": "Upcoming service dates based on this schedule.",
-  "Next": "Next"
+  "Next": "Next",
+  "Pause this maintenance plan?": "Pause this maintenance plan?",
+  "While this plan is paused": "While this plan is paused",
+  "New automatic work orders will not be created.": "New automatic work orders will not be created.",
+  "Upcoming service dates remain visible.": "Upcoming service dates remain visible.",
+  "Existing work orders keep their current status.": "Existing work orders keep their current status.",
+  "You can resume this plan at any time from the details page.": "You can resume this plan at any time from the details page.",
+  "Review maintenance plans and their upcoming services.": "Review maintenance plans and their upcoming services."
 }

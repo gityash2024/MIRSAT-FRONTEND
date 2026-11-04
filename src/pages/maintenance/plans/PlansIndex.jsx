@@ -4,6 +4,8 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import {
   CalendarDays,
+  PauseCircle,
+  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -48,6 +50,52 @@ import {
   usePlanLabels,
 } from "./planPresentation";
 
+const TableActions = styled.details`
+  summary {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    border-radius: 8px;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover,
+  &[open] summary {
+    background: var(--mp-soft);
+  }
+`;
+
+const PauseContent = styled(PlanPage)`
+  gap: 24px;
+  [data-pause-effects] {
+    background: var(--mp-soft);
+    border-color: transparent;
+  }
+  [data-pause-effects] ul {
+    margin: 0;
+    padding-inline-start: 20px;
+    line-height: 1.55;
+  }
+  [data-pause-effects] li + li {
+    margin-block-start: 8px;
+  }
+  [data-pause-note] {
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--mp-day-count);
+  }
+`;
+
+const PauseButton = styled(PlanButton)`
+  min-inline-size: 168px;
+  background: var(--mp-warning-action);
+  border-color: var(--mp-warning-action);
+`;
+
 const Toolbar = styled(Section)`
   padding: 10px 16px;
   margin-top: 20px;
@@ -74,7 +122,8 @@ const StatCard = styled(Section)`
 const DayBadge = styled(Pill)`
   width: 100%;
   justify-content: center;
-  background: ${(p) => (p.$tone === "red" ? "var(--mp-day-alert)" : "var(--mp-day-count)")};
+  background: ${(p) =>
+    p.$tone === "red" ? "var(--mp-day-alert)" : "var(--mp-day-count)"};
   html[data-theme="dark"] & {
     background: var(--mp-surface);
   }
@@ -146,8 +195,10 @@ export function PlanTableView({ plans, onPause, compact = false }) {
                   {compact ? (
                     <Link to={root + "/" + plan._id}>{m("Open plan")}</Link>
                   ) : (
-                    <details>
-                      <summary aria-label={m("Actions")}>⋯</summary>
+                    <TableActions>
+                      <summary aria-label={m("Actions")}>
+                        <MoreHorizontal size={20} aria-hidden="true" />
+                      </summary>
                       <Stack>
                         <Link to={root + "/" + plan._id}>{m("Open plan")}</Link>
                         <Link to={root + "/" + plan._id + "/edit"}>
@@ -161,7 +212,7 @@ export function PlanTableView({ plans, onPause, compact = false }) {
                           )}
                         </PlanButton>
                       </Stack>
-                    </details>
+                    </TableActions>
                   )}
                 </td>
               </tr>
@@ -177,26 +228,47 @@ export function PauseDialog({ plan, onClose, onChanged }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const pause = plan.status !== "paused";
-  const title = m(pause ? "Pause Maintenance Plan" : "Resume Maintenance Plan");
+  const title = m(
+    pause ? "Pause this maintenance plan?" : "Resume Maintenance Plan",
+  );
+  const ConfirmButton = pause ? PauseButton : PlanButton;
   return (
-    <Modal title={title} onClose={onClose} busy={busy}>
-      <PlanPage>
-        <h3>
+    <Modal
+      title={title}
+      titleIcon={pause && <PauseCircle size={23} aria-hidden="true" />}
+      width="640px"
+      onClose={onClose}
+      busy={busy}
+    >
+      <PauseContent>
+        <MutedText>
           {plan.name} · {plan.code}
-        </h3>
-        <p>
-          {m(
-            pause
-              ? "Pause stops automatic work order generation. The schedule stays visible and existing work orders keep their current status."
-              : "Resume automatic generation on this plan’s existing schedule.",
-          )}
-        </p>
+        </MutedText>
+        {pause ? (
+          <>
+            <Section data-pause-effects>
+              <h3>{m("While this plan is paused")}</h3>
+              <ul>
+                <li>{m("New automatic work orders will not be created.")}</li>
+                <li>{m("Upcoming service dates remain visible.")}</li>
+                <li>{m("Existing work orders keep their current status.")}</li>
+              </ul>
+            </Section>
+            <p data-pause-note>
+              {m("You can resume this plan at any time from the details page.")}
+            </p>
+          </>
+        ) : (
+          <p>
+            {m("Resume automatic generation on this plan’s existing schedule.")}
+          </p>
+        )}
         {error && <p role="alert">{m(error)}</p>}
-        <Row $between>
+        <Row style={{ justifyContent: "flex-end" }}>
           <PlanButton type="button" disabled={busy} onClick={onClose}>
             {m("Cancel")}
           </PlanButton>
-          <PlanButton
+          <ConfirmButton
             type="button"
             $primary
             disabled={busy}
@@ -216,9 +288,9 @@ export function PauseDialog({ plan, onClose, onChanged }) {
             }}
           >
             {m(busy ? "Saving…" : pause ? "Pause Plan" : "Resume Plan")}
-          </PlanButton>
+          </ConfirmButton>
         </Row>
-      </PlanPage>
+      </PauseContent>
     </Modal>
   );
 }
@@ -236,7 +308,7 @@ function Summary({ summary }) {
       )
     : null;
   return (
-    <SummaryGrid $columns="minmax(0,1fr) minmax(0,1.03fr)">
+    <SummaryGrid $columns="minmax(0,1fr) minmax(0,1.07fr)">
       <Banner>
         <LabelText>{m("Next Maintenance")}</LabelText>
         {plan ? (
@@ -471,7 +543,7 @@ export default function PlansIndex({ initialTable }) {
     selectDay("");
   };
   return (
-    <PlanPage>
+    <PlanPage data-plan-screen>
       <PlanHeader $between>
         <div>
           <h1>{m("Maintenance Plans")}</h1>
@@ -616,7 +688,12 @@ export default function PlansIndex({ initialTable }) {
       {table ? (
         <Section>
           <Row $between>
-            <h2>{m("Maintenance Plan Library")}</h2>
+            <div>
+              <h2>{m("Maintenance Plan Library")}</h2>
+              <MutedText>
+                {m("Review maintenance plans and their upcoming services.")}
+              </MutedText>
+            </div>
             <PlanButton type="button" onClick={() => setTable(false)}>
               <CalendarDays size={16} />
               {m("Calendar View")}

@@ -48,12 +48,31 @@ const DetailsHeading = styled(PlanHeader)`
   [data-plan-state] {
     margin-top: 16px;
   }
+  [data-plan-paused-note] {
+    border-radius: 8px;
+    padding: 6px 14px;
+    background: var(--mp-amber-tint);
+    color: var(--mp-amber);
+  }
 `;
 const DetailsBanner = styled(Banner)`
   min-height: 228px;
   align-content: center;
   h2 {
     font-size: 36px;
+    text-transform: uppercase;
+  }
+`;
+const DetailBack = styled(PlanLink)`
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+`;
+const ProgressSummary = styled(Columns)`
+  margin-block: 10px 4px;
+  > div:last-child strong {
+    color: var(--mp-amber);
   }
 `;
 const Timeline = styled.ol`
@@ -119,10 +138,10 @@ function Heading({ plan, onPause }) {
   return (
     <>
       <Row>
-        <PlanLink to={root}>
+        <DetailBack to={root}>
           <ArrowLeft size={16} />
           {m("Back to Maintenance Plans")}
-        </PlanLink>
+        </DetailBack>
       </Row>
       <DetailsHeading $between>
         <div>
@@ -133,9 +152,14 @@ function Heading({ plan, onPause }) {
             {plan.description ||
               m("Monitor the preventive schedule and generated work orders.")}
           </p>
-          <Pill data-plan-state $tone={tone}>
-            {status}
-          </Pill>
+          <Row data-plan-state>
+            <Pill $tone={tone}>{status}</Pill>
+            {plan.status === "paused" && (
+              <span role="status" data-plan-paused-note>
+                {m("Automatic work order generation is paused.")}
+              </span>
+            )}
+          </Row>
         </div>
         {onPause && (
           <Row>
@@ -162,25 +186,22 @@ function ServiceBanner({ plan }) {
     date = usePlanDate();
   return (
     <>
-      {plan.status === "paused" && (
-        <Section role="status">
-          <Row>
-            <Pill $tone="amber">{m("Plan Paused")}</Pill>
-            <span>{m("Automatic work order generation is paused.")}</span>
-          </Row>
-        </Section>
-      )}
       {plan.lastError && <ErrorBox role="alert">{m(plan.lastError)}</ErrorBox>}
       <DetailsBanner>
-        <Columns $columns="minmax(0,3fr) minmax(0,1fr)">
+        <Columns $columns="minmax(0,3fr) minmax(0,1fr)" $align="center">
           <Stack>
-            <LabelText>{m("Next Automatic Service")}</LabelText>
+            <LabelText>
+              {m("Next Automatic Service")}
+              {plan.status === "paused" && ` · ${m("On Hold")}`}
+            </LabelText>
             <h2>
-              {plan.status === "paused"
-                ? m("On Hold")
-                : plan.dueAt
-                  ? date(plan.dueAt, plan.timezone)
-                  : `${plan.preview.threshold} ${m("hours")}`}
+              {plan.dueAt
+                ? date(plan.dueAt, plan.timezone, {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : `${plan.preview.threshold ?? "—"} ${m("hours")}`}
             </h2>
             <p>
               {assetName(plan.asset)} · {plan.equipment?.name} ·{" "}
@@ -294,7 +315,7 @@ function Details({ plan, reload }) {
       ? Math.round((100 * completed) / (completed + remaining))
       : 0;
   return (
-    <PlanPage>
+    <PlanPage data-plan-screen>
       <Heading plan={plan} onPause={() => setPause(true)} />
       <ServiceBanner plan={plan} />
       <Columns>
@@ -330,17 +351,18 @@ function Details({ plan, reload }) {
         </Section>
         <Section>
           <h2>{m("Current Year Progress")}</h2>
-          <Row $between>
-            <div>
+          <ProgressSummary>
+            <Row>
               <Value>{completed}</Value>
-              <p>{m("Services completed")}</p>
-            </div>
-            <div>
+              <MutedText>{m("Services completed")}</MutedText>
+            </Row>
+            <Row>
               <Value>{remaining}</Value>
-              <p>{m("Services remaining")}</p>
-            </div>
-          </Row>
+              <MutedText>{m("Services remaining")}</MutedText>
+            </Row>
+          </ProgressSummary>
           <Track
+            style={{ "--mp-progress-fill": "var(--mp-accent)" }}
             value={percent}
             max={100}
             aria-label={m("Current Year Progress")}
@@ -371,7 +393,15 @@ function Details({ plan, reload }) {
                   <span>
                     {m(index === 0 ? "Next service" : "Following service")}
                   </span>
-                  <Pill>{m(index === 0 ? "Next" : "Upcoming")}</Pill>
+                  <Pill $tone={plan.status === "paused" ? "amber" : "text"}>
+                    {m(
+                      plan.status === "paused"
+                        ? "On Hold"
+                        : index === 0
+                          ? "Next"
+                          : "Upcoming",
+                    )}
+                  </Pill>
                 </Row>
               </li>
             ))}
