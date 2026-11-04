@@ -7,6 +7,7 @@ import {
   Home,
   User,
   ClipboardList,
+  ClipboardCheck,
   Users,
   Calendar,
   ListChecks,
@@ -26,6 +27,7 @@ import mirSatLogo from '../../assets/mirsat-logo-white.svg';
 import takamolLogo from '../../assets/tms-logo-white.svg';
 import { DARK_PALETTE } from '../../theme/darkPalette';
 import { canBrowseMaintenance } from '../../pages/maintenance/shared';
+import MaintenancePlansIcon from '../icons/MaintenancePlansIcon';
 
 const SidebarContainer = styled.div`
   background: var(--color-navy);
@@ -441,7 +443,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   // Define navigation items with required permissions
   const getNavigationItems = () => [
     { title: t('Fault Reports', { ns: 'maintenance' }), path: '/fault-reports', icon: AlertTriangle, maintenanceModule: 'faults' },
-    { title: t('Maintenance Plans', { ns: 'maintenance' }), path: '/maintenance-plans', icon: ListChecks, maintenanceModule: 'maintenance_plans' },
+    { title: t('Maintenance Plans', { ns: 'maintenance' }), path: '/maintenance-plans', icon: MaintenancePlansIcon, maintenanceModule: 'maintenance_plans' },
     { title: t('Spare Parts', { ns: 'maintenance' }), path: '/spare-parts', icon: Package, maintenanceModule: 'warehouse' },
     { title: t('Documents', { ns: 'maintenance' }), path: '/documents', icon: FileText, maintenanceModule: 'documents' },
     {
@@ -495,7 +497,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     {
       title: t('navigation.questionnaires'),
       path: '/questionnaire',
-      icon: FileText,
+      icon: ClipboardCheck,
       permission: 'view_questionnaires',
       modulePermission: 'access_questionnaires',
       roles: ['admin', 'manager']
