@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Link, useParams } from "react-router-dom";
 import { Plus, ArrowLeft, Radio, Settings } from "lucide-react";
 import toast from "react-hot-toast";
+import { AssetPlans, MeterReadings } from "./plans/PlanAssetTabs";
 import AssetModal from "../assets/components/AssetModal";
 import generatorVisual from "../../assets/maintenance/generator.svg";
 import pumpVisual from "../../assets/maintenance/pump.svg";
@@ -233,6 +234,7 @@ export default function AssetProfile() {
   const tools = (data?.equipment || []).filter(
     (row) => row.type === "tool" && row.parent === equipmentId,
   );
+  const canPlans = canManageMaintenance(user, "maintenance_plans");
   const visualType = equipment ? equipment.name : asset?.type;
   const illustration = /vessel|boat|ship/i.test(visualType || "")
     ? vesselVisual
@@ -378,6 +380,8 @@ export default function AssetProfile() {
                 ...(equipment ? [["tools", "Tools"]] : []),
                 ...(canTasks ? [["tasks", "Work Orders"]] : []),
                 ...(canWarehouse ? [["parts", "Spare Parts"]] : []),
+                ...(canPlans && !equipment ? [["plans", "Maintenance Plans"]] : []),
+                ...(canPlans && equipment?.type === "equipment" ? [["meter", "Meter Readings"]] : []),
                 [
                   "history",
                   equipment
@@ -395,6 +399,9 @@ export default function AssetProfile() {
                 </button>
               ))}
             </Tabs>
+            {tab === "plans" && canPlans && !equipment && <AssetPlans assetId={id} />}
+            {tab === "meter" && canPlans && equipment?.type === "equipment" &&
+              <MeterReadings equipment={equipment} assetId={id} assetLabel={asset.displayName} canRecord={manage} />}
             {tab === "overview" && (
               <Grid $columns="repeat(2,minmax(0,1fr))">
                 <Panel>

@@ -49,6 +49,7 @@ export const MODULE_PERMISSIONS = {
   TEMPLATE: 'access_template',
   ASSETS: 'access_assets',
   DOCUMENTS: 'access_documents',
+  MAINTENANCE_PLANS: 'access_maintenance_plans',
   FAULTS: 'access_faults',
   WAREHOUSE: 'access_warehouse',
   QUESTIONNAIRES: 'access_questionnaires',

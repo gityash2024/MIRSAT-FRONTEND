@@ -46,6 +46,10 @@ import StockMovement from '../pages/maintenance/StockMovement';
 import PartEditor from '../pages/maintenance/PartEditor';
 import WarehousePage, { SparePartDetail } from '../pages/maintenance/Warehouse';
 import AssetProfile from '../pages/maintenance/AssetProfile';
+import PlansIndex from '../pages/maintenance/plans/PlansIndex';
+import PlanEditor from '../pages/maintenance/plans/PlanEditor';
+import PlanDetails from '../pages/maintenance/plans/PlanDetails';
+import { PlanGate } from '../pages/maintenance/plans/PlanUI';
 import AssetRegister, { CreateAsset, EditAsset } from '../pages/maintenance/AssetRegister';
 
 import UserDashboard from '../pages/UserDashboard';
@@ -85,6 +89,11 @@ const DashboardRoute = () => {
   }
 
   return <Dashboard />;
+};
+
+const PlansRoute = () => {
+  const { search } = useLocation();
+  return <PlansIndex key={search} initialTable={new URLSearchParams(search).get("view") === "table"} />;
 };
 
 const AppRoutes = () => {
@@ -166,6 +175,12 @@ const AppRoutes = () => {
           <Route path="/questionnaire/create" element={<QuestionCreate />} />
           <Route path="/questionnaire/edit/:id" element={<QuestionCreate />} />
           
+          <Route path="/maintenance-plans" element={<PlanGate><PlansRoute /></PlanGate>} />
+          <Route path="/maintenance-plans/create" element={<PlanGate><PlanEditor /></PlanGate>} />
+          <Route path="/maintenance-plans/:id/edit" element={<PlanGate><PlanEditor /></PlanGate>} />
+          <Route path="/maintenance-plans/:id" element={<PlanGate><PlanDetails /></PlanGate>} />
+          <Route path="/maintenance-plans/:id/tasks" element={<PlanGate><PlanDetails mode="orders" /></PlanGate>} />
+          <Route path="/maintenance-plans/:id/tasks/:occurrenceId" element={<PlanGate><PlanDetails mode="order" /></PlanGate>} />
           <Route path="/assets" element={<AssetRegister />} />
           <Route path="/assets/create" element={<CreateAsset />} />
           <Route path="/assets/manage" element={<AssetList />} />

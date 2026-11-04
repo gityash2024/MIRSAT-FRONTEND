@@ -441,6 +441,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   // Define navigation items with required permissions
   const getNavigationItems = () => [
     { title: t('Fault Reports', { ns: 'maintenance' }), path: '/fault-reports', icon: AlertTriangle, maintenanceModule: 'faults' },
+    { title: t('Maintenance Plans', { ns: 'maintenance' }), path: '/maintenance-plans', icon: ListChecks, maintenanceModule: 'maintenance_plans' },
     { title: t('Spare Parts', { ns: 'maintenance' }), path: '/spare-parts', icon: Package, maintenanceModule: 'warehouse' },
     { title: t('Documents', { ns: 'maintenance' }), path: '/documents', icon: FileText, maintenanceModule: 'documents' },
     {
@@ -527,7 +528,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   // Get menu items based on role and permissions
   const allMenuItems = useMemo(() => {
-    const navigationOrder = ['/dashboard', '/user-dashboard', '/tasks', '/user-tasks', '/fault-reports', '/templates', '/assets', '/spare-parts', '/calendar', '/documents', '/questionnaire', '/users', '/logs', '/profile'];
+    const navigationOrder = ['/dashboard', '/user-dashboard', '/tasks', '/user-tasks', '/fault-reports', '/maintenance-plans', '/templates', '/assets', '/spare-parts', '/calendar', '/documents', '/questionnaire', '/users', '/logs', '/profile'];
     const navigationItems = getNavigationItems().sort((a, b) => navigationOrder.indexOf(a.path) - navigationOrder.indexOf(b.path));
     
     return navigationItems.filter(item => {

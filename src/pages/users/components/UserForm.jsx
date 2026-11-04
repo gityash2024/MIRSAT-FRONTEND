@@ -287,6 +287,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
     const moduleMap = {
       'ASSETS': t('common.assets'),
       'DOCUMENTS': t('Documents', { ns: 'maintenance' }),
+      'MAINTENANCE_PLANS': t('Maintenance Plans', { ns: 'maintenance' }),
       'FAULTS': t('Fault Reports', { ns: 'maintenance' }),
       'WAREHOUSE': t('Spare Parts & Warehouse', { ns: 'maintenance' }),
       'TEMPLATE': t('common.template'),
