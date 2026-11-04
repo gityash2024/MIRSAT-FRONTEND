@@ -27,7 +27,10 @@ export function usePlanLabels() {
   const m = useCopy();
   return {
     frequency(plan) {
-      if (!plan.calendar?.unit) return m("Operating hours");
+      if (plan.trigger === "meter" || !plan.calendar?.unit)
+        return plan.meter?.interval
+          ? `${plan.meter.interval} ${m("hours")}`
+          : m("Operating hours");
       const unit = { day: "Day", week: "Week", month: "Month", year: "Year" }[
         plan.calendar.unit
       ];

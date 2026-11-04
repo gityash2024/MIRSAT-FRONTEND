@@ -576,9 +576,23 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
           }}
         >
           <Stack>
-            <p>
-              {part.name} · {order.task.title}
-            </p>
+            <div>
+              <MutedText>{m("Work Order")}</MutedText>
+              <p>
+                <b>{order.task.title}</b>
+              </p>
+            </div>
+            <div>
+              <MutedText>{m("Part")}</MutedText>
+              <p>
+                <b>
+                  {part.name} · {part.sku}
+                </b>
+              </p>
+            </div>
+            <MutedText>
+              {m("Reserve available stock for this work order.")}
+            </MutedText>
             <FieldLabel>
               {m("Warehouse")}
               <select
@@ -615,7 +629,7 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
               {m("Available")}: {available}
             </MutedText>
             {error && <ErrorBox role="alert">{m(error)}</ErrorBox>}
-            <Row $between>
+            <Row style={{ justifyContent: "flex-end" }}>
               <PlanButton type="button" disabled={busy} onClick={onClose}>
                 {m("Cancel")}
               </PlanButton>
@@ -649,12 +663,12 @@ function WorkOrder({ plan, order, reload, path }) {
     task?.isActive &&
     !["completed", "archived"].includes(task.status);
   return (
-    <PlanPage>
+    <PlanPage data-plan-screen>
       <Row>
-        <PlanLink to={planPath(plan._id) + "/tasks"}>
+        <DetailBack to={planPath(plan._id) + "/tasks"}>
           <ArrowLeft size={16} />
           {m("Generated Work Orders")}
-        </PlanLink>
+        </DetailBack>
       </Row>
       <PlanHeader $between>
         <div>
@@ -668,18 +682,88 @@ function WorkOrder({ plan, order, reload, path }) {
         </div>
         {task && (
           <PlanLink $primary to={`/tasks/${task._id}`}>
-            {m("Open Inspection Task")} →
+            {m("Open Work Order")} →
           </PlanLink>
         )}
       </PlanHeader>
-      <Banner>
-        <Row $between>
+      <Columns $columns="minmax(0,1.8fr) minmax(0,1fr)">
+        <Section>
+          <h2>{m("Work Order Overview")}</h2>
+          <Columns $columns="repeat(4,minmax(0,1fr))">
+            <div>
+              <MutedText>{m("Work Order")}</MutedText>
+              <p>
+                <b>{task?.title || "—"}</b>
+              </p>
+            </div>
+            <div>
+              <MutedText>{m("Asset")}</MutedText>
+              <p>
+                <b>{assetName(plan.asset)}</b>
+              </p>
+            </div>
+            <div>
+              <MutedText>{m("Maintenance Type")}</MutedText>
+              <p>
+                <b>{m("Preventive")}</b>
+              </p>
+            </div>
+            <div>
+              <MutedText>{m("Priority")}</MutedText>
+              <p>
+                <b>
+                  {task
+                    ? m(
+                        { low: "Low", medium: "Medium", high: "High" }[
+                          task.priority
+                        ],
+                      )
+                    : "—"}
+                </b>
+              </p>
+            </div>
+          </Columns>
+          <Columns>
+            <div>
+              <MutedText>{m("Work Order Source")}</MutedText>
+              <p>{m("Maintenance Plan")}</p>
+            </div>
+            <div>
+              <MutedText>{m("Maintenance Plan")}</MutedText>
+              <p>
+                <Link to={planPath(plan._id)}>
+                  {plan.code} · {plan.name}
+                </Link>
+              </p>
+            </div>
+          </Columns>
           <div>
-            <LabelText>{m("Service Due")}</LabelText>
-            <h2>{date(order.dueAt, plan.timezone)}</h2>
+            <MutedText>{m("Description")}</MutedText>
+            <p>{plan.description || "—"}</p>
           </div>
+        </Section>
+        <Section>
+          <h2>{m("Assignment & Schedule")}</h2>
           <div>
-            <LabelText>{m("Trigger Type")}</LabelText>
+            <MutedText>{m("Assigned To")}</MutedText>
+            <p>
+              <b>
+                {task?.assignedTo?.map((user) => user.name).join(", ") || "—"}
+              </b>
+            </p>
+          </div>
+          <Columns>
+            <div>
+              <MutedText>{m("Generated On")}</MutedText>
+              <p>{date(order.createdAt, plan.timezone)}</p>
+            </div>
+            <div>
+              <MutedText>{m("Service Due")}</MutedText>
+              <p>{date(order.dueAt, plan.timezone)}</p>
+            </div>
+          </Columns>
+          <div>
+            <MutedText>{m("Trigger Type")}</MutedText>
             <p>
               {m(
                 order.triggeredBy === "meter"
@@ -689,44 +773,123 @@ function WorkOrder({ plan, order, reload, path }) {
               {order.threshold != null && ` · ${order.threshold} ${m("hours")}`}
             </p>
           </div>
-        </Row>
-      </Banner>
-      <Columns>
-        <Section>
-          <h2>{m("Work Order Details")}</h2>
-          <Pill>{m(taskLabel(task?.status))}</Pill>
-          <p>
-            {m("Assigned To")}:{" "}
-            {task?.assignedTo?.map((user) => user.name).join(", ") || "—"}
-          </p>
-          <p>
-            {m("Priority")}:{" "}
-            {task
-              ? m({ low: "Low", medium: "Medium", high: "High" }[task.priority])
-              : "—"}
-          </p>
-          <p>
-            {m("Generated On")}: {date(order.createdAt, plan.timezone)}
-          </p>
-        </Section>
-        <Section>
-          <h2>{m("Inspection Progress")}</h2>
-          <Value>{task?.overallProgress || 0}%</Value>
-          <Track
-            value={task?.overallProgress || 0}
-            max={100}
-            aria-label={m("Inspection Progress")}
-          />
         </Section>
       </Columns>
       <Section>
-        <h2>{m("Procedure Checklist")}</h2>
-        {order.procedure ? (
-          <ProcedureTree record={order.procedure} />
+        <Row $between>
+          <div>
+            <h2>{m("Procedure Checklist")}</h2>
+            <MutedText>
+              {order.checklist?.filter((row) => row.answered).length || 0} /{" "}
+              {order.checklist?.length || 0} {m("Completed")}
+            </MutedText>
+          </div>
+          <Pill
+            $tone={
+              ["completed", "archived"].includes(task?.status)
+                ? "green"
+                : "text"
+            }
+          >
+            {m(taskLabel(task?.status))}
+          </Pill>
+        </Row>
+        <Track
+          value={task?.overallProgress || 0}
+          max={100}
+          aria-label={m("Inspection Progress")}
+        />
+        {order.checklist?.length ? (
+          <PlanTable>
+            <table>
+              <thead>
+                <tr>
+                  {["Task", "Assigned To", "Status", "Completion"].map(
+                    (label) => (
+                      <th key={label}>{m(label)}</th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {order.checklist.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <b>{row.text}</b>
+                      <small>{row.description}</small>
+                    </td>
+                    <td>
+                      {task?.assignedTo?.map((user) => user.name).join(", ") ||
+                        "—"}
+                    </td>
+                    <td>
+                      <Pill $tone={row.answered ? "green" : "text"}>
+                        {m(row.answered ? "Completed" : "Pending")}
+                      </Pill>
+                    </td>
+                    <td>
+                      {row.answered ? (
+                        m("Completed")
+                      ) : (
+                        <Link to={`/tasks/${task._id}`}>
+                          {m("Open Work Order")} →
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </PlanTable>
         ) : (
           <MutedText>{m("Procedure unavailable")}</MutedText>
         )}
       </Section>
+      <Columns $columns="minmax(0,1.8fr) minmax(0,1fr)">
+        <Section>
+          <h2>{m("Activity History")}</h2>
+          <Timeline>
+            {(order.activity || [])
+              .slice()
+              .reverse()
+              .map((entry, index) => (
+                <li key={entry._id || index}>
+                  <Row $between>
+                    <div>
+                      <b>{m(taskLabel(entry.status))}</b>
+                      <p>
+                        <MutedText>{entry.comment || "—"}</MutedText>
+                      </p>
+                    </div>
+                    <MutedText>
+                      {date(entry.timestamp, plan.timezone, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </MutedText>
+                  </Row>
+                </li>
+              ))}
+          </Timeline>
+        </Section>
+        <Section>
+          <h2>{m("Completion Summary")}</h2>
+          <Row>
+            <Value style={{ color: "var(--mp-green)" }}>
+              {task?.overallProgress || 0}%
+            </Value>
+            <MutedText>{m("Completed")}</MutedText>
+          </Row>
+          <MutedText>
+            {m("Complete required answers and signature in the work order.")}
+          </MutedText>
+          {task && (
+            <PlanLink $primary to={`/tasks/${task._id}`}>
+              {m("Open Work Order")} →
+            </PlanLink>
+          )}
+        </Section>
+      </Columns>
       <Section>
         <Row>
           <Package size={20} />

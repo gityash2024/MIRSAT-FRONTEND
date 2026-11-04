@@ -788,5 +788,18 @@
   "Upcoming service dates remain visible.": "تظل مواعيد الصيانة القادمة ظاهرة.",
   "Existing work orders keep their current status.": "تحتفظ أوامر العمل الحالية بحالتها.",
   "You can resume this plan at any time from the details page.": "يمكنك استئناف هذه الخطة في أي وقت من صفحة التفاصيل.",
-  "Review maintenance plans and their upcoming services.": "راجع خطط الصيانة ومواعيد الصيانة القادمة."
+  "Review maintenance plans and their upcoming services.": "راجع خطط الصيانة ومواعيد الصيانة القادمة.",
+  "Work Order Overview": "نظرة عامة على أمر العمل",
+  "Maintenance Type": "نوع الصيانة",
+  "Preventive": "وقائية",
+  "Work Order Source": "مصدر أمر العمل",
+  "Maintenance Plan": "خطة الصيانة",
+  "Assignment & Schedule": "التكليف والجدول الزمني",
+  "Task": "المهمة",
+  "Completion": "الإنجاز",
+  "Completion Summary": "ملخص الإنجاز",
+  "Complete required answers and signature in the work order.": "أكمل الإجابات المطلوبة والتوقيع في أمر العمل.",
+  "Reserve available stock for this work order.": "احجز المخزون المتاح لأمر العمل هذا.",
+  "Enter the latest meter reading for this equipment.": "أدخل أحدث قراءة للعداد لهذا المعدّ.",
+  "Add photo or supporting document": "إضافة صورة أو مستند داعم"
 }

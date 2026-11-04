@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
+import styled from "styled-components";
 import { useRef, useState } from "react";
-import { Clock3, Download, Plus } from "lucide-react";
+import { Clock3, Download, Plus, Upload } from "lucide-react";
 import {
   ErrorBox,
   Modal,
@@ -19,6 +20,7 @@ import { PlanTableView } from "./PlansIndex";
 import {
   Columns,
   FieldLabel,
+  LabelText,
   MutedText,
   Pill,
   PlanButton,
@@ -68,6 +70,50 @@ export function AssetPlans({ assetId }) {
     </PlanPage>
   );
 }
+const ReadingForm = styled(Stack)`
+  gap: 24px;
+  [data-reading-equipment] {
+    padding: 16px 20px;
+    background: var(--mp-day-count);
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+  }
+  textarea {
+    min-height: 84px;
+  }
+  input:not([type="file"]),
+  select {
+    min-height: 50px;
+  }
+  [data-reading-actions] {
+    justify-content: flex-end;
+  }
+`;
+
+const ReadingFile = styled.span`
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  min-height: 50px;
+  background: var(--mp-soft);
+  border: 1px solid var(--mp-border);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  &:focus-within {
+    outline: 2px solid var(--mp-accent);
+    outline-offset: 2px;
+  }
+`;
+
 const localDateTime = () => {
   const now = new Date();
   return new Date(+now - now.getTimezoneOffset() * 60000)
@@ -85,7 +131,13 @@ function ReadingDialog({ equipment, latest, actor, path, onClose, onSaved }) {
     [error, setError] = useState("");
   const submission = useRef({ key: "", signature: "", file: null });
   return (
-    <Modal title={m("Record New Reading")} onClose={onClose} busy={busy}>
+    <Modal
+      title={m("Record New Reading")}
+      width="920px"
+      padding="36px"
+      onClose={onClose}
+      busy={busy}
+    >
       <PlanPage>
         <form
           onSubmit={async (event) => {
@@ -135,8 +187,14 @@ function ReadingDialog({ equipment, latest, actor, path, onClose, onSaved }) {
             }
           }}
         >
-          <Stack>
-            <h3>{equipment.name}</h3>
+          <ReadingForm>
+            <MutedText>
+              {m("Enter the latest meter reading for this equipment.")}
+            </MutedText>
+            <div data-reading-equipment>
+              <LabelText>{m("Equipment")}</LabelText>
+              <h3>{equipment.name}</h3>
+            </div>
             <Columns>
               <FieldLabel>
                 {m("Meter Type")}
@@ -199,15 +257,19 @@ function ReadingDialog({ equipment, latest, actor, path, onClose, onSaved }) {
             </FieldLabel>
             <FieldLabel>
               {m("Attachment (optional)")}
-              <input
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg"
-                onChange={(event) => setFile(event.target.files[0] || null)}
-              />
+              <ReadingFile>
+                <Upload size={16} aria-hidden="true" />
+                {file?.name || m("Add photo or supporting document")}
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  onChange={(event) => setFile(event.target.files[0] || null)}
+                />
+              </ReadingFile>
               <MutedText>{m("PNG, JPEG or PDF up to 10 MB")}</MutedText>
             </FieldLabel>
             {error && <ErrorBox role="alert">{m(error)}</ErrorBox>}
-            <Row $between>
+            <Row data-reading-actions>
               <PlanButton type="button" disabled={busy} onClick={onClose}>
                 {m("Cancel")}
               </PlanButton>
@@ -215,7 +277,7 @@ function ReadingDialog({ equipment, latest, actor, path, onClose, onSaved }) {
                 {m(busy ? "Saving…" : "Save Reading")}
               </PlanButton>
             </Row>
-          </Stack>
+          </ReadingForm>
         </form>
       </PlanPage>
     </Modal>
@@ -342,18 +404,21 @@ export function MeterReadings({ equipment, assetId, assetLabel, canRecord }) {
             <Columns $columns="repeat(4,minmax(0,1fr))">
               <Section>
                 <MutedText>{m("Current Reading")}</MutedText>
-                <Value>{current ?? "—"}</Value>
-                <MutedText>{m("hours")}</MutedText>
+                <Value>
+                  {current ?? "—"} <small>{m("hours")}</small>
+                </Value>
               </Section>
               <Section>
                 <MutedText>{m("Next Service")}</MutedText>
-                <Value>{target ?? "—"}</Value>
-                <MutedText>{m("hours")}</MutedText>
+                <Value>
+                  {target ?? "—"} <small>{m("hours")}</small>
+                </Value>
               </Section>
               <Section>
                 <MutedText>{m("Remaining")}</MutedText>
-                <Value>{remaining ?? "—"}</Value>
-                <MutedText>{m("hours")}</MutedText>
+                <Value>
+                  {remaining ?? "—"} <small>{m("hours")}</small>
+                </Value>
               </Section>
               <Section>
                 <MutedText>{m("Meter Status")}</MutedText>
@@ -376,6 +441,7 @@ export function MeterReadings({ equipment, assetId, assetLabel, canRecord }) {
                 </Row>
                 {next && (
                   <Track
+                    style={{ "--mp-progress-fill": "var(--mp-accent)" }}
                     max={target || 1}
                     value={
                       target === 0 && current != null

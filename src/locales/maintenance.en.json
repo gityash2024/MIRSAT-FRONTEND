@@ -788,5 +788,18 @@
   "Upcoming service dates remain visible.": "Upcoming service dates remain visible.",
   "Existing work orders keep their current status.": "Existing work orders keep their current status.",
   "You can resume this plan at any time from the details page.": "You can resume this plan at any time from the details page.",
-  "Review maintenance plans and their upcoming services.": "Review maintenance plans and their upcoming services."
+  "Review maintenance plans and their upcoming services.": "Review maintenance plans and their upcoming services.",
+  "Work Order Overview": "Work Order Overview",
+  "Maintenance Type": "Maintenance Type",
+  "Preventive": "Preventive",
+  "Work Order Source": "Work Order Source",
+  "Maintenance Plan": "Maintenance Plan",
+  "Assignment & Schedule": "Assignment & Schedule",
+  "Task": "Task",
+  "Completion": "Completion",
+  "Completion Summary": "Completion Summary",
+  "Complete required answers and signature in the work order.": "Complete required answers and signature in the work order.",
+  "Reserve available stock for this work order.": "Reserve available stock for this work order.",
+  "Enter the latest meter reading for this equipment.": "Enter the latest meter reading for this equipment.",
+  "Add photo or supporting document": "Add photo or supporting document"
 }

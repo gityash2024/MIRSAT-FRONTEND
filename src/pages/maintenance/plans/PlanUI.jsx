@@ -214,6 +214,10 @@ export const LabelText = styled.small`
 export const Value = styled.strong`
   font-size: 30px;
   line-height: 1.1;
+  small {
+    font-size: 18px;
+    font-weight: 600;
+  }
 `;
 export const Track = styled.progress`
   display: block;
