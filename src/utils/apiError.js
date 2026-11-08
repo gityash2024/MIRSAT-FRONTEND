@@ -7,11 +7,8 @@ export const normalizeApiError = (error, fallbackMessage = 'Request failed') => 
     statusCode: nestedError?.statusCode || error?.response?.status,
     code: nestedError?.code || responseData?.code || payload?.code,
     field: nestedError?.field || responseData?.field || payload?.field,
-    message: nestedError?.message
-      || responseData?.message
-      || payload?.message
-      || error?.message
-      || fallbackMessage
+    message: [nestedError?.message, responseData?.message, payload?.message, error?.message]
+      .find((message) => typeof message === 'string' && message.trim()) || fallbackMessage
   };
 };
 

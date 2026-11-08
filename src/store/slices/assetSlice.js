@@ -212,9 +212,9 @@ const assetSlice = createSlice({
         state.error = null;
         // Don't modify the assets array here since we'll refetch
       })
-      .addCase(createAsset.rejected, (state, action) => {
+      .addCase(createAsset.rejected, (state) => {
+        // The save form handles the rejected payload without replacing the register.
         state.loading = false;
-        state.error = action.payload;
       })
       
       // updateAsset
@@ -235,9 +235,9 @@ const assetSlice = createSlice({
           state.assets[index] = action.payload.data;
         }
       })
-      .addCase(updateAsset.rejected, (state, action) => {
+      .addCase(updateAsset.rejected, (state) => {
+        // The save form handles the rejected payload without replacing the register.
         state.loading = false;
-        state.error = action.payload;
       })
       
       // deleteAsset
