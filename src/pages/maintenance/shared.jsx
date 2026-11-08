@@ -725,10 +725,13 @@ export function FormDialog({
     </Modal>
   );
 }
-export function Field({ field, value, onChange }) {
+export function Field({ field, value, onChange, error }) {
   const m = useCopy();
+  const errorId = useId();
   const props = {
     name: field.name,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? errorId : undefined,
     "data-agent-field": field.agent,
     required: field.required,
     disabled: field.disabled,
@@ -781,6 +784,7 @@ export function Field({ field, value, onChange }) {
           placeholder={m(field.placeholder || "")}
         />
       )}
+      {error && <ErrorBox as="span" id={errorId} role="alert">{error}</ErrorBox>}
     </Label>
   );
 }
@@ -995,6 +999,7 @@ FormDialog.propTypes = {
   children: PropTypes.node,
 };
 Field.propTypes = {
+  error: PropTypes.string,
   field: PropTypes.object.isRequired,
   value: PropTypes.any,
   onChange: PropTypes.func.isRequired,

@@ -18,6 +18,7 @@ import StockMovement from "./StockMovement";
 import { Field } from "./shared";
 import AssetRegister, { CreateAsset } from "./AssetRegister";
 import { assetService } from "../../services/asset.service";
+import assetReducer, { createAsset, updateAsset } from "../../store/slices/assetSlice";
 import {
   FormDialog,
   Preview,
@@ -458,6 +459,39 @@ it("the asset register keeps profile, edit, task, type-management and export ent
     "assets.export.open",
   );
 });
+it("keeps a duplicate asset ID on the form and clears its error when corrected", async () => {
+  setup();
+  assetService.createAsset.mockRejectedValueOnce({
+    response: {
+      status: 409,
+      data: { error: { code: "ASSET_UNIQUE_ID_EXISTS", field: "uniqueId" } },
+    },
+  });
+  mount(<CreateAsset />);
+  const id = await screen.findByRole("textbox", { name: /^Unique ID/ });
+  const name = screen.getByRole("textbox", { name: /^Asset Name/ });
+  fireEvent.change(id, { target: { value: "16" } });
+  fireEvent.change(name, { target: { value: "QA Vessel" } });
+  fireEvent.submit(screen.getByRole("button", { name: "Save Asset" }).closest("form"));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("assets.assetIdAlreadyExists");
+  expect(id).toHaveAttribute("aria-invalid", "true");
+  expect(id).toHaveValue("16");
+  expect(name).toHaveValue("QA Vessel");
+  expect(service.save).not.toHaveBeenCalled();
+
+  fireEvent.change(id, { target: { value: "17" } });
+  expect(id).not.toHaveAttribute("aria-invalid");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it.each([createAsset, updateAsset])("keeps rejected saves out of the asset list error", (save) => {
+  const conflict = { code: "ASSET_UNIQUE_ID_EXISTS", field: "uniqueId", message: "Duplicate" };
+  const rejected = save.rejected(null, "request-id", {}, conflict);
+  expect(rejected.payload).toEqual(conflict);
+  expect(assetReducer(undefined, rejected)).toMatchObject({ loading: false, error: null });
+});
+
 it("retrying a failed new-asset profile save does not create a duplicate core asset", async () => {
   setup();
   assetService.createAsset.mockResolvedValue({ data: { _id: assetId } });

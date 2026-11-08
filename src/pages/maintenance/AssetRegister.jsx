@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Download,
@@ -20,9 +21,9 @@ import AssetTasksModal from "../assets/components/AssetTasksModal";
 import DocumentNamingModal from "../../components/ui/DocumentNamingModal";
 import { deleteAsset, exportAssets } from "../../store/slices/assetSlice";
 import { assetService } from "../../services/asset.service";
+import { normalizeApiError } from "../../utils/apiError";
 import {
   maintenanceService as service,
-  maintenanceError,
   asFormData,
 } from "../../services/maintenance.service";
 import {
@@ -484,6 +485,7 @@ export function EditAsset() {
 }
 export function CreateAsset({ initial } = {}) {
   const m = useCopy();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { manage, user } = useMaintenanceAccess("assets");
   const canDocuments = canManageMaintenance(user, "documents");
@@ -538,8 +540,11 @@ export function CreateAsset({ initial } = {}) {
   const [createdId, setCreatedId] = useState(initial?.asset?._id || null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const change = (name, value) =>
+  const [uniqueIdError, setUniqueIdError] = useState("");
+  const change = (name, value) => {
     setValues((old) => ({ ...old, [name]: value }));
+    if (name === "uniqueId") setUniqueIdError("");
+  };
   if (!manage)
     return (
       <ErrorBox>{m("Access to this module has not been granted")}</ErrorBox>
@@ -572,6 +577,7 @@ export function CreateAsset({ initial } = {}) {
             if (busy) return;
             setBusy(true);
             setError("");
+            setUniqueIdError("");
             try {
               let id = createdId;
               const core = {
@@ -624,7 +630,12 @@ export function CreateAsset({ initial } = {}) {
               toast.success(m(editing ? "Asset updated" : "Asset created"));
               navigate(`/assets/${id}`);
             } catch (err) {
-              setError(maintenanceError(err));
+              const { code, message } = normalizeApiError(err);
+              if (code === "ASSET_UNIQUE_ID_EXISTS") {
+                setUniqueIdError(t("assets.assetIdAlreadyExists"));
+              } else {
+                setError(message);
+              }
             } finally {
               setBusy(false);
             }
@@ -682,6 +693,7 @@ export function CreateAsset({ initial } = {}) {
                         field.name !== "lifecycleStatus",
                     }}
                     value={values[field.name]}
+                    error={field.name === "uniqueId" ? uniqueIdError : undefined}
                     onChange={(value) => change(field.name, value)}
                   />
                 ))}
