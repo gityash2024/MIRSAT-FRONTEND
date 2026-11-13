@@ -16,7 +16,7 @@ import AssetProfile from "./AssetProfile";
 import PartEditor from "./PartEditor";
 import StockMovement from "./StockMovement";
 import { Field } from "./shared";
-import AssetRegister, { CreateAsset } from "./AssetRegister";
+import AssetRegister, { CreateAsset, EditAsset } from "./AssetRegister";
 import { assetService } from "../../services/asset.service";
 import assetReducer, { createAsset, updateAsset } from "../../store/slices/assetSlice";
 import {
@@ -212,6 +212,8 @@ const mount = (component, path = "/") =>
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/assets/:id" element={component} />
+        <Route path="/assets/:id/edit" element={component} />
+        <Route path="/assets/:id/equipment/:equipmentId" element={component} />
         <Route path="/fault-reports/:id/work-order" element={component} />
         <Route path="/fault-reports/:id" element={component} />
         <Route path="*" element={component} />
@@ -702,7 +704,7 @@ it("editing a legacy asset keeps optional profile fields empty and reuses the co
   setup();
   assetService.updateAsset.mockResolvedValue({ success: true });
   service.save.mockResolvedValue({ success: true });
-  mount(<CreateAsset initial={fixtures[`/asset-profiles/${assetId}`].data} />);
+  mount(<EditAsset />, `/assets/${assetId}/edit`);
   await screen.findByText("Identification Details");
   expect(screen.getByLabelText("Serial Number")).not.toBeRequired();
   fireEvent.submit(
@@ -791,4 +793,92 @@ it.each([
   mount(<FaultWorkOrder />, "/fault-reports/fault-id/work-order");
   expect(await screen.findByRole("link", { name: "Open Work Order" })).toHaveAttribute("href", "/tasks/task-id");
   expect(service.save).not.toHaveBeenCalled();
+});
+
+it("updates the route asset even when the profile returns only id and a save needs retry", async () => {
+  setup();
+  const profilePath = `/asset-profiles/${assetId}`;
+  const data = fixtures[profilePath].data;
+  const { _id, ...asset } = data.asset;
+  service.get.mockResolvedValue({ data: { ...data, asset: { ...asset, id: _id, city: "Marina" } } });
+  assetService.updateAsset.mockResolvedValue({ success: true });
+  service.save.mockRejectedValueOnce(new Error("Profile interrupted")).mockResolvedValueOnce({ success: true });
+
+  mount(<EditAsset />, `/assets/${assetId}/edit`);
+  const submit = await screen.findByRole("button", { name: "Save Changes" });
+  expect(screen.getByRole("textbox", { name: /^Unique ID/ })).toHaveValue("LOCAL-001");
+  fireEvent.submit(submit.closest("form"));
+  expect(await screen.findByText("Profile interrupted")).toBeInTheDocument();
+  fireEvent.submit(submit.closest("form"));
+
+  await waitFor(() => expect(service.save).toHaveBeenCalledTimes(2));
+  expect(assetService.createAsset).not.toHaveBeenCalled();
+  expect(assetService.updateAsset).toHaveBeenCalledTimes(2);
+  for (const [target, body] of assetService.updateAsset.mock.calls) {
+    expect(target).toBe(assetId);
+    expect(body.uniqueId).toBe("LOCAL-001");
+  }
+  expect(service.save.mock.calls.map(([path]) => path)).toEqual([profilePath, profilePath]);
+});
+
+it.each([undefined, "engine-id"])("keeps an embedded document tied to the current profile (%s)", async (equipmentId) => {
+  setup();
+  const onSaved = vi.fn();
+  service.save.mockRejectedValueOnce(new Error("Upload interrupted")).mockResolvedValueOnce({ data: doc });
+  mount(<UploadDocument assetId={assetId} equipmentId={equipmentId} onClose={vi.fn()} onSaved={onSaved} />);
+  const dialog = await screen.findByRole("dialog", { name: "Add Document" });
+  const submit = await within(dialog).findByRole("button", { name: "Upload & Save" });
+  const title = within(dialog).getByRole("textbox", { name: /Document Title/ });
+  fireEvent.change(title, { target: { value: "Engine manual" } });
+  fireEvent.change(within(dialog).getByLabelText("Upload file"), {
+    target: { files: [new File(["pdf"], "manual.pdf", { type: "application/pdf" })] },
+  });
+  fireEvent.submit(submit.closest("form"));
+  expect(await within(dialog).findByRole("alert")).toHaveTextContent("Upload interrupted");
+  expect(title).toHaveValue("Engine manual");
+  fireEvent.submit(submit.closest("form"));
+
+  await waitFor(() => expect(onSaved).toHaveBeenCalledWith(doc));
+  for (const [path, body] of service.save.mock.calls) {
+    expect(path).toBe("/documents");
+    expect(body.get("asset")).toBe(assetId);
+    expect(body.get("equipment")).toBe(equipmentId ?? null);
+    expect(body.get("file").name).toBe("manual.pdf");
+  }
+});
+
+it("archives the selected equipment only after confirmation and retains the Equipment tab", async () => {
+  setup();
+  const profilePath = `/asset-profiles/${assetId}`;
+  const equipment = { _id: "engine-id", name: "Port engine", type: "equipment" };
+  const data = fixtures[profilePath].data;
+  let archived = false;
+  service.get.mockImplementation(async (path) => path === profilePath
+    ? { data: { ...data, equipment: archived ? [] : [equipment] } }
+    : fixtures[path] || { data: [] });
+  service.save.mockRejectedValueOnce(new Error("Archive child components first")).mockImplementationOnce(async () => {
+    archived = true;
+    return { success: true };
+  });
+  mount(<AssetProfile />, `/assets/${assetId}`);
+  fireEvent.click(await screen.findByRole("tab", { name: "Equipment" }));
+  const openDelete = async () => {
+    fireEvent.click(await screen.findByRole("button", { name: "Actions · Port engine" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    return screen.getByRole("dialog", { name: "Delete Equipment" });
+  };
+
+  let dialog = await openDelete();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  expect(service.save).not.toHaveBeenCalled();
+  dialog = await openDelete();
+  const submit = within(dialog).getByRole("button", { name: "Delete" });
+  fireEvent.submit(submit.closest("form"));
+  expect(await within(dialog).findByRole("alert")).toHaveTextContent("Archive child components first");
+  expect(screen.getByText("Port engine")).toBeInTheDocument();
+  fireEvent.submit(submit.closest("form"));
+
+  await screen.findByText("No equipment added");
+  expect(screen.getByRole("tab", { name: "Equipment" })).toHaveAttribute("aria-selected", "true");
+  expect(service.save).toHaveBeenLastCalledWith(`${profilePath}/equipment/engine-id`, {}, "delete");
 });

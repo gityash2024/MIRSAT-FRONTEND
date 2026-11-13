@@ -629,18 +629,19 @@ export default function Documents() {
   );
 }
 
-export function UploadDocument() {
+export function UploadDocument({ assetId, equipmentId, onClose, onSaved } = {}) {
   const m = useCopy();
   const navigate = useNavigate();
   const [search] = useSearchParams();
+  const embedded = Boolean(assetId);
   const { manage } = useMaintenanceAccess("documents");
   const lookups = useResource("/documents/lookups", {}, manage);
   const [values, setValues] = useState({
     title: "",
     category: "",
     description: "",
-    asset: search.get("asset") || "",
-    equipment: search.get("equipment") || "",
+    asset: assetId || search.get("asset") || "",
+    equipment: embedded ? equipmentId || "" : search.get("equipment") || "",
     documentType: "",
     versionLabel: "v1.0",
     language: "English",
@@ -659,6 +660,274 @@ export function UploadDocument() {
     return (
       <ErrorBox>{m("Access to this module has not been granted")}</ErrorBox>
     );
+  const form = (
+    <ResourceState resource={lookups}>
+      <Panel>
+        <Actions style={{ justifyContent: "space-between" }}>
+          {["1. Upload File", "2. Document Details", "3. Link & Control"].map(
+            (label) => (
+              <strong key={label}>{m(label)}</strong>
+            ),
+          )}
+        </Actions>
+      </Panel>
+      <form
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (busy) return;
+          setBusy(true);
+          setError("");
+          try {
+            if (!file) throw new Error(m("Select a file to upload"));
+            if (file.size > (fields.maxFileMb || 25) * 1024 * 1024)
+              throw new Error(
+                `${m("Maximum file size")}: ${fields.maxFileMb || 25} MB`,
+              );
+            const saved = await service.save(
+              "/documents",
+              asFormData({ ...values, file }),
+            );
+            if (embedded) {
+              onSaved(saved.data);
+              return;
+            }
+            navigate("/documents", {
+              state: {
+                success: "Document uploaded successfully",
+                document: saved.data._id,
+              },
+            });
+          } catch (err) {
+            setError(maintenanceError(err));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <Grid>
+          <Panel>
+            <h2>{m("1. Upload File")}</h2>
+            <p>
+              {m("Choose the primary file to store in the document library")}
+            </p>
+            <FileDrop
+              file={file}
+              onChange={setFile}
+              maxFileMb={fields.maxFileMb || 25}
+              required
+            />
+            <h2 style={{ marginTop: 32 }}>{m("2. Document Details")}</h2>
+            <p>
+              {m(
+                "Add information that helps users identify and retrieve the file.",
+              )}
+            </p>
+            <FormGrid>
+              {[
+                { name: "title", label: "Document Title", required: true },
+                {
+                  name: "documentType",
+                  label: "Document Type",
+                  options: [
+                    "PDF",
+                    "Manual",
+                    "Certificate",
+                    "Report",
+                    "Policy",
+                    "Other",
+                  ],
+                  required: true,
+                },
+                {
+                  name: "category",
+                  label: "Category",
+                  options: DOCUMENT_CATEGORIES,
+                  required: true,
+                },
+                {
+                  name: "versionLabel",
+                  label: "Version",
+                  required: true,
+                  maxLength: 30,
+                },
+                {
+                  name: "language",
+                  label: "Language",
+                  options: ["English", "Arabic", "Other"],
+                  required: true,
+                },
+                {
+                  name: "owner",
+                  label: "Document Owner",
+                  options: optionsFrom(fields.users),
+                  required: true,
+                },
+                {
+                  name: "description",
+                  label: "Description",
+                  type: "textarea",
+                  wide: true,
+                },
+              ].map((field) => (
+                <Field
+                  key={field.name}
+                  field={field}
+                  value={values[field.name]}
+                  onChange={(value) => change(field.name, value)}
+                />
+              ))}
+            </FormGrid>
+            <h2 style={{ marginTop: 32 }}>{m("3. Link & Control")}</h2>
+            <p>
+              {m(
+                "Define where the document belongs and how it is controlled.",
+              )}
+            </p>
+            <FormGrid>
+              {!embedded && (<>
+              <Field
+                field={{
+                  name: "asset",
+                  label: "Select Asset",
+                  options: optionsFrom(fields.assets, "displayName"),
+                }}
+                value={values.asset}
+                onChange={(value) => {
+                  change("asset", value);
+                  change("equipment", "");
+                }}
+              />
+              <Field
+                field={{
+                  name: "equipment",
+                  label: "Select Equipment",
+                  options: optionsFrom(
+                    (fields.equipment || []).filter(
+                      (row) => !values.asset || row.asset === values.asset,
+                    ),
+                  ),
+                }}
+                value={values.equipment}
+                onChange={(value) => change("equipment", value)}
+              />
+              </>)}
+              {Boolean(fields.tasks?.length) && (
+                <Field
+                  field={{
+                    name: "task",
+                    label: "Work Order",
+                    options: optionsFrom(fields.tasks, "title"),
+                  }}
+                  value={values.task || ""}
+                  onChange={(value) => change("task", value)}
+                />
+              )}
+            </FormGrid>
+          </Panel>
+          <div>
+            <Panel>
+              <h2>{m("Document Control")}</h2>
+              <p>{m("Review the control settings for this record.")}</p>
+              <FormGrid style={{ gridTemplateColumns: "1fr" }}>
+                {[
+                  {
+                    name: "effectiveDate",
+                    label: "Effective Date",
+                    type: "date",
+                  },
+                  { name: "reviewDate", label: "Review Date", type: "date" },
+                  { name: "expiryDate", label: "Expiry Date", type: "date" },
+                  {
+                    name: "accessLevel",
+                    label: "Access Level",
+                    options: [
+                      { value: "all", label: "All Authorized Users" },
+                      { value: "restricted", label: "Restricted Access" },
+                    ],
+                  },
+                ].map((field) => (
+                  <Field
+                    key={field.name}
+                    field={field}
+                    value={values[field.name] || ""}
+                    onChange={(value) => change(field.name, value)}
+                  />
+                ))}
+              </FormGrid>
+              {values.accessLevel === "restricted" && (
+                <Label style={{ marginTop: 20 }}>
+                  {m("Authorized Users")}
+                  <SelectInput
+                    multiple
+                    value={values.authorizedUsers}
+                    onChange={(event) =>
+                      change(
+                        "authorizedUsers",
+                        [...event.target.selectedOptions].map(
+                          (option) => option.value,
+                        ),
+                      )
+                    }
+                  >
+                    {(fields.users || []).map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </Label>
+              )}
+              <Label
+                style={{
+                  marginTop: 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={values.controlled}
+                  onChange={(event) =>
+                    change("controlled", event.target.checked)
+                  }
+                />
+                {m("ISO record control")}
+              </Label>
+              {error && <ErrorBox role="alert">{error}</ErrorBox>}
+              <Actions style={{ marginTop: 24 }}>
+                <Button $primary type="submit" disabled={busy}>
+                  {m(busy ? "Uploading…" : "Upload & Save")}
+                </Button>
+                {embedded ? (
+                  <Button type="button" onClick={onClose} disabled={busy}>{m("Cancel")}</Button>
+                ) : (
+                  <Button as={Link} to="/documents">{m("Cancel")}</Button>
+                )}
+              </Actions>
+            </Panel>
+            <Panel>
+              <h3>{m("Where should I link it?")}</h3>
+              <Definition $columns={1}>
+                {[
+                  ["Asset", "A vessel-level certificate or policy"],
+                  ["Equipment", "A manual or record for installed equipment"],
+                  ["Fleet-wide", "A policy or SOP used across all assets"],
+                ].map(([label, description]) => (
+                  <div key={label}>
+                    <dt>{m(label)}</dt>
+                    <dd>{m(description)}</dd>
+                  </div>
+                ))}
+              </Definition>
+            </Panel>
+          </div>
+        </Grid>
+      </form>
+    </ResourceState>
+  );
+  if (embedded) {
+    return <Modal title={m("Add Document")} onClose={onClose} busy={busy} wide>{form}</Modal>;
+  }
   return (
     <Page>
       <Back to="/documents">
@@ -675,261 +944,7 @@ export function UploadDocument() {
           </p>
         </div>
       </Header>
-      <ResourceState resource={lookups}>
-        <Panel>
-          <Actions style={{ justifyContent: "space-between" }}>
-            {["1. Upload File", "2. Document Details", "3. Link & Control"].map(
-              (label) => (
-                <strong key={label}>{m(label)}</strong>
-              ),
-            )}
-          </Actions>
-        </Panel>
-        <form
-          onSubmit={async (event) => {
-            event.preventDefault();
-            if (busy) return;
-            setBusy(true);
-            setError("");
-            try {
-              if (!file) throw new Error(m("Select a file to upload"));
-              if (file.size > (fields.maxFileMb || 25) * 1024 * 1024)
-                throw new Error(
-                  `${m("Maximum file size")}: ${fields.maxFileMb || 25} MB`,
-                );
-              const saved = await service.save(
-                "/documents",
-                asFormData({ ...values, file }),
-              );
-              navigate("/documents", {
-                state: {
-                  success: "Document uploaded successfully",
-                  document: saved.data._id,
-                },
-              });
-            } catch (err) {
-              setError(maintenanceError(err));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <Grid>
-            <Panel>
-              <h2>{m("1. Upload File")}</h2>
-              <p>
-                {m("Choose the primary file to store in the document library")}
-              </p>
-              <FileDrop
-                file={file}
-                onChange={setFile}
-                maxFileMb={fields.maxFileMb || 25}
-                required
-              />
-              <h2 style={{ marginTop: 32 }}>{m("2. Document Details")}</h2>
-              <p>
-                {m(
-                  "Add information that helps users identify and retrieve the file.",
-                )}
-              </p>
-              <FormGrid>
-                {[
-                  { name: "title", label: "Document Title", required: true },
-                  {
-                    name: "documentType",
-                    label: "Document Type",
-                    options: [
-                      "PDF",
-                      "Manual",
-                      "Certificate",
-                      "Report",
-                      "Policy",
-                      "Other",
-                    ],
-                    required: true,
-                  },
-                  {
-                    name: "category",
-                    label: "Category",
-                    options: DOCUMENT_CATEGORIES,
-                    required: true,
-                  },
-                  {
-                    name: "versionLabel",
-                    label: "Version",
-                    required: true,
-                    maxLength: 30,
-                  },
-                  {
-                    name: "language",
-                    label: "Language",
-                    options: ["English", "Arabic", "Other"],
-                    required: true,
-                  },
-                  {
-                    name: "owner",
-                    label: "Document Owner",
-                    options: optionsFrom(fields.users),
-                    required: true,
-                  },
-                  {
-                    name: "description",
-                    label: "Description",
-                    type: "textarea",
-                    wide: true,
-                  },
-                ].map((field) => (
-                  <Field
-                    key={field.name}
-                    field={field}
-                    value={values[field.name]}
-                    onChange={(value) => change(field.name, value)}
-                  />
-                ))}
-              </FormGrid>
-              <h2 style={{ marginTop: 32 }}>{m("3. Link & Control")}</h2>
-              <p>
-                {m(
-                  "Define where the document belongs and how it is controlled.",
-                )}
-              </p>
-              <FormGrid>
-                <Field
-                  field={{
-                    name: "asset",
-                    label: "Select Asset",
-                    options: optionsFrom(fields.assets, "displayName"),
-                  }}
-                  value={values.asset}
-                  onChange={(value) => {
-                    change("asset", value);
-                    change("equipment", "");
-                  }}
-                />
-                <Field
-                  field={{
-                    name: "equipment",
-                    label: "Select Equipment",
-                    options: optionsFrom(
-                      (fields.equipment || []).filter(
-                        (row) => !values.asset || row.asset === values.asset,
-                      ),
-                    ),
-                  }}
-                  value={values.equipment}
-                  onChange={(value) => change("equipment", value)}
-                />
-                {Boolean(fields.tasks?.length) && (
-                  <Field
-                    field={{
-                      name: "task",
-                      label: "Work Order",
-                      options: optionsFrom(fields.tasks, "title"),
-                    }}
-                    value={values.task || ""}
-                    onChange={(value) => change("task", value)}
-                  />
-                )}
-              </FormGrid>
-            </Panel>
-            <div>
-              <Panel>
-                <h2>{m("Document Control")}</h2>
-                <p>{m("Review the control settings for this record.")}</p>
-                <FormGrid style={{ gridTemplateColumns: "1fr" }}>
-                  {[
-                    {
-                      name: "effectiveDate",
-                      label: "Effective Date",
-                      type: "date",
-                    },
-                    { name: "reviewDate", label: "Review Date", type: "date" },
-                    { name: "expiryDate", label: "Expiry Date", type: "date" },
-                    {
-                      name: "accessLevel",
-                      label: "Access Level",
-                      options: [
-                        { value: "all", label: "All Authorized Users" },
-                        { value: "restricted", label: "Restricted Access" },
-                      ],
-                    },
-                  ].map((field) => (
-                    <Field
-                      key={field.name}
-                      field={field}
-                      value={values[field.name] || ""}
-                      onChange={(value) => change(field.name, value)}
-                    />
-                  ))}
-                </FormGrid>
-                {values.accessLevel === "restricted" && (
-                  <Label style={{ marginTop: 20 }}>
-                    {m("Authorized Users")}
-                    <SelectInput
-                      multiple
-                      value={values.authorizedUsers}
-                      onChange={(event) =>
-                        change(
-                          "authorizedUsers",
-                          [...event.target.selectedOptions].map(
-                            (option) => option.value,
-                          ),
-                        )
-                      }
-                    >
-                      {(fields.users || []).map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Label>
-                )}
-                <Label
-                  style={{
-                    marginTop: 20,
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={values.controlled}
-                    onChange={(event) =>
-                      change("controlled", event.target.checked)
-                    }
-                  />
-                  {m("ISO record control")}
-                </Label>
-                {error && <ErrorBox role="alert">{error}</ErrorBox>}
-                <Actions style={{ marginTop: 24 }}>
-                  <Button $primary type="submit" disabled={busy}>
-                    {m(busy ? "Uploading…" : "Upload & Save")}
-                  </Button>
-                  <Button as={Link} to="/documents">
-                    {m("Cancel")}
-                  </Button>
-                </Actions>
-              </Panel>
-              <Panel>
-                <h3>{m("Where should I link it?")}</h3>
-                <Definition $columns={1}>
-                  {[
-                    ["Asset", "A vessel-level certificate or policy"],
-                    ["Equipment", "A manual or record for installed equipment"],
-                    ["Fleet-wide", "A policy or SOP used across all assets"],
-                  ].map(([label, description]) => (
-                    <div key={label}>
-                      <dt>{m(label)}</dt>
-                      <dd>{m(description)}</dd>
-                    </div>
-                  ))}
-                </Definition>
-              </Panel>
-            </div>
-          </Grid>
-        </form>
-      </ResourceState>
+      {form}
     </Page>
   );
 }

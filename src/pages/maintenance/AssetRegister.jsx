@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import AssetTable from "../assets/components/AssetTable";
-import AssetModal from "../assets/components/AssetModal";
 import AssetTypeModal from "../assets/components/AssetTypeModal";
 import AssetTasksModal from "../assets/components/AssetTasksModal";
 import DocumentNamingModal from "../../components/ui/DocumentNamingModal";
@@ -32,7 +31,6 @@ import {
   ImagePicker,
   PrivateImage,
   DocumentQueue,
-  FormSteps,
 } from "./ProfileFields";
 import generatorVisual from "../../assets/maintenance/generator.svg";
 import pumpVisual from "../../assets/maintenance/pump.svg";
@@ -69,6 +67,8 @@ import {
 
 export default function AssetRegister() {
   const m = useCopy();
+  const navigate = useNavigate();
+  const editAsset = (asset) => navigate(`/assets/${asset._id || asset.id}/edit`);
   const dispatch = useDispatch();
   const { browse } = useMaintenanceAccess("assets");
   const [page, setPage] = useState(1);
@@ -364,7 +364,7 @@ export default function AssetRegister() {
               total: resource.data?.total || 0,
             }}
             onPageChange={setPage}
-            onEdit={(asset) => setDialog({ type: "edit", asset })}
+            onEdit={editAsset}
             onDelete={(assetId) =>
               setDialog({
                 type: "delete",
@@ -389,7 +389,7 @@ export default function AssetRegister() {
           <Actions>
             <Button
               type="button"
-              onClick={() => setDialog({ type: "edit", asset: dialog.asset })}
+              onClick={() => editAsset(dialog.asset)}
             >
               {m("Edit Asset")}
             </Button>
@@ -407,14 +407,6 @@ export default function AssetRegister() {
             </Button>
           </Actions>
         </FormDialog>
-      )}
-      {dialog?.type === "edit" && (
-        <AssetModal
-          isOpen
-          asset={dialog.asset}
-          onClose={() => setDialog(null)}
-          onSuccess={refresh}
-        />
       )}
       {dialog?.type === "types" && (
         <AssetTypeModal
@@ -468,6 +460,10 @@ export default function AssetRegister() {
 
 export function EditAsset() {
   const { id } = useParams();
+  return <EditAssetLoader key={id} id={id} />;
+}
+
+function EditAssetLoader({ id }) {
   const { manage } = useMaintenanceAccess("assets");
   const m = useCopy();
   const resource = useResource(`/asset-profiles/${id}`, {}, manage);
@@ -477,13 +473,13 @@ export function EditAsset() {
     );
   return (
     <ResourceState resource={resource}>
-      {resource.data?.data && (
-        <CreateAsset key={id} initial={resource.data.data} />
-      )}
+      {resource.data?.data?.asset ? (
+        <CreateAsset editId={id} initial={resource.data.data} />
+      ) : <ErrorBox role="alert">{m("Asset not found")}</ErrorBox>}
     </ResourceState>
   );
 }
-export function CreateAsset({ initial } = {}) {
+export function CreateAsset({ initial, editId } = {}) {
   const m = useCopy();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -492,7 +488,15 @@ export function CreateAsset({ initial } = {}) {
   const [documentFiles, setDocumentFiles] = useState([]);
   const [uploaded, setUploaded] = useState([]);
   const types = useResource("/asset-types", {}, manage, true);
-  const editing = Boolean(initial?.asset);
+  const editing = Boolean(editId);
+  const typeOptions = (types.data?.data || []).map(({ name }) => ({
+    value: name,
+    label: name,
+  }));
+  const originalType = initial?.asset?.type;
+  if (originalType && !typeOptions.some(({ value }) => value === originalType)) {
+    typeOptions.push({ value: originalType, label: originalType });
+  }
   const [removeImage, setRemoveImage] = useState(false);
   const [values, setValues] = useState({
     uniqueId: "",
@@ -537,7 +541,7 @@ export function CreateAsset({ initial } = {}) {
   const [whiteText, setWhiteText] = useState(
     initial?.asset?.textColor === "#ffffff",
   );
-  const [createdId, setCreatedId] = useState(initial?.asset?._id || null);
+  const [createdId, setCreatedId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [uniqueIdError, setUniqueIdError] = useState("");
@@ -579,7 +583,7 @@ export function CreateAsset({ initial } = {}) {
             setError("");
             setUniqueIdError("");
             try {
-              let id = createdId;
+              let id = editId || createdId;
               const core = {
                 uniqueId: values.uniqueId.trim(),
                 type: values.type,
@@ -589,11 +593,13 @@ export function CreateAsset({ initial } = {}) {
                 color: values.color,
                 ...(whiteText ? { textColor: "#ffffff" } : {}),
               };
-              if (!id) {
+              if (editing) {
+                await assetService.updateAsset(editId, core);
+              } else if (!id) {
                 const response = await assetService.createAsset(core);
                 id = response.data._id || response.data.id;
                 setCreatedId(id);
-              } else if (editing) await assetService.updateAsset(id, core);
+              }
               await service.save(
                 `/asset-profiles/${id}`,
                 {
@@ -641,7 +647,6 @@ export function CreateAsset({ initial } = {}) {
             }
           }}
         >
-          {!editing && <FormSteps />}
           <Grid $columns="minmax(0, 1.91fr) minmax(300px, 1fr)">
             <Panel>
               <h2>{m("Basic Information")}</h2>
@@ -666,10 +671,7 @@ export function CreateAsset({ initial } = {}) {
                     label: "Asset Type",
                     required: true,
                     placeholder: "Select asset type",
-                    options: (types.data?.data || []).map((type) => ({
-                      value: type.name,
-                      label: type.name,
-                    })),
+                    options: typeOptions,
                   },
                   {
                     name: "lifecycleStatus",
@@ -756,7 +758,7 @@ export function CreateAsset({ initial } = {}) {
                   onChange={(value) => change("description", value)}
                 />
               </div>
-              <details style={{ marginTop: 24 }}>
+              {editing && <details style={{ marginTop: 24 }}>
                 <summary>{m("Asset display options")}</summary>
                 <Field
                   field={{
@@ -777,7 +779,7 @@ export function CreateAsset({ initial } = {}) {
                   />
                   {m("White asset text")}
                 </Label>
-              </details>
+              </details>}
             </Panel>
             <div>
               <Panel>
@@ -788,7 +790,7 @@ export function CreateAsset({ initial } = {}) {
                   onChange={setImage}
                   currentPath={
                     !removeImage && initial?.profile?.image
-                      ? `/asset-profiles/${createdId}/image`
+                      ? `/asset-profiles/${editId}/image`
                       : undefined
                   }
                   revision={initial?.profile?.updatedAt}
@@ -894,4 +896,5 @@ const AssetVisual = styled(Link)`
   }
 `;
 
-CreateAsset.propTypes = { initial: PropTypes.object };
+EditAssetLoader.propTypes = { id: PropTypes.string.isRequired };
+CreateAsset.propTypes = { initial: PropTypes.object, editId: PropTypes.string };

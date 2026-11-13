@@ -132,6 +132,7 @@ const CloseButton = styled.button`
 const ModalBody = styled.div`
   padding: 24px;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   flex: 1;
   width: 100%;
   max-width: 100%;
@@ -298,6 +299,7 @@ const TypesList = styled.div`
   gap: 8px;
   max-height: 300px;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -456,6 +458,35 @@ const AssetTypeModal = ({ isOpen, onClose, onSuccess }) => {
     setAlertConfig({ title, message, type });
     setShowAlert(true);
   };
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const root = document.documentElement;
+    const { overflow, scrollbarGutter } = root.style;
+    const body = document.body;
+    const { position, top, left, width } = body.style;
+    const { scrollX, scrollY } = window;
+
+    // Keep the register in place even when a nested list reaches its boundary.
+    Object.assign(body.style, {
+      position: 'fixed',
+      top: `${-scrollY}px`,
+      left: `${-scrollX}px`,
+      width: '100%',
+    });
+    root.style.scrollbarGutter = 'stable';
+    root.style.overflow = 'hidden';
+
+    return () => {
+      Object.assign(body.style, { position, top, left, width });
+      root.style.overflow = overflow;
+      root.style.scrollbarGutter = scrollbarGutter;
+      if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+        window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+      }
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {

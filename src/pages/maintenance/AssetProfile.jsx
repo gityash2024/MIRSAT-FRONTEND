@@ -1,6 +1,8 @@
+import ActionMenu from "./ActionMenu";
+import { UploadDocument } from "./Documents";
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Plus, ArrowLeft, Radio, Settings } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssetPlans, MeterReadings } from "./plans/PlanAssetTabs";
@@ -457,8 +459,7 @@ export default function AssetProfile() {
                   ))}
                   {manageDocuments && (
                     <Button
-                      as={Link}
-                      to={`/documents/upload?asset=${id}${equipmentId ? `&equipment=${equipmentId}` : ""}`}
+                      onClick={() => setDialog({ type: "uploadDocument" })}
                     >
                       <Plus />
                       {m("Add Document")}
@@ -553,8 +554,10 @@ export default function AssetProfile() {
                   )}
                 </Actions>
                 <EquipmentTable
+                  actions
                   rows={equipmentList}
                   assetId={id}
+                  onDelete={manage ? (row) => setDialog({ type: "deleteEquipment", row }) : undefined}
                   onSelect={() => setTab("overview")}
                 />
                 {equipment && (
@@ -598,8 +601,7 @@ export default function AssetProfile() {
                   <h2>{m("Documents")}</h2>
                   {manageDocuments && (
                     <Button
-                      as={Link}
-                      to={`/documents/upload?asset=${id}${equipmentId ? `&equipment=${equipmentId}` : ""}`}
+                      onClick={() => setDialog({ type: "uploadDocument" })}
                       $primary
                     >
                       <Plus />
@@ -888,6 +890,32 @@ export default function AssetProfile() {
           onSaved={refresh}
         />
       )}
+      {dialog?.type === "uploadDocument" && manageDocuments && (
+        <UploadDocument
+          assetId={id}
+          equipmentId={equipmentId}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            setTab("documents");
+            refresh();
+          }}
+        />
+      )}
+      {dialog?.type === "deleteEquipment" && manage && (
+        <FormDialog
+          title="Delete Equipment"
+          fields={[]}
+          submitLabel="Delete"
+          onClose={() => setDialog(null)}
+          onSubmit={async () => {
+            await service.save(`/asset-profiles/${id}/equipment/${dialog.row._id}`, {}, "delete");
+            refresh();
+          }}
+        >
+          <p>{m("Delete")} {dialog.row.name}?</p>
+        </FormDialog>
+      )}
       {["equipment", "tool", "editEquipment"].includes(dialog?.type) && (
         <FormDialog
           title={
@@ -997,8 +1025,9 @@ function RecordTable({ records }) {
     <Muted>{m("No records added")}</Muted>
   );
 }
-function EquipmentTable({ rows, assetId, onSelect }) {
+function EquipmentTable({ rows, assetId, onSelect, onDelete, actions = false }) {
   const m = useCopy();
+  const navigate = useNavigate();
   return rows.length ? (
     <TableWrap>
       <table>
@@ -1025,6 +1054,18 @@ function EquipmentTable({ rows, assetId, onSelect }) {
               <td>{row.model || "—"}</td>
               <td>{row.serialNumber || "—"}</td>
               <td>
+                {actions ? (
+                  <ActionMenu
+                    label={`${m("Actions")} · ${row.name}`}
+                    items={[
+                      { label: m("View"), onClick: () => {
+                        onSelect?.();
+                        navigate(`/assets/${assetId}/equipment/${row._id}`);
+                      } },
+                      onDelete && { label: m("Delete"), onClick: () => onDelete(row) },
+                    ]}
+                  />
+                ) : (
                 <Button
                   as={Link}
                   to={`/assets/${assetId}/equipment/${row._id}`}
@@ -1032,6 +1073,7 @@ function EquipmentTable({ rows, assetId, onSelect }) {
                 >
                   {m("View")}
                 </Button>
+                )}
               </td>
             </tr>
           ))}
@@ -1055,4 +1097,6 @@ EquipmentTable.propTypes = {
   rows: PropTypes.array.isRequired,
   assetId: PropTypes.string.isRequired,
   onSelect: PropTypes.func,
+  onDelete: PropTypes.func,
+  actions: PropTypes.bool,
 };
