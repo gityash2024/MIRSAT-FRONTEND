@@ -1459,6 +1459,8 @@
     "confirmChanges": "تأكيد التغييرات"
   },
   "assets": {
+    "backToRegister": "العودة إلى سجل الأصول",
+    "failedToLoadAsset": "تعذر تحميل الأصل.",
     "title": "الأصول",
     "assetManagement": "إدارة الأصول",
     "manageAssetsEfficiently": "إدارة أصولك بكفاءة",

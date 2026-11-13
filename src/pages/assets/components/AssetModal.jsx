@@ -364,7 +364,7 @@ const Button = styled.button`
   `}
 `;
 
-const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
+const AssetModal = ({ isOpen, onClose, asset, onSuccess, pageAssetId }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetTypes } = useSelector(state => state.assetTypes || { assetTypes: [] });
@@ -486,7 +486,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
 
       if (asset) {
         // Check if asset._id exists, if not, use asset.id as fallback
-        const assetId = asset._id || asset.id;
+        const assetId = pageAssetId || asset._id || asset.id;
         if (!assetId) {
           console.error('No valid asset ID found:', asset);
           throw new Error(t('assets.assetIdMissing'));
@@ -549,6 +549,156 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
     }
   };
 
+  const fields = (
+    <>
+      <ModalBody>
+        {errors.general && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            padding: '12px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '14px'
+          }}>
+            {errors.general}
+          </div>
+        )}
+
+        <FormGroup>
+          <Label htmlFor="uniqueId">{t('common.uniqueId')} *</Label>
+          <Input
+            type="text"
+            id="uniqueId"
+            name="uniqueId"
+            data-agent-field="assets.form.uniqueId"
+            value={formData.uniqueId}
+            onChange={handleChange}
+            placeholder={t('common.enterUniqueId')}
+            disabled={isSubmitting}
+            maxLength={64}
+            autoCapitalize="characters"
+          />
+          {errors.uniqueId && <ErrorText>{errors.uniqueId}</ErrorText>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="type">{t('common.type')} *</Label>
+          <Select
+            id="type"
+            name="type"
+            data-agent-field="assets.form.type"
+            value={formData.type}
+            onChange={handleChange}
+            disabled={isSubmitting}
+          >
+            <option value="">{t('common.selectAssetType')}</option>
+            {pageAssetId && asset.type && !assetTypes.some(({ name }) => name === asset.type) && (
+              <option value={asset.type}>{asset.type}</option>
+            )}
+            {assetTypes.map(type => {
+              const typeId = getAssetTypeId(type);
+              return (
+                <option key={typeId} value={type.name}>
+                  {type.name}
+                </option>
+              );
+            })}
+          </Select>
+          {errors.type && <ErrorText>{errors.type}</ErrorText>}
+          {assetTypes.length === 0 && !pageAssetId && (
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+              No asset types available. Create one first.
+            </div>
+          )}
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="displayName">{t('common.displayName')} *</Label>
+          <Input
+            type="text"
+            id="displayName"
+            name="displayName"
+            data-agent-field="assets.form.displayName"
+            value={formData.displayName}
+            onChange={handleChange}
+            placeholder={t('common.enterDisplayName')}
+            disabled={isSubmitting}
+          />
+          {errors.displayName && <ErrorText>{errors.displayName}</ErrorText>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="city">{t('common.city')} *</Label>
+          <Input
+            type="text"
+            id="city"
+            name="city"
+            data-agent-field="assets.form.city"
+            value={formData.city}
+            onChange={handleChange}
+            placeholder={t('common.enterCity')}
+            disabled={isSubmitting}
+          />
+          {errors.city && <ErrorText>{errors.city}</ErrorText>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="location">{t('common.location')} *</Label>
+          <Input
+            type="text"
+            id="location"
+            name="location"
+            data-agent-field="assets.form.location"
+            onChange={handleChange}
+            value={formData.location}
+            placeholder={t('common.enterLocation')}
+            disabled={isSubmitting}
+          />
+          {errors.location && <ErrorText>{errors.location}</ErrorText>}
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="color">Row Color</Label>
+          <ColorPickerContainer>
+            <ColorInput
+              type="color"
+              id="color"
+              name="color"
+              data-agent-field="assets.form.color"
+              value={formData.color}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              title="Select asset row color"
+            />
+            <ColorPreview color={formData.color}>
+              {formData.color}
+            </ColorPreview>
+          </ColorPickerContainer>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+            This color will be used for the asset row in the listing
+          </div>
+        </FormGroup>
+      </ModalBody>
+
+      <ModalFooter>
+          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+            {t('common.cancel')}
+          </Button>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          disabled={isSubmitting || (!pageAssetId && assetTypes.length === 0)}
+          data-agent-action="assets.submit"
+        >
+          {isSubmitting ? t('common.saving') : asset ? t('common.updateAsset') : t('common.createAsset')}
+        </Button>
+      </ModalFooter>
+    </>
+  );
+  if (pageAssetId) return fields;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -574,147 +724,7 @@ const AssetModal = ({ isOpen, onClose, asset, onSuccess }) => {
               </CloseButton>
             </ModalHeader>
             
-            <ModalBody>
-              {errors.general && (
-                <div style={{
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  color: '#b91c1c',
-                  padding: '12px',
-                  borderRadius: '6px',
-                  marginBottom: '16px',
-                  fontSize: '14px'
-                }}>
-                  {errors.general}
-                </div>
-              )}
-
-              <FormGroup>
-                <Label htmlFor="uniqueId">{t('common.uniqueId')} *</Label>
-                <Input
-                  type="text"
-                  id="uniqueId"
-                  name="uniqueId"
-                  data-agent-field="assets.form.uniqueId"
-                  value={formData.uniqueId}
-                  onChange={handleChange}
-                  placeholder={t('common.enterUniqueId')}
-                  disabled={isSubmitting}
-                  maxLength={64}
-                  autoCapitalize="characters"
-                />
-                {errors.uniqueId && <ErrorText>{errors.uniqueId}</ErrorText>}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="type">{t('common.type')} *</Label>
-                <Select
-                  id="type"
-                  name="type"
-                  data-agent-field="assets.form.type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                >
-                  <option value="">{t('common.selectAssetType')}</option>
-                  {assetTypes.map(type => {
-                    const typeId = getAssetTypeId(type);
-                    return (
-                      <option key={typeId} value={type.name}>
-                        {type.name}
-                      </option>
-                    );
-                  })}
-                </Select>
-                {errors.type && <ErrorText>{errors.type}</ErrorText>}
-                {assetTypes.length === 0 && (
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                    No asset types available. Create one first.
-                  </div>
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="displayName">{t('common.displayName')} *</Label>
-                <Input
-                  type="text"
-                  id="displayName"
-                  name="displayName"
-                  data-agent-field="assets.form.displayName"
-                  value={formData.displayName}
-                  onChange={handleChange}
-                  placeholder={t('common.enterDisplayName')}
-                  disabled={isSubmitting}
-                />
-                {errors.displayName && <ErrorText>{errors.displayName}</ErrorText>}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="city">{t('common.city')} *</Label>
-                <Input
-                  type="text"
-                  id="city"
-                  name="city"
-                  data-agent-field="assets.form.city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  placeholder={t('common.enterCity')}
-                  disabled={isSubmitting}
-                />
-                {errors.city && <ErrorText>{errors.city}</ErrorText>}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="location">{t('common.location')} *</Label>
-                <Input
-                  type="text"
-                  id="location"
-                  name="location"
-                  data-agent-field="assets.form.location"
-                  onChange={handleChange}
-                  value={formData.location}
-                  placeholder={t('common.enterLocation')}
-                  disabled={isSubmitting}
-                />
-                {errors.location && <ErrorText>{errors.location}</ErrorText>}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="color">Row Color</Label>
-                <ColorPickerContainer>
-                  <ColorInput
-                    type="color"
-                    id="color"
-                    name="color"
-                    data-agent-field="assets.form.color"
-                    value={formData.color}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                    title="Select asset row color"
-                  />
-                  <ColorPreview color={formData.color}>
-                    {formData.color}
-                  </ColorPreview>
-                </ColorPickerContainer>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                  This color will be used for the asset row in the listing
-                </div>
-              </FormGroup>
-            </ModalBody>
-            
-            <ModalFooter>
-                <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
-                  {t('common.cancel')}
-                </Button>
-              <Button 
-                variant="primary" 
-                onClick={handleSubmit} 
-                disabled={isSubmitting || assetTypes.length === 0}
-                data-agent-action="assets.submit"
-              >
-                {isSubmitting ? t('common.saving') : asset ? t('common.updateAsset') : t('common.createAsset')}
-              </Button>
-            </ModalFooter>
+            {fields}
           </ModalContainer>
         </ModalOverlay>
       )}

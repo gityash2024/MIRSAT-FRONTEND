@@ -1544,6 +1544,8 @@
     "confirmChanges": "Confirm Changes"
   },
   "assets": {
+    "backToRegister": "Back to Asset Register",
+    "failedToLoadAsset": "Failed to load asset.",
     "title": "Assets",
     "assetManagement": "Asset Management",
     "manageAssetsEfficiently": "Manage your assets efficiently",

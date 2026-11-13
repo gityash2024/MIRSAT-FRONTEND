@@ -40,6 +40,7 @@ import Settings from '../pages/settings';
 import Reports from '../pages/reports';
 import CalendarView from '../pages/calendar/CalendarView';
 import AssetList from '../pages/assets';
+import EditAsset from '../pages/assets/EditAsset';
 
 import UserDashboard from '../pages/UserDashboard';
 import UserTasks from '../pages/UserTasks/index';
@@ -160,6 +161,7 @@ const AppRoutes = () => {
           <Route path="/questionnaire/edit/:id" element={<QuestionCreate />} />
           
           <Route path="/assets" element={<AssetList />} />
+          <Route path="/assets/:id/edit" element={<EditAsset />} />
 
           <Route path="/reports/*" element={<Reports />} />
 

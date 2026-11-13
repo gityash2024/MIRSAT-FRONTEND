@@ -1,6 +1,7 @@
 // pages/assets/index.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import {
@@ -308,6 +309,7 @@ const LoadingContainer = styled.div`
 `;
 
 const AssetList = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
@@ -329,7 +331,6 @@ const AssetList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
-  const [currentAsset, setCurrentAsset] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [filters, setFilters] = useState({});
   const [searchTimeout, setSearchTimeout] = useState(null);
@@ -485,14 +486,12 @@ const AssetList = () => {
     }
   };
 
-  const handleOpenModal = (asset = null) => {
-    setCurrentAsset(asset);
+  const handleOpenModal = () => {
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setCurrentAsset(null);
   };
 
   const handleOpenTypeModal = () => {
@@ -697,7 +696,7 @@ const AssetList = () => {
         loading={loading}
         pagination={pagination}
         onPageChange={handlePageChange}
-        onEdit={handleOpenModal}
+        onEdit={(asset) => navigate(`/assets/${asset._id || asset.id}/edit`)}
         onDelete={handleDelete}
         onViewTasks={handleViewTasks}
       />
@@ -706,7 +705,6 @@ const AssetList = () => {
         <AssetModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          asset={currentAsset}
           onSuccess={handleAssetSuccess}
         />
       )}
