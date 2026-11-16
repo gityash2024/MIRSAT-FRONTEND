@@ -926,7 +926,7 @@ function FaultActionDialog({ action, assigned, canReview, reportOpen, onClose, o
   }
 
   return (
-    <Modal title={m("Action details")} onClose={onClose} busy={busy} width="940px" padding="20px" titleSize="18px" preserveScroll>
+    <Modal title={m("Action details")} onClose={onClose} busy={busy} width="940px" padding="20px" titleSize={18} preserveScroll>
       <h3>{action.title}</h3>
       {action.description && <p>{action.description}</p>}
       <Definition style={{ marginBlock: "14px", gap: 12 }}>
