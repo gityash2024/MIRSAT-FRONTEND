@@ -65,12 +65,24 @@ import {
   canManageMaintenance,
 } from "./shared";
 
+const StatusCard = styled(Stat).attrs({ as: "button" })`
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  &[aria-pressed="true"]:not(:first-child) {
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+`;
+
 export default function AssetRegister() {
   const m = useCopy();
   const navigate = useNavigate();
   const editAsset = (asset) => navigate(`/assets/${asset._id || asset.id}/edit`);
   const dispatch = useDispatch();
-  const { browse } = useMaintenanceAccess("assets");
+  const { browse, user } = useMaintenanceAccess("assets");
+  const statusFiltersEnabled = ["admin", "superadmin"].includes(user?.role);
+  const [registerStatus, setRegisterStatus] = useState("");
   const [page, setPage] = useState(1);
   const [view, setView] = useState("grid");
   const [filters, setFilters] = useState({
@@ -93,7 +105,7 @@ export default function AssetRegister() {
   const allAssets = useResource("/assets/dropdown", {}, browse, true);
   const resource = useResource(
     "/assets",
-    { ...filters, page, limit: 12 },
+    { ...filters, page, limit: 12, ...(statusFiltersEnabled && registerStatus ? { registerStatus } : {}) },
     browse,
     true,
   );
@@ -101,7 +113,7 @@ export default function AssetRegister() {
   const assets = resource.data?.data || [];
   const summary = useResource(
     "/asset-profiles/register-summary",
-    { ids: assets.map((asset) => asset._id || asset.id).join(",") },
+    { ...(statusFiltersEnabled ? filters : {}), ids: assets.map((asset) => asset._id || asset.id).join(",") },
     browse,
   );
   const totals = summary.data?.data;
@@ -146,19 +158,45 @@ export default function AssetRegister() {
           </Button>
         </Actions>
       </Header>
-      <Stats>
-        {[
-          ["Total Assets", totals?.total, "blue"],
-          ["Operational", totals?.operational, "green"],
-          ["Maintenance Due", totals?.maintenanceDue, "amber"],
-          ["Out of Service", totals?.outOfService, "red"],
-        ].map(([label, value, color]) => (
-          <Stat key={label} $tone={color}>
-            <strong>{value ?? "—"}</strong>
-            <span>{m(label)}</span>
-          </Stat>
-        ))}
-      </Stats>
+      {statusFiltersEnabled ? (
+        <Stats $count={5}>
+          {[
+            ["", "Total Assets", totals?.total, "blue"],
+            ["active", "Active", totals?.active, "green"],
+            ["inactive", "Inactive", totals?.inactive, "slate"],
+            ["retired", "Retired", totals?.retired, "purple"],
+            ["maintenance_due", "Maintenance Due", totals?.maintenanceDue, "amber"],
+          ].map(([status, label, value, color]) => (
+            <StatusCard
+              key={label}
+              $tone={color}
+              type="button"
+              aria-pressed={registerStatus === status}
+              onClick={() => {
+                setRegisterStatus(status);
+                setPage(1);
+              }}
+            >
+              <strong>{value ?? "—"}</strong>
+              <span>{m(label)}</span>
+            </StatusCard>
+          ))}
+        </Stats>
+      ) : (
+        <Stats>
+          {[
+            ["Total Assets", totals?.total, "blue"],
+            ["Operational", totals?.operational, "green"],
+            ["Maintenance Due", totals?.maintenanceDue, "amber"],
+            ["Out of Service", totals?.outOfService, "red"],
+          ].map(([label, value, color]) => (
+            <Stat key={label} $tone={color}>
+              <strong>{value ?? "—"}</strong>
+              <span>{m(label)}</span>
+            </Stat>
+          ))}
+        </Stats>
+      )}
       <FilterBar
         onSubmit={(event) => {
           event.preventDefault();
@@ -248,6 +286,7 @@ export default function AssetRegister() {
               sortOrder: "asc",
             });
             setFilters({ sortBy: "uniqueId", sortOrder: "asc" });
+            setRegisterStatus("");
             setPage(1);
           }}
         >

@@ -6,9 +6,14 @@ export const MAINTENANCE_TONES = {
   amber: { light: { background: '#fff5df', text: '#8c6216' }, dark: { background: '#352a13', text: '#fcd34d' } },
   red: { light: { background: '#ffece7', text: '#a43c32' }, dark: { background: '#3b1e21', text: '#fca5a5' } },
   green: { light: { background: '#e3f7ef', text: '#25664f' }, dark: { background: '#15352c', text: '#86efac' } },
+  slate: { light: { background: '#ecf0f5', text: '#39465c' }, dark: { background: '#263242', text: '#e0e8f3' } },
+  purple: { light: { background: '#f0e8ff', text: '#6535a6' }, dark: { background: '#32224a', text: '#dbc4ff' } },
+  pink: { light: { background: '#fce8f2', text: '#9b3268' }, dark: { background: '#422239', text: '#ffb8dc' } },
   navy: { light: { background: '#000048', text: '#ffffff' }, dark: { background: '#2b4c9b', text: '#ffffff' } },
 };
 export const maintenanceTone = (tone, mode = 'light') => (MAINTENANCE_TONES[tone] || MAINTENANCE_TONES.blue)[mode];
-export const statusTone = status => ['critical', 'high', 'overdue', 'rejected'].includes(status) ? 'red'
+export const statusTone = status => status === 'ready_for_review' ? 'purple'
+  : status === 'returned_for_changes' ? 'pink'
+  : ['critical', 'high', 'overdue', 'rejected'].includes(status) ? 'red'
   : ['closed', 'resolved', 'completed', 'approved', 'current', 'controlled'].includes(status) ? 'green'
     : ['medium', 'pending', 'expiring', 'under_assessment'].includes(status) ? 'amber' : 'blue';

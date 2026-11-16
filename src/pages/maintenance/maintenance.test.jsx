@@ -10,7 +10,7 @@ import {
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Documents, { UploadDocument } from "./Documents";
-import FaultReports, { CreateFaultReport, FaultDetail, FaultWorkOrder } from "./FaultReports";
+import FaultReports, { CreateFaultReport, FaultDetail, FaultPriorityQueue, FaultWorkOrder } from "./FaultReports";
 import WarehousePage from "./Warehouse";
 import AssetProfile from "./AssetProfile";
 import PartEditor from "./PartEditor";
@@ -881,4 +881,81 @@ it("archives the selected equipment only after confirmation and retains the Equi
   await screen.findByText("No equipment added");
   expect(screen.getByRole("tab", { name: "Equipment" })).toHaveAttribute("aria-selected", "true");
   expect(service.save).toHaveBeenLastCalledWith(`${profilePath}/equipment/engine-id`, {}, "delete");
+});
+
+it("opens the correct fault action details for each visible row and returns focus to the list", async () => {
+  setup();
+  const report = fixtures["/fault-reports"].data[0];
+  vi.mocked(service.get).mockImplementation(async (path) => path === "/fault-reports/fault-id" ? {
+    data: {
+      ...report,
+      actions: [
+        { _id: "a1", title: "Inspect pump", status: "pending", priority: "high" },
+        { _id: "a2", title: "Submit photos", status: "ready_for_review", priority: "low", submissionNotes: "Evidence added" },
+      ],
+      attachments: [],
+      history: [],
+    },
+    permissions: { createAction: true, reviewAction: true },
+  } : fixtures[path] || { data: [] });
+  mount(<FaultDetail />, "/fault-reports/fault-id");
+  const rows = await screen.findAllByRole("button", { name: "View Action" });
+  expect(rows).toHaveLength(2);
+  rows[0].focus();
+  fireEvent.click(rows[0]);
+  let details = screen.getByRole("dialog", { name: "Action details" });
+  expect(within(details).getByText("Inspect pump")).toBeVisible();
+  expect(within(details).getByText("Pending")).toBeVisible();
+  fireEvent.click(within(details).getByRole("button", { name: "Close", exact: true }));
+  expect(rows[0]).toHaveFocus();
+
+  fireEvent.click(rows[1]);
+  details = screen.getByRole("dialog", { name: "Action details" });
+  expect(within(details).getByText("Submit photos")).toBeVisible();
+  expect(within(details).getByText("Evidence added")).toBeVisible();
+  expect(within(details).getByRole("button", { name: "Close Action" })).toBeEnabled();
+});
+
+it("navigates from Fault Reports to Priority Queue and back through report details", async () => {
+  setup();
+  const reports = fixtures["/fault-reports"];
+  vi.mocked(service.get).mockImplementation(async (path) => {
+    if (path === "/fault-reports/priority-queue") return reports;
+    if (path === "/fault-reports/fault-id") return { data: { ...reports.data[0], actions: [], attachments: [], history: [] }, permissions: {} };
+    return fixtures[path] || { data: [] };
+  });
+  render(
+    <MemoryRouter initialEntries={["/fault-reports"]}>
+      <Routes>
+        <Route path="/fault-reports" element={<FaultReports />} />
+        <Route path="/fault-reports/priority-queue" element={<FaultPriorityQueue />} />
+        <Route path="/fault-reports/:id" element={<FaultDetail />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  fireEvent.click(await screen.findByRole("link", { name: /Open priority queue/ }));
+  expect(screen.getByRole("link", { name: "Back to Fault Reports" })).toHaveAttribute("href", "/fault-reports");
+  expect(await screen.findByRole("columnheader", { name: "Priority" })).toBeVisible();
+  expect(screen.getByRole("columnheader", { name: "Severity" })).toBeVisible();
+  fireEvent.click(screen.getByRole("link", { name: "View fault" }));
+  fireEvent.click(await screen.findByRole("link", { name: "Back to Priority Queue" }));
+  expect(await screen.findByRole("heading", { name: "Priority Queue" })).toBeVisible();
+});
+
+it("clears only the Asset Register status when Total Assets is selected", async () => {
+  setup();
+  mount(<AssetRegister />);
+  fireEvent.change(screen.getByRole("textbox", { name: "Search assets" }), { target: { value: "vessel" } });
+  await waitFor(() => expect(service.getExisting).toHaveBeenCalledWith("/assets", expect.objectContaining({ search: "vessel" }), expect.anything()));
+  const active = screen.getByRole("button", { name: /Active/ });
+  fireEvent.click(active);
+  await waitFor(() => expect(service.getExisting).toHaveBeenCalledWith("/assets", expect.objectContaining({ search: "vessel", registerStatus: "active" }), expect.anything()));
+  expect(active).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: /Total Assets/ }));
+  await waitFor(() => {
+    const [path, params] = service.getExisting.mock.lastCall;
+    expect(path).toBe("/assets");
+    expect(params).toMatchObject({ search: "vessel", page: 1 });
+    expect(params).not.toHaveProperty("registerStatus");
+  });
 });

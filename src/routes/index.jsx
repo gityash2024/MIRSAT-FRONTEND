@@ -41,7 +41,7 @@ import Reports from '../pages/reports';
 import CalendarView from '../pages/calendar/CalendarView';
 import AssetList from '../pages/assets';
 import Documents, { UploadDocument } from '../pages/maintenance/Documents';
-import FaultReports, { CreateFaultReport, FaultDetail, FaultWorkOrder } from '../pages/maintenance/FaultReports';
+import FaultReports, { CreateFaultReport, FaultDetail, FaultPriorityQueue, FaultWorkOrder } from '../pages/maintenance/FaultReports';
 import StockMovement from '../pages/maintenance/StockMovement';
 import PartEditor from '../pages/maintenance/PartEditor';
 import WarehousePage, { SparePartDetail } from '../pages/maintenance/Warehouse';
@@ -212,6 +212,7 @@ const AppRoutes = () => {
           <Route path="/documents" element={<Documents />} />
           <Route path="/documents/upload" element={<UploadDocument />} />
           <Route path="/fault-reports" element={<FaultReports />} />
+          <Route path="/fault-reports/priority-queue" element={<FaultPriorityQueue />} />
           <Route path="/fault-reports/create" element={<CreateFaultReport />} />
           <Route path="/fault-reports/:id" element={<FaultDetail />} />
           <Route path="/fault-reports/:id/work-order" element={<FaultWorkOrder />} />

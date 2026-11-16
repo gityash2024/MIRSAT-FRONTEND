@@ -289,6 +289,7 @@ const UserForm = ({ initialData = {}, onSubmit, onCancel, submitButtonText = 'Sa
       'DOCUMENTS': t('Documents', { ns: 'maintenance' }),
       'MAINTENANCE_PLANS': t('Maintenance Plans', { ns: 'maintenance' }),
       'FAULTS': t('Fault Reports', { ns: 'maintenance' }),
+      'ASSIGN_FAULT_ACTIONS': t('Assign Fault Actions', { ns: 'maintenance' }),
       'WAREHOUSE': t('Spare Parts & Warehouse', { ns: 'maintenance' }),
       'TEMPLATE': t('common.template'),
       'USERS': t('common.users'),

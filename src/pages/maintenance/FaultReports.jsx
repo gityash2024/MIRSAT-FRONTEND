@@ -1,7 +1,7 @@
 import { SelectInput } from "./DesignSelect";
 import { useState } from "react";
 import styled from "styled-components";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Download,
@@ -38,6 +38,7 @@ import {
   ResourceState,
   Pagination,
   Preview,
+  Modal,
   Back,
   Tabs,
   TextLink,
@@ -555,10 +556,8 @@ export default function FaultReports() {
               ))}
               <Button
                 style={{ width: "100%", marginTop: 20 }}
-                onClick={() => {
-                  setFilters({ priority: critical ? "critical" : "high" });
-                  setPage(1);
-                }}
+                as={Link}
+                to="/fault-reports/priority-queue"
               >
                 {m("Open priority queue")} →
               </Button>
@@ -569,6 +568,84 @@ export default function FaultReports() {
     </Page>
   );
 }
+const QueueNotice = styled(Panel)`
+  margin-block: 20px 16px;
+  background: #e6eff9;
+  border: 1px solid #9ec6ed;
+  p { margin: 6px 0 0; }
+  html[data-theme="dark"] & {
+    background: #1c2c40;
+    border-color: #38536e;
+  }
+`;
+const PriorityTable = styled(TableWrap)`
+  table { border-spacing: 0 10px; border-collapse: separate; min-width: 640px; }
+  th { background: transparent; border: 0; }
+  td { background: #f3f5fa; border: 0; }
+  html[data-theme="dark"] & td { background: #1e293b; }
+  td:first-child { border-start-start-radius: 8px; border-end-start-radius: 8px; }
+  td:last-child { border-start-end-radius: 8px; border-end-end-radius: 8px; text-align: end; }
+`;
+
+export function FaultPriorityQueue() {
+  const m = useCopy();
+  const { browse } = useMaintenanceAccess("faults");
+  const [params, setParams] = useSearchParams();
+  const page = Math.max(1, Number.parseInt(params.get("page"), 10) || 1);
+  const limit = 10;
+  const queue = useResource("/fault-reports/priority-queue", { page, limit }, browse);
+  if (!browse) return <ErrorBox>{m("Access to this module has not been granted")}</ErrorBox>;
+
+  return (
+    <Page>
+      <Button as={Link} to="/fault-reports"><ArrowLeft size={14} />{m("Back to Fault Reports")}</Button>
+      <Header style={{ marginTop: 16 }}>
+        <div><h1>{m("Priority Queue")}</h1><p>{m("Review the faults that need attention first.")}</p></div>
+      </Header>
+      <QueueNotice>
+        <strong>{m("Sorted by priority: highest first")}</strong>
+        <Muted as="p">{m("Priority tells you how soon to act. Severity tells you how serious the fault is.")}</Muted>
+      </QueueNotice>
+      <Panel>
+        <h2>{m("Faults to review")}</h2>
+        <ResourceState resource={queue}>
+          <PriorityTable>
+            <table>
+              <thead><tr>
+                {["Order", "Fault", "Priority", "Severity", "Status"].map(label =>
+                  <th key={label} scope="col">{m(label)}</th>
+                )}
+                <th scope="col" aria-label={m("Actions")} />
+              </tr></thead>
+              <tbody>
+                {(queue.data?.data || []).map((fault, index) => (
+                  <tr key={fault._id}>
+                    <td><strong>{String((page - 1) * limit + index + 1).padStart(2, "0")}</strong></td>
+                    <td>
+                      <strong>{fault.title}</strong>
+                      <Muted as="div">{[fault.number, fault.asset?.displayName, fault.location === "Other" ? fault.locationOther : (fault.location ? m(fault.location) : "")].filter(Boolean).join(" · ")}</Muted>
+                    </td>
+                    <td><Badge $status={fault.priority}>{m(readable(fault.priority))}</Badge></td>
+                    <td>{m(readable(fault.severity))}</td>
+                    <td>{m(readable(fault.status))}</td>
+                    <td>
+                      <Button $primary as={Link} to={`/fault-reports/${fault._id}?from=priority-queue&page=${page}`}>
+                        {m("View fault")} <span aria-hidden="true">→</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </PriorityTable>
+          {queue.data?.total === 0 && <Muted>{m("No faults found")}</Muted>}
+          <Pagination result={queue.data} page={page} onChange={next => setParams({ page: String(next) })} />
+        </ResourceState>
+      </Panel>
+    </Page>
+  );
+}
+
 export function CreateFaultReport() {
   const m = useCopy();
   const navigate = useNavigate();
@@ -584,6 +661,7 @@ export function CreateFaultReport() {
     description: "",
     severity: "",
     priority: "",
+    assignedTo: "",
   });
   const [file, setFile] = useState(null);
   const [savedId, setSavedId] = useState(null);
@@ -622,7 +700,11 @@ export function CreateFaultReport() {
             try {
               let id = savedId;
               if (!id) {
-                const response = await service.save("/fault-reports", values);
+                const { assignedTo, ...fields } = values;
+                const response = await service.save("/fault-reports", {
+                  ...fields,
+                  ...(assignedTo ? { assignedTo } : {}),
+                });
                 id = response.data._id;
                 setSavedId(id);
               }
@@ -719,6 +801,12 @@ export function CreateFaultReport() {
                       label: readable(value),
                     })),
                   },
+                  ...(["admin", "superadmin"].includes(user.role) ? [{
+                    name: "assignedTo",
+                    label: "Assigned To (optional)",
+                    placeholder: "Unassigned",
+                    options: optionsFrom(lookups.data?.data?.users),
+                  }] : []),
                 ].map((field) => (
                   <Field
                     key={field.name}
@@ -796,13 +884,86 @@ export function CreateFaultReport() {
     </Page>
   );
 }
+const actionLabels = {
+  pending: "Pending",
+  in_progress: "In Progress",
+  ready_for_review: "Ready for Review",
+  returned_for_changes: "Returned for Changes",
+  completed: "Closed",
+};
+
+function ActionBadge({ status }) {
+  const m = useCopy();
+  return <Badge $status={status}>{m(actionLabels[status] || readable(status))}</Badge>;
+}
+
+function FaultActionDialog({ action, assigned, canReview, reportOpen, onClose, onSave }) {
+  const m = useCopy();
+  const [notes, setNotes] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const transitions = [];
+  if (reportOpen && assigned) {
+    if (["pending", "returned_for_changes"].includes(action.status))
+      transitions.push(["in_progress", "Start Action"]);
+    if (["pending", "in_progress", "returned_for_changes"].includes(action.status))
+      transitions.push(["ready_for_review", "Submit for Review"]);
+  }
+  if (reportOpen && canReview && action.status === "ready_for_review") {
+    transitions.push(["returned_for_changes", "Return for Changes"], ["completed", "Close Action"]);
+  }
+
+  async function changeStatus(status) {
+    setError("");
+    setBusy(true);
+    try {
+      await onSave(status, notes.trim());
+    } catch (err) {
+      setError(maintenanceError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={m("Action details")} onClose={onClose} busy={busy} width="940px" padding="20px" titleSize="18px" preserveScroll>
+      <h3>{action.title}</h3>
+      {action.description && <p>{action.description}</p>}
+      <Definition style={{ marginBlock: "14px", gap: 12 }}>
+        <div><dt>{m("Assigned To")}</dt><dd>{action.assignedTo?.name || "—"}</dd></div>
+        <div><dt>{m("Status")}</dt><dd><ActionBadge status={action.status} /></dd></div>
+      </Definition>
+      {action.submissionNotes && <p><strong>{m("Submission notes")}</strong><br />{action.submissionNotes}</p>}
+      {action.reviewNotes && <p><strong>{m("Review notes")}</strong><br />{action.reviewNotes}</p>}
+      {action.status === "pending" && <p>{m("Awaiting submission from the assignee.")}</p>}
+      {transitions.length > 0 && (
+        <>
+          <Label>{m("Notes")}<textarea value={notes} onChange={event => setNotes(event.target.value)} maxLength={5000} /></Label>
+          {error && <ErrorBox role="alert">{error}</ErrorBox>}
+          <Actions style={{ justifyContent: "flex-end", marginTop: 20 }}>
+            {transitions.map(([status, label]) => (
+              <Button key={status} $primary={status !== "returned_for_changes"} disabled={busy || (status === "returned_for_changes" && !notes.trim())} onClick={() => changeStatus(status)}>
+                {m(label)}
+              </Button>
+            ))}
+          </Actions>
+        </>
+      )}
+    </Modal>
+  );
+}
+
 export function FaultDetail() {
   const { id } = useParams();
+  const [params] = useSearchParams();
+  const fromQueue = params.get("from") === "priority-queue";
+  const queuePage = Math.max(1, Number.parseInt(params.get("page"), 10) || 1);
   const m = useCopy();
   const { manage, user, browse } = useMaintenanceAccess("faults");
   const resource = useResource(`/fault-reports/${id}`, {}, browse);
-  const lookups = useResource("/fault-reports/lookups", {}, manage);
   const fault = resource.data?.data;
+  const { createAction, reviewAction } = resource.data?.permissions || {};
+  const lookups = useResource("/fault-reports/lookups", {}, manage || Boolean(createAction));
   const [dialog, setDialog] = useState(null);
   const [preview, setPreview] = useState(null);
   const assignees = optionsFrom(lookups.data?.data?.users);
@@ -816,9 +977,9 @@ export function FaultDetail() {
     );
   return (
     <Page>
-      <Back to="/fault-reports">
+      <Back to={fromQueue ? `/fault-reports/priority-queue?page=${queuePage}` : "/fault-reports"}>
         <ArrowLeft size={14} />
-        {m("Back to Fault Reports")}
+        {m(fromQueue ? "Back to Priority Queue" : "Back to Fault Reports")}
       </Back>
       <ResourceState resource={resource}>
         {fault && (
@@ -971,7 +1132,7 @@ export function FaultDetail() {
                       )}
                     </p>
                   </div>
-                  {manage && (
+                  {createAction && (
                     <Button
                       $primary
                       disabled={["resolved", "closed"].includes(fault.status)}
@@ -992,6 +1153,7 @@ export function FaultDetail() {
                           "Priority",
                           "Due Date",
                           "Status",
+                          "Actions",
                         ].map((label) => (
                           <th key={label}>{m(label)}</th>
                         ))}
@@ -1011,27 +1173,11 @@ export function FaultDetail() {
                             </Badge>
                           </td>
                           <td>{formatDate(action.dueDate)}</td>
+                          <td><ActionBadge status={action.status} /></td>
                           <td>
-                            <button
-                              style={{
-                                border: 0,
-                                background: "none",
-                                cursor: "pointer",
-                              }}
-                              disabled={
-                                (!manage &&
-                                  String(action.assignedTo?._id) !==
-                                    String(user._id || user.id)) ||
-                                ["resolved", "closed"].includes(fault.status)
-                              }
-                              onClick={() =>
-                                setDialog({ type: "actionStatus", action })
-                              }
-                            >
-                              <Badge $status={action.status}>
-                                {m(readable(action.status))}
-                              </Badge>
-                            </button>
+                            <Button onClick={() => setDialog({ type: "viewAction", action })}>
+                              {m("View Action")}
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -1276,35 +1422,16 @@ export function FaultDetail() {
           </Label>
         </FormDialog>
       )}
-      {dialog?.type === "actionStatus" && (
-        <FormDialog
-          title="Update Action"
-          initial={{ status: dialog.action.status }}
-          fields={[
-            {
-              name: "status",
-              label: "Status",
-              options: ["pending", "in_progress", "completed"].map((value) => ({
-                value,
-                label: readable(value),
-              })),
-              required: true,
-            },
-            {
-              name: "notes",
-              label: "Notes",
-              type: "textarea",
-              required: true,
-              wide: true,
-            },
-          ]}
+      {dialog?.type === "viewAction" && (
+        <FaultActionDialog
+          action={dialog.action}
+          assigned={String(dialog.action.assignedTo?._id || dialog.action.assignedTo) === String(user._id || user.id)}
+          canReview={reviewAction}
+          reportOpen={!["resolved", "closed"].includes(fault.status)}
           onClose={() => setDialog(null)}
-          onSubmit={async (values) => {
-            await service.save(
-              `/fault-reports/${id}/actions/${dialog.action._id}`,
-              values,
-              "patch",
-            );
+          onSave={async (status, notes) => {
+            await service.save(`/fault-reports/${id}/actions/${dialog.action._id}`, { status, notes }, "patch");
+            setDialog(null);
             notifySuccess();
           }}
         />

@@ -535,6 +535,7 @@ export function Modal({
   padding,
   titleSize,
   busy = false,
+  preserveScroll = false,
 }) {
   const m = useCopy();
   const dialog = useRef(null);
@@ -546,8 +547,12 @@ export function Modal({
   useEffect(() => {
     const previousFocus = document.activeElement;
     const old = document.body.style.overflow;
+    const root = document.documentElement;
+    const previousRootStyle = root.style.overflow;
+    const previousPosition = { left: window.scrollX, top: window.scrollY };
     document.body.style.overflow = "hidden";
-    dialog.current?.querySelector("input,select,textarea,button")?.focus();
+    if (preserveScroll) root.style.overflow = "hidden";
+    dialog.current?.querySelector("input,select,textarea,button")?.focus({ preventScroll: preserveScroll });
     const keydown = (event) => {
       const dialogs = document.querySelectorAll(
         '[role="dialog"][aria-modal="true"]',
@@ -586,9 +591,12 @@ export function Modal({
     return () => {
       document.body.style.overflow = old;
       document.removeEventListener("keydown", keydown);
-      previousFocus?.focus();
+      if (preserveScroll) root.style.overflow = previousRootStyle;
+      previousFocus?.focus({ preventScroll: preserveScroll });
+      if (preserveScroll && (window.scrollX !== previousPosition.left || window.scrollY !== previousPosition.top))
+        window.scrollTo({ ...previousPosition, behavior: "instant" });
     };
-  }, []);
+  }, [preserveScroll]);
   return (
     <Overlay
       $topAligned={topAligned}

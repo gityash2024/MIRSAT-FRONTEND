@@ -51,6 +51,7 @@ export const MODULE_PERMISSIONS = {
   DOCUMENTS: 'access_documents',
   MAINTENANCE_PLANS: 'access_maintenance_plans',
   FAULTS: 'access_faults',
+  ASSIGN_FAULT_ACTIONS: 'assign_fault_actions',
   WAREHOUSE: 'access_warehouse',
   QUESTIONNAIRES: 'access_questionnaires',
   CALENDAR: 'access_calendar',
