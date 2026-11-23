@@ -35,7 +35,7 @@ import {
 } from "./PlanUI";
 import { root, usePlanDate } from "./planPresentation";
 
-export function AssetPlans({ assetId }) {
+export function AssetPlans({ assetId, fromAsset }) {
   const m = useCopy();
   const [page, setPage] = useState(1);
   const resource = useResource("/plans", { asset: assetId, page });
@@ -55,7 +55,7 @@ export function AssetPlans({ assetId }) {
         <ResourceState resource={resource}>
           {resource.data?.total ? (
             <>
-              <PlanTableView compact plans={resource.data.data} />
+              <PlanTableView compact plans={resource.data.data} fromAsset={fromAsset} />
               <Pagination
                 result={resource.data}
                 page={page}

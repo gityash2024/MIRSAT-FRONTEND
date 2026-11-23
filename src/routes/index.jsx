@@ -134,6 +134,7 @@ const AppRoutes = () => {
             <Route index element={<TaskList />} />
           </Route>
           <Route path="/tasks/create" element={<TaskCreate />} />
+          <Route path="/tasks/work-orders/create" element={<TaskCreate workOrder />} />
           <Route path="/tasks/:taskId" element={<TaskDetailsView />} />
           <Route path="/tasks/:taskId/edit" element={<TaskEdit />} />
           

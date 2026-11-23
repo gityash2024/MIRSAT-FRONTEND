@@ -1,3 +1,4 @@
+import { useCopy } from "../maintenance/shared";
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -549,6 +550,7 @@ const TaskList = () => {
   const dispatch = useDispatch();
   const { hasPermission } = usePermissions();
   const { t } = useTranslation();
+  const m = useCopy();
   const { tasks, loading, error, filters, pagination } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users || { users: [] });
   const { allAssetsForDropdown } = useSelector((state) => state.assets || { allAssetsForDropdown: [] });
@@ -965,7 +967,7 @@ const loadTasks = async () => {
       // Define table columns
       const columns = orderForLanguage([
         { header: '#', dataKey: 'index' },
-        { header: formatPdfText(L('inspectionName'), language), dataKey: 'title' },
+        { header: formatPdfText(L('workOrderName'), language), dataKey: 'title' },
         { header: formatPdfText(L('template'), language), dataKey: 'template' },
         { header: formatPdfText(L('assignee'), language), dataKey: 'assignee' },
         { header: formatPdfText(L('priority'), language), dataKey: 'priority' },
@@ -1056,7 +1058,7 @@ const loadTasks = async () => {
       const L = (key) => exportText(language, key);
 
       // Define the headers
-      const headers = [L('inspectionName'), L('template'), L('assignee'), L('priority'), L('status'), L('dueDate'), L('progress')];
+      const headers = [L('workOrderName'), L('template'), L('assignee'), L('priority'), L('status'), L('dueDate'), L('progress')];
 
       // Prepare the data
       const csvData = tasksData.map(task => [
@@ -1112,7 +1114,7 @@ const loadTasks = async () => {
     <PageContainer data-agent-page="tasks">
       <Header>
         <PageTitle>{t('navigation.tasks')}</PageTitle>
-        <SubTitle>{t('tasks.createAndManage')}</SubTitle>
+        <SubTitle>{m('Manage maintenance work orders and inspections.')}</SubTitle>
       </Header>
 
       <ActionBar>
@@ -1124,7 +1126,7 @@ const loadTasks = async () => {
               data-agent-field="tasks.search"
               value={searchTerm}
               onChange={handleSearchChange}
-              placeholder={t('tasks.searchPlaceholder')}
+              placeholder={m('Search work orders and inspections')}
             />
           </SearchBox>
 
@@ -1305,6 +1307,12 @@ const loadTasks = async () => {
           </ExportDropdown>
 
           {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
+            <ActionButton as={Link} to="/tasks/work-orders/create" $variant="primary">
+              <Plus size={16} />
+              {m('Create Work Order')}
+            </ActionButton>
+          )}
+          {hasPermission(PERMISSIONS.TASKS.CREATE_TASKS) && (
             <ActionButton as={Link} to="/tasks/create" $variant="primary" data-agent-action="tasks.create">
               <Plus size={16} />
               {t('tasks.createTask')}
@@ -1357,6 +1365,7 @@ const loadTasks = async () => {
         // Show tasks table (even if empty, so pagination can be displayed)
         <TaskTable
           tasks={tasks || []}
+          nameLabel={t('tasks.inspectionName')}
           loading={loading}
           pagination={pagination}
           onPageChange={handlePageChange}

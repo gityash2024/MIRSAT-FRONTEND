@@ -7,7 +7,6 @@ import {
   Check,
   Clock3,
   Plus,
-  Trash2,
 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ErrorBox, ResourceState, useCopy, useResource } from "../shared";
@@ -58,6 +57,21 @@ const EditorPanel = styled(Section)`
     }
   }
 `;
+
+const RequiredPartRow = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    > :first-child { grid-column: 1 / -1; }
+  }
+`;
+
+const partPrecision = (part) =>
+  /^(piece|pcs?)$/i.test(part?.unit?.trim() || "") ? 0 : part?.unitPrecision ?? 4;
 
 const EditorToggle = styled(FieldLabel)`
   display: flex;
@@ -175,6 +189,10 @@ function formPayload(values) {
   const { calendar, meter, ...fields } = values;
   return {
     ...fields,
+    requiredParts: fields.requiredParts.map((row) => ({
+      ...row,
+      quantity: Number(row.quantity),
+    })),
     ...(fields.trigger !== "meter" && { calendar }),
     ...(fields.trigger !== "calendar" && { meter }),
   };
@@ -351,9 +369,30 @@ function Editor({ existing, assetId }) {
   const selectedEquipment = data.equipment?.find(
     (row) => row._id === values.equipment,
   );
+  const partFor = (id) =>
+    data.parts?.find((part) => part._id === id) ||
+    existing?.requiredParts.find((row) => idOf(row.part) === id)?.part;
+  const validRequiredParts = () => {
+    const invalid = values.requiredParts.find(({ part, quantity }) => {
+      const precision = partPrecision(partFor(part));
+      const previous = existing?.requiredParts.find((row) => idOf(row.part) === part);
+      if (previous && Number(quantity) === previous.quantity) return false;
+      const syntax = precision === 0
+        ? /^\d+$/
+        : new RegExp(`^\\d+(?:\\.\\d{1,${precision}})?$`);
+      return !part || !syntax.test(String(quantity)) ||
+        Number(quantity) <= 0 || Number(quantity) > 1e9;
+    });
+    if (invalid) {
+      setError(m(partPrecision(partFor(invalid.part)) === 0
+        ? "Piece quantities must be positive whole numbers"
+        : "Enter a positive quantity within the allowed precision"));
+    }
+    return !invalid;
+  };
   const back = existing ? root + "/" + existing._id : root;
   const submit = async () => {
-    if (saving) return;
+    if (saving || !validRequiredParts()) return;
     setSaving(true);
     setError("");
     try {
@@ -391,26 +430,31 @@ function Editor({ existing, assetId }) {
           </p>
         </div>
       </PlanHeader>
-      <Section>
-        <Row $between data-plan-steps aria-label={m("Plan setup steps")}>
-          {["Plan Details", "Schedule", "Review"].map((label, index) => (
-            <strong
-              key={label}
-              aria-current={index === (review ? 2 : 0) ? "step" : undefined}
-            >
-              <span data-step-number>{index + 1}</span>
-              {m(label)}
-            </strong>
-          ))}
-        </Row>
-      </Section>
+      {existing && (
+        <Section>
+          <Row $between data-plan-steps aria-label={m("Plan setup steps")}>
+            {["Plan Details", "Schedule", "Review"].map((label, index) => (
+              <strong
+                key={label}
+                aria-current={index === (review ? 2 : 0) ? "step" : undefined}
+              >
+                <span data-step-number>{index + 1}</span>
+                {m(label)}
+              </strong>
+            ))}
+          </Row>
+        </Section>
+      )}
       {options.error && <ErrorBox role="alert">{m(options.error)}</ErrorBox>}
       {error && <ErrorBox role="alert">{m(error)}</ErrorBox>}
       <form
         onSubmit={(event) => {
           event.preventDefault();
           if (review) void submit();
-          else setReview(true);
+          else if (validRequiredParts()) {
+            setError("");
+            setReview(true);
+          }
         }}
       >
         <Columns $columns="minmax(0,1.8fr) minmax(0,1fr)" $align="start">
@@ -672,8 +716,11 @@ function Editor({ existing, assetId }) {
                         </PlanButton>
                       )}
                     </Row>
-                    {values.requiredParts.map((row, index) => (
-                      <Row key={index}>
+                    {values.requiredParts.map((row, index) => {
+                      const part = partFor(row.part);
+                      const precision = partPrecision(part);
+                      return (
+                      <RequiredPartRow key={index}>
                         <FieldLabel>
                           {m("Part")}
                           <select
@@ -712,9 +759,8 @@ function Editor({ existing, assetId }) {
                           {m("Quantity")}
                           <input
                             required
-                            type="number"
-                            min=".0001"
-                            step=".0001"
+                            type="text"
+                            inputMode={precision === 0 ? "numeric" : "decimal"}
                             value={row.quantity}
                             onChange={(event) =>
                               change(
@@ -723,16 +769,17 @@ function Editor({ existing, assetId }) {
                                   i === index
                                     ? {
                                         ...item,
-                                        quantity:
-                                          event.target.value === ""
-                                            ? ""
-                                            : +event.target.value,
+                                        quantity: event.target.value,
                                       }
                                     : item,
                                 ),
                               )
                             }
                           />
+                        </FieldLabel>
+                        <FieldLabel>
+                          {m("Unit")}
+                          <input readOnly value={part?.unit ? m(part.unit) : "—"} />
                         </FieldLabel>
                         <PlanButton
                           type="button"
@@ -746,10 +793,14 @@ function Editor({ existing, assetId }) {
                             )
                           }
                         >
-                          <Trash2 size={16} />
+                          {m("Remove")}
                         </PlanButton>
-                      </Row>
-                    ))}
+                      </RequiredPartRow>
+                      );
+                    })}
+                    {values.requiredParts.length > 0 && (
+                      <MutedText>{m("Use a positive whole number for Piece. Other units follow their configured precision.")}</MutedText>
+                    )}
                   </Section>
                 )}
               </>

@@ -28,7 +28,7 @@ import {
   readSelectedTimezone,
   subscribeSelectedTimezone,
 } from "../../utils/selectedTimezone";
-import DesignSelect from "./DesignSelect";
+import DesignSelect, { SearchableSelect } from "./DesignSelect";
 import { maintenanceTone, statusTone } from "../../theme/maintenancePalette";
 
 const PdfPreview = lazy(() => import("./PdfPreview"));
@@ -252,6 +252,12 @@ export const Stat = styled.div`
   padding: 20px;
   min-height: 116px;
   box-sizing: border-box;
+  &:is(button) {
+    border: 0;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
   strong {
     display: block;
     font-size: 26px;
@@ -703,7 +709,7 @@ export function FormDialog({
             .map((field) => (
               <Field
                 key={field.name}
-                field={field}
+                field={field.resolve ? { ...field, ...field.resolve(values) } : field}
                 value={values[field.name] ?? ""}
                 onChange={(value) => change(field.name, value)}
               />
@@ -736,10 +742,14 @@ export function FormDialog({
 export function Field({ field, value, onChange, error }) {
   const m = useCopy();
   const errorId = useId();
+  const unitId = useId();
+  const Select = field.searchable ? SearchableSelect : DesignSelect;
+  const label = `${m(field.label)}${field.required ? " *" : ""}`;
   const props = {
     name: field.name,
+    "aria-label": field.suffix ? label : undefined,
     "aria-invalid": error ? true : undefined,
-    "aria-describedby": error ? errorId : undefined,
+    "aria-describedby": [field.suffix && unitId, error && errorId].filter(Boolean).join(" ") || undefined,
     "data-agent-field": field.agent,
     required: field.required,
     disabled: field.disabled,
@@ -758,8 +768,9 @@ export function Field({ field, value, onChange, error }) {
     <Label $wide={field.wide}>
       {m(field.label)}
       {field.required ? " *" : ""}
+      {field.suffix && <small id={unitId}>{field.suffix}</small>}
       {field.options ? (
-        <DesignSelect
+        <Select
           value={value}
           name={field.name}
           label={`${m(field.label)}${field.required ? " *" : ""}`}
@@ -786,9 +797,12 @@ export function Field({ field, value, onChange, error }) {
         <input
           {...props}
           type={field.type || "text"}
-          step={field.type === "number" ? "0.0001" : undefined}
+          step={field.step ?? (field.type === "number" ? "0.0001" : undefined)}
           min={field.min}
           max={field.max}
+          readOnly={field.readOnly}
+          inputMode={field.inputMode}
+          pattern={field.pattern}
           placeholder={m(field.placeholder || "")}
         />
       )}
@@ -899,7 +913,7 @@ export function Pagination({ result, page, onChange }) {
     </Actions>
   );
 }
-export function Preview({ path, title, onClose }) {
+export function Preview({ path, title, filename, onClose }) {
   const m = useCopy();
   const [media, setMedia] = useState(null);
   const [error, setError] = useState("");
@@ -932,7 +946,7 @@ export function Preview({ path, title, onClose }) {
           <Suspense fallback={<p>{m("Loading…")}</p>}>
             <PdfPreview blob={media.blob} title={title} />
           </Suspense>
-        ) : (
+        ) : media.type.startsWith("image/") ? (
           <img
             src={media.url}
             alt={title}
@@ -944,6 +958,11 @@ export function Preview({ path, title, onClose }) {
               objectFit: "contain",
             }}
           />
+        ) : (
+          <Actions>
+            <Muted>{m("Download this file to open it.")}</Muted>
+            <Button as="a" href={media.url} download={filename || title}>{m("Download")}</Button>
+          </Actions>
         )
       ) : (
         <p>{m("Loading…")}</p>

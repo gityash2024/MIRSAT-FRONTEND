@@ -19,6 +19,9 @@ import {
   ErrorBox,
   ResourceState,
   Definition,
+  FormDialog,
+  Label,
+  Muted,
   useCopy,
   useMaintenanceAccess,
   canManageMaintenance,
@@ -66,6 +69,8 @@ function Editor({ data, canDocuments }) {
     manufacturerPartNumber: "",
     unit: "",
     compatibleAssetType: "",
+    compatibleEquipmentModels: [],
+    openingLocation: "unassigned",
     defaultWarehouse: "",
     storageLocation: "",
     initialQuantity: "",
@@ -82,6 +87,7 @@ function Editor({ data, canDocuments }) {
           "manufacturerPartNumber",
           "unit",
           "compatibleAssetType",
+          "compatibleEquipmentModels",
           "defaultWarehouse",
           "storageLocation",
           "unitCost",
@@ -100,13 +106,28 @@ function Editor({ data, canDocuments }) {
     [error, setError] = useState("");
   const warehouses = useResource("/warehouse/warehouses", { limit: 100 });
   const types = useResource("/asset-types", {}, true, true);
+  const catalog = useResource("/warehouse/catalog");
+  const catalogData = catalog.data?.data || {};
+  const [addEntry, setAddEntry] = useState(null);
+  const [modelSearch, setModelSearch] = useState("");
+  const [entriesSaved, setEntriesSaved] = useState([]);
+  const locations = useResource(
+    `/warehouse/warehouses/${values.defaultWarehouse}/locations`, {},
+    Boolean(!part && values.defaultWarehouse),
+  );
+  const precision = /^(piece|pcs?)$/i.test(values.unit.trim()) ? 0
+    : [...entriesSaved, ...(catalogData.unit || [])].find((entry) =>
+      entry.type === "unit" && entry.name === values.unit)?.precision ?? part?.unitPrecision ?? 4;
   const editing = Boolean(part);
   const stock = (data?.balances || []).reduce(
     (sum, row) => sum + row.onHand,
     0,
   );
   const change = (name, value) =>
-    setValues((old) => ({ ...old, [name]: value }));
+    setValues((old) => ({
+      ...old, [name]: value,
+      ...(name === "defaultWarehouse" && { openingLocation: "unassigned" }),
+    }));
   const field = (name, label, config = {}) => (
     <Field
       key={name}
@@ -115,6 +136,24 @@ function Editor({ data, canDocuments }) {
       onChange={(value) => change(name, value)}
     />
   );
+  const managed = (name, label, type, config = {}) => {
+    const configEntries = [...(catalogData[type] || []), ...entriesSaved.filter((entry) => entry.type === type)];
+    const valuesByName = new Map(configEntries.map((entry) => [
+      entry.name, entry.abbreviation ? `${entry.name} (${entry.abbreviation})` : entry.name,
+    ]));
+    if (values[name] && !valuesByName.has(values[name])) valuesByName.set(values[name], values[name]);
+    return (
+      <div>
+        {field(name, label, {
+          required: true, searchable: true,
+          options: [...valuesByName].map(([value, entryLabel]) => ({ value, label: entryLabel })),
+          ...config,
+        })}
+        {!config.disabled && <Button type="button" onClick={() => setAddEntry({ name, label, type })}>{m("Add Entry")}</Button>}
+      </div>
+    );
+  };
+  const models = [...new Set([...(catalogData.equipmentModels || []), ...values.compatibleEquipmentModels])];
   return (
     <Page>
       <Back to={part ? `/spare-parts/${part._id}` : "/spare-parts"}>
@@ -133,7 +172,9 @@ function Editor({ data, canDocuments }) {
           </p>
         </div>
       </Header>
-      <FormSteps first="Part Information" second="Stock & Documents" />
+      {editing && (
+        <FormSteps first="Part Information" second="Stock & Documents" />
+      )}
       {warehouses.error && (
         <ErrorBox role="alert">
           {warehouses.error}{" "}
@@ -149,7 +190,11 @@ function Editor({ data, canDocuments }) {
           setBusy(true);
           setError("");
           try {
-            const { initialQuantity, ...metadata } = values;
+            const { initialQuantity, openingLocation, ...metadata } = values;
+            const opening = Number(initialQuantity);
+            if (!editing && (!Number.isFinite(opening) || opening < 0 ||
+              Number(opening.toFixed(precision)) !== opening))
+              throw new Error(m(precision === 0 ? "Piece quantities must be positive whole numbers" : "Enter a positive quantity within the allowed precision"));
             const payload = {
               ...metadata,
               defaultWarehouse: metadata.defaultWarehouse || null,
@@ -174,6 +219,7 @@ function Editor({ data, canDocuments }) {
                 part: nextId,
                 warehouse: values.defaultWarehouse,
                 quantity: Number(initialQuantity),
+                ...(openingLocation !== "unassigned" && { location: openingLocation }),
                 reference: "Opening stock",
                 notes: "Initial stock recorded when adding the spare part",
                 idempotencyKey: receiptKey.current,
@@ -229,10 +275,7 @@ function Editor({ data, canDocuments }) {
                 placeholder: "Generated automatically",
                 disabled: Boolean(savedId) || !editing,
               })}
-              {field("category", "Part Category", {
-                required: true,
-                disabled: Boolean(savedId) && !editing,
-              })}
+              {managed("category", "Part Category", "category", { disabled: Boolean(savedId) && !editing })}
               {field("status", "Status", {
                 options: ["active", "inactive"].map((value) => ({
                   value,
@@ -245,11 +288,8 @@ function Editor({ data, canDocuments }) {
             <p>{m("Manufacturer and purchasing reference information.")}</p>
             <FormGrid>
               {field("manufacturerPartNumber", "Manufacturer Part No.")}
-              {field("manufacturer", "Manufacturer", { required: true })}
-              {field("unit", "Unit of Measure", {
-                required: true,
-                placeholder: "e.g. Piece, Litre, Set",
-              })}
+              {managed("manufacturer", "Manufacturer", "manufacturer")}
+              {managed("unit", "Unit of Measure", "unit", { disabled: Boolean(savedId) && !editing })}
               {field("compatibleAssetType", "Compatible Asset Type", {
                 options: (types.data?.data || []).map((type) => ({
                   value: type.name,
@@ -257,6 +297,24 @@ function Editor({ data, canDocuments }) {
                 })),
               })}
             </FormGrid>
+            <fieldset style={{ margin: "16px 0", border: "1px solid #ccd8ea", borderRadius: 8 }}>
+              <legend>{m("Compatible Equipment Models")}</legend>
+              <input type="search" aria-label={m("Search equipment models")} value={modelSearch}
+                onChange={(event) => setModelSearch(event.target.value)} />
+              <div style={{ maxHeight: 150, overflow: "auto" }}>
+                {models.filter((model) => model.toLocaleLowerCase().includes(modelSearch.trim().toLocaleLowerCase()))
+                  .map((model) => (
+                    <Label key={model}>
+                      <input type="checkbox" checked={values.compatibleEquipmentModels.includes(model)} onChange={(event) =>
+                        change("compatibleEquipmentModels", event.target.checked
+                          ? [...values.compatibleEquipmentModels, model]
+                          : values.compatibleEquipmentModels.filter((value) => value !== model))} />
+                      {model}
+                    </Label>
+                  ))}
+                {models.length === 0 && <Muted>{m("No equipment models found")}</Muted>}
+              </div>
+            </fieldset>
             <h2 style={{ marginTop: 32 }}>
               {m(editing ? "Stock & Storage" : "Initial Stock & Storage")}
             </h2>
@@ -273,7 +331,10 @@ function Editor({ data, canDocuments }) {
                 options: optionsFrom(warehouses.data?.data),
                 disabled: Boolean(savedId) && !editing,
               })}
-              {field("storageLocation", "Storage Location")}
+              {editing ? field("storageLocation", "Storage Location", { readOnly: true }) : field("openingLocation", "Storage Location", {
+                searchable: true, required: true, disabled: !values.defaultWarehouse || Boolean(savedId),
+                options: [{ value: "unassigned", label: m("Unassigned location") }, ...optionsFrom(locations.data?.data)],
+              })}
               {editing ? (
                 <Definition>
                   <div>
@@ -289,6 +350,7 @@ function Editor({ data, canDocuments }) {
                   min: 0,
                   required: true,
                   disabled: Boolean(savedId),
+                  step: precision === 0 ? 1 : Math.pow(10, -precision),
                 })
               )}
               {field("unitCost", "Unit Cost", { type: "number", min: 0 })}
@@ -360,6 +422,25 @@ function Editor({ data, canDocuments }) {
           </div>
         </Grid>
       </form>
+      {addEntry && (
+        <FormDialog
+          title="Add Catalog Entry"
+          fields={[
+            { name: "name", label: addEntry.label, required: true, maxLength: addEntry.type === "unit" ? 30 : 200 },
+            ...(addEntry.type === "unit" ? [
+              { name: "abbreviation", label: "Abbreviation", required: true, maxLength: 30 },
+              { name: "precision", label: "Decimal Places", required: true, type: "number", min: 0, max: 4, step: 1 },
+            ] : []),
+          ]}
+          onClose={() => setAddEntry(null)}
+          onSubmit={async (input) => {
+            const result = await service.save("/warehouse/catalog", { ...input, type: addEntry.type });
+            setEntriesSaved((old) => [...old, result.data]);
+            change(addEntry.name, result.data.name);
+            catalog.reload();
+          }}
+        />
+      )}
     </Page>
   );
 }

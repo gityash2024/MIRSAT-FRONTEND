@@ -51,6 +51,14 @@ import {
   optionsFrom,
 } from "./shared";
 
+const emptyDocumentFilters = { search: "", category: "", status: "", linkedType: "", review: "" };
+const documentStatuses = [
+  ["overdue", "Action Required"],
+  ["expiring", "Expiring Soon"],
+  ["controlled", "Controlled"],
+  ["archived", "Archived"],
+];
+
 const DOCUMENT_CATEGORIES = [
   "Certificates",
   "Manuals",
@@ -71,13 +79,7 @@ export default function Documents() {
   const { i18n } = useTranslation();
   const { manage, browse } = useMaintenanceAccess("documents");
   const [page, setPage] = useState(1);
-  const [draft, setDraft] = useState({
-    search: "",
-    category: "",
-    status: "",
-    linkedType: "",
-    review: "",
-  });
+  const [draft, setDraft] = useState(emptyDocumentFilters);
   const [filters, setFilters] = useState({});
   const records = useResource("/documents", { ...filters, page }, browse);
   const summary = useResource("/documents/summary", {}, browse);
@@ -92,6 +94,14 @@ export default function Documents() {
   const [versionUpload, setVersionUpload] = useState(null);
   const [preview, setPreview] = useState(null);
   const [archive, setArchive] = useState(null);
+  const [isoDetails, setIsoDetails] = useState(false);
+  const applyStatus = (status, clearOtherFilters = false) => {
+    const next = { ...(clearOtherFilters ? emptyDocumentFilters : filters), status };
+    setDraft(next);
+    setFilters(next);
+    setSelected([]);
+    setPage(1);
+  };
   const details = useResource(
     detail ? `/documents/${detail}` : null,
     {},
@@ -155,18 +165,21 @@ export default function Documents() {
             counts?.total,
             "blue",
             "Across all assets and records",
+            "",
           ],
           [
             "Expiring Soon",
             counts?.expiring,
             "amber",
             "Within the next 60 days",
+            "expiring",
           ],
           [
             "Action Required",
             counts?.actionRequired,
             "red",
-            "Expired or missing review",
+            "Expired or review overdue",
+            "overdue",
           ],
           [
             "ISO Readiness",
@@ -174,11 +187,19 @@ export default function Documents() {
             "green",
             "Controlled and reviewed records",
           ],
-        ].map(([label, value, tone, description]) => (
-          <Stat key={label} $tone={tone}>
+        ].map(([label, value, tone, description, status]) => (
+          <Stat key={label} $tone={tone} {...(status !== undefined && {
+            as: "button",
+            type: "button",
+            "aria-pressed": (filters.status || "") === status,
+            onClick: () => applyStatus(status, true),
+          })}>
             <strong>{value ?? "—"}</strong>
             <span>{m(label)}</span>
             <small>{m(description)}</small>
+            {status === undefined && (
+              <Button onClick={() => setIsoDetails(true)}>{m("View Details")}</Button>
+            )}
           </Stat>
         ))}
       </Stats>
@@ -227,6 +248,7 @@ export default function Documents() {
         onSubmit={(event) => {
           event.preventDefault();
           setFilters(draft);
+          setSelected([]);
           setPage(1);
         }}
       >
@@ -280,9 +302,9 @@ export default function Documents() {
           }
         >
           <option value="">{m("All statuses")}</option>
-          {["overdue", "expiring", "controlled"].map((value) => (
+          {documentStatuses.map(([value, label]) => (
             <option key={value} value={value}>
-              {m(value)}
+              {m(label)}
             </option>
           ))}
         </SelectInput>
@@ -300,15 +322,7 @@ export default function Documents() {
         <Button
           type="button"
           onClick={() => {
-            setDraft({
-              search: "",
-              category: "",
-              status: "",
-              linkedType: "",
-              review: "",
-            });
-            setFilters({});
-            setPage(1);
+            applyStatus("", true);
           }}
         >
           {m("Reset Filters")}
@@ -316,11 +330,16 @@ export default function Documents() {
         <Button $primary type="submit">
           {m("Apply Filter")}
         </Button>
-        <Button type="button" onClick={() => setExporting(!exporting)}>
+        <Button type="button" disabled={filters.status === "archived"} onClick={() => setExporting(!exporting)}>
           <Download />
           {m("Export")}
         </Button>
       </FilterBar>
+      {filters.status && (
+        <p role="status">
+          {m("Status")} · {m(documentStatuses.find(([value]) => value === filters.status)?.[1] || filters.status)}
+        </p>
+      )}
       {exporting && (
         <Panel>
           <h3>{m("Choose documents to export")}</h3>
@@ -493,7 +512,7 @@ export default function Documents() {
                         </small>
                       </td>
                       <td>{m(document.category)}</td>
-                      <td>{document.asset?.displayName || m("Fleet-wide")}</td>
+                      <td>{document.equipment ? m("Equipment") : document.task ? m("Work Order") : document.asset?.displayName || (document.part ? m("Spare Part") : m("Fleet-wide"))}</td>
                       <td>{version?.label || `v${version?.number}.0`}</td>
                       <td>
                         {document.owner?.name ||
@@ -504,8 +523,8 @@ export default function Documents() {
                         {formatDate(document.expiryDate || document.reviewDate)}
                       </td>
                       <td>
-                        <Badge $status={documentStatus(document)}>
-                          {m(
+                        <Badge $status={document.archived ? "archived" : documentStatus(document)}>
+                          {document.archived ? m("Archived") : m(
                             documentStatus(document).replace(/^./, (letter) =>
                               letter.toUpperCase(),
                             ),
@@ -538,13 +557,17 @@ export default function Documents() {
                                     toast.error(maintenanceError(error)),
                                 ),
                             },
-                            manage && {
+                            manage && !document.archived && {
                               label: m("Upload new version"),
                               onClick: () => setVersionUpload(document),
                             },
-                            manage && {
+                            manage && !document.archived && {
                               label: m("Archive"),
-                              onClick: () => setArchive(document),
+                              onClick: () => setArchive({ document }),
+                            },
+                            manage && !document.archived && {
+                              label: m("Delete"),
+                              onClick: () => setArchive({ document, deleting: true }),
                             },
                           ]}
                         />
@@ -578,7 +601,7 @@ export default function Documents() {
               <DocumentDetailContent
                 document={details.data.data}
                 history={history}
-                manage={manage}
+                manage={manage && !details.data.data.archived}
                 onHistory={() => setHistory(true)}
                 onClose={() => setDetail(null)}
                 onVersion={() => {
@@ -601,31 +624,83 @@ export default function Documents() {
           }}
         />
       )}
+      {isoDetails && (
+        <Modal title={m("ISO Readiness")} onClose={() => setIsoDetails(false)} wide>
+          <IsoDocumentGroup status="isoReady" title="Meets ISO readiness criteria" onSelect={(id) => {
+            setIsoDetails(false);
+            setHistory(false);
+            setDetail(id);
+          }} />
+          <IsoDocumentGroup status="isoNotReady" title="Does not meet ISO readiness criteria" onSelect={(id) => {
+            setIsoDetails(false);
+            setHistory(false);
+            setDetail(id);
+          }} />
+        </Modal>
+      )}
       {archive && (
-        <FormDialog
-          title="Archive document"
-          fields={[]}
+        <DocumentRemovalDialog
+          document={archive.document}
+          deleting={archive.deleting}
           onClose={() => setArchive(null)}
-          onSubmit={async () => {
-            await service.save(
-              `/documents/${archive._id}`,
-              undefined,
-              "delete",
-            );
-            setSelected((old) => old.filter((id) => id !== archive._id));
+          onSaved={() => {
+            setSelected((old) => old.filter((id) => id !== archive.document._id));
             refresh();
+            setSuccess(archive.deleting ? "Document removed from the library" : "Document archived. In Document Library, choose Archived from Status.");
           }}
-          submitLabel="Archive"
-        >
-          <p>
-            {m(
-              "This document and its versions will be retained and removed from the active library.",
-            )}
-          </p>
-        </FormDialog>
+        />
       )}
       {preview && <Preview {...preview} onClose={() => setPreview(null)} />}
     </Page>
+  );
+}
+
+function IsoDocumentGroup({ status, title, onSelect }) {
+  const m = useCopy();
+  const [page, setPage] = useState(1);
+  const documents = useResource("/documents", { status, page, limit: 10 });
+  return (
+    <section>
+      <h3>{m(title)}</h3>
+      <ResourceState resource={documents}>
+        {documents.data?.data?.length ? (
+          <ul>
+            {documents.data.data.map((document) => (
+              <li key={document._id}>
+                <Button type="button" onClick={() => onSelect(document._id)}>{document.title}</Button>
+              </li>
+            ))}
+          </ul>
+        ) : <Muted>{m("No documents found")}</Muted>}
+        <Pagination result={documents.data} page={page} onChange={setPage} />
+      </ResourceState>
+    </section>
+  );
+}
+
+export function DocumentRemovalDialog({ document, deleting = false, onClose, onSaved }) {
+  const m = useCopy();
+  return (
+    <FormDialog
+      title={deleting ? "Delete document" : "Archive document"}
+      fields={[]}
+      onClose={onClose}
+      onSubmit={async () => {
+        await service.save(
+          `/documents/${document._id}${deleting ? "/mistaken-upload" : ""}`,
+          undefined,
+          "delete",
+        );
+        onSaved();
+      }}
+      submitLabel={deleting ? "Delete" : "Archive"}
+    >
+      <p><strong>{document.title}</strong></p>
+      <p>{m(deleting
+        ? "Remove this upload from the library? The file and audit history will be retained."
+        : "This document and its versions will be retained and removed from the active library."
+      )}</p>
+    </FormDialog>
   );
 }
 
@@ -662,15 +737,15 @@ export function UploadDocument({ assetId, equipmentId, onClose, onSaved } = {}) 
     );
   const form = (
     <ResourceState resource={lookups}>
-      <Panel>
-        <Actions style={{ justifyContent: "space-between" }}>
-          {["1. Upload File", "2. Document Details", "3. Link & Control"].map(
-            (label) => (
-              <strong key={label}>{m(label)}</strong>
-            ),
-          )}
-        </Actions>
-      </Panel>
+      {embedded && (
+        <Panel>
+          <Actions style={{ justifyContent: "space-between" }}>
+            {["1. Upload File", "2. Document Details", "3. Link & Control"].map(
+              (label) => <strong key={label}>{m(label)}</strong>,
+            )}
+          </Actions>
+        </Panel>
+      )}
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -779,9 +854,9 @@ export function UploadDocument({ assetId, equipmentId, onClose, onSaved } = {}) 
             </FormGrid>
             <h2 style={{ marginTop: 32 }}>{m("3. Link & Control")}</h2>
             <p>
-              {m(
-                "Define where the document belongs and how it is controlled.",
-              )}
+              {m(embedded
+                ? "Define where the document belongs and how it is controlled."
+                : "Choose Asset for an asset record, Equipment for a specific item, or Work Order for a job record. Leave these fields blank to make the document fleet-wide.")}
             </p>
             <FormGrid>
               {!embedded && (<>

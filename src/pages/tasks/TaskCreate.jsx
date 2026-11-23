@@ -1,7 +1,9 @@
+import { useMemo } from "react";
+import { useCopy } from "../maintenance/shared";
 import React from 'react';
 import styled from 'styled-components';
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import TaskForm from './components/TaskForm';
 
@@ -111,29 +113,37 @@ const FormContainer = styled.div`
   }
 `;
 
-const TaskCreate = () => {
+const TaskCreate = ({ workOrder = false }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-
+  const m = useCopy();
+  const [params] = useSearchParams();
+  const fromAsset = useLocation().state?.fromAsset;
+  const backToAsset = workOrder && fromAsset?.tab === "tasks" && /^\/assets\/[^/?#]+(?:\/equipment\/[^/?#]+)?$/.test(fromAsset.path);
+  const asset = workOrder ? params.get("asset") || "" : "";
+  const initialData = useMemo(() => ({ asset }), [asset]);
   const handleCancel = () => {
-    navigate('/tasks');
+    if (backToAsset) navigate(fromAsset.path, { state: { assetTab: "tasks" } });
+    else navigate('/tasks');
   };
 
   return (
     <PageContainer>
       <Header>
-        <BackButton onClick={() => navigate('/tasks')}>
+        <BackButton onClick={handleCancel}>
           <ArrowLeft size={18} />
-          {t('common.backToTasks')}
+          {workOrder ? m(backToAsset ? 'Back to Asset' : 'Back to Work Orders') : t('common.backToTasks')}
         </BackButton>
-        <PageTitle>{t('tasks.createNewTask')}</PageTitle>
+        <PageTitle>{workOrder ? m('Create Work Order') : t('tasks.createNewTask')}</PageTitle>
       </Header>
 
       <FormContainer>
         <TaskForm
           onCancel={handleCancel}
           isEdit={false}
-          submitButtonText={t('tasks.createTask')}
+          workOrder={workOrder}
+          initialData={workOrder ? initialData : undefined}
+          submitButtonText={workOrder ? m('Create Work Order') : t('tasks.createTask')}
         />
       </FormContainer>
     </PageContainer>

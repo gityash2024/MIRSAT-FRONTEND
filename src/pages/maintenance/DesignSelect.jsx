@@ -1,7 +1,8 @@
-import { useRef, Children, useId } from "react";
+import { useRef, Children, useId, useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import {
+  Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption,
   Listbox,
   ListboxButton,
   ListboxOptions,
@@ -191,6 +192,62 @@ DesignSelect.propTypes = {
   label: PropTypes.string,
   agent: PropTypes.string,
 };
+
+const SearchRow = styled.span`
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  > input { flex: 1; min-width: 0; }
+  > button {
+    display: grid;
+    place-items: center;
+    padding-inline: 10px;
+    border: 1px solid #ccd8ea;
+    border-inline-start: 0;
+    border-start-end-radius: 6px;
+    border-end-end-radius: 6px;
+    background: var(--color-panel, white);
+    color: var(--color-navy);
+  }
+`;
+
+export function SearchableSelect({ value, options, onChange, placeholder, required, disabled, label, name }) {
+  const [search, setSearch] = useState("");
+  const input = useRef(null);
+  const matches = options.filter((item) =>
+    String(item.label).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  );
+  return (
+    <Wrapper>
+      <Combobox value={value || ""} onChange={(next) => onChange(next || "")} onClose={() => setSearch("")} disabled={disabled} immediate>
+        <SearchRow>
+          <ComboboxInput ref={input} aria-label={label} placeholder={placeholder}
+            displayValue={(id) => options.find((item) => item.value === id)?.label || ""}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <ComboboxButton aria-label={label} type="button"><ChevronDown size={16} /></ComboboxButton>
+        </SearchRow>
+        <Options as={ComboboxOptions} anchor="bottom start" portal modal={false} style={{ width: "var(--input-width)" }}>
+          {!required && <Option as={ComboboxOption} value="">{placeholder}</Option>}
+          {matches.map((item) => (
+            <Option as={ComboboxOption} key={item.value} value={item.value}>{item.label}</Option>
+          ))}
+          {required && matches.length === 0 && <Option as={ComboboxOption} value="" disabled>{placeholder}</Option>}
+        </Options>
+      </Combobox>
+      <select data-validation-control aria-hidden="true" tabIndex={-1} name={name}
+        required={required} disabled={disabled} value={value || ""}
+        onChange={(event) => onChange(event.target.value)}
+        onInvalid={(event) => { event.preventDefault(); input.current?.focus(); }}
+      >
+        <option value="" />
+        {options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+      </select>
+    </Wrapper>
+  );
+}
+
+SearchableSelect.propTypes = DesignSelect.propTypes;
 
 export function SelectInput({
   children,

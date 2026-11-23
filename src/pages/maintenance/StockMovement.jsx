@@ -1,6 +1,6 @@
 import { readSelectedTimezone } from "../../utils/selectedTimezone";
 import { useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowDown, CheckCircle } from "lucide-react";
 import PropTypes from "prop-types";
 import {
@@ -23,6 +23,8 @@ import {
   Badge,
   Muted,
   ResourceState,
+  Modal,
+  formatDate,
   FileDrop,
   useCopy,
   useMaintenanceAccess,
@@ -66,12 +68,17 @@ const confirmations = {
   transfer: "Stock transfer recorded",
   adjustment: "Awaiting authorization",
 };
+const roundStock = (value) => Math.round(value * 10000) / 10000;
+const remaining = (row) => row.remaining ?? roundStock(row.quantity - row.issued - row.released);
+const reservationNumber = (row) => row.number || `RES-${row._id.slice(-8).toUpperCase()}`;
+const realLocation = (id) => id && id !== "unassigned" ? id : undefined;
+
 export default function StockMovement() {
   const { id, operation } = useParams();
-  const { browse } = useMaintenanceAccess("warehouse");
+  const { browse, manage } = useMaintenanceAccess("warehouse");
   const m = useCopy();
   const resource = useResource(`/warehouse/parts/${id}`, {}, browse);
-  if (!browse || !labels[operation])
+  if (!browse || !manage || !labels[operation])
     return (
       <ErrorBox>{m("Access to this operation has not been granted")}</ErrorBox>
     );
@@ -90,7 +97,12 @@ export default function StockMovement() {
 function MovementForm({ data, type }) {
   const m = useCopy();
   const { user } = useMaintenanceAccess("warehouse");
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const taskId = canManageMaintenance(user, "tasks") ? params.get("workOrder") : null;
+  const directIssue = Boolean(taskId && type === "issue");
   const part = data.part;
+  const precision = /^(piece|pcs?)$/i.test(part.unit?.trim() || "") ? 0 : part.unitPrecision ?? 4;
   const warehouses = useResource("/warehouse/warehouses", { limit: 100 });
   const issues = useResource(
     "/warehouse/movements",
@@ -112,8 +124,11 @@ function MovementForm({ data, type }) {
   const [values, setValues] = useState({
     warehouse: part.defaultWarehouse || data.balances[0]?.warehouse?._id || "",
     destination: "",
-    storageLocation: part.storageLocation || "",
-    destinationStorageLocation: "",
+    location: "unassigned",
+    destinationLocation: "",
+    reason: "",
+    reasonExplanation: "",
+    recipient: "",
     quantity: "",
     movementDate: new Date().toLocaleDateString("en-CA", {
       timeZone: readSelectedTimezone(),
@@ -123,56 +138,66 @@ function MovementForm({ data, type }) {
     notes: "",
     reservation: "",
     sourceIssue: "",
-    task: "",
+    task: taskId || "",
   });
-  const change = (name, value) =>
+  const [fullRelease, setFullRelease] = useState(false);
+  const [viewReservation, setViewReservation] = useState(false);
+  const sourceLocations = useResource(
+    `/warehouse/warehouses/${values.warehouse}/locations`, {}, Boolean(values.warehouse),
+  );
+  const destinationLocations = useResource(
+    `/warehouse/warehouses/${values.destination}/locations`, {}, Boolean(type === "transfer" && values.destination),
+  );
+  const change = (name, value) => {
+    if (["quantity", "warehouse", "reservation"].includes(name)) setFullRelease(false);
+    const reservation = name === "reservation" && data.reservations.find((row) => row._id === value);
     setValues((old) => ({
       ...old,
       [name]: value,
-      ...(name === "warehouse"
-        ? {
-            reservation: "",
-            sourceIssue: "",
-            ...(old.destination === value ? { destination: "" } : {}),
-          }
-        : {}),
+      ...(name === "warehouse" && {
+        reservation: "",
+        ...(type !== "return" && { sourceIssue: "" }),
+        location: "unassigned",
+        ...(old.destination === value && { destination: "", destinationLocation: "" }),
+      }),
+      ...(name === "destination" && { destinationLocation: "" }),
+      ...(name === "reservation" && {
+        quantity: type === "issue" && reservation
+          ? String(remaining(reservation)) : "",
+      }),
     }));
+  };
   const balance = data.balances.find(
     (row) => row.warehouse?._id === values.warehouse,
   ) || { onHand: 0, reserved: 0, reorderPoint: 0 };
-  const amount = Number(values.quantity) || 0;
+  const reservationRequired = ["issue", "release"].includes(type) && !directIssue;
+  const selectedReservation = data.reservations.find((row) => row._id === values.reservation);
+  const reservationRemaining = selectedReservation ? remaining(selectedReservation) : undefined;
+  const sourceId = reservationRequired ? selectedReservation?.location?._id : realLocation(values.location);
+  const locationBalance = sourceId
+    ? balance.locations?.find((row) => String(row.location) === String(sourceId)) || { onHand: 0, reserved: 0 }
+    : balance.unassigned || { onHand: balance.onHand, reserved: balance.reserved };
+  const amount = fullRelease ? reservationRemaining || 0 : Number(values.quantity) || 0;
   const delta =
     type === "adjustment"
-      ? amount - balance.onHand
+      ? amount - locationBalance.onHand
       : ["receipt", "return"].includes(type)
         ? amount
         : ["issue", "transfer"].includes(type)
           ? -amount
           : 0;
-  const futureOnHand = balance.onHand + delta;
-  const futureReserved =
-    balance.reserved +
-    (type === "reserve"
-      ? amount
-      : ["release", "issue"].includes(type)
-        ? -amount
-        : 0);
-  const available = futureOnHand - futureReserved;
-  const selectedReservation = data.reservations.find(
-    (row) => row._id === values.reservation,
-  );
-  const reservationRemaining = selectedReservation
-    ? selectedReservation.quantity -
-      selectedReservation.issued -
-      selectedReservation.released
-    : undefined;
-  const invalid =
-    futureOnHand < 0 ||
-    futureReserved < 0 ||
-    available < 0 ||
-    (["issue", "release"].includes(type) &&
-      reservationRemaining !== undefined &&
-      amount > reservationRemaining);
+  const reservedDelta = type === "reserve" ? amount : reservationRequired ? -amount : 0;
+  const futureOnHand = roundStock(balance.onHand + delta);
+  const futureReserved = roundStock(balance.reserved + reservedDelta);
+  const available = roundStock(futureOnHand - futureReserved);
+  const exceedsReservation = reservationRemaining !== undefined && amount > reservationRemaining;
+  const invalidStock = futureOnHand < 0 || futureReserved < 0 || available < 0 ||
+    roundStock(locationBalance.onHand + delta - locationBalance.reserved - reservedDelta) < 0;
+  const invalid = exceedsReservation || invalidStock;
+  const sourceLabel = warehouses.data?.data?.find((row) => row._id === values.warehouse)?.name;
+  const destinationLabel = warehouses.data?.data?.find((row) => row._id === values.destination)?.name;
+  const partPath = `/spare-parts/${part._id}`;
+  const returnPath = taskId ? `/tasks/${taskId}` : partPath;
   const headerBalance = saved?.result || balance;
   const destinationBalance = data.balances.find(
     (row) => row.warehouse?._id === values.destination,
@@ -189,17 +214,26 @@ function MovementForm({ data, type }) {
     .filter(
       (row) =>
         row.warehouse?._id === values.warehouse &&
-        row.quantity - row.issued - row.released > 0,
+        remaining(row) > 0,
     )
     .map((row) => ({
       value: row._id,
-      label: `${row.reference || row._id.slice(-8)} · ${row.quantity - row.issued - row.released} ${part.unit} ${m("remaining")}`,
+      label: `${reservationNumber(row)} · ${formatDate(row.createdAt)} · ${row.task?.title || row.reason || row.reference || "—"}`,
     }));
+  const submitActions = (
+        <Actions>
+          <Button as={Link} to={returnPath}>{m("Cancel")}</Button>
+          <Button type="submit" $primary disabled={busy || (!submitted.current && invalid)}>
+            {m(busy ? "Saving…" : submitted.current ? "Retry attachment upload" :
+              type === "adjustment" ? "Submit for authorization" : type === "issue" ? "Issue Stock" : "Confirm")}
+          </Button>
+        </Actions>
+  );
   return (
     <Page>
-      <Back to={`/spare-parts/${part._id}`}>
+      <Back to={returnPath}>
         <ArrowLeft size={14} />
-        {m("Back to Part")}
+        {m(taskId ? "Back to Work Order" : "Back to Part")}
       </Back>
       <Header>
         <div>
@@ -289,32 +323,43 @@ function MovementForm({ data, type }) {
                 notes: values.notes,
                 idempotencyKey: key.current,
               };
+              const digits = String(values.quantity).trim();
+              const pattern = precision === 0 ? /^\d+$/ : new RegExp(`^\\d+(?:\\.\\d{1,${precision}})?$`);
+              if (!fullRelease && (!pattern.test(digits) || (type !== "adjustment" && amount <= 0)))
+                throw new Error(m(precision === 0 ? "Piece quantities must be positive whole numbers" : "Enter a positive quantity within the allowed precision"));
+              if (invalid) throw new Error(m(exceedsReservation ? "Quantity exceeds the remaining reservation" : "Insufficient available stock"));
               let result;
               if (type === "adjustment") {
-                delete input.notes;
                 result = await service.save("/warehouse/adjustments", {
                   ...input,
                   countedQuantity: Number(values.quantity),
                   countDate: values.movementDate,
                   reference: values.reference,
                   referenceType: values.referenceType,
-                  storageLocation: values.storageLocation,
-                  reason: values.notes,
+                  location: realLocation(values.location),
+                  reason: values.reason,
+                });
+              } else if (directIssue) {
+                result = await service.save(`/warehouse/work-orders/${taskId}/issue`, {
+                  ...input, location: realLocation(values.location), quantity: amount,
+                  recipient: values.recipient, movementDate: values.movementDate,
                 });
               } else
                 result = await service.save("/warehouse/movements", {
                   ...input,
                   type,
-                  quantity: Number(values.quantity),
+                  ...(fullRelease ? { fullRelease: true } : { quantity: amount }),
                   movementDate: values.movementDate,
-                  storageLocation: values.storageLocation,
+                  ...(reservationRequired ? {} : { location: realLocation(values.location) }),
+                  reason: values.reason || undefined,
+                  reasonExplanation: values.reasonExplanation || undefined,
+                  recipient: values.recipient || undefined,
                   referenceType: values.referenceType,
                   reference: values.reference,
                   ...(type === "transfer"
                     ? {
                         destination: values.destination,
-                        destinationStorageLocation:
-                          values.destinationStorageLocation,
+                        destinationLocation: realLocation(values.destinationLocation),
                       }
                     : {}),
                   ...(["issue", "release"].includes(type)
@@ -334,6 +379,13 @@ function MovementForm({ data, type }) {
                 `/warehouse/${type === "adjustment" ? "adjustments" : "movements"}/${submitted.current._id}/attachments`,
                 asFormData({ file }),
               );
+            if (type === "reserve" || directIssue) {
+              const movement = submitted.current;
+              navigate(returnPath, { state: { success: confirmations[type], stockMovement: {
+                id: movement._id, quantity: movement.quantity, unit: part.unit, available: movement.result?.available,
+              } } });
+              return;
+            }
             setSaved(submitted.current);
           } catch (err) {
             setError(maintenanceError(err));
@@ -342,7 +394,7 @@ function MovementForm({ data, type }) {
           }
         }}
       >
-        {[warehouses, issues, tasks]
+        {[warehouses, issues, tasks, sourceLocations, destinationLocations]
           .filter((resource) => resource.error)
           .map((resource, index) => (
             <ErrorBox role="alert" key={index}>
@@ -365,8 +417,18 @@ function MovementForm({ data, type }) {
                   required: true,
                   options: optionsFrom(warehouses.data?.data),
                 })}
-                {field("storageLocation", "Storage Location", {
-                  required: true,
+                {reservationRequired ? (
+                  <Field field={{ name: "reservationLocation", label: "Storage Location", readOnly: true }}
+                    value={selectedReservation?.location?.name || selectedReservation?.storageLocation || m("Unassigned location")} />
+                ) : field("location", "Storage Location", {
+                  required: true, searchable: true, disabled: !values.warehouse,
+                  options: [
+                    { value: "unassigned", label: `${m("Unassigned location")} · ${roundStock((balance.unassigned?.onHand ?? balance.onHand) - (balance.unassigned?.reserved ?? balance.reserved))} ${part.unit}` },
+                    ...(sourceLocations.data?.data || []).map(({ _id, name }) => {
+                      const row = balance.locations?.find((entry) => String(entry.location) === _id);
+                      return { value: _id, label: `${name} · ${roundStock((row?.onHand || 0) - (row?.reserved || 0))} ${part.unit}` };
+                    }),
+                  ],
                 })}
                 {type === "transfer" && (
                   <>
@@ -379,37 +441,42 @@ function MovementForm({ data, type }) {
                       ),
                     })}
                     {field(
-                      "destinationStorageLocation",
+                      "destinationLocation",
                       "Destination Storage Location",
-                      { required: true },
+                      { required: true, searchable: true, disabled: !values.destination,
+                        options: [{ value: "unassigned", label: m("Unassigned location") }, ...optionsFrom(destinationLocations.data?.data)] },
                     )}
                   </>
                 )}
-                {["issue", "release"].includes(type) &&
-                  field("reservation", "Reservation", {
-                    required: true,
-                    wide: true,
-                    options: reservationOptions,
-                  })}
+                {reservationRequired && field("reservation", "Reservation", {
+                  required: true, wide: true, searchable: true, options: reservationOptions,
+                })}
+                {reservationRequired && selectedReservation && (
+                  <Actions>
+                    <Button type="button" onClick={() => setViewReservation(true)}>{reservationNumber(selectedReservation)}</Button>
+                    <Muted>{m(type === "issue" ? "Remaining to issue" : "Remaining to release")}: {reservationRemaining} {part.unit}</Muted>
+                    {type === "release" && <Button type="button" onClick={() => {
+                      setFullRelease(true);
+                      setValues((old) => ({ ...old, quantity: String(reservationRemaining) }));
+                    }}>{m("Release full remaining quantity")}</Button>}
+                  </Actions>
+                )}
                 {type === "return" &&
                   field("sourceIssue", "Original Issue", {
                     required: true,
                     wide: true,
                     options: (issues.data?.data || [])
-                      .filter((row) => row.warehouse?._id === values.warehouse)
                       .map((row) => ({
                         value: row._id,
                         label: `${row.reference || row._id.slice(-8)} · ${row.quantity} ${part.unit}`,
                       })),
                   })}
                 {field("quantity", quantityLabels[type], {
-                  type: "number",
+                  suffix: part.unit,
+                  inputMode: precision === 0 ? "numeric" : "decimal",
                   required: true,
-                  min: type === "adjustment" ? 0 : 0.0001,
-                  max: ["issue", "release"].includes(type)
-                    ? reservationRemaining
-                    : undefined,
                 })}
+                {type === "issue" && field("recipient", "Recipient", { required: true, maxLength: 200 })}
                 {field("movementDate", dates[type], {
                   type: "date",
                   required: true,
@@ -436,13 +503,15 @@ function MovementForm({ data, type }) {
                     wide: true,
                     options: optionsFrom(tasks.data?.data, "title"),
                   })}
-                {field(
-                  "notes",
-                  type === "adjustment"
-                    ? "Adjustment Reason"
-                    : "Reason / Notes",
-                  { type: "textarea", wide: true, required: true },
-                )}
+                {type === "release" && field("reason", "Reason", {
+                  required: true, wide: true,
+                  options: ["No longer needed", "Work order cancelled", "Reserved by mistake", "Other"],
+                })}
+                {type === "release" && values.reason === "Other" && field("reasonExplanation", "Explain the release reason", { required: true, type: "textarea", wide: true })}
+                {["reserve", "adjustment"].includes(type) && field("reason", type === "adjustment" ? "Adjustment Reason" : "Reason", {
+                  type: "textarea", wide: true, required: type === "adjustment" || !values.task,
+                })}
+                {field("notes", "Notes", { type: "textarea", wide: true })}
               </FormGrid>
             </fieldset>
             {!saved && (
@@ -463,7 +532,7 @@ function MovementForm({ data, type }) {
             <h2>{m("Stock Impact")}</h2>
             <p>{m("Preview before confirming")}</p>
             <Panel style={{ background: "#f5f8fc", padding: 18 }}>
-              <Muted>{m("Current stock")}</Muted>
+              <Muted>{sourceLabel || m("Warehouse")} · {m("Current stock")}</Muted>
               <h2 style={{ margin: "12px 0" }}>
                 {balance.onHand} {part.unit}
               </h2>
@@ -498,7 +567,8 @@ function MovementForm({ data, type }) {
             </Panel>
             {type === "transfer" && values.destination && (
               <Panel style={{ background: "#edf3ff", padding: 18 }}>
-                <Muted>{m("Destination Warehouse")}</Muted>
+                <Muted>{destinationLabel || m("Destination Warehouse")}</Muted>
+                <p>{m("Current stock")}: {destinationBalance.onHand} {part.unit}</p>
                 <h2 style={{ margin: "12px 0" }}>
                   {destinationBalance.onHand + amount} {part.unit}
                 </h2>
@@ -512,7 +582,7 @@ function MovementForm({ data, type }) {
               </Panel>
             )}
             {invalid && (
-              <ErrorBox>{m("Insufficient available stock")}</ErrorBox>
+              <ErrorBox>{m(exceedsReservation ? "Quantity exceeds the remaining reservation" : "Insufficient available stock")}</ErrorBox>
             )}
             <Actions style={{ justifyContent: "space-between" }}>
               <strong>{m("Stock health")}</strong>
@@ -532,39 +602,25 @@ function MovementForm({ data, type }) {
                 )}
               </p>
             )}
+            {!saved && type === "issue" && submitActions}
           </Panel>
         </Grid>
         {error && <ErrorBox role="alert">{error}</ErrorBox>}
-        {!saved && (
-          <Panel>
-            <Actions style={{ justifyContent: "space-between" }}>
-              <Muted>
-                {m("This movement will appear in Movement History.")}
-              </Muted>
-              <Actions>
-                <Button as={Link} to={`/spare-parts/${part._id}`}>
-                  {m("Cancel")}
-                </Button>
-                <Button
-                  type="submit"
-                  $primary
-                  disabled={busy || (!submitted.current && invalid)}
-                >
-                  {m(
-                    busy
-                      ? "Saving…"
-                      : submitted.current
-                        ? "Retry attachment upload"
-                        : type === "adjustment"
-                          ? "Submit for authorization"
-                          : "Confirm",
-                  )}
-                </Button>
-              </Actions>
-            </Actions>
-          </Panel>
-        )}
+        {!saved && type !== "issue" && <Panel>{submitActions}</Panel>}
       </form>
+      {viewReservation && selectedReservation && (
+        <Modal title={reservationNumber(selectedReservation)} onClose={() => setViewReservation(false)}>
+          <Definition>
+            <dt>{m("Date")}</dt><dd>{formatDate(selectedReservation.createdAt, true)}</dd>
+            <dt>{m("Warehouse")}</dt><dd>{selectedReservation.warehouse?.name}</dd>
+            <dt>{m("Storage Location")}</dt><dd>{selectedReservation.location?.name || selectedReservation.storageLocation || m("Unassigned location")}</dd>
+            <dt>{m("Reason")}</dt><dd>{selectedReservation.reason || selectedReservation.reference || "—"}</dd>
+            <dt>{m("Work Order")}</dt>
+            <dd>{selectedReservation.task?._id ? <Link to={`/tasks/${selectedReservation.task._id}`}>{selectedReservation.task.title}</Link> : "—"}</dd>
+            <dt>{m("Remaining")}</dt><dd>{reservationRemaining} {part.unit}</dd>
+          </Definition>
+        </Modal>
+      )}
     </Page>
   );
 }

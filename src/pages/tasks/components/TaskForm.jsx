@@ -1684,6 +1684,7 @@ const TaskForm = ({
   isCalendarMode = false, // Flag to indicate calendar mode
   initialDeadline, // For calendar mode - initial deadline from selected date
   sourceFaultId,
+  workOrder = false,
   submitButtonText = 'Save',
   isSubmitting: propIsSubmitting = false,
   usersProp = [],
@@ -1703,6 +1704,7 @@ const TaskForm = ({
   users = users?.filter(user => user.role === 'inspector');
   const inspectionLevels = inspectionLevelsProp.length > 0 ? inspectionLevelsProp : stateInspectionLevels;
   const assets = assetsProp.length > 0 ? assetsProp : stateAssets;
+  const initialAssetId = initialData.asset?.id || initialData.asset?._id || initialData.asset || '';
 
   const [formData, setFormData] = useState({
     title: initialData.title || '',
@@ -1717,7 +1719,7 @@ const TaskForm = ({
     location: initialData.location || '',
     assignedTo: initialData.assignedTo || [],
     inspectionLevel: initialData.inspectionLevel?.id || initialData.inspectionLevel?._id || initialData.inspectionLevel || '',
-    asset: initialData.asset?.id || initialData.asset?._id || initialData.asset || '',
+    asset: initialAssetId,
     isActive: initialData.isActive !== undefined ? initialData.isActive : true,
     attachments: initialData.attachments || [],
     preInspectionQuestions: initialData.preInspectionQuestions || []
@@ -1968,7 +1970,11 @@ const TaskForm = ({
         // Tasks mode - create task
         console.log('Creating new task');
 
-        const createResult = await dispatch(createTask(sourceFaultId ? { ...taskData, sourceFaultId } : taskData)).unwrap();
+        const createResult = await dispatch(createTask({
+          ...taskData,
+          ...(sourceFaultId && { sourceFaultId }),
+          ...(workOrder && { maintenanceWorkOrder: true }),
+        })).unwrap();
 
         // Log task creation
         await FrontendLogger.logActivity({
@@ -2035,14 +2041,14 @@ const TaskForm = ({
     if (name === 'inspectionLevel') {
       if (value) {
         const selectedTemplate = inspectionLevels?.find(level => level._id === value);
-        // Always clear a previous asset. A blank type is intentionally kept
-        // blank: it must not silently make every asset selectable.
-        setSelectedTemplateType(getTemplateAssetType(selectedTemplate));
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          asset: ''
-        }));
+        const type = getTemplateAssetType(selectedTemplate);
+        setSelectedTemplateType(type);
+        setFormData(prev => {
+          const assetId = workOrder ? prev.asset || initialAssetId : '';
+          const compatible = assetId && type && filterAssetsForTemplateType(assets, type)
+            .some(asset => (asset._id || asset.id) === assetId);
+          return { ...prev, [name]: value, asset: compatible ? assetId : '' };
+        });
         return;
       } else {
         // Template cleared, reset asset field and clear type filter
@@ -2050,7 +2056,7 @@ const TaskForm = ({
         setFormData(prev => ({
           ...prev,
           [name]: value,
-          asset: ''
+          asset: workOrder ? initialAssetId : ''
         }));
         return;
       }
@@ -2477,7 +2483,10 @@ const TaskForm = ({
                   : t('tasks.noMatchingAssetFound')
               }
             </option>
-            {filteredAssets.map(asset => (
+            {(workOrder && !formData.inspectionLevel
+              ? (assets || []).filter(asset => (asset._id || asset.id) === initialAssetId)
+              : filteredAssets
+            ).map(asset => (
               <option key={asset._id || asset.id} value={asset._id || asset.id}>
                 {asset.displayName || asset.uniqueId} - {asset.type}
               </option>

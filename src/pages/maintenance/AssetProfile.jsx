@@ -1,8 +1,8 @@
 import ActionMenu from "./ActionMenu";
-import { UploadDocument } from "./Documents";
+import { DocumentRemovalDialog, UploadDocument } from "./Documents";
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Plus, ArrowLeft, Radio, Settings } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssetPlans, MeterReadings } from "./plans/PlanAssetTabs";
@@ -28,6 +28,7 @@ import {
   FormGrid,
   ErrorBox,
   Modal,
+  Preview,
   FormDialog,
   Field,
   ResourceState,
@@ -198,10 +199,16 @@ function ProfileEditor({
 }
 export default function AssetProfile() {
   const { id, equipmentId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromAsset = { path: location.pathname, tab: "" };
+  const entryTab = ["plans", "parts", "tasks"].includes(location.state?.assetTab)
+    ? location.state.assetTab
+    : "overview";
   const m = useCopy();
   const { user, manage, browse } = useMaintenanceAccess("assets");
   const resource = useResource(`/asset-profiles/${id}`, {}, browse);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(entryTab);
   const [dialog, setDialog] = useState(null);
   const partsLookup = useResource(
     "/warehouse/parts",
@@ -214,9 +221,9 @@ export default function AssetProfile() {
     dialog?.type === "linkPart",
   );
   useEffect(() => {
-    setTab("overview");
+    setTab(entryTab);
     setDialog(null);
-  }, [id, equipmentId]);
+  }, [id, equipmentId, entryTab]);
   const data = resource.data?.data;
   const profile = data?.profile;
   const asset = data?.asset;
@@ -249,6 +256,7 @@ export default function AssetProfile() {
     equipmentId ? row.equipment === equipmentId : true,
   );
   const records = equipment?.records || profile?.records || [];
+  const workOrders = data?.workOrders || data?.tasks || [];
   const refresh = () => {
     resource.reload();
     toast.success(m("Saved successfully"));
@@ -401,7 +409,7 @@ export default function AssetProfile() {
                 </button>
               ))}
             </Tabs>
-            {tab === "plans" && canPlans && !equipment && <AssetPlans assetId={id} />}
+            {tab === "plans" && canPlans && !equipment && <AssetPlans assetId={id} fromAsset={{ ...fromAsset, tab: "plans" }} />}
             {tab === "meter" && canPlans && equipment?.type === "equipment" &&
               <MeterReadings equipment={equipment} assetId={id} assetLabel={asset.displayName} canRecord={manage} />}
             {tab === "overview" && (
@@ -553,20 +561,16 @@ export default function AssetProfile() {
                     </Button>
                   )}
                 </Actions>
-                <EquipmentTable
-                  actions
-                  rows={equipmentList}
-                  assetId={id}
-                  onDelete={manage ? (row) => setDialog({ type: "deleteEquipment", row }) : undefined}
-                  onSelect={() => setTab("overview")}
-                />
-                {equipment && (
-                  <Button
-                    style={{ marginTop: 20 }}
-                    onClick={() => setDialog({ type: "tool" })}
-                  >
-                    {m("Add Tool")}
-                  </Button>
+                {equipment && equipmentList.length === 0 ? (
+                  <Muted>{m("No components added")}</Muted>
+                ) : (
+                  <EquipmentTable
+                    actions
+                    rows={equipmentList}
+                    assetId={id}
+                    onDelete={manage ? (row) => setDialog({ type: "deleteEquipment", row }) : undefined}
+                    onSelect={() => setTab("overview")}
+                  />
                 )}
               </Panel>
             )}
@@ -632,12 +636,19 @@ export default function AssetProfile() {
                           <td>{document.versions.at(-1)?.number || "—"}</td>
                           <td>{formatDate(document.updatedAt)}</td>
                           <td>
-                            <Button
-                              as={Link}
-                              to={`/documents?document=${document._id}`}
-                            >
-                              {m("View")}
-                            </Button>
+                            <ActionMenu
+                              label={`${m("Actions")} ${document.title}`}
+                              items={[
+                                document.versions.at(-1) && {
+                                  label: m("View"),
+                                  onClick: () => setDialog({ type: "documentPreview", document }),
+                                },
+                                manageDocuments && {
+                                  label: m("Delete"),
+                                  onClick: () => setDialog({ type: "deleteDocument", document }),
+                                },
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -655,19 +666,28 @@ export default function AssetProfile() {
                   {manage && (
                     <Button
                       $primary
-                      onClick={() => setDialog({ type: "profile" })}
+                      onClick={() => setDialog({ type: "addRecord" })}
                     >
                       <Plus />
                       {m("Add Record")}
                     </Button>
                   )}
                 </Actions>
-                <RecordTable records={records} />
+                <RecordTable records={records} onView={(record) => setDialog({ type: "recordDetails", record })} />
               </Panel>
             )}
             {tab === "tasks" && (
               <Panel>
-                <h2>{m("Work Orders")}</h2>
+                <Actions style={{ justifyContent: "space-between", marginBottom: 20 }}>
+                  <h2>{m("Work Orders")}</h2>
+                  {canTasks && (
+                    <Button $primary as={Link} to={`/tasks/work-orders/create?asset=${id}`}
+                      state={{ fromAsset: { ...fromAsset, tab: "tasks" } }}>
+                      <Plus />{m("Create Work Order")}
+                    </Button>
+                  )}
+                </Actions>
+                {workOrders.length === 0 ? <Muted>{m("No work orders found")}</Muted> : (
                 <TableWrap>
                   <table>
                     <thead>
@@ -684,7 +704,7 @@ export default function AssetProfile() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.tasks.map((task) => (
+                      {workOrders.map((task) => (
                         <tr key={task._id}>
                           <td>{task.title}</td>
                           <td>{m(readable(task.priority))}</td>
@@ -695,7 +715,7 @@ export default function AssetProfile() {
                           </td>
                           <td>{formatDate(task.deadline)}</td>
                           <td>
-                            <Button as={Link} to={`/tasks/${task._id}`}>
+                            <Button as={Link} to={`/tasks/${task._id}`} state={{ fromAsset: { ...fromAsset, tab: "tasks" } }}>
                               {m("View")}
                             </Button>
                           </td>
@@ -704,9 +724,11 @@ export default function AssetProfile() {
                     </tbody>
                   </table>
                 </TableWrap>
+                )}
                 {canFaults && (
                   <>
                     <h3 style={{ marginTop: 28 }}>{m("Fault Reports")}</h3>
+                    {data.faults.length === 0 && <Muted>{m("No fault reports found")}</Muted>}
                     {data.faults.map((fault) => (
                       <p key={fault._id}>
                         <TextLink to={`/fault-reports/${fault._id}`}>
@@ -727,13 +749,12 @@ export default function AssetProfile() {
                   style={{ justifyContent: "space-between", marginBottom: 20 }}
                 >
                   <h2>{m("Spare Parts")}</h2>
-                  <Button
-                    $primary
-                    onClick={() => setDialog({ type: "linkPart" })}
-                  >
-                    <Plus />
-                    {m("Link Spare Part")}
-                  </Button>
+                  {canWarehouse && manage && (
+                    <Button $primary onClick={() => setDialog({ type: "linkPart" })}>
+                      <Plus />
+                      {m("Link Spare Part")}
+                    </Button>
+                  )}
                 </Actions>
                 <TableWrap>
                   <table>
@@ -776,9 +797,16 @@ export default function AssetProfile() {
                             </Badge>
                           </td>
                           <td>
-                            <Button as={Link} to={`/spare-parts/${part._id}`}>
-                              {m("View")}
-                            </Button>
+                            <ActionMenu
+                              label={`${m("Actions")} ${part.name}`}
+                              items={[
+                                { label: m("View"), onClick: () => navigate(`/spare-parts/${part._id}`, { state: { fromAsset: { ...fromAsset, tab: "parts" } } }) },
+                                canWarehouse && manage && part.directLink && {
+                                  label: m("Unlink"),
+                                  onClick: () => setDialog({ type: "unlinkPart", part }),
+                                },
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -826,7 +854,22 @@ export default function AssetProfile() {
           <ErrorBox>{m("Equipment not found")}</ErrorBox>
         )}
       </ResourceState>
-      {dialog?.type === "linkPart" && (
+      {dialog?.type === "unlinkPart" && canWarehouse && manage && (
+        <FormDialog
+          title="Unlink spare part"
+          fields={[]}
+          submitLabel="Unlink"
+          onClose={() => setDialog(null)}
+          onSubmit={async () => {
+            await service.save(`/warehouse/parts/${dialog.part._id}/asset-links/${id}`, undefined, "delete");
+            refresh();
+          }}
+        >
+          <p><strong>{dialog.part.name}</strong></p>
+          <p>{m("Unlink this part from the asset? The inventory record and stock quantities will be retained.")}</p>
+        </FormDialog>
+      )}
+      {dialog?.type === "linkPart" && canWarehouse && manage && (
         <FormDialog
           title="Link Spare Part"
           fields={[
@@ -852,7 +895,11 @@ export default function AssetProfile() {
               name: "recommendedQuantity",
               label: "Recommended Quantity",
               type: "number",
-              min: 0,
+              resolve: ({ part }) => {
+                const selected = partsLookup.data?.data?.find((row) => row._id === part);
+                const precision = /^(piece|pcs?)$/i.test(selected?.unit?.trim() || "") ? 0 : selected?.unitPrecision ?? 4;
+                return { suffix: selected?.unit, min: 10 ** -precision, step: 10 ** -precision };
+              },
             },
             {
               name: "usageNote",
@@ -880,12 +927,92 @@ export default function AssetProfile() {
           onSuccess={refresh}
         />
       )}
+      {dialog?.type === "addRecord" && manage && (
+        <FormDialog
+          title="Add Record"
+          initial={{ name: "", dataType: "text", value: "", unit: "" }}
+          fields={[
+            { name: "name", label: "Record Name", required: true, maxLength: 200 },
+            {
+              name: "dataType", label: "Data Type", required: true,
+              options: [
+                { value: "text", label: "Text" },
+                { value: "number", label: "Number" },
+                { value: "date", label: "Date" },
+                { value: "boolean", label: "Yes / No" },
+              ],
+            },
+            { name: "value", label: "Value", required: true, when: ({ dataType }) => dataType === "text" },
+            { name: "numberValue", label: "Value", inputMode: "decimal", required: true, when: ({ dataType }) => dataType === "number" },
+            { name: "dateValue", label: "Value", type: "date", required: true, when: ({ dataType }) => dataType === "date" },
+            {
+              name: "booleanValue", label: "Value", required: true,
+              options: [{ value: "true", label: "Yes" }, { value: "false", label: "No" }],
+              when: ({ dataType }) => dataType === "boolean",
+            },
+            { name: "unit", label: "Unit", maxLength: 50 },
+          ]}
+          onClose={() => setDialog(null)}
+          onSubmit={async ({ name, dataType, unit, value, numberValue, dateValue, booleanValue }) => {
+            const typedValue = { text: value, number: numberValue, date: dateValue, boolean: booleanValue }[dataType];
+            if (dataType === "number" && !/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(typedValue?.trim() || ""))
+              throw new Error(m("Record value must be a number"));
+            await service.save(
+              `/asset-profiles/${id}${equipmentId ? `/equipment/${equipmentId}` : ""}/records`,
+              { name, dataType, unit, value: typedValue },
+            );
+            refresh();
+          }}
+          submitLabel="Add Record"
+        >
+          <Definition>
+            <dt>{m("Linked Asset")}</dt>
+            <dd>{asset.displayName}</dd>
+          </Definition>
+        </FormDialog>
+      )}
+      {dialog?.type === "recordDetails" && (
+        <Modal title={m("Record Details")} onClose={() => setDialog(null)}>
+          <Definition>
+            <dt>{m("Record Name")}</dt>
+            <dd>{dialog.record.name}</dd>
+            <dt>{m("Data Type")}</dt>
+            <dd>{m(readable(dialog.record.dataType || "text"))}</dd>
+            <dt>{m("Value")}</dt>
+            <dd style={{ overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
+              {dialog.record.dataType === "boolean"
+                ? m(dialog.record.value === "true" ? "Yes" : "No")
+                : dialog.record.value}
+            </dd>
+            <dt>{m("Unit")}</dt>
+            <dd>{dialog.record.unit || "—"}</dd>
+            <dt>{m("Date")}</dt>
+            <dd>{formatDate(dialog.record.date)}</dd>
+          </Definition>
+        </Modal>
+      )}
       {dialog?.type === "profile" && (
         <ProfileEditor
           profile={equipment || profile}
           documents={data?.documents || []}
           assetId={id}
           equipmentId={equipmentId}
+          onClose={() => setDialog(null)}
+          onSaved={refresh}
+        />
+      )}
+      {dialog?.type === "documentPreview" && canDocuments && (
+        <Preview
+          title={dialog.document.title}
+          filename={dialog.document.versions.at(-1).file?.filename}
+          path={`/documents/${dialog.document._id}/versions/${dialog.document.versions.at(-1).number}/file?preview=true`}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.type === "deleteDocument" && manageDocuments && (
+        <DocumentRemovalDialog
+          document={dialog.document}
+          deleting
           onClose={() => setDialog(null)}
           onSaved={refresh}
         />
@@ -980,7 +1107,7 @@ export default function AssetProfile() {
     </Page>
   );
 }
-function RecordTable({ records }) {
+function RecordTable({ records, onView }) {
   const m = useCopy();
   return records.length ? (
     <TableWrap>
@@ -997,7 +1124,11 @@ function RecordTable({ records }) {
         <tbody>
           {records.map((record, index) => (
             <tr key={record._id || index}>
-              <td>{record.name}</td>
+              <td>
+                <TextLink as="button" type="button" onClick={() => onView(record)}>
+                  {record.name}
+                </TextLink>
+              </td>
               <td>{m(readable(record.dataType || "text"))}</td>
               <td>
                 {record.document ? (
@@ -1092,7 +1223,7 @@ ProfileEditor.propTypes = {
   assetId: PropTypes.string.isRequired,
   equipmentId: PropTypes.string,
 };
-RecordTable.propTypes = { records: PropTypes.array.isRequired };
+RecordTable.propTypes = { records: PropTypes.array.isRequired, onView: PropTypes.func.isRequired };
 EquipmentTable.propTypes = {
   rows: PropTypes.array.isRequired,
   assetId: PropTypes.string.isRequired,

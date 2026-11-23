@@ -1001,7 +1001,7 @@ const PreInspectionQuestionsModal = ({ isOpen, onClose, task }) => {
   );
 };
 
-const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort }) => {
+const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onSort, nameLabel }) => {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
   const navigate = useNavigate();
@@ -1212,7 +1212,7 @@ const TaskTable = ({ tasks: initialTasks, loading, pagination, onPageChange, onS
               <th style={{ width: '50px', textAlign: 'center' }}>#</th>
               <th onClick={() => handleSort('title')}>
                 <HeaderContent>
-                  <HeaderText>{t('common.taskName')}</HeaderText>
+                  <HeaderText>{nameLabel || t('common.taskName')}</HeaderText>
                   {sortConfig.key === 'title' && (
                     <SortIcon>
                       {sortConfig.direction === 'asc' ? (

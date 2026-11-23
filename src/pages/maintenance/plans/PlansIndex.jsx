@@ -142,7 +142,7 @@ const startOfWeek = (value) => {
   const date = new Date(localDate(value) + "T00:00:00Z");
   return new Date(+date - ((date.getUTCDay() + 6) % 7) * DAY);
 };
-export function PlanTableView({ plans, onPause, compact = false }) {
+export function PlanTableView({ plans, onPause, compact = false, fromAsset }) {
   const m = useCopy(),
     date = usePlanDate(),
     labels = usePlanLabels();
@@ -172,7 +172,7 @@ export function PlanTableView({ plans, onPause, compact = false }) {
                 <td
                   style={{ borderInlineStart: `3px solid var(--mp-${tone})` }}
                 >
-                  <Link to={root + "/" + plan._id}>
+                  <Link to={root + "/" + plan._id} state={fromAsset ? { fromAsset } : undefined}>
                     <b>{plan.name}</b>
                   </Link>
                   <small>{plan.code}</small>
@@ -193,7 +193,7 @@ export function PlanTableView({ plans, onPause, compact = false }) {
                 </td>
                 <td>
                   {compact ? (
-                    <Link to={root + "/" + plan._id}>{m("Open plan")}</Link>
+                    <PlanLink to={root + "/" + plan._id} state={{ fromAsset }}>{m("View")}</PlanLink>
                   ) : (
                     <TableActions>
                       <summary aria-label={m("Actions")}>

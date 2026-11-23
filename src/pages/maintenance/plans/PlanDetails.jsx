@@ -1,10 +1,14 @@
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import { useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Clock3, Package, Pause, Pencil, Play } from "lucide-react";
 import {
   ErrorBox,
+  Field,
+  FormDialog,
+  useMaintenanceAccess,
+  optionsFrom,
   Modal,
   Pagination,
   ResourceState,
@@ -132,15 +136,17 @@ const taskLabel = (status) =>
 const planPath = (id) => `${root}/${id}`;
 
 function Heading({ plan, onPause }) {
+  const fromAsset = useLocation().state?.fromAsset;
+  const backToAsset = fromAsset?.tab === "plans" && /^\/assets\/[^/?#]+$/.test(fromAsset.path);
   const m = useCopy(),
     labels = usePlanLabels();
   const [status, tone] = labels.status(plan);
   return (
     <>
       <Row>
-        <DetailBack to={root}>
+        <DetailBack to={backToAsset ? fromAsset.path : root} state={backToAsset ? { assetTab: "plans" } : undefined}>
           <ArrowLeft size={16} />
-          {m("Back to Maintenance Plans")}
+          {m(backToAsset ? "Back to Asset" : "Back to Maintenance Plans")}
         </DetailBack>
       </Row>
       <DetailsHeading $between>
@@ -263,7 +269,11 @@ function OccurrenceTable({ rows, plan, empty }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row._id}>
-              <td>{row.task?.title || m("Unavailable")}</td>
+              <td>{row.task ? (
+                <Link to={planPath(plan._id) + "/tasks/" + row._id}>
+                  {row.code || row.task.number || row.task.title}
+                </Link>
+              ) : m("Unavailable")}</td>
               <td>{date(row.createdAt, plan.timezone)}</td>
               <td>{date(row.dueAt, plan.timezone)}</td>
               <td>
@@ -294,6 +304,10 @@ function Details({ plan, reload }) {
     date = usePlanDate(),
     labels = usePlanLabels();
   const [pause, setPause] = useState(false);
+  const [reassign, setReassign] = useState(false);
+  const [assignees, setAssignees] = useState([]);
+  const { manage } = useMaintenanceAccess("maintenance_plans");
+  const options = useResource("/plans/options", { asset: idOf(plan.asset) }, reassign);
   const procedure = useResource(
     "/plans/options",
     { asset: idOf(plan.asset), template: idOf(plan.template) },
@@ -325,7 +339,9 @@ function Details({ plan, reload }) {
             {[
               [m("Asset"), assetName(plan.asset)],
               [m("Equipment"), plan.equipment?.name],
-              [m("Procedure"), plan.template?.name],
+              [m("Procedure"), plan.template
+                ? <Link to={`/templates/${idOf(plan.template)}`}>{plan.template.name}</Link>
+                : plan.template?.name],
               [m("Frequency"), labels.frequency(plan)],
               [
                 m("First Service Date"),
@@ -345,10 +361,31 @@ function Details({ plan, reload }) {
                 <p>
                   <b>{value || "—"}</b>
                 </p>
+                {label === m("Assigned To") && manage && (
+                  <PlanButton type="button" onClick={() => { setAssignees(plan.assignedTo.map(idOf)); setReassign(true); }}>{m("Reassign")}</PlanButton>
+                )}
               </div>
             ))}
           </Columns>
         </Section>
+        {reassign && (
+          <FormDialog title="Reassign" fields={[]} onClose={() => setReassign(false)}
+            onSubmit={async () => {
+              if (!assignees.length) throw new Error(m("Select at least one assignee"));
+              await maintenanceService.save(`/plans/${plan._id}/assignees`, { assignedTo: assignees }, "patch");
+              reload();
+            }}>
+            <p>{m("This assignment applies to future work orders.")}</p>
+            <ResourceState resource={options}>
+              {optionsFrom(options.data?.data?.inspectors).map(({ value, label }) => (
+                <FieldLabel key={value}>
+                  <input type="checkbox" checked={assignees.includes(value)} onChange={(event) =>
+                    setAssignees((old) => event.target.checked ? [...old, value] : old.filter((id) => id !== value))} />{label}
+                </FieldLabel>
+              ))}
+            </ResourceState>
+          </FormDialog>
+        )}
         <Section>
           <h2>{m("Current Year Progress")}</h2>
           <ProgressSummary>
@@ -530,15 +567,26 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [warehouse, setWarehouse] = useState(action.warehouse?._id || ""),
-    [quantity, setQuantity] = useState("");
+    [quantity, setQuantity] = useState(action.type === "issue" ?
+      Math.round((action.quantity - action.issued - action.released) * 10000) / 10000 : "");
+  const [location, setLocation] = useState("unassigned");
+  const [recipient, setRecipient] = useState("");
   const request = useRef({ signature: "", key: "" });
   const issue = action.type === "issue",
     part = issue ? action.part : action.row.part;
   const balances = order.balances.filter((row) => idOf(row.part) === part._id);
+  const balance = balances.find((row) => row.warehouse._id === warehouse);
+  const precision = /^(piece|pcs?)$/i.test(part.unit?.trim() || "") ? 0 : part.unitPrecision ?? 4;
+  const step = 10 ** -precision;
+  const locations = useResource(`/warehouse/warehouses/${warehouse}/locations`, {}, !issue && Boolean(warehouse));
+  const locationRows = balance?.locations || [];
   const available = issue
     ? action.quantity - action.issued - action.released
-    : (balances.find((row) => row.warehouse._id === warehouse)?.onHand || 0) -
-      (balances.find((row) => row.warehouse._id === warehouse)?.reserved || 0);
+    : location === "unassigned"
+      ? (balance?.onHand || 0) - (balance?.reserved || 0) -
+        locationRows.reduce((total, row) => total + row.onHand - row.reserved, 0)
+      : locationRows.filter((row) => idOf(row.location) === location)
+        .reduce((total, row) => total + row.onHand - row.reserved, 0);
   const max =
     Math.round(
       Math.min(available, issue ? available : action.remaining) * 10000,
@@ -558,7 +606,8 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
               quantity: +quantity,
               warehouse,
               part: part._id,
-              ...(issue && { reservation: action._id }),
+              ...(issue ? { reservation: action._id, recipient } :
+                location === "unassigned" ? {} : { location }),
             };
             const signature = JSON.stringify(body);
             if (request.current.signature !== signature)
@@ -591,7 +640,7 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
               </p>
             </div>
             <MutedText>
-              {m("Reserve available stock for this work order.")}
+              {m(issue ? "Issue Reserved Stock" : "Reserve available stock for this work order.")}
             </MutedText>
             <FieldLabel>
               {m("Warehouse")}
@@ -599,7 +648,10 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
                 required
                 disabled={issue}
                 value={warehouse}
-                onChange={(event) => setWarehouse(event.target.value)}
+                onChange={(event) => {
+                  setWarehouse(event.target.value);
+                  setLocation("unassigned");
+                }}
               >
                 <option value="">{m("Select Warehouse")}</option>
                 {issue ? (
@@ -613,20 +665,38 @@ function StockDialog({ action, order, path, onClose, onSaved }) {
                 )}
               </select>
             </FieldLabel>
+            {issue ? (
+              <>
+                <FieldLabel>
+                  {m("Storage Location")}
+                  <input readOnly value={action.location?.name || m("Unassigned location")} />
+                </FieldLabel>
+                <FieldLabel>
+                  {m("Issue Recipient")}
+                  <input required maxLength={200} value={recipient} onChange={(event) => setRecipient(event.target.value)} />
+                </FieldLabel>
+              </>
+            ) : (
+              <Field field={{
+                name: "location", label: "Storage Location", searchable: true, disabled: !warehouse,
+                options: [{ value: "unassigned", label: "Unassigned location" },
+                  ...(locations.data?.data || []).map((row) => ({ value: row._id, label: row.name }))],
+              }} value={location} onChange={setLocation} />
+            )}
             <FieldLabel>
-              {m("Quantity")}
+              {m("Quantity")} · {part.unit}
               <input
                 required
                 type="number"
-                min=".0001"
+                min={step}
                 max={Math.max(0, max)}
-                step=".0001"
+                step={step}
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
               />
             </FieldLabel>
             <MutedText>
-              {m("Available")}: {available}
+              {m(issue ? "Remaining to issue" : "Available")}: {Math.round(available * 10000) / 10000}
             </MutedText>
             {error && <ErrorBox role="alert">{m(error)}</ErrorBox>}
             <Row style={{ justifyContent: "flex-end" }}>

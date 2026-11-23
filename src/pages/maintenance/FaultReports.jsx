@@ -1110,7 +1110,9 @@ export function FaultDetail() {
                 <Definition $columns={1}>
                   <div>
                     <dt>{m("Linked Work Order")}</dt>
-                    <dd>{fault.workOrder?.title || m("Not created yet")}</dd>
+                    <dd>{fault.workOrder ? (
+                      <TextLink to={`/tasks/${taskReferenceId(fault.workOrder)}`}>{fault.workOrder.title || taskReferenceId(fault.workOrder)}</TextLink>
+                    ) : m("Not created yet")}</dd>
                   </div>
                 </Definition>
                 {manage && (

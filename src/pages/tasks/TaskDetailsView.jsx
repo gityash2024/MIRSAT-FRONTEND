@@ -1,5 +1,7 @@
+import WorkOrderParts from "../maintenance/WorkOrderParts";
+import { useCopy } from "../maintenance/shared";
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -615,6 +617,10 @@ const StyledTextarea = styled.textarea`
 
 const TaskDetailsView = () => {
   const { taskId } = useParams();
+  const location = useLocation();
+  const fromAsset = location.state?.fromAsset;
+  const backToAsset = fromAsset?.tab === "tasks" && /^\/assets\/[^/?#]+(?:\/equipment\/[^/?#]+)?$/.test(fromAsset.path);
+  const m = useCopy();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -662,7 +668,8 @@ const TaskDetailsView = () => {
 
 
   const handleBack = () => {
-    navigate('/tasks');
+    if (backToAsset) navigate(fromAsset.path, { state: { assetTab: 'tasks' } });
+    else navigate('/tasks');
   };
 
   const handleExportClick = () => {
@@ -1340,6 +1347,7 @@ const TaskDetailsView = () => {
   const completedQuestions = Object.keys(responses).filter(responseId =>
     inspectionQuestionIds.has(responseId)
   ).length;
+  const workOrder = currentTask.maintenanceWorkOrder || currentTask.maintenancePlan || currentTask.sourceFault;
 
   // Use the actual progress from the task data or calculate it
   const progressPercentage = currentTask.overallProgress ||
@@ -1365,7 +1373,7 @@ const TaskDetailsView = () => {
       <Header>
         <BackButton onClick={handleBack}>
           <ArrowLeft size={16} />
-          {t('common.backToTasks')}
+          {backToAsset ? m('Back to Asset') : workOrder ? m('Back to Work Orders') : t('common.backToTasks')}
         </BackButton>
         <TaskTitle>{currentTask.name || currentTask.title}</TaskTitle>
         <HeaderActions>
@@ -1408,12 +1416,13 @@ const TaskDetailsView = () => {
       </Header>
 
       <Content>
+        <WorkOrderParts task={currentTask} />
         {/* Task Overview */}
         <TaskCard>
           <CardHeader>
             <CardTitle>
               <FileText size={20} />
-              {t('common.taskOverview')}
+              {workOrder ? m('Work Order Overview') : t('common.taskOverview')}
             </CardTitle>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -1422,7 +1431,7 @@ const TaskDetailsView = () => {
                 isEditMode={isEditMode}
               >
                 {isEditMode ? <X size={16} /> : <Edit size={16} />}
-                {isEditMode ? t('common.exitEdit') : t('common.editInspection')}
+                {isEditMode ? t('common.exitEdit') : workOrder ? m('Edit Work Order') : t('common.editInspection')}
               </EditToggleButton>
             </div>
 
